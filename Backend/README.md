@@ -38,18 +38,24 @@ NODE_ENV=development
 - `pnpm run build` - Compile TypeScript to JavaScript
 - `pnpm run typecheck` - Type check without emitting
 - `pnpm run start` - Run production build
+- `pnpm run lint` - Lint code with ESLint
+- `pnpm run format` - Format code with Prettier
+- `pnpm run format:check` - Check code formatting
 
 ## API Endpoints
 
 ### Health Check
+
 ```
 GET /healthz
 ```
 
 ### Metrics
+
 ```
 GET /metrics
 ```
+
 Returns Prometheus metrics
 
 ## Project Structure
@@ -80,6 +86,12 @@ src/
 - Arcjet (Security)
 - Prometheus (Metrics)
 - Helmet, HPP, CORS
+- ESLint + Prettier
+
+## Git Hooks
+
+- **Pre-commit**: Formats code, runs linting and type checking
+- **Pre-push**: Builds both Backend and Frontend
 
 ## Development
 

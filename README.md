@@ -13,6 +13,7 @@ A modern, secure web application with React frontend and Express backend.
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 22+
 - pnpm 10+
 
@@ -57,28 +58,47 @@ FairArena/
 
 ## Scripts
 
+### Root
+
+- `pnpm format` - Format all code with Prettier
+- `pnpm format:check` - Check code formatting
+
 ### Backend
+
 - `pnpm run dev` - Start development server
 - `pnpm run build` - Build for production
 - `pnpm run start` - Run production server
+- `pnpm run lint` - Lint code with ESLint
+- `pnpm run typecheck` - Type check without emitting
 
 ### Frontend
+
 - `pnpm run dev` - Start development server
 - `pnpm run build` - Build for production
 - `pnpm run preview` - Preview production build
+- `pnpm run lint` - Lint code with ESLint
 
 ## Tech Stack
 
 **Frontend:**
+
 - React 19
 - TypeScript
 - Vite
+- ESLint + Prettier
 
 **Backend:**
+
 - Express 5
 - TypeScript
 - Arcjet (Security)
 - Prometheus (Metrics)
+- ESLint + Prettier
+
+## Git Hooks
+
+- **Pre-commit**: Formats code, runs linting and type checking on staged files
+- **Pre-push**: Builds both Backend and Frontend to ensure production readiness
 
 ## Contributing
 

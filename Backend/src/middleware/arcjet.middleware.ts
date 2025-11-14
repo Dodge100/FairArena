@@ -1,10 +1,9 @@
 import { aj } from '../config/arcjet.js';
-
 import { NextFunction, Request, Response } from 'express';
 
 export const arcjetMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const decision = await aj.protect(req, {} as any);
+    const decision = await aj.protect(req, { requested: 1 });
 
     if (decision.isDenied()) {
       if (decision.reason.isRateLimit()) {
@@ -25,7 +24,7 @@ export const arcjetMiddleware = async (req: Request, res: Response, next: NextFu
       }
     }
 
-    if (decision.results.some((result: any) => result.reason.isBot() && result.reason.isSpoofed())) {
+    if (decision.results.some((result) => result.reason.isBot() && result.reason.isSpoofed())) {
       return res.status(403).json({
         error: 'Spoofed bot detected',
         message: 'Malicious bot activity detected.',

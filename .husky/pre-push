@@ -1,0 +1,2 @@
+pnpm --filter backend run build
+pnpm --filter fairarena run build
