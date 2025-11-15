@@ -1,7 +1,11 @@
-import { aj } from '../config/arcjet.js';
 import { NextFunction, Request, Response } from 'express';
+import { aj } from '../config/arcjet.js';
 
 export const arcjetMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api/inngest')) {
+    return next();
+  }
+
   try {
     const decision = await aj.protect(req, { requested: 1 });
 
