@@ -11,7 +11,7 @@ function Home() {
         fill="#DDFF00"
       />
      
-      <DottedGlowBackground className='opacity-95 absolute -z-1' glowColor='#e8ff53' darkColor='#DDFF00' />
+      
       <Header/>
       
     </>

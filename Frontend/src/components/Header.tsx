@@ -54,7 +54,7 @@ function Header() {
   initial={{ opacity: 0, y: 20 }}
   whileInView={{ opacity: 1, y: 0 }}
   viewport={{ once: true, amount: 0.3 }}
-  transition={{ duration: 0.6, ease: "easeOut" }}
+  transition={{ duration: 0.6,delay:1.2, ease: "easeOut" }}
   className="
     text-center mt-6 text-neutral-400
     text-sm sm:text-base md:text-lg

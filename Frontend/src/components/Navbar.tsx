@@ -48,7 +48,7 @@ export default function Navbar() {
               isDark ? "text-white" : "text-black"
             }`}
           >
-            FairArena
+            <Link to="/home" >FairArena</Link>
           </motion.div>
 
           {/* Desktop Nav */}
@@ -171,7 +171,7 @@ export default function Navbar() {
                 }}
                 className="flex flex-col gap-6 text-lg"
               >
-                {["Benefits", "How-it-Works", "Testimonials", "FAQ"].map(
+                {["benefits", "how-it-works", "testimonials", "FAQ"].map(
                   (item, i) => (
                     <motion.button
                       key={i}
@@ -188,9 +188,10 @@ export default function Navbar() {
                       }}
                       className={`${
                         isDark ? "hover:text-white" : "hover:text-black"
-                      } transition cursor-pointer`}
+                      } transition capitalize cursor-pointer`}
+                      onClick={() => setOpen(false)}
                     >
-                      {item}
+                      <Link to={item} >{item}</Link>
                     </motion.button>
                   )
                 )}
