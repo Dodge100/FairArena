@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
-import { ENV } from '../config/env.js';
-import { welcomeEmailTemplate } from './templates/welcome.js';
+import { ENV } from '../../config/env.js';
+import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
 

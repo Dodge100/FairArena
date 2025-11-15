@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { sendWelcomeEmail } from '../../email/index.js';
+import { sendWelcomeEmail } from '../../email/v1/index.js';
 import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
 
