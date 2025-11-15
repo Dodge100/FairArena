@@ -18,7 +18,16 @@
   }
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE & Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
 
 
 :root[data-theme="light"] {
@@ -42,4 +51,47 @@ body {
   align-items: center;
   /* justify-content: center; */
   flex-direction: column;
+}
+
+/* Clerk Footer Theme Overrides */
+[data-theme="dark"] .cl-footer,
+[data-theme="dark"] .cl-cardFooter,
+[data-theme="dark"] .cl-formFooter,
+[data-theme="dark"] .cl-footerText,
+[data-theme="dark"] .cl-footerAction,
+[data-theme="dark"] .cl-footerActionText,
+[data-theme="dark"] [class*="cl-footer"],
+[data-theme="dark"] [class*="footer"],
+[data-theme="dark"] [class*="cl-footer"] *,
+[data-theme="dark"] [class*="footer"] *,
+[data-theme="dark"] .cl-formFooter *,
+[data-theme="dark"] .cl-cardFooter * {
+  color: white !important;
+}
+
+[data-theme="light"] .cl-footer,
+[data-theme="light"] .cl-cardFooter,
+[data-theme="light"] .cl-formFooter,
+[data-theme="light"] .cl-footerText,
+[data-theme="light"] .cl-footerAction,
+[data-theme="light"] .cl-footerActionText,
+[data-theme="light"] [class*="cl-footer"],
+[data-theme="light"] [class*="footer"],
+[data-theme="light"] [class*="cl-footer"] *,
+[data-theme="light"] [class*="footer"] *,
+[data-theme="light"] .cl-formFooter *,
+[data-theme="light"] .cl-cardFooter * {
+  color: black !important;
+}
+
+[data-theme="dark"] .cl-footerActionLink,
+[data-theme="dark"] [class*="footerActionLink"],
+[data-theme="dark"] a[class*="footer"] {
+  color: #DDEF00 !important;
+}
+
+[data-theme="light"] .cl-footerActionLink,
+[data-theme="light"] [class*="footerActionLink"],
+[data-theme="light"] a[class*="footer"] {
+  color: black !important;
 }

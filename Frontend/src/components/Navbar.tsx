@@ -72,6 +72,7 @@ export default function Navbar() {
             )}
 
             {/* Desktop CTA */}
+            <Link to={"/signup"}>
             <motion.button
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -84,7 +85,7 @@ export default function Navbar() {
               }`}
             >
               Sign Up
-            </motion.button>
+            </motion.button></Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -196,6 +197,7 @@ export default function Navbar() {
               </motion.div>
 
               {/* CTA BUTTON WITH FADE-UP */}
+              <Link to="/signup">
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -207,7 +209,7 @@ export default function Navbar() {
                 `}
               >
                 Sign Up
-              </motion.button>
+              </motion.button></Link>
               <div className="w-full flex items-center mt-5 justify-center">
               <ThemeToggleButton className={"flex"}/>
               </div>
