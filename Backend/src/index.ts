@@ -5,10 +5,10 @@ import hpp from 'hpp';
 import { serve } from 'inngest/express';
 import * as client from 'prom-client';
 import { ENV } from './config/env.js';
-import { inngest } from './inngest/client.js';
-import { syncUser, updateUser } from './inngest/index.js';
+import { inngest } from './inngest/v1/client.js';
+import { syncUser, updateUser } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
-import webhookRouter from './routes/webhook.js';
+import webhookRouter from './routes/v1/webhook.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -22,7 +22,7 @@ app.set('trust proxy', 1);
 app.use(cors());
 
 // Webhook routes
-app.use('/webhooks', webhookRouter);
+app.use('/webhooks/v1', webhookRouter);
 
 // JSON middleware
 app.use(express.json());

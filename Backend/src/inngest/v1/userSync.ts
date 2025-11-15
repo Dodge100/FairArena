@@ -1,4 +1,4 @@
-import { prisma } from '../config/database.js';
+import { prisma } from '../../config/database.js';
 import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
 

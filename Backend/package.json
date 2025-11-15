@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --exec tsx src/index.ts",
+    "dev:inngest": "npx inngest-cli dev",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",

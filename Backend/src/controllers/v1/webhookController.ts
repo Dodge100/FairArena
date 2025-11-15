@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { inngest } from '../inngest/client.js';
+import { inngest } from '../../inngest/v1/client.js';
 
 export const handleClerkWebhook = async (req: Request, res: Response) => {
   try {

@@ -1,4 +1,4 @@
-import { prisma } from '../config/database.js';
+import { prisma } from '../../config/database.js';
 
 export async function upsertUser(userId: string, email: string) {
   if (!userId || !email) {
