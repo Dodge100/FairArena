@@ -1,34 +1,28 @@
-import { useTheme } from "../../theme-context";
-import { cn } from "../../libs/utils";
-import {motion} from "motion/react"
+import { motion } from 'motion/react';
+import { useTheme } from '../../hooks/useTheme';
+import { cn } from '../../libs/utils';
 
-export default function ThemeToggleButton({className}:{className:String}) {
-  const { theme } = useTheme();
-
+export default function ThemeToggleButton({ className }: { className: string }) {
   return (
-    <div className={cn("p-2 rounded-xl", className)}>
+    <div className={cn('p-2 rounded-xl', className)}>
       {/* {theme === "light" ? <MoonIcon size={20} /> : <Sun size={20} />} */}
       <motion.div layout>
-        <ThemeToggleButton3 className={cn("size-10 p-2")} />
+        <ThemeToggleButton3 className={cn('size-10 p-2')} />
       </motion.div>
     </div>
   );
 }
 
- const ThemeToggleButton3 = ({
-  className = "",
-}: {
-  className?: string;
-}) => {
+const ThemeToggleButton3 = ({ className = '' }: { className?: string }) => {
   const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-  
+  const isDark = theme === 'dark';
+
   return (
     <button
       type="button"
       className={cn(
-        "rounded-full transition-all duration-300 cursor-pointer active:scale-95",
-        isDark ? "bg-black text-[#DDFF00]" : "bg-[#DDFF00] text-black",
+        'rounded-full transition-all duration-300 cursor-pointer active:scale-95',
+        isDark ? 'bg-black text-[#DDFF00]' : 'bg-[#DDFF00] text-black',
         className,
       )}
       onClick={toggleTheme}
@@ -43,14 +37,14 @@ export default function ThemeToggleButton({className}:{className:String}) {
         <clipPath id="skiper-btn-3">
           <motion.path
             animate={{ y: isDark ? 14 : 0, x: isDark ? -11 : 0 }}
-            transition={{ ease: "easeInOut", duration: 0.35 }}
+            transition={{ ease: 'easeInOut', duration: 0.35 }}
             d="M0-11h25a1 1 0 0017 13v30H0Z"
           />
         </clipPath>
         <g clipPath="url(#skiper-btn-3)">
           <motion.circle
             animate={{ r: isDark ? 10 : 8 }}
-            transition={{ ease: "easeInOut", duration: 0.35 }}
+            transition={{ ease: 'easeInOut', duration: 0.35 }}
             cx="16"
             cy="16"
           />
@@ -59,7 +53,7 @@ export default function ThemeToggleButton({className}:{className:String}) {
               scale: isDark ? 0.5 : 1,
               opacity: isDark ? 0 : 1,
             }}
-            transition={{ ease: "easeInOut", duration: 0.35 }}
+            transition={{ ease: 'easeInOut', duration: 0.35 }}
             stroke="currentColor"
             strokeWidth="1.5"
           >
