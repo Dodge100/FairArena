@@ -1,7 +1,9 @@
-import { Zap } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
-import { useTheme } from '../hooks/useTheme';
+
+import { useEffect, useState } from "react";
+import { useTheme } from "../theme-context";
+import { motion } from "motion/react";
+import { Zap } from "lucide-react";
+import { Link } from "react-router";
 
 function Header() {
   const { theme } = useTheme();
@@ -61,7 +63,9 @@ function Header() {
       </motion.p>
 
       {/* CTA Button */}
+      <Link to={"/waitlist"} >
       <motion.button
+
         initial={{ opacity: 0, scale: 0.8, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 1.5, duration: 0.6, ease: 'easeOut' }}
@@ -74,6 +78,8 @@ function Header() {
       >
         <Zap /> Join WaitList
       </motion.button>
+      </Link>
+
     </div>
   );
 }

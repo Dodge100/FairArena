@@ -6,6 +6,8 @@ import Benefits from './pages/Benefits'
 import HowItWorks from './pages/HowItWorks'
 import Testimonials from './pages/Testimonials'
 import FAQ from './pages/FAQ'
+import WaitList from './components/WaitList'
+import Signup from './components/Signup'
 
 
 
@@ -22,6 +24,8 @@ function App() {
         <Route path="/testimonials" element={<Testimonials />} />
         <Route path="/FAQ" element={<FAQ />} />
       </Route>
+      <Route path="/waitlist" element={<WaitList />} />
+      <Route path="/signup" element={<Signup />} />
     </Routes>
     </>
   )

@@ -1,10 +1,9 @@
-import { Menu, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { useTheme } from '../hooks/useTheme';
-import ThemeToggleButton from './ui/ThemeChange';
-
+import { useEffect, useState } from "react";
+import { useTheme } from "../theme-context";
+import { motion, AnimatePresence } from "motion/react";
+import { Menu, X } from "lucide-react";
+import ThemeToggleButton from "./ui/ThemeChange";
+import { Link } from "react-router";
 export default function Navbar() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
@@ -20,8 +19,8 @@ export default function Navbar() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className={`w-full fixed top-0 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className={`w-full fixed top-0 overflow-hidden h-30 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -42,7 +41,7 @@ export default function Navbar() {
               isDark ? 'text-white' : 'text-black'
             }`}
           >
-            <Link to="/home">FairArena</Link>
+            <Link to="/home" ><img width="100" src="/fairArenaLogo.png" alt="FairArena Logo" /></Link>
           </motion.div>
 
           {/* Desktop Nav */}
@@ -66,6 +65,7 @@ export default function Navbar() {
             ))}
 
             {/* Desktop CTA */}
+            <Link to={"/waitlist"}>
             <motion.button
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -77,8 +77,8 @@ export default function Navbar() {
                   : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
               }`}
             >
-              Sign Up
-            </motion.button>
+              Join Waitlist
+            </motion.button></Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -192,6 +192,7 @@ export default function Navbar() {
               </motion.div>
 
               {/* CTA BUTTON WITH FADE-UP */}
+              <Link to="/signup">
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -203,7 +204,7 @@ export default function Navbar() {
                 `}
               >
                 Sign Up
-              </motion.button>
+              </motion.button></Link>
               <div className="w-full flex items-center mt-5 justify-center">
                 <ThemeToggleButton className={'flex'} />
               </div>

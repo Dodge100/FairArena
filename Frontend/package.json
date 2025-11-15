@@ -11,12 +11,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.55.0",
     "@tailwindcss/vite": "^4.1.17",
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "aceternity-ui": "^0.2.2",
     "clsx": "^2.1.1",
+    "locomotive-scroll": "^4.1.4",
     "lucide": "^0.553.0",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
