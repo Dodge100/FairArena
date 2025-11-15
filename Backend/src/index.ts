@@ -2,9 +2,13 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import { serve } from 'inngest/express';
 import * as client from 'prom-client';
 import { ENV } from './config/env.js';
+import { inngest } from './inngest/client.js';
+import { syncUser, updateUser } from './inngest/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
+import webhookRouter from './routes/webhook.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -26,6 +30,12 @@ collectDefaultMetrics({ register: client.register });
 
 // Arcjet middleware for security
 app.use(arcjetMiddleware);
+
+// Webhook routes
+app.use('/webhooks', webhookRouter);
+
+// Inngest serve
+app.use('/api/inngest', serve({ client: inngest, functions: [syncUser, updateUser] }));
 
 // Metrics endpoint
 app.get('/metrics', async (_, res) => {
