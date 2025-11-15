@@ -1,9 +1,9 @@
+import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import cors from 'cors';
 import hpp from 'hpp';
+import * as client from 'prom-client';
 import { ENV } from './config/env.js';
-import client from 'prom-client';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 
 const app = express();
@@ -34,11 +34,17 @@ app.get('/metrics', async (_, res) => {
   res.send(metrics);
 });
 
+// Health check endpoint
 app.get('/healthz', (_, res) => {
-    res.status(200).send('Server is healthy...');
+  res.status(200).send('Server is healthy...');
+});
+
+// 404 handler for unmatched routes
+app.use((_, res) => {
+  res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

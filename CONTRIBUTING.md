@@ -9,6 +9,7 @@
 ## Development Setup
 
 ### Backend
+
 ```bash
 cd Backend
 pnpm install
@@ -17,6 +18,7 @@ pnpm run dev
 ```
 
 ### Prerequisites
+
 - Node.js 22+
 - pnpm 10+
 
@@ -32,6 +34,7 @@ pnpm run dev
 Format: `type: description`
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -52,6 +55,7 @@ Example: `feat: add user authentication`
 ## Reporting Issues
 
 Include:
+
 - Clear description
 - Steps to reproduce
 - Expected vs actual behavior
