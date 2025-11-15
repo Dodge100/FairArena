@@ -1,5 +1,6 @@
 import { prisma } from '../config/database.js';
 import { inngest } from './client.js';
+import { upsertUser } from './userOperations.js';
 
 export const updateUser = inngest.createFunction(
   { id: 'update-user' },
@@ -13,12 +14,8 @@ export const updateUser = inngest.createFunction(
     }
     await step.run('update-user-in-db', async () => {
       try {
-        await prisma.$transaction(async (tx) => {
-          await tx.user.upsert({
-            where: { userId },
-            update: { email },
-            create: { userId, email },
-          });
+        await prisma.$transaction(async () => {
+          await upsertUser(userId, email);
         });
         console.log(`User ${userId} updated successfully`);
       } catch (error) {

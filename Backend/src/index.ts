@@ -21,6 +21,9 @@ app.set('trust proxy', 1);
 // CORS middleware
 app.use(cors());
 
+// Webhook routes
+app.use('/webhooks', webhookRouter);
+
 // JSON middleware
 app.use(express.json());
 
@@ -30,9 +33,6 @@ collectDefaultMetrics({ register: client.register });
 
 // Arcjet middleware for security
 app.use(arcjetMiddleware);
-
-// Webhook routes
-app.use('/webhooks', webhookRouter);
 
 // Inngest serve
 app.use('/api/inngest', serve({ client: inngest, functions: [syncUser, updateUser] }));
