@@ -1,3 +1,11 @@
+---
+name: General Issue
+about: General issue or question template
+title: ''
+labels: ''
+assignees: ''
+---
+
 # Issue Template
 
 ## Description
