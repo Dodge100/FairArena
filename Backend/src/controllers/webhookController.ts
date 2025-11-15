@@ -21,7 +21,12 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
           email: data.email_addresses?.[0]?.email_address,
         },
       });
+    } else {
+      console.log(`Unhandled webhook type: ${type}`);
+      return res.status(200).json({ message: 'Webhook type not processed' });
     }
+
+    res.status(200).json({ message: 'Webhook processed' });
 
     res.status(200).json({ message: 'Webhook processed' });
   } catch (error) {
