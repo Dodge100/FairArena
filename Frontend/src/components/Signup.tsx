@@ -23,33 +23,33 @@ export default function AuthScreen() {
       borderRadius: "12px",
       fontFamily: "Inter, sans-serif",
     },
-  
+
     elements: {
       // ---------- CARD ----------
       card: `
         ${isDark ? "!bg-[#0d0d0d]" : "!bg-white"}
-        !border 
+        !border
         ${isDark ? "!border-neutral-800" : "!border-[#e6e6e6]"}
-        !rounded-2xl 
-        !shadow-none 
+        !rounded-2xl
+        !shadow-none
         w-full
       `,
-  
+
       // ---------- HEADER ----------
       headerTitle: `
-        text-2xl font-semibold 
+        text-2xl font-semibold
         ${isDark ? "text-white" : "text-neutral-900"}
       `,
       headerSubtitle: `
-        ${isDark ? "text-neutral-400" : "text-neutral-600"} 
+        ${isDark ? "text-neutral-400" : "text-neutral-600"}
         text-sm
       `,
-  
+
       // ---------- LABEL ----------
       formFieldLabel: `
         ${isDark ? "text-neutral-300" : "text-neutral-700"}
       `,
-  
+
       // ---------- INPUT ----------
       formFieldInput: `
         ${
@@ -61,14 +61,14 @@ export default function AuthScreen() {
         focus:border-[#DDEF00]
         focus:ring-0
       `,
-  
+
       // ---------- BUTTON ----------
       formButtonPrimary: `
         bg-[#DDEF00] text-black
-        rounded-lg py-2 font-semibold 
+        rounded-lg py-2 font-semibold
         transition-transform active:scale-95
       `,
-  
+
       // ---------- FOOTER (FIXED TO MATCH WAITLIST) ----------
       cardFooter: `
         ${isDark ? "!bg-[#0d0d0d] !border-neutral-800" : "!bg-white"}
@@ -84,7 +84,7 @@ export default function AuthScreen() {
       footer: `
         ${isDark ? "!text-white !text-white/100" : "!text-black !text-black/100"}
       `,
-      
+
       footerText: `
         ${isDark ? "!text-white !text-white/100" : "!text-black !text-black/100"}
       `,
@@ -125,41 +125,41 @@ export default function AuthScreen() {
       otpCodeFieldInput: `
         ${isDark ? "bg-[#1A1A1A] text-white border-[#2B2B2B]" : "bg-white text-black border-[#e6e6e6]"}
       `,
-  
+
       // ---------- SSO SOCIAL BUTTONS ----------
       socialButtons: `
-        bg-[#DDEF00] 
+        bg-[#DDEF00]
         hover:bg-[#c7db00]
         text-black
         !rounded-lg
         !border-0
       `,
-  
+
       socialButtonsBlockButton: `
-        bg-[#DDEF00] 
-        hover:bg-[#c7db00] 
+        bg-[#DDEF00]
+        hover:bg-[#c7db00]
         text-black
         !rounded-lg
         !border-0
         py-2
         font-medium
       `,
-  
+
       socialButtonsIconButton: `
         bg-[#DDEF00]
         text-black
         !rounded-lg
         !border-0
       `,
-  
+
       socialButtonsProviderIcon: `
-        text-black 
+        text-black
         opacity-100
       `,
     },
   };
-  
-  
+
+
 
   return (
     <div
@@ -171,7 +171,7 @@ export default function AuthScreen() {
       {/* MAIN CONTAINER */}
       <div
         className={`
-          w-full h-screen 
+          w-full h-screen
           flex flex-col md:flex-row rounded-none overflow-hidden
           shadow-[0_0_80px_rgba(0,0,0,0.2)]
         `}
@@ -235,8 +235,7 @@ export default function AuthScreen() {
               <>
                 Already have an account?{" "}
                 <button
-                  className={`"text-[#DDEF00]
-                     font-medium`}
+                  className={"text-[#DDEF00] font-medium"}
                   onClick={() => setMode("login")}
                 >
                   Login →

@@ -10,5 +10,8 @@
     "source.organizeImports": "explicit",
     "source.fixAll": "explicit"
   },
-  "eslint.codeActionsOnSave.mode": "all"
+  "eslint.codeActionsOnSave.mode": "all",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  }
 }

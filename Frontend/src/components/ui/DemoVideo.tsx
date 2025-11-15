@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import LocomotiveScroll from "locomotive-scroll";
 import dashboardDemo from "../../../public/dashboardDemo.jpg";
 import { PlayIcon } from "lucide-react";
@@ -16,18 +16,32 @@ function DemoVideo() {
     const locomotiveScroll = new LocomotiveScroll({});
     return () => locomotiveScroll.destroy();
   }, []);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const onPlayClick = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.muted = false;
+      videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   return (
     <div
       data-scroll
       data-scroll-speed="0.7"
       className={`
-        w-[90%] sm:w-[85%] md:w-[80%] lg:w-full 
+        w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
         h-auto
-        -mt-20 sm:-mt-32 md:-mt-16
+        mt-10 sm:mt-16 md:mt-20
         p-2
-        bg-gradient-to-b from-[#DDFF00] ${isDark?"to-neutral-950 ":"to-neutral-400"} 
+        bg-gradient-to-b from-[#DDFF00] ${isDark? "to-neutral-950 ":"to-neutral-400"}
         rounded-3xl
       `}
     >
@@ -37,30 +51,15 @@ function DemoVideo() {
           ${isDark ? "bg-neutral-900" : "bg-white"}
         `}
       >
-        <img
-          src={dashboardDemo}
-          className="w-full max-w-full h-auto object-cover rounded-2xl"
-          alt="Dashboard Demo"
-        />
-
-        {/* Play Button — Theme Based */}
-        <div className="absolute inset-0 flex items-center justify-center z-50">
-          <div
-            className={`
-              w-20 h-20 rounded-full flex items-center justify-center cursor-pointer
-              backdrop-blur-md transition-all duration-300 hover:scale-110
-
-              ${isDark
-                ? "bg-[#DDFF00]/80 shadow-[0_0_25px_rgba(221,255,0,0.5)]"
-                : "bg-white/90 shadow-[0_0_20px_rgba(0,0,0,0.12)] border border-black/20"}
-            `}
-          >
-            <PlayIcon
-              size={48}
-              className={`${isDark ? "text-black" : "text-black"}`}
+            {/* Video element — posters can be used as fallback */}
+            <video
+              ref={videoRef}
+              src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+              className="w-full max-w-full h-auto object-cover rounded-2xl"
+              autoPlay={true}
+              loop
+              muted
             />
-          </div>
-        </div>
       </div>
     </div>
   );
