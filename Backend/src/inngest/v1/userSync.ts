@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { sendWelcomeEmail } from '../../email/index.js';
 import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
 
@@ -21,6 +22,14 @@ export const syncUser = inngest.createFunction(
       } catch (error) {
         console.error('Error syncing user:', error);
         throw error;
+      }
+    });
+    await step.run('send-welcome-email', async () => {
+      try {
+        await sendWelcomeEmail(email, email.split('@')[0]);
+        console.log(`Welcome email sent to ${email}`);
+      } catch (error) {
+        console.error('Error sending welcome email:', error);
       }
     });
   },
