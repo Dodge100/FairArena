@@ -81,6 +81,7 @@ Note: Prometheus is not included in the Docker deploy. For metrics, use Render's
 ```env
 PORT=3000
 ARCJET_KEY=your_arcjet_key_here
+JWT_SECRET=your_jwt_secret_here
 NODE_ENV=development
 ```
 
