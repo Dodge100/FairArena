@@ -1,16 +1,11 @@
 import { useTheme } from "../theme-context";
 import { SignIn, SignUp } from "@clerk/clerk-react";
-import { useState, useEffect } from "react";
-import fairArenaLogo from "../../public/fairArenaLogo.png";
-
-import dashboardDemo from "../../public/dashboardDemo.jpg";
+import { useState } from "react";
 
 export default function AuthScreen() {
   const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
+  const isDark = theme === "dark";
   const [mode, setMode] = useState<"login" | "signup">("login");
-
-  useEffect(() => setIsDark(theme === "dark"), [theme]);
 
   const appearance = {
     variables: {
@@ -184,7 +179,7 @@ export default function AuthScreen() {
             ${isDark ? "bg-neutral-900" : "bg-white"}
           `}
         >
-          <img src={fairArenaLogo} className="w-30" alt="Fair Arena Logo" />
+          <img src="/fairArenaLogo.png" className="w-30" alt="Fair Arena Logo" />
           <h1
             className={`
               text-3xl font-bold mb-1
@@ -222,7 +217,7 @@ export default function AuthScreen() {
           >
             {mode === "login" ? (
               <>
-                Don’t have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   className={`${"text-[#DDEF00]"
                     } font-medium`}
@@ -274,7 +269,7 @@ export default function AuthScreen() {
             </p>
 
             <img
-              src={dashboardDemo}
+              src="/dashboardDemo.jpg"
               alt="Dashboard Preview"
               className="rounded-xl shadow-lg border"
             />

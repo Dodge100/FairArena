@@ -1,14 +1,10 @@
-import fairArenaLogo from "../../public/fairArenaLogo.png";
 import { Spotlight } from "./ui/Spotlight";
 import { Waitlist } from "@clerk/clerk-react";
 import { useTheme } from "../theme-context";
-import { useEffect, useState } from "react";
 
 function WaitList() {
   const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => setIsDark(theme === "dark"), [theme]);
+  const isDark = theme === "dark";
 
   return (
     <div
@@ -27,7 +23,7 @@ function WaitList() {
       <div className="max-w-9xl flex flex-col items-center relative z-20 gap-6">
 
         {/* Logo */}
-        <img src={fairArenaLogo} className="w-40" alt="Fair Arena Logo" />
+        <img src="/fairArenaLogo.png" className="w-40" alt="Fair Arena Logo" />
 
         {/* Heading */}
         <h2

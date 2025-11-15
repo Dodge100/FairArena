@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Lightbulb, Users, BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../theme-context";
-import fairArenaLogo from "../../public/fairArenaLogo.png";
 
 function WhyChooseUs() {
   const { theme } = useTheme();
@@ -47,7 +46,7 @@ function WhyChooseUs() {
     <div
       className={`
         p-8 rounded-3xl transition shadow-[0_0_30px_-10px_rgba(0,0,0,0.4)]
-        border 
+        border
         ${isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"}
       `}
     >
@@ -86,7 +85,7 @@ function WhyChooseUs() {
       >
         Why Choose
         <img
-          src={fairArenaLogo}
+          src="/fairArenaLogo.png"
           alt="FairArena Logo"
           className="md:w-28 w-20 h-auto object-contain ml-2"
         />
@@ -95,7 +94,7 @@ function WhyChooseUs() {
       {/* Subtitle */}
       <span
         className={`
-          mt-10 text-center font-semibold 
+          mt-10 text-center font-semibold
           text-3xl sm:text-4xl md:text-5xl lg:text-6xl
           ${isDark ? "text-neutral-100" : "text-neutral-800"}
         `}
@@ -106,9 +105,9 @@ function WhyChooseUs() {
       {/* Cards Grid */}
       <div
         className="
-          mt-16 
-          grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
-          gap-8 
+          mt-16
+          grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3
+          gap-8
           w-[90%] max-w-7xl
         "
       >
