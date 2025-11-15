@@ -17,13 +17,20 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  // Load theme from localStorage AFTER mount
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored) setTheme(stored);
-  }, []);
+  // Initialize theme from localStorage synchronously to prevent flash
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check localStorage first, then fallback to system preference or "light"
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("theme") as Theme | null;
+      if (stored === "light" || stored === "dark") {
+        return stored;
+      }
+      // If no stored theme, check system preference
+      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+      return prefersDark ? "dark" : "light";
+    }
+    return "light";
+  });
 
   // Apply theme to <html> when theme changes
   useEffect(() => {
