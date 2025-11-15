@@ -5,6 +5,7 @@ import { useTheme } from "../theme-context";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X } from "lucide-react";
 import ThemeToggleButton from "./ui/ThemeChange";
+import { Link } from "react-router";
 
 export default function Navbar() {
   const { theme } = useTheme();
@@ -56,7 +57,7 @@ export default function Navbar() {
               isDark ? "text-white/80" : "text-black/70"
             }`}
           >
-            {["Benefits", "How-it-Works", "Testimonials", "FAQ"].map(
+            {["benefits", "how-it-works", "testimonials", "FAQ"].map(
               (item, i) => (
                 <motion.button
                   key={i}
@@ -65,9 +66,9 @@ export default function Navbar() {
                   transition={{ delay: 0.25 + i * 0.1, duration: 0.4 }}
                   className={`${
                     isDark ? "hover:text-white" : "hover:text-black"
-                  } transition cursor-pointer`}
+                  } transition cursor-pointer capitalize`}
                 >
-                  {item}
+                  <Link to={item}>{item}</Link>
                 </motion.button>
               )
             )}

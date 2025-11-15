@@ -1,25 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTheme } from "../../theme-context";
 import { Sun,  MoonIcon } from "lucide-react";
 import { cn } from "../../libs/utils";
 import {motion} from "motion/react"
 
 export default function ThemeToggleButton({className}:{className:String}) {
-
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   return (
-    <button
-  onClick={toggleTheme}
-  className={`p-2 rounded-xl
-              cursor-pointer text-black dark:text-white ${className}`}
->
-  {/* {theme === "light" ? <MoonIcon size={20} /> : <Sun size={20} />} */}
-  <motion.div layout>
-          <ThemeToggleButton3 className={cn("size-10 p-2")} />
-        </motion.div>
-  
-</button>
+    <div className={cn("p-2 rounded-xl", className)}>
+      {/* {theme === "light" ? <MoonIcon size={20} /> : <Sun size={20} />} */}
+      <motion.div layout>
+        <ThemeToggleButton3 className={cn("size-10 p-2")} />
+      </motion.div>
+    </div>
   );
 }
 
@@ -28,7 +22,9 @@ export default function ThemeToggleButton({className}:{className:String}) {
 }: {
   className?: string;
 }) => {
-  const [isDark, setIsDark] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+  
   return (
     <button
       type="button"
@@ -37,7 +33,7 @@ export default function ThemeToggleButton({className}:{className:String}) {
         isDark ? "bg-black text-[#DDFF00]" : "bg-[#DDFF00] text-black",
         className,
       )}
-      onClick={() => setIsDark(!isDark)}
+      onClick={toggleTheme}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

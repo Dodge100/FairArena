@@ -23,7 +23,7 @@ function Header() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay:0.9, ease: "easeOut" }}
         className={`
-          text-4xl md:text-6xl lg:text-8xl font-semibold text-center mt-6 
+          text-4xl md:text-6xl lg:text-8xl font-semibold text-center lg:mt-30 xl:mt-20
           transition-colors cursor-default duration-300
           ${isDark ? "text-white" : "text-black"}
         `}
@@ -50,6 +50,22 @@ function Header() {
         </motion.span>
 
       </motion.h1>
+      <motion.p
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true, amount: 0.3 }}
+  transition={{ duration: 0.6, ease: "easeOut" }}
+  className="
+    text-center mt-6 text-neutral-400
+    text-sm sm:text-base md:text-lg
+    px-4 md:px-0 
+    max-w-[90%] sm:max-w-[80%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%]
+    mx-auto
+  "
+>
+  Fair Arena Helps Hackathon Judges to Score Perfectly with Website Insights and Uniqueness. 
+</motion.p>
+
 
       {/* CTA Button */}
       <motion.button
@@ -58,7 +74,7 @@ function Header() {
         transition={{ delay: 1.5, duration: 0.6, ease: "easeOut" }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
-        className="mt-10 text-2xl font-semibold px-6 py-3 rounded-full
+        className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
           bg-[#d9ff00] flex items-center gap-2 text-neutral-800 shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
           hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
           transition-all duration-300 cursor-pointer"
