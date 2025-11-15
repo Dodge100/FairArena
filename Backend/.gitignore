@@ -3,3 +3,11 @@ dist/
 .env*.local
 .env
 /src/generated/prisma
+
+# Inngest
+.inngest/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

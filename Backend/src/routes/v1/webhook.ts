@@ -1,8 +1,8 @@
 import express, { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Webhook } from 'svix';
-import { ENV } from '../config/env.js';
-import { handleClerkWebhook } from '../controllers/webhookController.js';
+import { ENV } from '../../config/env.js';
+import { handleClerkWebhook } from '../../controllers/v1/webhookController.js';
 
 const router = Router();
 
