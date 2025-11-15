@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useTheme } from "../theme-context";
 import { motion, AnimatePresence } from "motion/react";

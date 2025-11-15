@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type DottedGlowBackgroundProps = {
   className?: string;
@@ -230,10 +230,12 @@ export const DottedGlowBackground = ({
       raf = requestAnimationFrame(draw);
     };
 
-    window.addEventListener("resize", () => {
+    const onResize = () => {
       resize();
       regenDots();
-    });
+    };
+
+    window.addEventListener("resize", onResize);
 
     raf = requestAnimationFrame(draw);
 
@@ -241,6 +243,7 @@ export const DottedGlowBackground = ({
       stopped = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener("resize", onResize);
     };
   }, [
     gap,

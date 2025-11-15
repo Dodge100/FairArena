@@ -1,6 +1,4 @@
-import React from 'react'
 import { Spotlight } from '../components/ui/Spotlight'
-import { DottedGlowBackground } from '../components/ui/Dotted-background'
 import Header from '../components/Header'
 
 function Home() {

@@ -1,6 +1,4 @@
-import React from "react";
 import { useTheme } from "../../theme-context";
-import { Sun,  MoonIcon } from "lucide-react";
 import { cn } from "../../libs/utils";
 import {motion} from "motion/react"
 

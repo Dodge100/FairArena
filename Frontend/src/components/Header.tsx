@@ -1,9 +1,7 @@
-"use client";
 
 import { useEffect, useState } from "react";
 import { useTheme } from "../theme-context";
 import { motion } from "motion/react";
-import { BsLightning } from "react-icons/bs";
 import { Zap } from "lucide-react";
 
 function Header() {
