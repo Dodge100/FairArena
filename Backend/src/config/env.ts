@@ -8,6 +8,8 @@ const requiredEnvVars = [
   'DATABASE_URL',
   'INNGEST_SIGNING_KEY',
   'INNGEST_EVENT_KEY',
+  'RESEND_API_KEY',
+  'FROM_EMAIL_ADDRESS',
 ];
 
 for (const envVar of requiredEnvVars) {
@@ -26,4 +28,7 @@ export const ENV = {
   DATABASE_URL: process.env.DATABASE_URL!,
   INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY!,
   INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY!,
+  RESEND_API_KEY: process.env.RESEND_API_KEY!,
+  FROM_EMAIL_ADDRESS: process.env.FROM_EMAIL_ADDRESS!,
+  BASE_URL: process.env.BASE_URL || '',
 };
