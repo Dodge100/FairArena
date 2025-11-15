@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Menu, X } from "lucide-react";
 import ThemeToggleButton from "./ui/ThemeChange";
 import { Link } from "react-router";
-
+import fairArenaLogo from "../../public/fairArenaLogo.png"
 export default function Navbar() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
@@ -21,7 +21,7 @@ export default function Navbar() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className={`w-full fixed top-0 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
+        className={`w-full fixed top-0 overflow-hidden h-30 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -46,7 +46,7 @@ export default function Navbar() {
               isDark ? "text-white" : "text-black"
             }`}
           >
-            <Link to="/home" >FairArena</Link>
+            <Link to="/home" ><img width="100" src={fairArenaLogo} alt="" /></Link>
           </motion.div>
 
           {/* Desktop Nav */}

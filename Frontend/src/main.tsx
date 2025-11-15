@@ -3,11 +3,14 @@ import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './theme-context.tsx'
 import { BrowserRouter } from 'react-router-dom'
+import { StrictMode } from 'react'
 
 createRoot(document.getElementById('root')!).render(
+  <StrictMode>
   <ThemeProvider>
     <BrowserRouter>
     <App />
     </BrowserRouter>
   </ThemeProvider>
+  </StrictMode>
 )
