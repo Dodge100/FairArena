@@ -27,9 +27,9 @@ export default function Navbar() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
           className={`
-            flex items-center justify-between w-[72%] md:w-auto gap-10 px-4 md:py-4 py-2 rounded-full transition-all duration-300
+            flex items-center justify-between backdrop-blur-xl w-[72%] md:w-auto gap-10 px-4 md:py-4 py-2 rounded-full transition-all duration-300
             border
-            ${isDark ? 'bg-[#0a0a0a] border-[#222]' : 'bg-[#ffffff] border-[#b4b4b4]'}
+            ${isDark ? 'bg-[#0a0a0a]/80 border-[#222]' : 'bg-[#ffffff] border-[#b4b4b4]'}
           `}
         >
           {/* Logo */}
@@ -41,7 +41,7 @@ export default function Navbar() {
               isDark ? 'text-white' : 'text-black'
             }`}
           >
-            <Link to="/home" ><img width="100" src="/fairArenaLogo.png" alt="FairArena Logo" /></Link>
+            <Link to="/home" ><img width="100" src="/fairArenaLogotop.png" alt="FairArena Logo" /></Link>
           </motion.div>
 
           {/* Desktop Nav */}
@@ -50,7 +50,7 @@ export default function Navbar() {
               isDark ? 'text-white/80' : 'text-black/70'
             }`}
           >
-            {['benefits', 'how-it-works', 'testimonials', 'FAQ'].map((item, i) => (
+            {['benefits', 'how-it-works', 'testimonials', 'about'].map((item, i) => (
               <motion.button
                 key={i}
                 initial={{ opacity: 0, y: -10 }}
@@ -167,7 +167,7 @@ export default function Navbar() {
                 }}
                 className="flex flex-col gap-6 text-lg"
               >
-                {['benefits', 'how-it-works', 'testimonials', 'FAQ'].map((item, i) => (
+                {['benefits', 'how-it-works', 'testimonials', 'about'].map((item, i) => (
                   <motion.button
                     key={i}
                     variants={{

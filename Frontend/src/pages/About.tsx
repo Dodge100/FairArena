@@ -1,4 +1,4 @@
-function FAQ() {
+function About() {
   return (
     <div className='w-full h-screen flex items-center justify-center'>
       <h1 className='text-center mt-6 text-neutral-400
@@ -21,4 +21,4 @@ function FAQ() {
   )
 }
 
-export default FAQ
+export default About

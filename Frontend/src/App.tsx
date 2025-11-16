@@ -4,10 +4,11 @@ import Signup from './components/Signup'
 import WaitList from './components/WaitList'
 import PublicLayout from './layout/PublicLayout'
 import Benefits from './pages/Benefits'
-import FAQ from './pages/FAQ'
 import Home from './pages/Home'
 import HowItWorks from './pages/HowItWorks'
 import Testimonials from './pages/Testimonials'
+import NotFound from './components/NotFound'
+import About from './pages/About'
 
 
 
@@ -22,10 +23,11 @@ function App() {
           <Route path="/benefits" element={<Benefits />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/testimonials" element={<Testimonials />} />
-          <Route path="/FAQ" element={<FAQ />} />
+          <Route path="/about" element={<About />} />
         </Route>
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   )

@@ -12,11 +12,9 @@ export default function PublicLayout() {
   useEffect(() => {
     if (!scrollRef.current) return;
 
-    // Initialize LocomotiveScroll and keep instance in ref so we can call update()
     scrollInstance.current = new LocomotiveScroll({
       el: scrollRef.current,
       smooth: true,
-      // Enable smooth on mobile/tablet to avoid layout jumps on smaller screens
       smartphone: { smooth: true },
       tablet: { smooth: true, breakpoint: 768 },
       multiplier: 1,
@@ -26,11 +24,9 @@ export default function PublicLayout() {
     const onLoad = () => scrollInstance.current?.update();
     const onResize = () => scrollInstance.current?.update();
 
-    // Update after window load and on resize to ensure correct heights
     window.addEventListener("load", onLoad);
     window.addEventListener("resize", onResize);
 
-    // Small delayed update to account for async content (images/videos)
     const delayedUpdate = setTimeout(() => scrollInstance.current?.update(), 500);
 
     return () => {
@@ -42,7 +38,7 @@ export default function PublicLayout() {
     };
   }, []);
 
-  // When route changes, update locomotive so it recalculates size/positions
+  // Update scroll on route changes
   useEffect(() => {
     scrollInstance.current?.update();
   }, [location]);

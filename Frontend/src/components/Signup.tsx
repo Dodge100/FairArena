@@ -179,7 +179,7 @@ export default function AuthScreen() {
             ${isDark ? "bg-neutral-900" : "bg-white"}
           `}
         >
-          <img src="/fairArenaLogo.png" className="w-30" alt="Fair Arena Logo" />
+          <img src="/fairArenaLogotop.png" className="w-30" alt="Fair Arena Logo" />
           <h1
             className={`
               text-3xl font-bold mb-1
