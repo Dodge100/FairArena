@@ -1,47 +1,73 @@
-import { useEffect, useState, useRef } from "react";
-import LocomotiveScroll from "locomotive-scroll";
-import dashboardDemo from "../../../public/dashboardDemo.jpg";
-import { PlayIcon } from "lucide-react";
+import { Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import videojs from "video.js";
+import "video.js/dist/video-js.css";
 import { useTheme } from "../../theme-context";
 
 function DemoVideo() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
 
   useEffect(() => {
     setIsDark(theme === "dark");
   }, [theme]);
 
   useEffect(() => {
-    const locomotiveScroll = new LocomotiveScroll({});
-    return () => locomotiveScroll.destroy();
-  }, []);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const onPlayClick = () => {
     if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.muted = false;
-      videoRef.current.play();
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
+
+    const initPlayer = () => {
+      if (videoRef.current && !playerRef.current) {
+        playerRef.current = videojs(videoRef.current, {
+          controls: false,
+          muted: true,
+          fluid: true,
+          responsive: true,
+          poster: "/dashboardDemo.jpg",
+        });
+
+        const player = playerRef.current;
+
+        player.on('play', () => setIsPlaying(true));
+        player.on('pause', () => setIsPlaying(false));
+      }
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(initPlayer);
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (playerRef.current) {
+      if (isPlaying) {
+        playerRef.current.pause();
+      } else {
+        playerRef.current.play();
+      }
     }
   };
 
   return (
     <div
       data-scroll
-      data-scroll-speed="0.7"
+      data-scroll-speed="0.8"
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
         h-auto
         mt-10 sm:mt-16 md:mt-20
         p-2
-        bg-gradient-to-b from-[#DDFF00] ${isDark? "to-neutral-950 ":"to-neutral-400"}
+        bg-linear-to-b from-[#DDFF00] ${isDark ? "to-neutral-950" : "to-neutral-400"}
         rounded-3xl
       `}
     >
@@ -51,15 +77,25 @@ function DemoVideo() {
           ${isDark ? "bg-neutral-900" : "bg-white"}
         `}
       >
-            {/* Video element — posters can be used as fallback */}
-            <video
-              ref={videoRef}
-              src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-              className="w-full max-w-full h-auto object-cover rounded-2xl"
-              autoPlay={true}
-              loop
-              muted
-            />
+        <video
+          ref={videoRef}
+          poster="/dashboardDemo.jpg"
+          className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
+        >
+          <source src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570" type="video/mp4" />
+        </video>
+
+        {/* Play Button Overlay when paused */}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <button
+              onClick={togglePlay}
+              className="bg-[#DDFF00] text-black rounded-full p-4 hover:bg-[#c4e600] transition-colors"
+            >
+              <Play size={48} fill="currentColor" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

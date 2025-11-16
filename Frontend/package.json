@@ -30,13 +30,16 @@
     "react-router-dom": "^7.9.6",
     "shadcn": "^3.5.0",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "video.js": "^8.23.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/locomotive-scroll": "^4.1.4",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@types/video.js": "^7.3.58",
     "@vitejs/plugin-react": "^5.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
