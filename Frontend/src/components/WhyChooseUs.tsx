@@ -85,7 +85,7 @@ function WhyChooseUs() {
       >
         Why Choose
         <img
-          src="/fairArenaLogo.png"
+          src="/fairArenaLogotop.png"
           alt="FairArena Logo"
           className="md:w-28 w-20 h-auto object-contain ml-2"
         />
@@ -107,7 +107,7 @@ function WhyChooseUs() {
         className="
           mt-16
           grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3
-          gap-8
+          gap-8 px-10
           w-[90%] max-w-7xl
         "
       >

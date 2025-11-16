@@ -41,7 +41,7 @@ export default function Navbar() {
               isDark ? 'text-white' : 'text-black'
             }`}
           >
-            <Link to="/home" ><img width="100" src="/fairArenaLogo.png" alt="FairArena Logo" /></Link>
+            <Link to="/home" ><img width="100" src="/fairArenaLogotop.png" alt="FairArena Logo" /></Link>
           </motion.div>
 
           {/* Desktop Nav */}

@@ -60,12 +60,12 @@ function DemoVideo() {
   return (
     <div
       data-scroll
-      data-scroll-speed="0.8"
+      data-scroll-speed="3"
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
-        h-auto
-        mt-10 sm:mt-16 md:mt-20
+        h-auto sm:mt-10 md:-mt-60 -mt-40
+        md:mb-20 mb-40
         p-2
         bg-linear-to-b from-[#DDFF00] ${isDark ? "to-neutral-950" : "to-neutral-400"}
         rounded-3xl
@@ -73,7 +73,7 @@ function DemoVideo() {
     >
       <div
         className={`
-          w-full h-full relative overflow-hidden rounded-2xl
+          w-full h-full relative  overflow-hidden rounded-2xl
           ${isDark ? "bg-neutral-900" : "bg-white"}
         `}
       >

@@ -8,6 +8,7 @@ import FAQ from './pages/FAQ'
 import Home from './pages/Home'
 import HowItWorks from './pages/HowItWorks'
 import Testimonials from './pages/Testimonials'
+import NotFound from './components/NotFound'
 
 
 
@@ -26,6 +27,7 @@ function App() {
         </Route>
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   )

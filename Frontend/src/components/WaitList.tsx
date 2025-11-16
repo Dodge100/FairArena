@@ -23,7 +23,7 @@ function WaitList() {
       <div className="max-w-9xl flex flex-col items-center relative z-20 gap-6">
 
         {/* Logo */}
-        <img src="/fairArenaLogo.png" className="w-40" alt="Fair Arena Logo" />
+        <img src="/fairArenaLogotop.png" className="w-40" alt="Fair Arena Logo" />
 
         {/* Heading */}
         <h2
