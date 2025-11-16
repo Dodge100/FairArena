@@ -10,7 +10,6 @@ function WaitList() {
     <div
       className={`
         w-full h-screen flex flex-col items-center
-        ${isDark ? "" : "bg-white"}
       `}
     >
       {/* Spotlight */}

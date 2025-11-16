@@ -79,28 +79,28 @@ function WhyChooseUs() {
       {/* Heading */}
       <h2
         className={`
-          text-xl md:text-2xl font-semibold px-6 py-3 h-20 rounded-full flex items-center overflow-hidden
-          ${isDark ? "bg-neutral-800 text-[#ddef00]" : "bg-neutral-100 text-neutral-800"}
+          text-xl md:text-sm font-semibold px-6 py-1 h-15 rounded-full flex items-center overflow-hidden
+          ${isDark ? "bg-neutral-900 text-[#ddef00]" : "bg-neutral-100 text-neutral-800"}
         `}
       >
         Why Choose
         <img
           src="/fairArenaLogotop.png"
           alt="FairArena Logo"
-          className="md:w-28 w-20 h-auto object-contain ml-2"
+          className="md:w-20 w-20 h-auto object-contain ml-2"
         />
       </h2>
 
       {/* Subtitle */}
-      <span
+      <p
         className={`
           mt-10 text-center font-semibold
-          text-3xl sm:text-4xl md:text-5xl lg:text-6xl
+          text-4xl md:text-5xl
           ${isDark ? "text-neutral-100" : "text-neutral-800"}
         `}
       >
-        Key Benefits Of Using Fair Arena
-      </span>
+        Key Benefits Of Using <span className="text-neutral-400">Fair Arena</span>
+      </p>
 
       {/* Cards Grid */}
       <div
