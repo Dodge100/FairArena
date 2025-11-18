@@ -1,19 +1,21 @@
-import { Route, Routes } from 'react-router'
-import './App.css'
-import Signup from './components/Signup'
-import WaitList from './components/WaitList'
-import PublicLayout from './layout/PublicLayout'
-import Benefits from './pages/Benefits'
-import Home from './pages/Home'
-import HowItWorks from './pages/HowItWorks'
-import Testimonials from './pages/Testimonials'
-import NotFound from './components/NotFound'
-import About from './pages/About'
-
-
+import { Route, Routes } from 'react-router';
+import NotFound from './components/NotFound';
+import WaitList from './components/WaitList';
+import ProtectedLayout from './layout/ProtectedLayout';
+import PublicLayout from './layout/PublicLayout';
+import About from './pages/About';
+import Benefits from './pages/Benefits';
+import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
+import HowItWorks from './pages/HowItWorks';
+import Signin from './pages/Signin';
+import Signup from './pages/Signup';
+import Testimonials from './pages/Testimonials';
+import Profile from './pages/Profile';
+import Support from './pages/Support';
+import { Protected } from '@/libs/protected';
 
 function App() {
-
   return (
     <>
       <Routes>
@@ -25,12 +27,18 @@ function App() {
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/about" element={<About />} />
         </Route>
+        <Route path="/dashboard" element={<ProtectedLayout />}>
+          <Route index element={<Dashboard />} />
+        </Route>
+        <Route path="/dashboard/profile" element={<Protected><Profile /></Protected>} />
+        <Route path="/support" element={<Support />} />
         <Route path="/waitlist" element={<WaitList />} />
+        <Route path="/signin" element={<Signin />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
-  )
+  );
 }
 
 export default App;
