@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import { useTheme } from "../theme-context";
-import { motion, AnimatePresence } from "motion/react";
-import { Menu, X } from "lucide-react";
-import ThemeToggleButton from "./ui/ThemeChange";
-import { Link } from "react-router";
+import { useUser } from '@clerk/clerk-react';
+import { Menu, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { useTheme } from '../hooks/useTheme';
+import ThemeToggleButton from './ui/ThemeChange';
 export default function Navbar() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
   const [open, setOpen] = useState(false);
-
+  const { user } = useUser();
   useEffect(() => {
     setIsDark(theme === 'dark');
   }, [theme]);
@@ -19,7 +20,7 @@ export default function Navbar() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`w-full fixed top-0 overflow-hidden h-30 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
       >
         <motion.div
@@ -41,7 +42,9 @@ export default function Navbar() {
               isDark ? 'text-white' : 'text-black'
             }`}
           >
-            <Link to="/home" ><img width="100" src="/fairArenaLogotop.png" alt="FairArena Logo" /></Link>
+            <Link to="/home">
+              <img width="100" src="/fairArenaLogotop.png" alt="FairArena Logo" />
+            </Link>
           </motion.div>
 
           {/* Desktop Nav */}
@@ -64,21 +67,39 @@ export default function Navbar() {
               </motion.button>
             ))}
 
-            {/* Desktop CTA */}
-            <Link to={"/waitlist"}>
-            <motion.button
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45, duration: 0.4 }}
-              className={`ml-6 sm:flex hidden font-semibold px-6 py-2 rounded-full transition-all duration-300 cursor-pointer
+            {!user ? (
+              <Link to={'/waitlist'}>
+                <motion.button
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.4 }}
+                  className={`ml-6 sm:flex hidden font-semibold px-6 py-2 rounded-full transition-all duration-300 cursor-pointer
               ${
                 isDark
                   ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
                   : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
               }`}
-            >
-              Join Waitlist
-            </motion.button></Link>
+                >
+                  Join Waitlist
+                </motion.button>
+              </Link>
+            ) : (
+              <Link to={'/dashboard'}>
+                <motion.button
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.4 }}
+                  className={`ml-6 sm:flex hidden font-semibold px-6 py-2 rounded-full transition-all duration-300 cursor-pointer
+              ${
+                isDark
+                  ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+                  : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+              }`}
+                >
+                  Go to Dashboard
+                </motion.button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,7 +135,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55]"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-55"
               style={{ willChange: 'opacity' }}
             />
 
@@ -130,7 +151,7 @@ export default function Navbar() {
                 duration: 0.35,
               }}
               style={{ willChange: 'transform, opacity' }}
-              className={`fixed top-0 right-0 h-full w-[80%] max-w-[330px] z-[60] shadow-xl p-6
+              className={`fixed top-0 right-0 h-full w-[80%] max-w-[330px] z-60 shadow-xl p-6
                 border-l
                 ${
                   isDark
@@ -191,23 +212,43 @@ export default function Navbar() {
                 ))}
               </motion.div>
 
-              {/* CTA BUTTON WITH FADE-UP */}
-              <Link to="/signup">
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.3, ease: 'easeOut' }}
-                className={`mt-10 w-full font-semibold px-6 py-3 rounded-full
-                  bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
-                  hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
-                  transition-all duration-300 cursor-pointer
-                `}
-              >
-                Sign Up
-              </motion.button></Link>
-              <div className="w-full flex items-center mt-5 justify-center">
-                <ThemeToggleButton className={'flex'} />
-              </div>
+              <>
+                {!user ? (
+                  <Link to="/waitlist">
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.3, ease: 'easeOut' }}
+                      className={`mt-10 w-full font-semibold px-6 py-3 rounded-full
+                      bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
+                      hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
+                      transition-all duration-300 cursor-pointer
+                    `}
+                    >
+                      Join Waitlist
+                    </motion.button>
+                  </Link>
+                ) : (
+                  <Link to="/dashboard">
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.3, ease: 'easeOut' }}
+                      className={`mt-10 w-full font-semibold px-6 py-3 rounded-full
+                      bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
+                      hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
+                      transition-all duration-300 cursor-pointer
+                    `}
+                    >
+                      Go to Dashboard
+                    </motion.button>
+                  </Link>
+                )}
+
+                <div className="w-full flex items-center mt-5 justify-center">
+                  <ThemeToggleButton className={'flex'} />
+                </div>
+              </>
             </motion.div>
           </>
         )}

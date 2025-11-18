@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.55.0",
+    "@microsoft/clarity": "^1.0.0",
     "@tailwindcss/vite": "^4.1.17",
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/locomotive-scroll": "^4.1.4",
+    "@types/next": "^8.0.7",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

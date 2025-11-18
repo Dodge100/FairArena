@@ -1,8 +1,8 @@
-import { Play } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import videojs from "video.js";
-import "video.js/dist/video-js.css";
-import { useTheme } from "../../theme-context";
+import { Play } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
+import { useTheme } from '../../hooks/useTheme';
 
 function DemoVideo() {
   const { theme } = useTheme();
@@ -13,7 +13,7 @@ function DemoVideo() {
   const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ function DemoVideo() {
           muted: true,
           fluid: true,
           responsive: true,
-          poster: "/dashboardDemo.jpg",
+          poster: '/dashboardDemo.jpg',
         });
 
         const player = playerRef.current;
@@ -64,17 +64,17 @@ function DemoVideo() {
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
-        h-auto sm:mt-10 md:-mt-60 -mt-40
+        h-auto mt-20 sm:mt-16 md:mt-20
         md:mb-20 mb-40
         p-2
-        bg-linear-to-b from-[#DDFF00] ${isDark ? "to-neutral-950" : "to-neutral-400"}
+        bg-linear-to-b from-[#DDFF00] ${isDark ? 'to-neutral-950' : 'to-neutral-400'}
         rounded-3xl
       `}
     >
       <div
         className={`
           w-full h-full relative  overflow-hidden rounded-2xl
-          ${isDark ? "bg-neutral-900" : "bg-white"}
+          ${isDark ? 'bg-neutral-900' : 'bg-white'}
         `}
       >
         <video
@@ -82,7 +82,10 @@ function DemoVideo() {
           poster="/dashboardDemo.jpg"
           className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
         >
-          <source src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570" type="video/mp4" />
+          <source
+            src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570"
+            type="video/mp4"
+          />
         </video>
 
         {/* Play Button Overlay when paused */}

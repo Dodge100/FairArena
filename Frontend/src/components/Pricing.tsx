@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
-import { motion } from "motion/react";
-import { useTheme } from "../theme-context";
+import { Check } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
 
 interface FeatureList {
   monthly: number;
@@ -21,54 +21,54 @@ interface PricingPlan {
 
 const PRICING_PLANS: PricingPlan[] = [
   {
-    name: "Basic plan",
+    name: 'Basic plan',
     price: { monthly: 10, annual: 8 },
-    description: "Basic features for up to 10 users.",
-    featuresTitle: "FEATURES",
-    featuresSubtitle: "Everything in our free plan plus…",
+    description: 'Basic features for up to 10 users.',
+    featuresTitle: 'FEATURES',
+    featuresSubtitle: 'Everything in our free plan plus…',
     features: [
-      "Access to basic features",
-      "Basic reporting and analytics",
-      "Up to 10 individual users",
-      "20GB individual data each user",
-      "Basic chat and email support",
+      'Access to basic features',
+      'Basic reporting and analytics',
+      'Up to 10 individual users',
+      '20GB individual data each user',
+      'Basic chat and email support',
     ],
   },
   {
-    name: "Business plan",
+    name: 'Business plan',
     isPopular: true,
     highlight: true,
     price: { monthly: 20, annual: 16 },
-    description: "Growing teams up to 20 users.",
-    featuresTitle: "FEATURES",
-    featuresSubtitle: "Everything in Basic plus…",
+    description: 'Growing teams up to 20 users.',
+    featuresTitle: 'FEATURES',
+    featuresSubtitle: 'Everything in Basic plus…',
     features: [
-      "200+ integrations",
-      "Advanced reporting and analytics",
-      "Up to 20 individual users",
-      "40GB individual data each user",
-      "Priority chat and email support",
+      '200+ integrations',
+      'Advanced reporting and analytics',
+      'Up to 20 individual users',
+      '40GB individual data each user',
+      'Priority chat and email support',
     ],
   },
   {
-    name: "Enterprise plan",
+    name: 'Enterprise plan',
     price: { monthly: 40, annual: 35 },
-    description: "Advanced features + unlimited users.",
-    featuresTitle: "FEATURES",
-    featuresSubtitle: "Everything in Business plus…",
+    description: 'Advanced features + unlimited users.',
+    featuresTitle: 'FEATURES',
+    featuresSubtitle: 'Everything in Business plus…',
     features: [
-      "Advanced custom fields",
-      "Audit log and data history",
-      "Unlimited individual users",
-      "Unlimited individual data",
-      "Personalised + priority service",
+      'Advanced custom fields',
+      'Audit log and data history',
+      'Unlimited individual users',
+      'Unlimited individual data',
+      'Personalised + priority service',
     ],
   },
 ];
 
 interface PricingCardProps {
   plan: PricingPlan;
-  billing: "monthly" | "annual";
+  billing: 'monthly' | 'annual';
   isDark: boolean;
 }
 
@@ -83,11 +83,11 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
         ${
           highlight
             ? isDark
-              ? "bg-[#0f0f0f] border-3 border-[#d9ff00]"
-              : "bg-white border-2 border-[#d9ff00]"
+              ? 'bg-[#0f0f0f] border-3 border-[#d9ff00]'
+              : 'bg-white border-2 border-[#d9ff00]'
             : isDark
-            ? "bg-[#0d0d0d] border border-white/10"
-            : "bg-white border border-neutral-300"
+              ? 'bg-[#0d0d0d] border border-white/10'
+              : 'bg-white border border-neutral-300'
         }
       `}
     >
@@ -99,20 +99,18 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
 
       <h3
         className={`text-xl font-semibold mb-2 ${
-          highlight ? "text-[#d9ff00]" : isDark ? "text-white" : "text-black"
+          highlight ? 'text-[#d9ff00]' : isDark ? 'text-white' : 'text-black'
         }`}
       >
         {plan.name}
       </h3>
 
-      <p className={`text-4xl font-bold ${isDark ? "text-white" : "text-black"}`}>
-        ${price}
-      </p>
-      <p className={`${isDark ? "text-neutral-400" : "text-neutral-600"} text-sm mb-6`}>
+      <p className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>${price}</p>
+      <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>
         per user per month
       </p>
 
-      <p className={`${isDark ? "text-neutral-400" : "text-neutral-600"} text-sm mb-6`}>
+      <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>
         {plan.description}
       </p>
 
@@ -121,10 +119,10 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
         className={`w-full py-3 rounded-lg font-semibold transition
           ${
             highlight
-              ? "bg-[#d9ff00] text-black hover:bg-[#c0e600]"
+              ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
               : isDark
-              ? "bg-white text-black hover:opacity-90"
-              : "bg-black text-white hover:opacity-90"
+                ? 'bg-white text-black hover:opacity-90'
+                : 'bg-black text-white hover:opacity-90'
           }
         `}
       >
@@ -135,8 +133,8 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
         className={`w-full py-3 rounded-lg mt-3 font-semibold transition border
           ${
             isDark
-              ? "bg-transparent border-white/20 text-white hover:bg-white/10"
-              : "bg-transparent border-neutral-300 text-black hover:bg-neutral-100"
+              ? 'bg-transparent border-white/20 text-white hover:bg-white/10'
+              : 'bg-transparent border-neutral-300 text-black hover:bg-neutral-100'
           }
         `}
       >
@@ -145,13 +143,11 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
 
       {/* Features */}
       <div className="mt-8">
-        <h4 className={`${isDark ? "text-white" : "text-black"} font-semibold mb-3`}>
+        <h4 className={`${isDark ? 'text-white' : 'text-black'} font-semibold mb-3`}>
           {plan.featuresTitle}
         </h4>
 
-        <p
-          className={`${isDark ? "text-neutral-400" : "text-neutral-600"} text-sm mb-4`}
-        >
+        <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-4`}>
           {plan.featuresSubtitle}
         </p>
 
@@ -159,9 +155,7 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
           {plan.features.map((feature, i) => (
             <li
               key={i}
-              className={`flex items-center gap-3 text-sm ${
-                isDark ? "text-white" : "text-black"
-              }`}
+              className={`flex items-center gap-3 text-sm ${isDark ? 'text-white' : 'text-black'}`}
             >
               <Check size={18} className="text-[#d9ff00]" />
               {feature}
@@ -174,19 +168,19 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
 }
 
 export default function Pricing() {
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
 
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   return (
     <div
       className={`w-full min-h-screen py-28 px-6 flex flex-col items-center transition-colors
-      
+
     `}
     >
       {/* Badge */}
@@ -203,42 +197,40 @@ export default function Pricing() {
       <p
         className={`
           mt-10 text-center font-semibold text-4xl md:text-5xl mb-10 transition-colors
-          ${isDark ? "text-neutral-100" : "text-black"}
+          ${isDark ? 'text-neutral-100' : 'text-black'}
         `}
       >
-        Pricing of{" "}
-        <span className={isDark ? "text-neutral-400" : "text-neutral-600"}>
-          Fair Arena
-        </span>
+        Pricing of{' '}
+        <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>Fair Arena</span>
       </p>
 
       {/* Toggle Buttons */}
       <div
         className={`relative flex items-center gap-0 mb-12 p-2 rounded-xl transition-colors
-        ${isDark ? "bg-[#0d0d0d]" : "bg-neutral-200"}
+        ${isDark ? 'bg-[#0d0d0d]' : 'bg-neutral-200'}
       `}
       >
         {/* Sliding neon highlight */}
         <motion.div
           layout
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="absolute top-2 bottom-2 rounded-lg bg-[#d9ff00]"
           style={{
-            left: billing === "monthly" ? "8px" : "50%",
-            width: "calc(50% - 12px)",
+            left: billing === 'monthly' ? '8px' : '50%',
+            width: 'calc(50% - 12px)',
           }}
         />
 
         {/* Monthly */}
         <button
-          onClick={() => setBilling("monthly")}
+          onClick={() => setBilling('monthly')}
           className={`relative z-10 w-32 py-2 text-sm font-semibold rounded-lg transition
             ${
-              billing === "monthly"
-                ? "text-black"
+              billing === 'monthly'
+                ? 'text-black'
                 : isDark
-                ? "text-white/60 hover:text-white"
-                : "text-neutral-600 hover:text-black"
+                  ? 'text-white/60 hover:text-white'
+                  : 'text-neutral-600 hover:text-black'
             }
           `}
         >
@@ -247,14 +239,14 @@ export default function Pricing() {
 
         {/* Annual */}
         <button
-          onClick={() => setBilling("annual")}
+          onClick={() => setBilling('annual')}
           className={`relative z-10 w-32 py-2 text-sm font-semibold rounded-lg transition
             ${
-              billing === "annual"
-                ? "text-black"
+              billing === 'annual'
+                ? 'text-black'
                 : isDark
-                ? "text-white/60 hover:text-white"
-                : "text-neutral-600 hover:text-black"
+                  ? 'text-white/60 hover:text-white'
+                  : 'text-neutral-600 hover:text-black'
             }
           `}
         >

@@ -1,5 +1,13 @@
-import { useContext } from 'react';
-import { ThemeContext } from '../theme-context';
+import { createContext, useContext } from 'react';
+
+type Theme = 'light' | 'dark';
+
+type ThemeContextType = {
+  theme: Theme;
+  toggleTheme: () => void;
+};
+
+export const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
