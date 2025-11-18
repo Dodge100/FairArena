@@ -21,7 +21,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Apply theme to <html> when theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
     localStorage.setItem('theme', theme);
   }, [theme]);
 

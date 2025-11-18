@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Lightbulb, Users, BarChart3 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { BarChart3, Lightbulb, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 
 function WhyChooseUs() {
