@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useTheme } from '../hooks/useTheme';
 import { Spotlight } from './ui/Spotlight';
-import { AnimatedShinyText } from './ui/animated-shiny-text';
 
 function Header() {
   const { theme } = useTheme();
@@ -35,7 +34,6 @@ function Header() {
           ${isDark ? 'text-white' : 'text-black'}
         `}
       >
-        <AnimatedShinyText className='text-sm flex w-auto bg'>give star on github <Github/></AnimatedShinyText>
         {/* Line 1 */}
         <motion.span
           initial={{ opacity: 0, y: 20 }}
