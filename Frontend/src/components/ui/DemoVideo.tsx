@@ -59,12 +59,10 @@ function DemoVideo() {
 
   return (
     <div
-      data-scroll
-      data-scroll-speed="3"
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
-        h-auto mt-20 sm:mt-16 md:mt-20
+        h-auto md:-mt-15
         md:mb-20 mb-40
         p-2
         bg-linear-to-b from-[#DDFF00] ${isDark ? 'to-neutral-950' : 'to-neutral-400'}

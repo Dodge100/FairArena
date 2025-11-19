@@ -1,9 +1,11 @@
 import { useUser } from '@clerk/clerk-react';
-import { Zap } from 'lucide-react';
+import { Github, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useTheme } from '../hooks/useTheme';
+import { Spotlight } from './ui/Spotlight';
+import { AnimatedShinyText } from './ui/animated-shiny-text';
 
 function Header() {
   const { theme } = useTheme();
@@ -18,8 +20,10 @@ function Header() {
     <div
       data-scroll
       data-scroll-speed="1"
-      className="w-full sm:h-screen h-[80vh] flex flex-col items-center justify-center"
+      className="w-full sm:h-screen h-[80vh] flex relative flex-col items-center justify-center"
     >
+      <Spotlight className="top-0 left-20" fill="#DDFF00" />
+
       {/* Heading Wrapper */}
       <motion.h1
         initial={{ opacity: 0, y: 40 }}
@@ -31,6 +35,7 @@ function Header() {
           ${isDark ? 'text-white' : 'text-black'}
         `}
       >
+        <AnimatedShinyText className='text-sm flex w-auto bg'>give star on github <Github/></AnimatedShinyText>
         {/* Line 1 */}
         <motion.span
           initial={{ opacity: 0, y: 20 }}
