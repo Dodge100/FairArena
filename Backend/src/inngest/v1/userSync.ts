@@ -1,4 +1,3 @@
-import { prisma } from '../../config/database.js';
 import { sendWelcomeEmail } from '../../email/v1/index.js';
 import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
@@ -15,9 +14,7 @@ export const syncUser = inngest.createFunction(
     }
     await step.run('sync-user-to-db', async () => {
       try {
-        await prisma.$transaction(async () => {
-          await upsertUser(userId, email);
-        });
+        await upsertUser(userId, email);
         console.log(`User ${userId} synced successfully`);
       } catch (error) {
         console.error('Error syncing user:', error);

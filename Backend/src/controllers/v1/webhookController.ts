@@ -27,6 +27,15 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
           },
         })
         .catch((error) => console.error('Failed to send user.updated event:', error));
+    } else if (type === 'user.deleted') {
+      inngest
+        .send({
+          name: 'user.deleted',
+          data: {
+            userId: data.id,
+          },
+        })
+        .catch((error) => console.error('Failed to send user.deleted event:', error));
     } else {
       console.log(`Unhandled webhook type: ${type}`);
       return res.status(200).json({ message: 'Webhook type not processed' });

@@ -17,7 +17,7 @@ import {
     SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useTheme } from "@/hooks/useTheme"
-import { OrganizationSwitcher, useClerk, useUser } from "@clerk/clerk-react"
+import { useClerk, useUser } from "@clerk/clerk-react"
 import { BarChart3, Calendar, FileText, HelpCircle, Home, Inbox, LogOut, Search, Settings, Trophy, Users } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -197,7 +197,7 @@ export function AppSidebar() {
                             className="h-auto py-2 cursor-pointer"
                             tooltip="Profile"
                         >
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6">
                                 <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
                                 <AvatarFallback className={`bg-primary text-primary-foreground ${theme === 'dark' ? 'bg-primary/20 text-primary-foreground' : ''}`}>
                                     {getInitials()}
@@ -212,37 +212,6 @@ export function AppSidebar() {
                                 </span>
                             </div>
                         </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <div className="px-2 py-2">
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">Organization</span>
-                            </div>
-                            <OrganizationSwitcher
-                                appearance={{
-                                    elements: {
-                                        rootBox: "w-full",
-                                        organizationSwitcherTrigger: `w-full justify-start bg-background hover:bg-accent border border-border rounded-md px-3 py-2 text-sm text-foreground ${theme === 'dark' ? 'hover:bg-accent/50' : ''}`,
-                                        organizationSwitcherTriggerIcon: "h-4 w-4 text-muted-foreground",
-                                        organizationSwitcherTriggerText: "text-foreground truncate flex-1 min-w-0",
-                                        organizationSwitcherPopoverCard: "bg-popover border-border shadow-lg text-foreground",
-                                        organizationSwitcherPopoverActionButton: "hover:bg-accent text-foreground px-3 py-2 rounded-md",
-                                        organizationSwitcherPopoverActionButtonText: "text-foreground font-medium",
-                                        organizationSwitcherPopoverActionButtonIcon: "text-muted-foreground",
-                                        organizationSwitcherPopoverFooter: "bg-muted/50 border-t border-border text-muted-foreground",
-                                    },
-                                    variables: {
-                                        colorPrimary: 'hsl(var(--primary))',
-                                        colorBackground: 'hsl(var(--background))',
-                                        colorInputBackground: 'hsl(var(--background))',
-                                        colorInputText: 'hsl(var(--foreground))',
-                                        colorText: 'hsl(var(--foreground))',
-                                        colorTextSecondary: 'hsl(var(--muted-foreground))',
-                                    }
-                                }}
-                                hidePersonal={false}
-                            />
-                        </div>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <div className="px-2 py-2">
