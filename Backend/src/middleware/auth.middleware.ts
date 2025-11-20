@@ -13,7 +13,7 @@ declare global {
 
 export const protectRoute = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const auth = req.auth();
+    const auth = await req.auth();
     if (!auth?.userId) {
       return res.status(401).json({
         success: false,

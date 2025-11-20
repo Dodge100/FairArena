@@ -20,8 +20,38 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  // Future relations should use onDelete: Cascade to enable cascading deletes
-  // Example: posts Post[] @relation(onDelete: Cascade)
+  // Relations with cascading deletes
+  profile           Profile?
+  otps              Otp[]
 
   @@index([userId])
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  // Add profile fields as needed, e.g.
+  firstName         String?
+  lastName          String?
+  bio               String?
+  avatarUrl         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  email     String
+  otpHash   String   // Hashed OTP for security
+  sentFor   String   // Purpose: 'account-settings', 'password-reset', etc.
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+
+  @@index([email])
+  @@index([userId])
+  @@index([sentFor])
 }

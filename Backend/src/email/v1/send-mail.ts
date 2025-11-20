@@ -1,12 +1,14 @@
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
+import { otpEmailTemplate } from '../templates/otp.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
 
 // Collect all templates
 export const emailTemplates = {
   welcome: welcomeEmailTemplate,
+  otp: otpEmailTemplate,
 };
 
 // Function to send email
@@ -40,4 +42,8 @@ export const sendEmail = async (
 
 export const sendWelcomeEmail = async (to: string, userName: string): Promise<unknown> => {
   return sendEmail(to, 'Welcome to FairArena', 'welcome', { userName });
+};
+
+export const sendOtpEmail = async (to: string, otp: string): Promise<unknown> => {
+  return sendEmail(to, 'Account Verification - FairArena', 'otp', { otp });
 };

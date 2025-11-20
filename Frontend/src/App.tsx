@@ -13,8 +13,8 @@ import Signup from './pages/Signup';
 import Testimonials from './pages/Testimonials';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
-import { Protected } from '@/libs/protected';
 import { GoogleOneTap } from '@clerk/clerk-react'
+import AccountSettings from './pages/AccountSettings';
 
 function App() {
   return (
@@ -31,8 +31,9 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/account-settings" element={<AccountSettings />} />
         </Route>
-        <Route path="/dashboard/profile" element={<Protected><Profile /></Protected>} />
         <Route path="/support" element={<Support />} />
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signin" element={<Signin />} />
