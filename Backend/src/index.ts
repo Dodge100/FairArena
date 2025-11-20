@@ -6,7 +6,7 @@ import { serve } from 'inngest/express';
 import * as client from 'prom-client';
 import { ENV } from './config/env.js';
 import { inngest } from './inngest/v1/client.js';
-import { syncUser, updateUser } from './inngest/v1/index.js';
+import { syncUser, updateUser, deleteUser } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import webhookRouter from './routes/v1/webhook.js';
 
@@ -35,7 +35,7 @@ collectDefaultMetrics({ register: client.register });
 app.use(arcjetMiddleware);
 
 // Inngest serve
-app.use('/api/inngest', serve({ client: inngest, functions: [syncUser, updateUser] }));
+app.use('/api/inngest', serve({ client: inngest, functions: [syncUser, updateUser, deleteUser] }));
 
 // Metrics endpoint
 app.get('/metrics', async (_, res) => {

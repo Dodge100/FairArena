@@ -14,10 +14,12 @@ import Testimonials from './pages/Testimonials';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
 import { Protected } from '@/libs/protected';
+import { GoogleOneTap } from '@clerk/clerk-react'
 
 function App() {
   return (
     <>
+    <GoogleOneTap />
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
