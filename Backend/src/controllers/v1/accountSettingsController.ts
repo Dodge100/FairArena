@@ -74,6 +74,15 @@ export const sendOtp = async (req: Request, res: Response) => {
       data: { userId: auth.userId },
     });
 
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId: auth.userId,
+        action: 'sensitive-action-attempted',
+        level: 'WARN',
+      },
+    });
+
     res.json({ success: true, message: 'OTP sent to your email' });
   } catch (error) {
     logger.error('Send OTP error', {
@@ -212,6 +221,15 @@ export const verifyOtp = async (req: Request, res: Response) => {
       maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000, // 10 minutes
     });
 
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId: auth.userId,
+        action: 'sensitive-action-verified',
+        level: 'CRITICAL',
+      },
+    });
+
     logger.info('OTP verified successfully', { userId: auth.userId });
     res.json({ success: true, message: 'Verification successful' });
   } catch (error) {
@@ -253,5 +271,64 @@ export const checkStatus = async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : String(error),
     });
     res.status(500).json({ success: false, message: 'Status check failed' });
+  }
+};
+
+export const getLogs = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies['account-settings-token'];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
+        userId: string;
+        purpose: string;
+      };
+
+      // Verify the token is for account settings
+      if (decoded.purpose !== 'account-settings') {
+        logger.warn('Invalid token purpose', { purpose: decoded.purpose });
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
+
+      inngest.send({
+        name: 'log.create',
+        data: {
+          userId: decoded.userId,
+          action: 'logs-accessed',
+          level: 'CRITICAL',
+        },
+      });
+
+      const logs = await prisma.logs.findMany({
+        where: {
+          userId: decoded.userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          action: true,
+          level: true,
+          metadata: true,
+          createdAt: true,
+        },
+      });
+
+      res.json({ success: true, logs });
+    } catch (jwtError) {
+      logger.warn('Invalid or expired token', {
+        error: jwtError instanceof Error ? jwtError.message : String(jwtError),
+      });
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+  } catch (error) {
+    logger.error('Get logs error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({ success: false, message: 'Failed to fetch logs' });
   }
 };

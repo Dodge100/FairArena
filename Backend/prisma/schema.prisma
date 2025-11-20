@@ -23,6 +23,7 @@ model User {
   // Relations with cascading deletes
   profile           Profile?
   otps              Otp[]
+  Logs        Logs[]
 
   @@index([userId])
 }
@@ -54,4 +55,24 @@ model Otp {
   @@index([email])
   @@index([userId])
   @@index([sentFor])
+}
+
+model Logs {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  action      String   // 'account-settings-access', 'profile-update', etc.
+  level       level
+  metadata    Json?    // Additional context (e.g., what was accessed)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+enum level {
+  INFO
+  WARN
+  CRITICAL
 }

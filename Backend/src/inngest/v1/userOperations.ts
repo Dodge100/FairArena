@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database.js';
 import logger from '../../utils/logger.js';
+import { inngest } from './client.js';
 
 export async function upsertUser(userId: string, email: string) {
   if (!userId || !email) {
@@ -11,6 +12,18 @@ export async function upsertUser(userId: string, email: string) {
       update: { email },
       create: { userId, email },
     });
+
+    // Send async log event instead of direct database call
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId,
+        action: 'user-created',
+        level: 'INFO',
+        metadata: { email },
+      },
+    });
+
     logger.info('User upserted', { userId, email });
   } catch (error: unknown) {
     const prismaError = error as { code?: string; meta?: { target?: string[] } };
@@ -22,6 +35,17 @@ export async function upsertUser(userId: string, email: string) {
           data: { userId },
         });
         logger.info('User updated via email conflict', { userId, email });
+
+        // Send async log event for update
+        inngest.send({
+          name: 'log.create',
+          data: {
+            userId,
+            action: 'user-update',
+            level: 'INFO',
+            metadata: { email, reason: 'email_conflict' },
+          },
+        });
         return;
       }
     }
@@ -44,6 +68,17 @@ export async function deleteUser(userId: string) {
     await prisma.user.delete({
       where: { userId },
     });
+
+    // Send async log event for deletion
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId,
+        action: 'user-deleted',
+        level: 'CRITICAL',
+      },
+    });
+
     logger.info('User deleted successfully with cascading deletes', { userId });
   } catch (error: unknown) {
     const prismaError = error as { code?: string };

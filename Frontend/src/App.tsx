@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import Support from './pages/Support';
 import { GoogleOneTap } from '@clerk/clerk-react'
 import AccountSettings from './pages/AccountSettings';
+import AccountLogs from './pages/AccountLogs';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/account-settings" element={<AccountSettings />} />
+          <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
         </Route>
         <Route path="/support" element={<Support />} />
         <Route path="/waitlist" element={<WaitList />} />

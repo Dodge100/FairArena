@@ -8,7 +8,13 @@ import { serve } from 'inngest/express';
 import * as client from 'prom-client';
 import { ENV } from './config/env.js';
 import { inngest } from './inngest/v1/client.js';
-import { deleteUser, sendOtpForAccountSettings, syncUser, updateUser } from './inngest/v1/index.js';
+import {
+  createLog,
+  deleteUser,
+  sendOtpForAccountSettings,
+  syncUser,
+  updateUser,
+} from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import webhookRouter from './routes/v1/webhook.js';
@@ -57,7 +63,13 @@ app.use(
   '/api/inngest',
   serve({
     client: inngest,
-    functions: [syncUser, updateUser, deleteUser, sendOtpForAccountSettings],
+    functions: [
+      syncUser,
+      updateUser,
+      deleteUser,
+      sendOtpForAccountSettings,
+      createLog,
+    ],
   }),
 );
 

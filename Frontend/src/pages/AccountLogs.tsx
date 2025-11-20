@@ -4,10 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { CheckCircle, Loader2, Mail, Shield, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-export default function AccountSettings() {
-    const navigate = useNavigate();
+export default function AccountLogs() {
     const [isVerified, setIsVerified] = useState(false);
     const [isVerifying, setIsVerifying] = useState(true);
     const [otp, setOtp] = useState('');
@@ -16,6 +14,8 @@ export default function AccountSettings() {
     const [message, setMessage] = useState('');
     const [isRateLimited, setIsRateLimited] = useState(false);
     const [retryAfter, setRetryAfter] = useState(0);
+    const [logs, setLogs] = useState([]);
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
     useEffect(() => {
         checkVerificationStatus();
@@ -39,6 +39,13 @@ export default function AccountSettings() {
             if (interval) clearInterval(interval);
         };
     }, [isRateLimited, retryAfter]);
+
+    // Fetch logs when verified
+    useEffect(() => {
+        if (isVerified) {
+            fetchLogs();
+        }
+    }, [isVerified]);
 
     const checkVerificationStatus = async () => {
         try {
@@ -129,6 +136,26 @@ export default function AccountSettings() {
             setMessage('Verification failed');
         } finally {
             setIsVerifyingOtp(false);
+        }
+    };
+
+    const fetchLogs = async () => {
+        setIsLoadingLogs(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`, {
+                credentials: 'include',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setLogs(data.logs);
+            } else {
+                setMessage('Failed to fetch logs');
+            }
+        } catch (error) {
+            console.error('Fetch logs failed:', error);
+            setMessage('Failed to fetch logs');
+        } finally {
+            setIsLoadingLogs(false);
         }
     };
 
@@ -243,29 +270,37 @@ export default function AccountSettings() {
                         <CardHeader>
                             <CardTitle>Account Logs</CardTitle>
                             <CardDescription>
-                                View your account activity logs.
+                                Your recent account activity.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Button onClick={() => navigate('/dashboard/account-settings/logs')}>
-                                View Account Logs
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {isVerified && (
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle>Profile Settings</CardTitle>
-                            <CardDescription>
-                                Manage your profile information and preferences.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">
-                                Profile settings form will be implemented here.
-                            </p>
+                            {isLoadingLogs ? (
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Loading logs...</span>
+                                </div>
+                            ) : logs.length > 0 ? (
+                                <div className="space-y-2">
+                                    {logs.map((log: any) => (
+                                        <div key={log.id} className="flex items-center justify-between p-2 border rounded">
+                                            <div>
+                                                <span className="font-medium">{log.action}</span>
+                                                <span className={`ml-2 px-2 py-1 text-xs rounded ${log.level === 'CRITICAL' ? 'bg-red-100 text-red-800' :
+                                                        log.level === 'WARN' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-blue-100 text-blue-800'
+                                                    }`}>
+                                                    {log.level}
+                                                </span>
+                                            </div>
+                                            <span className="text-sm text-muted-foreground">
+                                                {new Date(log.createdAt).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No logs found.</p>
+                            )}
                         </CardContent>
                     </Card>
                 )}
