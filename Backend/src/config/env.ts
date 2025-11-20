@@ -10,6 +10,9 @@ const requiredEnvVars = [
   'INNGEST_EVENT_KEY',
   'RESEND_API_KEY',
   'FROM_EMAIL_ADDRESS',
+  'JWT_SECRET',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
 ];
 
 for (const envVar of requiredEnvVars) {
@@ -30,5 +33,8 @@ export const ENV = {
   INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY!,
   RESEND_API_KEY: process.env.RESEND_API_KEY!,
   FROM_EMAIL_ADDRESS: process.env.FROM_EMAIL_ADDRESS!,
+  JWT_SECRET: process.env.JWT_SECRET!,
   BASE_URL: process.env.BASE_URL || '',
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL!,
+  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN!,
 };

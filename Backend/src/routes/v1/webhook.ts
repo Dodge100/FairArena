@@ -6,7 +6,7 @@ import { handleClerkWebhook } from '../../controllers/v1/webhookController.js';
 
 const router = Router();
 
-// Rate limiting for webhook endpoints
+// Rate limiter for webhook endpoints
 const webhookLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -18,11 +18,10 @@ const webhookLimiter = rateLimit({
 // Clerk webhook endpoint
 router.post(
   '/clerk',
-  express.raw({ type: 'application/json' }),
   webhookLimiter,
+  express.raw({ type: 'application/json' }),
   async (req, res, next) => {
     try {
-      console.log('Raw body type:', typeof req.body, 'isBuffer:', Buffer.isBuffer(req.body));
       const wh = new Webhook(ENV.CLERK_WEBHOOK_SECRET);
       const payload = wh.verify(req.body, {
         'svix-id': req.headers['svix-id'] as string,

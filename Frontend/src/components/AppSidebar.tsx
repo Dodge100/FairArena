@@ -83,7 +83,7 @@ const secondaryItems = [
     },
     {
         title: "Settings",
-        url: "/dashboard/settings",
+        url: "/dashboard/account-settings",
         icon: Settings,
     },
     {
