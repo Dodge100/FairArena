@@ -19,7 +19,10 @@ app.use(hpp());
 app.set('trust proxy', 1);
 
 // CORS middleware
-app.use(cors());
+app.use(cors({
+  origin: ENV.NODE_ENV === 'production' ? 'https://fairarena.vercel.app' : 'http://localhost:5173',
+  credentials: true
+}));
 
 // Webhook routes
 app.use('/webhooks/v1', webhookRouter);

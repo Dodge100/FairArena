@@ -1,25 +1,14 @@
 import express, { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Webhook } from 'svix';
 import { ENV } from '../../config/env.js';
 import { handleClerkWebhook } from '../../controllers/v1/webhookController.js';
 
 const router = Router();
 
-// Rate limiting for webhook endpoints
-const webhookLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many webhook requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Clerk webhook endpoint
 router.post(
   '/clerk',
   express.raw({ type: 'application/json' }),
-  webhookLimiter,
   async (req, res, next) => {
     try {
       console.log('Raw body type:', typeof req.body, 'isBuffer:', Buffer.isBuffer(req.body));
