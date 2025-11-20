@@ -3,6 +3,7 @@ import { prisma } from '../../config/database.js';
 import { sendOtpEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 const SALT_ROUNDS = 12;
 const OTP_EXPIRY_MINUTES = 10;
@@ -28,7 +29,7 @@ export const sendOtpForAccountSettings = inngest.createFunction(
     logger.info('Starting OTP generation for account settings', { userId });
 
     const user = await step.run('fetch-user', async () => {
-      const foundUser = await prisma.user.findUnique({
+      const foundUser = await getReadOnlyPrisma().user.findUnique({
         where: { userId },
         select: { email: true, userId: true },
       });

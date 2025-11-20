@@ -25,7 +25,7 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
     // Validate the payload
     const validationResult = clerkWebhookSchema.safeParse(payload);
     if (!validationResult.success) {
-      logger.warn('Invalid webhook payload', { errors: validationResult.error.errors });
+      logger.warn('Invalid webhook payload', { errors: validationResult.error.issues });
       return res.status(400).json({ error: 'Invalid payload structure' });
     }
 

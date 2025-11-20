@@ -5,20 +5,43 @@ import { otpEmailTemplate } from '../templates/otp.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
 
-// Collect all templates
+// Define parameter types for each template
+type WelcomeEmailParams = { userName: string };
+type OtpEmailParams = { otp: string };
+
+// Collect all templates with correct types
 export const emailTemplates = {
-  welcome: welcomeEmailTemplate,
-  otp: otpEmailTemplate,
+  welcome: welcomeEmailTemplate as (params: WelcomeEmailParams) => string,
+  otp: otpEmailTemplate as (params: OtpEmailParams) => string,
 };
 
-// Function to send email
-export const sendEmail = async (
+// Function overloads for sendEmail
+export function sendEmail(
   to: string,
   subject: string,
-  templateName: keyof typeof emailTemplates,
-  params: unknown,
-): Promise<unknown> => {
-  const html = emailTemplates[templateName](params as { userName: string });
+  templateName: 'welcome',
+  params: WelcomeEmailParams,
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'otp',
+  params: OtpEmailParams,
+): Promise<unknown>;
+export async function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'welcome' | 'otp',
+  params: WelcomeEmailParams | OtpEmailParams,
+): Promise<unknown> {
+  let html: string;
+  if (templateName === 'welcome') {
+    html = emailTemplates.welcome(params as WelcomeEmailParams);
+  } else if (templateName === 'otp') {
+    html = emailTemplates.otp(params as OtpEmailParams);
+  } else {
+    throw new Error(`Unknown template name: ${templateName}`);
+  }
 
   try {
     const { data, error } = await resend.emails.send({
@@ -38,7 +61,7 @@ export const sendEmail = async (
     console.error('Failed to send email:', err);
     throw err;
   }
-};
+}
 
 export const sendWelcomeEmail = async (to: string, userName: string): Promise<unknown> => {
   return sendEmail(to, 'Welcome to FairArena', 'welcome', { userName });
