@@ -13,12 +13,14 @@ import {
   deleteUser,
   recordProfileView,
   sendOtpForAccountSettings,
+  subscribeToNewsletter,
   syncUser,
   updateProfileFunction,
   updateUser,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
+import newsletterRouter from './routes/v1/newsletter.js';
 import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 
@@ -54,6 +56,9 @@ app.use(cookieParser());
 // Account settings routes
 app.use('/api/v1/account-settings', accountSettingsRouter);
 
+// Newsletter routes
+app.use('/api/v1/newsletter', newsletterRouter);
+
 // Profile routes
 app.use('/api/v1/profile', profileRouter);
 
@@ -77,6 +82,7 @@ app.use(
       createLog,
       updateProfileFunction,
       recordProfileView,
+      subscribeToNewsletter,
     ],
   }),
 );

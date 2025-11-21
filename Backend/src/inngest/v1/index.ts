@@ -1,5 +1,6 @@
 export { sendOtpForAccountSettings } from './accountSettingsSendOtp.js';
 export { createLog } from './createLog.js';
+export { subscribeToNewsletter } from './newsletterSubscribe.js';
 export { updateProfileFunction } from './profileUpdate.js';
 export { recordProfileView } from './recordProfileView.js';
 export { deleteUser } from './userDelete.js';
