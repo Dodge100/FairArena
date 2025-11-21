@@ -1,58 +1,8 @@
+import { LegalList, LegalSection } from "@/components/legal/LegalSection";
 import { useTheme } from "@/hooks/useTheme";
 import { useEffect, useState } from "react";
 
-/* ---------------------------------------------
-   Reusable Component: PolicySection
----------------------------------------------- */
-export function PolicySection({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <div className="mb-10">
-      <h2
-        className={`
-          text-2xl font-semibold mb-4
-          ${isDark ? "text-[#ddef00]" : "text-[#a5bf00]"}
-        `}
-      >
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
-/* ---------------------------------------------
-   Reusable Component: PolicyList
----------------------------------------------- */
-export function PolicyList({
-  items,
-  isDark,
-}: {
-  items: string[];
-  isDark: boolean;
-}) {
-  return (
-    <ul
-      className={`
-        list-disc ml-6 mb-6
-        ${isDark ? "text-neutral-300" : "text-neutral-700"}
-      `}
-    >
-      {items.map((item, index) => (
-        <li key={index} className="mb-1">
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /* ---------------------------------------------
    MAIN PAGE: Privacy Policy
@@ -103,9 +53,9 @@ function PrivacyPolicy() {
         {/* --------------------------------------------- */}
         {/* SECTION 1 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="1. Information We Collect" isDark={isDark}>
+        <LegalSection title="1. Information We Collect" isDark={isDark}>
           <h3 className="text-xl font-semibold mb-2">1.1 Information provided by organisers</h3>
-          <PolicyList
+          <LegalList
             isDark={isDark}
             items={[
               "Name and email",
@@ -116,7 +66,7 @@ function PrivacyPolicy() {
           />
 
           <h3 className="text-xl font-semibold mb-2">1.2 Information provided by participants</h3>
-          <PolicyList
+          <LegalList
             isDark={isDark}
             items={[
               "Name, email, or profile details",
@@ -126,7 +76,7 @@ function PrivacyPolicy() {
           />
 
           <h3 className="text-xl font-semibold mb-2">1.3 Information provided by judges</h3>
-          <PolicyList
+          <LegalList
             isDark={isDark}
             items={[
               "Name, email",
@@ -136,7 +86,7 @@ function PrivacyPolicy() {
           />
 
           <h3 className="text-xl font-semibold mb-2">1.4 Automatically collected information</h3>
-          <PolicyList
+          <LegalList
             isDark={isDark}
             items={[
               "Browser type, device, IP address",
@@ -148,13 +98,13 @@ function PrivacyPolicy() {
           <p className="mb-4">
             We do not store sensitive personal information such as passwords in plain text.
           </p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 2 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="2. How We Use Your Data" isDark={isDark}>
-          <PolicyList
+        <LegalSection title="2. How We Use Your Data" isDark={isDark}>
+          <LegalList
             isDark={isDark}
             items={[
               "Manage and host hackathons",
@@ -167,13 +117,13 @@ function PrivacyPolicy() {
             ]}
           />
           <p>We never sell your data to third parties.</p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 3 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="3. How We Share Your Data" isDark={isDark}>
-          <PolicyList
+        <LegalSection title="3. How We Share Your Data" isDark={isDark}>
+          <LegalList
             isDark={isDark}
             items={[
               "Payment gateways for billing",
@@ -182,13 +132,13 @@ function PrivacyPolicy() {
             ]}
           />
           <p>We do not share data with advertisers.</p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 4 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="4. Data Security" isDark={isDark}>
-          <PolicyList
+        <LegalSection title="4. Data Security" isDark={isDark}>
+          <LegalList
             isDark={isDark}
             items={[
               "Encrypted data transmission",
@@ -201,13 +151,13 @@ function PrivacyPolicy() {
             However, no system is 100% secure. Users are responsible for keeping their login
             credentials protected.
           </p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 5 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="5. Your Rights" isDark={isDark}>
-          <PolicyList
+        <LegalSection title="5. Your Rights" isDark={isDark}>
+          <LegalList
             isDark={isDark}
             items={[
               "Access to your stored data",
@@ -219,34 +169,34 @@ function PrivacyPolicy() {
             Contact us at{" "}
             <span className="text-[#879400]">fairarena.contact@gmail.com</span>.
           </p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 6 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="6. Children’s Privacy" isDark={isDark}>
+        <LegalSection title="6. Children’s Privacy" isDark={isDark}>
           <p>FairArena is not intended for users under 13 years old.</p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 7 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="7. Changes to This Policy" isDark={isDark}>
+        <LegalSection title="7. Changes to This Policy" isDark={isDark}>
           <p>
             We may update this Privacy Policy occasionally. Continued use of FairArena means you
             accept the updated terms.
           </p>
-        </PolicySection>
+        </LegalSection>
 
         {/* --------------------------------------------- */}
         {/* SECTION 8 */}
         {/* --------------------------------------------- */}
-        <PolicySection title="8. Contact Us" isDark={isDark}>
+        <LegalSection title="8. Contact Us" isDark={isDark}>
           <p>
             For questions or concerns, email:{" "}
             <span className="text-[#879400]">fairarena.contact@gmail.com</span>
           </p>
-        </PolicySection>
+        </LegalSection>
       </div>
     </div>
   );

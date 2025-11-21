@@ -1,6 +1,6 @@
 import { useTheme } from "@/hooks/useTheme";
 import { useEffect, useState } from "react";
-import { Rocket, Globe, Target, Star, Zap, Handshake, Brain, Heart, ArrowRight } from "lucide-react";
+import { Rocket, Target, Star, Zap, Handshake, Brain, Heart, ArrowRight } from "lucide-react";
 
 function About() {
   const { theme } = useTheme();

@@ -2,8 +2,8 @@ import { useUser } from '@clerk/clerk-react';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { useTheme } from '../hooks/useTheme';
+import { Link } from 'react-router-dom';
+import { useTheme } from '@/hooks/useTheme';
 import ThemeToggleButton from './ui/ThemeChange';
 export default function Navbar() {
   const { theme } = useTheme();

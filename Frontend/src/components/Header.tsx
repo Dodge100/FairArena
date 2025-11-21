@@ -1,5 +1,5 @@
 import { useUser } from '@clerk/clerk-react';
-import { Github, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';

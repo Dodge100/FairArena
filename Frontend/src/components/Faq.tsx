@@ -10,7 +10,7 @@ function Faq() {
     { q: 'What does the AI analyzer check? ', a: 'It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions.' },
     { q: 'Can multiple judges score the same project?', a: 'Yes. Scores from all judges are combined automatically.' },
     { q: 'Does FairArena support multi-round hackathons?', a: 'Yes — preliminary, semi-final, and final rounds.' },
-    { q: 'Is there a free version?', a: 'Judges and participants always use FairArena for free During Hackthon. Organisers choose a paid plan.' },
+    { q: 'Is there a free version?', a: 'Judges and participants always use FairArena for free During Hackathons. Organisers choose a paid plan.' },
     { q: 'Can organisers download reports?', a: 'Yes — detailed score reports, analytics, and winner sheets.' },
   ];
 

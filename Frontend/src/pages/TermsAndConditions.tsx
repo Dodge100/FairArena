@@ -1,58 +1,8 @@
+import { LegalList, LegalSection } from "@/components/legal/LegalSection";
 import { useTheme } from "@/hooks/useTheme";
 import { useEffect, useState } from "react";
 
-/* ----------------------------------------------------
-   REUSABLE COMPONENT: TermsSection
------------------------------------------------------ */
-function TermsSection({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <div className="mb-10">
-      <h2
-        className={`
-          text-2xl font-semibold mb-4
-          ${isDark ? "text-[#ddef00]" : "text-[#a5bf00]"}
-        `}
-      >
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
 
-/* ----------------------------------------------------
-   REUSABLE COMPONENT: TermsList
------------------------------------------------------ */
-function TermsList({
-  items,
-  isDark,
-}: {
-  items: string[];
-  isDark: boolean;
-}) {
-  return (
-    <ul
-      className={`
-        list-disc ml-6 mb-6
-        ${isDark ? "text-neutral-300" : "text-neutral-700"}
-      `}
-    >
-      {items.map((item, i) => (
-        <li key={i} className="mb-1">
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /* ----------------------------------------------------
    DATA ARRAYS
@@ -142,70 +92,70 @@ function TermsAndConditions() {
         </p>
 
         <p className="mb-10">
-          These Terms & Conditions govern your use of FairArena.  
+          These Terms & Conditions govern your use of FairArena.
           By using our platform, you agree to these terms.
         </p>
 
         {/* ------------ SECTION 1 ------------ */}
-        <TermsSection title="1. Definitions" isDark={isDark}>
-          <TermsList items={definitionsList} isDark={isDark} />
-        </TermsSection>
+        <LegalSection title="1. Definitions" isDark={isDark}>
+          <LegalList items={definitionsList} isDark={isDark} />
+        </LegalSection>
 
         {/* ------------ SECTION 2 ------------ */}
-        <TermsSection title="2. Use of Service" isDark={isDark}>
-          <TermsList items={useOfServiceList} isDark={isDark} />
-        </TermsSection>
+        <LegalSection title="2. Use of Service" isDark={isDark}>
+          <LegalList items={useOfServiceList} isDark={isDark} />
+        </LegalSection>
 
         {/* ------------ SECTION 3 ------------ */}
-        <TermsSection title="3. Payments & Billing" isDark={isDark}>
-          <TermsList items={paymentsList} isDark={isDark} />
-        </TermsSection>
+        <LegalSection title="3. Payments & Billing" isDark={isDark}>
+          <LegalList items={paymentsList} isDark={isDark} />
+        </LegalSection>
 
         {/* ------------ SECTION 4 ------------ */}
-        <TermsSection title="4. AI Analysis" isDark={isDark}>
+        <LegalSection title="4. AI Analysis" isDark={isDark}>
           <p className="mb-6">{aiAnalysisText}</p>
-        </TermsSection>
+        </LegalSection>
 
         {/* ------------ SECTION 5 ------------ */}
-        <TermsSection title="5. Intellectual Property" isDark={isDark}>
-          <TermsList items={intellectualPropertyList} isDark={isDark} />
-        </TermsSection>
+        <LegalSection title="5. Intellectual Property" isDark={isDark}>
+          <LegalList items={intellectualPropertyList} isDark={isDark} />
+        </LegalSection>
 
         {/* ------------ SECTION 6 ------------ */}
-        <TermsSection title="6. Limitation of Liability" isDark={isDark}>
+        <LegalSection title="6. Limitation of Liability" isDark={isDark}>
           <p className="mb-4">FairArena is not responsible for:</p>
 
-          <TermsList items={liabilityList} isDark={isDark} />
+          <LegalList items={liabilityList} isDark={isDark} />
 
           <p className="mt-4">Your use of the platform is at your own risk.</p>
-        </TermsSection>
+        </LegalSection>
 
         {/* ------------ SECTION 7 ------------ */}
-        <TermsSection title="7. Account Suspension" isDark={isDark}>
+        <LegalSection title="7. Account Suspension" isDark={isDark}>
           <p className="mb-4">We may suspend accounts that:</p>
-          <TermsList items={suspensionList} isDark={isDark} />
-        </TermsSection>
+          <LegalList items={suspensionList} isDark={isDark} />
+        </LegalSection>
 
         {/* ------------ SECTION 8 ------------ */}
-        <TermsSection title="8. Termination" isDark={isDark}>
+        <LegalSection title="8. Termination" isDark={isDark}>
           <p>
-            Organisers may stop using FairArena anytime.  
+            Organisers may stop using FairArena anytime.
             Data from completed hackathons may be retained for compliance and analytics.
           </p>
-        </TermsSection>
+        </LegalSection>
 
         {/* ------------ SECTION 9 ------------ */}
-        <TermsSection title="9. Governing Law" isDark={isDark}>
+        <LegalSection title="9. Governing Law" isDark={isDark}>
           <p>These Terms are governed by the laws of India.</p>
-        </TermsSection>
+        </LegalSection>
 
         {/* ------------ SECTION 10 ------------ */}
-        <TermsSection title="10. Contact" isDark={isDark}>
+        <LegalSection title="10. Contact" isDark={isDark}>
           <p>
             For questions, contact us at:{" "}
             <span className="text-[#909d00]">fairarena.contact@gmail.com</span>
           </p>
-        </TermsSection>
+        </LegalSection>
 
       </div>
     </div>

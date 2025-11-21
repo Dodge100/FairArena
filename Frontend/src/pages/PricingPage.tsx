@@ -17,7 +17,7 @@ function PricingCard({ plan, billing, isDark }: any) {
         ${
           highlight
             ? isDark
-              ? "bg-[#0f0f0f] border-3 border-[#d9ff00]"
+              ? "bg-[#0f0f0f] border-[3px] border-[#d9ff00]"
               : "bg-white border-2 border-[#d9ff00]"
             : isDark
             ? "bg-[#0d0d0d] border border-white/10"
@@ -217,14 +217,14 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <div className="
-        grid 
-        grid-cols-1 
-        sm:grid-cols-2 
-        lg:grid-cols-3 
-        gap-8 
-        sm:gap-10 
-        max-w-7xl 
-        mx-auto 
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        gap-8
+        sm:gap-10
+        max-w-7xl
+        mx-auto
         mt-14 sm:mt-16
       ">
         {PLANS.map((plan, i) => (
