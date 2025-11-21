@@ -3,6 +3,7 @@ import DemoVideo from '../components/ui/DemoVideo';
 import WhyChooseUs from '../components/WhyChooseUs';
 import Faq from '../components/Faq';
 import Pricing from '../components/Pricing';
+import Newsletter from '@/components/NewsLetter';
 
 
 function Home() {
@@ -15,6 +16,7 @@ function Home() {
       <WhyChooseUs />
       <Pricing />
       <Faq />
+      <Newsletter/>
       
     </>
   );

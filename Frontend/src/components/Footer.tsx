@@ -69,7 +69,7 @@ function Footer() {
             Menu
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            {["Features", "How It Works", "Testimonials", "Pricing"].map(
+            {["about", "why-choose-us", "pricing"].map(
               (item) => (
                 <li
                   key={item}
@@ -82,7 +82,8 @@ function Footer() {
                     }
                   `}
                 >
-                  {item}
+                 <Link to={item}>
+                 {item}</Link>
                 </li>
               )
             )}
@@ -99,7 +100,7 @@ function Footer() {
             Resources
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            {["Blog", "Newsletter", "Career", "Ebooks & Guides"].map((item) => (
+            {["Blog", "Ebooks & Guides"].map((item) => (
               <li
                 key={item}
                 className={`
