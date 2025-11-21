@@ -1,81 +1,48 @@
-import type { LucideIcon } from 'lucide-react';
-import { BarChart3, Lightbulb, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useTheme } from '../hooks/useTheme';
+import type { LucideIcon } from "lucide-react";
+import { BarChart3, Lightbulb, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTheme } from "../hooks/useTheme";
+import { Link } from "react-router";
+import BenefitCard from "./BenefitCard"; // ⬅️ IMPORTED
 
 function WhyChooseUs() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === 'dark');
+    setIsDark(theme === "dark");
   }, [theme]);
 
   // DATA ARRAY
   const benefits = [
     {
       id: 1,
-      title: 'Automate Repetitive Tasks',
-      desc: 'Save time with automation tools that handle routine tasks for you – focus on growth.',
+      title: "AI-Powered Website Analysis",
+      desc: "Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.",
       icon: Lightbulb,
     },
     {
       id: 2,
-      title: 'Boost Collaboration',
-      desc: 'Get everyone on the same page with real-time updates, comments, and shared project boards.',
+      title: "Fair & Transparent Scoring",
+      desc: "Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.",
       icon: Users,
     },
     {
       id: 3,
-      title: 'Track Progress',
-      desc: 'Stay on top of your goals with detailed analytics and custom reports, updated live.',
+      title: "One Dashboard for Entire Hackathon",
+      desc: "Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.",
       icon: BarChart3,
     },
   ];
 
-  // REUSABLE CARD COMPONENT
-  const BenefitCard = ({
-    icon: Icon,
-    title,
-    desc,
-  }: {
-    icon: LucideIcon;
-    title: string;
-    desc: string;
-  }) => (
-    <div
-      className={`
-        p-8 rounded-3xl transition shadow-[0_0_30px_-10px_rgba(0,0,0,0.4)]
-        border
-        ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}
-      `}
-    >
-      <div
-        className={`
-          w-16 h-16 rounded-2xl mb-6 flex items-center justify-center
-          ${isDark ? 'bg-[#ddef00]/10 ' : 'bg-[#ddef00]/20 '}
-        `}
-      >
-        <Icon size={32} className={`${'text-[#ddef00]'}`} />
-      </div>
-
-      <h3 className={`text-xl font-semibold mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
-        {title}
-      </h3>
-
-      <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed`}>
-        {desc}
-      </p>
-    </div>
-  );
-
   return (
     <div className="w-full h-auto pb-20 flex flex-col items-center justify-start">
+      
       {/* Heading */}
       <h2
         className={`
           text-xl md:text-sm font-semibold px-6 py-1 h-15 rounded-full flex items-center overflow-hidden
-          ${isDark ? 'bg-neutral-900 text-[#ddef00]' : 'bg-neutral-100 text-neutral-800'}
+          ${isDark ? "bg-neutral-900 text-[#ddef00]" : "bg-neutral-100 text-neutral-800"}
         `}
       >
         Why Choose
@@ -91,10 +58,10 @@ function WhyChooseUs() {
         className={`
           mt-10 text-center font-semibold
           text-4xl md:text-5xl
-          ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
+          ${isDark ? "text-neutral-100" : "text-neutral-800"}
         `}
       >
-        Key Benefits Of Using <span className="text-neutral-400">Fair Arena</span>
+        Key Benefits Of Using <span className="text-neutral-500">Fair Arena</span>
       </p>
 
       {/* Cards Grid */}
@@ -107,9 +74,21 @@ function WhyChooseUs() {
         "
       >
         {benefits.map((item) => (
-          <BenefitCard key={item.id} icon={item.icon} title={item.title} desc={item.desc} />
+          <BenefitCard
+            key={item.id}
+            icon={item.icon}
+            title={item.title}
+            desc={item.desc}
+            isDark={isDark}
+          />
         ))}
       </div>
+
+      <Link to="/why-choose-us">
+        <button className="mt-10 px-6 py-3 rounded-full bg-[#ddef00] text-black font-semibold text-lg hover:bg-[#ddef00]/80 transition">
+          Read More
+        </button>
+      </Link>
     </div>
   );
 }
