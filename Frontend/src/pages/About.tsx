@@ -25,7 +25,7 @@ function About() {
         lg:max-w-[50%] xl:max-w-[60%] mx-auto
       `}
       >
-        <span className="lg:text-8xl text-4xl sm:text-6xl text-[#ddef00] [-webkit-text-stroke:_1px_black] font-bold">
+        <span className="text-4xl sm:text-5xl text-[#ddef00] [-webkit-text-stroke:_1px_black] font-bold">
           About FairArena
         </span>
       </h1>
