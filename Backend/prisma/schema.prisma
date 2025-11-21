@@ -44,10 +44,13 @@ model Profile {
   jobTitle          String?
   company           String?
   yearsOfExperience Int?
+  experiences       String[]
   education         String[]  // List of degrees/qualifications
   skills            String[]
   languages         String[]  // Spoken languages
   interests         String[]
+  certifications    String[]  // Professional certifications
+  awards            String[]  // Awards and honors
   // Links
   githubUsername    String?
   twitterHandle     String?

@@ -30,10 +30,13 @@ interface ProfileData {
   jobTitle: string;
   company: string;
   yearsOfExperience: number | string;
+  experiences: string[];
   education: string[];
   skills: string[];
   languages: string[];
   interests: string[];
+  certifications: string[];
+  awards: string[];
   githubUsername: string;
   twitterHandle: string;
   linkedInProfile: string;
@@ -61,10 +64,13 @@ export default function EditProfile() {
     jobTitle: '',
     company: '',
     yearsOfExperience: '',
+    experiences: [],
     education: [],
     skills: [],
     languages: [],
     interests: [],
+    certifications: [],
+    awards: [],
     githubUsername: '',
     twitterHandle: '',
     linkedInProfile: '',
@@ -79,6 +85,9 @@ export default function EditProfile() {
   const [newSkill, setNewSkill] = useState('');
   const [newLanguage, setNewLanguage] = useState('');
   const [newInterest, setNewInterest] = useState('');
+  const [newExperience, setNewExperience] = useState('');
+  const [newCertification, setNewCertification] = useState('');
+  const [newAward, setNewAward] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // URL validation function
@@ -157,10 +166,13 @@ export default function EditProfile() {
             jobTitle: profileData.jobTitle || '',
             company: profileData.company || '',
             yearsOfExperience: profileData.yearsOfExperience ?? '',
+            experiences: profileData.experiences || [],
             education: profileData.education || [],
             skills: profileData.skills || [],
             languages: profileData.languages || [],
             interests: profileData.interests || [],
+            certifications: profileData.certifications || [],
+            awards: profileData.awards || [],
             githubUsername: profileData.githubUsername || '',
             twitterHandle: profileData.twitterHandle || '',
             linkedInProfile: profileData.linkedInProfile || '',
@@ -450,6 +462,46 @@ export default function EditProfile() {
               </div>
             </div>
 
+            {/* Experiences */}
+            <div className="space-y-2">
+              <Label>Experiences</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newExperience}
+                  onChange={(e) => setNewExperience(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addItem('experiences', newExperience, setNewExperience);
+                    }
+                  }}
+                  placeholder="Software Engineer at Google (2018-2022)"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => addItem('experiences', newExperience, setNewExperience)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.experiences.map((exp, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {exp}
+                    <button
+                      type="button"
+                      onClick={() => removeItem('experiences', index)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
             {/* Skills */}
             <div className="space-y-2">
               <Label>Skills</Label>
@@ -561,6 +613,102 @@ export default function EditProfile() {
                     <button
                       type="button"
                       onClick={() => removeItem('interests', index)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Certifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Certifications</CardTitle>
+            <CardDescription>Add your professional certifications</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Certifications</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newCertification}
+                  onChange={(e) => setNewCertification(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addItem('certifications', newCertification, setNewCertification);
+                    }
+                  }}
+                  placeholder="AWS Certified Solutions Architect"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => addItem('certifications', newCertification, setNewCertification)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.certifications.map((cert, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {cert}
+                    <button
+                      type="button"
+                      onClick={() => removeItem('certifications', index)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Awards */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Awards & Honors</CardTitle>
+            <CardDescription>Add your achievements and recognitions</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Awards</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newAward}
+                  onChange={(e) => setNewAward(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addItem('awards', newAward, setNewAward);
+                    }
+                  }}
+                  placeholder="Employee of the Year 2023"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => addItem('awards', newAward, setNewAward)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.awards.map((award, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {award}
+                    <button
+                      type="button"
+                      onClick={() => removeItem('awards', index)}
                       className="ml-1 hover:text-destructive"
                     >
                       <X className="h-3 w-3" />

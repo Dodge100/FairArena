@@ -21,6 +21,7 @@ import {
   Github,
   Globe,
   Linkedin,
+  Mail,
   MapPin,
   Moon,
   Share2,
@@ -38,16 +39,20 @@ interface ProfileData {
   lastName: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  email: string | null;
   gender: string | null;
   dateOfBirth: string | null;
   location: string | null;
   jobTitle: string | null;
   company: string | null;
   yearsOfExperience: number | null;
+  experiences: string[];
   education: string[];
   skills: string[];
   languages: string[];
   interests: string[];
+  certifications: string[];
+  awards: string[];
   githubUsername: string | null;
   twitterHandle: string | null;
   linkedInProfile: string | null;
@@ -296,68 +301,142 @@ export default function PublicProfile() {
       </div>
 
       {/* Hero Header */}
-      <div className="relative bg-linear-to-br from-primary/5 via-background to-muted/10 border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="relative bg-linear-to-br from-primary/10 via-background to-muted/20 border-b overflow-hidden">
+        {/* Modern Soft Background Pattern */}
+        <div className="absolute inset-0 pointer-events-none">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 1440 320"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="absolute inset-0 w-full h-full"
+          >
+            <defs>
+              <radialGradient
+                id="bg1"
+                cx="50%"
+                cy="0%"
+                r="100%"
+                fx="50%"
+                fy="0%"
+                gradientTransform="rotate(45)"
+              >
+                <stop offset="0%" stopColor="#b5c800" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient
+                id="bg2"
+                cx="80%"
+                cy="100%"
+                r="100%"
+                fx="80%"
+                fy="100%"
+                gradientTransform="rotate(-30)"
+              >
+                <stop offset="0%" stopColor="#00c6fb" stopOpacity="0.10" />
+                <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <rect width="1440" height="320" fill="url(#bg1)" />
+            <rect width="1440" height="320" fill="url(#bg2)" />
+          </svg>
+        </div>
+        <div className="absolute inset-0 bg-linear-to-t from-background/80 via-transparent to-transparent" />
+
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-16 lg:py-20 relative">
           <div className="max-w-screen-2xl mx-auto">
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
               {/* Avatar */}
-              <div className="shrink-0">
-                <Avatar className="h-32 w-32 lg:h-48 lg:w-48 border-4 border-background shadow-2xl ring-4 ring-primary/10 transition-transform hover:scale-105">
+              <div className="shrink-0 relative">
+                <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/60 rounded-full blur-lg opacity-30 animate-pulse" />
+                <Avatar className="relative h-36 w-36 lg:h-52 lg:w-52 border-4 border-background shadow-2xl ring-4 ring-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-primary/25">
                   <AvatarImage
                     src={
                       profile.avatarUrl ||
                       `https://api.dicebear.com/7.x/initials/svg?seed=${fullName}`
                     }
                     alt={fullName}
+                    className="object-cover"
                   />
-                  <AvatarFallback className="text-4xl lg:text-6xl">{initials}</AvatarFallback>
+                  <AvatarFallback className="text-5xl lg:text-7xl bg-linear-to-br from-primary/20 to-primary/10">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
               </div>
 
               {/* Profile Info */}
               <div className="flex-1 text-center lg:text-left space-y-6">
-                <div className="space-y-3">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight">
-                    {fullName}
-                  </h1>
-                  {profile.jobTitle && (
-                    <p className="text-lg sm:text-xl text-muted-foreground flex flex-wrap items-center justify-center lg:justify-start gap-2">
-                      <Briefcase className="h-5 w-5 shrink-0" />
-                      <span className="font-medium">{profile.jobTitle}</span>
-                      {profile.company && (
-                        <span className="text-foreground/60">at {profile.company}</span>
-                      )}
-                    </p>
-                  )}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-linear-to-r from-foreground to-foreground/80 bg-clip-text text-transparent tracking-tight">
+                      {fullName}
+                    </h1>
+                    {profile.jobTitle && (
+                      <p className="text-xl sm:text-2xl text-muted-foreground flex flex-wrap items-center justify-center lg:justify-start gap-3 font-medium">
+                        <Briefcase className="h-6 w-6 shrink-0 text-primary" />
+                        <span>{profile.jobTitle}</span>
+                        {profile.company && (
+                          <>
+                            <span className="text-muted-foreground/60">at</span>
+                            <span className="text-foreground font-semibold">{profile.company}</span>
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+
                   {profile.location && (
-                    <p className="text-base sm:text-lg text-muted-foreground flex items-center justify-center lg:justify-start gap-2">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      {profile.location}
+                    <p className="text-lg sm:text-xl text-muted-foreground flex items-center justify-center lg:justify-start gap-3">
+                      <MapPin className="h-5 w-5 shrink-0 text-primary" />
+                      <span className="font-medium">{profile.location}</span>
                     </p>
                   )}
+
+                  {/* Quick Stats */}
+                  <div className="flex flex-wrap justify-center lg:justify-start gap-6 pt-2">
+                    {profile.yearsOfExperience !== null && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-primary">
+                          {profile.yearsOfExperience}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {profile.yearsOfExperience === 1 ? 'Year' : 'Years'} Exp.
+                        </div>
+                      </div>
+                    )}
+                    {profile.skills && profile.skills.length > 0 && (
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-primary">
+                          {profile.skills.length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Skills</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-2">
                   {isOwner && (
                     <>
                       <Button
                         variant="default"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/edit')}
-                        className="shadow-lg hover:shadow-xl transition-all"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-linear-to-r from-primary to-primary/90"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="h-5 w-5 mr-2" />
                         Edit Profile
                       </Button>
                       <Button
                         variant="outline"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/views')}
-                        className="shadow-lg hover:shadow-xl transition-all"
+                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40"
                       >
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Profile Viewers
+                        <FileText className="h-5 w-5 mr-2" />
+                        View Analytics
                       </Button>
                     </>
                   )}
@@ -365,10 +444,10 @@ export default function PublicProfile() {
                     variant={copied ? 'default' : 'outline'}
                     size="lg"
                     onClick={handleShare}
-                    className="shadow-lg hover:shadow-xl transition-all"
+                    className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40"
                   >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    {copied ? 'Copied!' : 'Share'}
+                    <Share2 className="h-5 w-5 mr-2" />
+                    {copied ? 'Copied!' : 'Share Profile'}
                   </Button>
                 </div>
               </div>
@@ -385,9 +464,12 @@ export default function PublicProfile() {
             <div className="xl:col-span-2 space-y-8">
               {/* Bio */}
               {profile.bio && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl font-semibold">About</CardTitle>
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      About
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap">
@@ -399,17 +481,21 @@ export default function PublicProfile() {
 
               {/* Skills */}
               {profile.skills && profile.skills.length > 0 && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl font-semibold">Skills</CardTitle>
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Skills
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="flex flex-wrap gap-3">
-                      {profile.skills.map((skill) => (
+                      {profile.skills.map((skill, index) => (
                         <Badge
                           key={skill}
                           variant="secondary"
-                          className="px-4 py-2 text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                          className="px-4 py-2 text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105 cursor-default"
+                          style={{ animationDelay: `${index * 50}ms` }}
                         >
                           {skill}
                         </Badge>
@@ -421,16 +507,19 @@ export default function PublicProfile() {
 
               {/* Education */}
               {profile.education && profile.education.length > 0 && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl font-semibold">Education</CardTitle>
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Education
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <ul className="space-y-3">
                       {profile.education.map((edu, index) => (
                         <li
                           key={index}
-                          className="text-muted-foreground text-base flex items-start gap-3"
+                          className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
                         >
                           <span className="text-primary mt-1 text-lg">•</span>
                           <span className="leading-relaxed">{edu}</span>
@@ -441,12 +530,90 @@ export default function PublicProfile() {
                 </Card>
               )}
 
+              {/* Experiences */}
+              {profile.experiences && profile.experiences.length > 0 && (
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Professional Experience
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ul className="space-y-3">
+                      {profile.experiences.map((exp, index) => (
+                        <li
+                          key={index}
+                          className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                        >
+                          <span className="text-primary mt-1 text-lg">•</span>
+                          <span className="leading-relaxed">{exp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Certifications */}
+              {profile.certifications && profile.certifications.length > 0 && (
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Certifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ul className="space-y-3">
+                      {profile.certifications.map((cert, index) => (
+                        <li
+                          key={index}
+                          className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                        >
+                          <span className="text-primary mt-1 text-lg">•</span>
+                          <span className="leading-relaxed">{cert}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Awards */}
+              {profile.awards && profile.awards.length > 0 && (
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Awards & Honors
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ul className="space-y-3">
+                      {profile.awards.map((award, index) => (
+                        <li
+                          key={index}
+                          className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                        >
+                          <span className="text-primary mt-1 text-lg">•</span>
+                          <span className="leading-relaxed">{award}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Languages & Interests */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {profile.languages && profile.languages.length > 0 && (
-                  <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                  <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                     <CardHeader className="pb-4">
-                      <CardTitle className="text-xl font-semibold">Languages</CardTitle>
+                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                        Languages
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="flex flex-wrap gap-2">
@@ -454,7 +621,7 @@ export default function PublicProfile() {
                           <Badge
                             key={lang}
                             variant="outline"
-                            className="px-3 py-1.5 hover:bg-accent transition-colors"
+                            className="px-3 py-1.5 hover:bg-accent hover:border-primary/50 transition-all duration-200 hover:scale-105 cursor-default"
                           >
                             {lang}
                           </Badge>
@@ -465,9 +632,12 @@ export default function PublicProfile() {
                 )}
 
                 {profile.interests && profile.interests.length > 0 && (
-                  <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                  <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                     <CardHeader className="pb-4">
-                      <CardTitle className="text-xl font-semibold">Interests</CardTitle>
+                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                        Interests
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="flex flex-wrap gap-2">
@@ -475,7 +645,7 @@ export default function PublicProfile() {
                           <Badge
                             key={interest}
                             variant="outline"
-                            className="px-3 py-1.5 hover:bg-accent transition-colors"
+                            className="px-3 py-1.5 hover:bg-accent hover:border-primary/50 transition-all duration-200 hover:scale-105 cursor-default"
                           >
                             {interest}
                           </Badge>
@@ -491,19 +661,19 @@ export default function PublicProfile() {
             <div className="space-y-8">
               {/* Experience */}
               {profile.yearsOfExperience !== null && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-xl font-semibold">
-                      <Calendar className="h-5 w-5" />
+                      <Calendar className="h-5 w-5 text-primary" />
                       Experience
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="text-center py-6">
-                      <div className="text-4xl font-bold text-primary">
+                      <div className="text-5xl font-bold text-primary mb-2 group-hover:scale-110 transition-transform">
                         {profile.yearsOfExperience}
                       </div>
-                      <p className="text-muted-foreground mt-2 text-sm">
+                      <p className="text-muted-foreground text-sm font-medium">
                         {profile.yearsOfExperience === 1 ? 'Year' : 'Years'} of Experience
                       </p>
                     </div>
@@ -512,25 +682,41 @@ export default function PublicProfile() {
               )}
 
               {/* Links */}
-              {(profile.githubUsername ||
+              {(profile.email ||
+                profile.githubUsername ||
                 profile.twitterHandle ||
                 profile.linkedInProfile ||
                 profile.portfolioUrl ||
                 profile.resumeUrl) && (
-                <Card className="shadow-lg hover:shadow-xl transition-shadow border-0 bg-card/50 backdrop-blur-sm">
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-semibold">Connect</CardTitle>
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Connect
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
+                      {profile.email && (
+                        <a
+                          href={`mailto:${profile.email}`}
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <div className="flex-1">
+                            <span className="font-medium block">Email</span>
+                            <span className="text-sm text-muted-foreground">{profile.email}</span>
+                          </div>
+                        </a>
+                      )}
                       {profile.githubUsername && (
                         <a
                           href={`https://github.com/${profile.githubUsername}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
                         >
-                          <Github className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
                           <span className="font-medium">GitHub</span>
                         </a>
                       )}
@@ -539,9 +725,9 @@ export default function PublicProfile() {
                           href={`https://twitter.com/${profile.twitterHandle}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
                         >
-                          <Twitter className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
                           <span className="font-medium">Twitter</span>
                         </a>
                       )}
@@ -550,9 +736,9 @@ export default function PublicProfile() {
                           href={profile.linkedInProfile}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
                         >
-                          <Linkedin className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
                           <span className="font-medium">LinkedIn</span>
                         </a>
                       )}
@@ -561,9 +747,9 @@ export default function PublicProfile() {
                           href={profile.portfolioUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
                         >
-                          <Globe className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
                           <span className="font-medium">Portfolio</span>
                         </a>
                       )}
@@ -572,9 +758,9 @@ export default function PublicProfile() {
                           href={profile.resumeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
                         >
-                          <FileText className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
                           <span className="font-medium">Resume</span>
                         </a>
                       )}

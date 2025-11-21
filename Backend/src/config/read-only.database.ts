@@ -21,13 +21,21 @@ for (const url of urls) {
 
 // Function to get the next client in round robin
 export function getReadOnlyPrisma(): PrismaClient {
+  if (prismaClients.length === 0) {
+    throw new Error('No read-only Prisma clients are configured.');
+  }
+
   const client = prismaClients[currentIndex];
   currentIndex = (currentIndex + 1) % prismaClients.length;
   return client;
 }
 
 // For backward compatibility, export the first one as prisma
-export const prisma = prismaClients[0];
+export const prisma =
+  prismaClients[0] ??
+  (() => {
+    throw new Error('No read-only Prisma clients are configured.');
+  })();
 
 // Graceful shutdown
 process.on('beforeExit', async () => {

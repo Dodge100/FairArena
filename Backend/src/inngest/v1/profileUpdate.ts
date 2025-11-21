@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
+import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 // Validation schema (same as in profileController.ts)
@@ -15,10 +16,13 @@ const profileUpdateSchema = z.object({
   jobTitle: z.string().max(200).optional(),
   company: z.string().max(200).optional(),
   yearsOfExperience: z.number().int().min(0).max(100).optional(),
+  experiences: z.array(z.string().max(500)).max(20).optional(),
   education: z.array(z.string().max(500)).max(20).optional(),
   skills: z.array(z.string().max(100)).max(100).optional(),
   languages: z.array(z.string().max(50)).max(50).optional(),
   interests: z.array(z.string().max(100)).max(50).optional(),
+  certifications: z.array(z.string().max(200)).max(20).optional(),
+  awards: z.array(z.string().max(200)).max(20).optional(),
   githubUsername: z.string().max(100).optional(),
   twitterHandle: z.string().max(100).optional(),
   linkedInProfile: z.string().url().max(500).optional().or(z.literal('')),
@@ -74,10 +78,13 @@ export const updateProfileFunction = inngest.createFunction(
           jobTitle: validatedData.jobTitle,
           company: validatedData.company,
           yearsOfExperience: validatedData.yearsOfExperience,
+          experiences: validatedData.experiences,
           education: validatedData.education,
           skills: validatedData.skills,
           languages: validatedData.languages,
           interests: validatedData.interests,
+          certifications: validatedData.certifications,
+          awards: validatedData.awards,
           githubUsername: validatedData.githubUsername,
           twitterHandle: validatedData.twitterHandle,
           linkedInProfile: validatedData.linkedInProfile,
@@ -135,8 +142,9 @@ export const updateProfileFunction = inngest.createFunction(
       try {
         const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${userId}`;
         await redis.del(cacheKey);
+        logger.info(`Invalidated cache for userId: ${userId}`);
       } catch (error) {
-        console.warn('Cache invalidation error:', error);
+        logger.error('Cache invalidation error:', error);
         // Don't fail the update if cache invalidation fails
       }
     });

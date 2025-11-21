@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
+import logger from '../../utils/logger.js';
 
 // Validation schemas
 const profileIdSchema = z.string().min(1).max(255);
@@ -50,7 +51,7 @@ export const recordView = async (req: Request, res: Response) => {
       status: 'success',
     });
   } catch (error) {
-    console.error('Error recording profile view:', error);
+    logger.error('Error recording profile view:', error);
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -129,7 +130,7 @@ export const getProfileViews = async (req: Request, res: Response) => {
       data: viewsWithAvatars,
     });
   } catch (error) {
-    console.error('Error fetching profile views:', error);
+    logger.error('Error fetching profile views:', error);
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

@@ -244,29 +244,32 @@ export default function Support() {
 
         {/* Contact Methods */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div
+          {/* Email Support */}
+          <button
             onClick={() => handleContactMethod('email')}
             className={`
-                group relative p-6 rounded-2xl border transition-all duration-300
-                hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-                ${
-                  isDark
-                    ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                    : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-                }
-              `}
+              group relative p-6 rounded-2xl border transition-all duration-300
+              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
+              ${
+                isDark
+                  ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
+                  : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
+              }
+            `}
           >
             <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col items-center justify-center">
               <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-blue-500 to-cyan-500 group-hover:scale-110 transition-transform duration-300">
                 <Mail className="w-7 h-7 text-white" />
               </div>
               <h3
-                className={`text-xl font-bold mb-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
+                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
               >
                 Email Support
               </h3>
-              <p className={`text-sm mb-4 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+              <p
+                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              >
                 fairarena.contact@gmail.com
               </p>
               <div
@@ -278,31 +281,34 @@ export default function Support() {
                 </span>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div
+          {/* Live Chat */}
+          <button
             onClick={() => handleContactMethod('chat')}
             className={`
-                group relative p-6 rounded-2xl border transition-all duration-300
-                hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-                ${
-                  isDark
-                    ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                    : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-                }
-              `}
+              group relative p-6 rounded-2xl border transition-all duration-300
+              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
+              ${
+                isDark
+                  ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
+                  : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
+              }
+            `}
           >
             <div className="absolute inset-0 bg-linear-to-br from-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col items-center justify-center">
               <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-300">
                 <MessageSquare className="w-7 h-7 text-white" />
               </div>
               <h3
-                className={`text-xl font-bold mb-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
+                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
               >
                 Live Chat
               </h3>
-              <p className={`text-sm mb-4 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+              <p
+                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              >
                 Available 24/7
               </p>
               <div
@@ -314,31 +320,34 @@ export default function Support() {
                 </span>
               </div>
             </div>
-          </div>
+          </button>
 
-          <div
+          {/* Help Center */}
+          <button
             onClick={() => handleContactMethod('faq')}
             className={`
-                group relative p-6 rounded-2xl border transition-all duration-300
-                hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-                ${
-                  isDark
-                    ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                    : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-                }
-              `}
+              group relative p-6 rounded-2xl border transition-all duration-300
+              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
+              ${
+                isDark
+                  ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
+                  : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
+              }
+            `}
           >
             <div className="absolute inset-0 bg-linear-to-br from-orange-500 to-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col items-center justify-center">
               <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-orange-500 to-red-500 group-hover:scale-110 transition-transform duration-300">
                 <HelpCircle className="w-7 h-7 text-white" />
               </div>
               <h3
-                className={`text-xl font-bold mb-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
+                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
               >
                 Help Center
               </h3>
-              <p className={`text-sm mb-4 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+              <p
+                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              >
                 Browse our FAQ
               </p>
               <div
@@ -350,7 +359,7 @@ export default function Support() {
                 </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Main Form Section */}
@@ -387,11 +396,6 @@ export default function Support() {
 
           {/* Support Form */}
           <div className="lg:col-span-2" ref={formRef}>
-            className=
-            {`
-            p-1 rounded-2xl backdrop-blur-md border
-            ${isDark ? 'bg-[#ddef00]/10 border-neutral-800' : 'bg-neutral-100 border-neutral-300'}
-          `}
             <Card
               className={`
               border shadow-none

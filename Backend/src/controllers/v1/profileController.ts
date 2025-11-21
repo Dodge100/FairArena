@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import logger from '../../utils/logger.js';
 
 // Validation schemas
 const userIdSchema = z.string().min(1).max(255);
@@ -19,10 +20,13 @@ const profileUpdateSchema = z.object({
   jobTitle: z.string().max(200).optional(),
   company: z.string().max(200).optional(),
   yearsOfExperience: z.number().int().min(0).max(100).optional(),
+  experiences: z.array(z.string().max(500)).max(20).optional(),
   education: z.array(z.string().max(500)).max(20).optional(),
   skills: z.array(z.string().max(100)).max(100).optional(),
   languages: z.array(z.string().max(50)).max(50).optional(),
   interests: z.array(z.string().max(100)).max(50).optional(),
+  certifications: z.array(z.string().max(200)).max(20).optional(),
+  awards: z.array(z.string().max(200)).max(20).optional(),
   githubUsername: z.string().max(100).optional(),
   twitterHandle: z.string().max(100).optional(),
   linkedInProfile: z.union([z.string().url().max(500), z.literal('')]).optional(),
@@ -64,7 +68,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         return res.status(200).json(profileData);
       }
     } catch (cacheError) {
-      console.warn('Cache read error:', cacheError);
+      logger.warn('Cache read error:', cacheError);
       // Continue without cache
     }
 
@@ -86,10 +90,13 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         jobTitle: true,
         company: true,
         yearsOfExperience: true,
+        experiences: true,
         education: true,
         skills: true,
         languages: true,
         interests: true,
+        certifications: true,
+        awards: true,
         githubUsername: true,
         twitterHandle: true,
         linkedInProfile: true,
@@ -140,19 +147,22 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     // Remove privacy settings from response
     const { ...profileData } = profile;
 
-    // Fetch Clerk user data for avatar
+    // Fetch Clerk user data for avatar and email
     let avatarUrl = null;
+    let email = null;
     try {
       const clerkUser = await clerkClient.users.getUser(profile.userId);
       avatarUrl = clerkUser.imageUrl || null;
+      email = clerkUser.primaryEmailAddress?.emailAddress || null;
     } catch (error) {
-      console.error('Error fetching Clerk user:', error);
+      logger.error('Error fetching Clerk user:', error);
     }
 
     const responseData = {
       data: {
         ...profileData,
         avatarUrl,
+        email,
       },
       meta: {
         requiresConsent: shouldTrackViews && !hasConsent,
@@ -163,14 +173,14 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     // Cache the response for 1 hour (3600 seconds)
     try {
       await redis.setex(cacheKey, 3600, JSON.stringify(responseData));
-      console.log('Profile cached successfully for user:', userId);
+      logger.info('Profile cached successfully for user:', userId);
     } catch (cacheError) {
-      console.warn('Cache write error:', cacheError);
+      logger.warn('Cache write error:', cacheError);
     }
 
     return res.status(200).json(responseData);
   } catch (error) {
-    console.error('Error fetching public profile:', error);
+    logger.error('Error fetching public profile:', error);
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -210,7 +220,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
 
     return res.status(200).json({ data: profile });
   } catch (error) {
-    console.error('Error fetching own profile:', error);
+    logger.error('Error fetching own profile:', error);
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -258,7 +268,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       status: 'processing',
     });
   } catch (error) {
-    console.error('Error queuing profile update:', error);
+    logger.error('Error queuing profile update:', error);
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

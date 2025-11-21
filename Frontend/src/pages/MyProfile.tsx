@@ -18,10 +18,13 @@ interface ProfileData {
   jobTitle: string;
   company: string;
   yearsOfExperience: number | string;
+  experiences: string[];
   education: string[];
   skills: string[];
   languages: string[];
   interests: string[];
+  certifications: string[];
+  awards: string[];
   githubUsername: string;
   twitterHandle: string;
   linkedInProfile: string;
@@ -91,13 +94,17 @@ export default function MyProfile() {
       { name: 'jobTitle', value: profile.jobTitle },
       { name: 'company', value: profile.company },
       { name: 'yearsOfExperience', value: profile.yearsOfExperience },
+      { name: 'experiences', value: profile.experiences?.length > 0 },
       { name: 'education', value: profile.education?.length > 0 },
       { name: 'skills', value: profile.skills?.length > 0 },
       { name: 'languages', value: profile.languages?.length > 0 },
       { name: 'interests', value: profile.interests?.length > 0 },
+      { name: 'certifications', value: profile.certifications?.length > 0 },
+      { name: 'awards', value: profile.awards?.length > 0 },
       { name: 'githubUsername', value: profile.githubUsername },
       { name: 'twitterHandle', value: profile.twitterHandle },
       { name: 'linkedInProfile', value: profile.linkedInProfile },
+      { name: 'resumeUrl', value: profile.resumeUrl },
       { name: 'portfolioUrl', value: profile.portfolioUrl },
     ];
 

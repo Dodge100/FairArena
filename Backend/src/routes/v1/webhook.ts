@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import { Webhook } from 'svix';
 import { ENV } from '../../config/env.js';
 import { handleClerkWebhook } from '../../controllers/v1/webhookController.js';
+import logger from '../../utils/logger.js';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post(
       req.body = payload;
       next();
     } catch (error) {
-      console.error('Webhook signature verification failed:', error);
+      logger.error('Webhook signature verification failed:', error);
       return res.status(400).json({ error: 'Invalid webhook signature' });
     }
   },

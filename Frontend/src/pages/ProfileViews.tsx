@@ -23,6 +23,7 @@ export default function ProfileViews() {
   const [views, setViews] = useState<ProfileView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileMissing, setProfileMissing] = useState(false);
 
   useEffect(() => {
     const fetchProfileViews = async () => {
@@ -39,6 +40,18 @@ export default function ProfileViews() {
 
         if (!response.ok) {
           if (response.status === 404) {
+            try {
+              const errorData = await response.json();
+              // Check if the error indicates profile is missing
+              if (errorData.error?.message === 'Profile not found') {
+                setProfileMissing(true);
+                return;
+              }
+            } catch (parseError) {
+              // If we can't parse the error response, treat as generic 404
+              console.warn('Failed to parse 404 error response:', parseError);
+            }
+            // For other 404 errors, treat as no views (backward compatibility)
             setViews([]);
             return;
           }
@@ -121,12 +134,14 @@ export default function ProfileViews() {
               <div>
                 <CardTitle>Recent Viewers</CardTitle>
                 <CardDescription className="mt-1">
-                  {views.length === 0
-                    ? 'No one has viewed your profile yet'
-                    : 'People who viewed your profile'}
+                  {profileMissing
+                    ? 'Create a profile to start tracking views'
+                    : views.length === 0
+                      ? 'No one has viewed your profile yet'
+                      : 'People who viewed your profile'}
                 </CardDescription>
               </div>
-              {views.length > 0 && (
+              {!profileMissing && views.length > 0 && (
                 <div className="bg-primary/10 text-primary px-4 py-2 rounded-full font-semibold">
                   {views.length} {views.length === 1 ? 'view' : 'views'}
                 </div>
@@ -135,7 +150,23 @@ export default function ProfileViews() {
           </CardHeader>
           <CardContent>
             {error && <div className="text-center py-8 text-destructive">{error}</div>}
-            {!error && views.length === 0 && (
+            {profileMissing && (
+              <div className="text-center py-12">
+                <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">Profile Not Found</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  You need to create a profile before you can view profile statistics
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => navigate('/dashboard/profile')}
+                >
+                  Create Profile
+                </Button>
+              </div>
+            )}
+            {!error && !profileMissing && views.length === 0 && (
               <div className="text-center py-12">
                 <Eye className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-lg font-medium text-muted-foreground">No profile views yet</p>
@@ -151,7 +182,7 @@ export default function ProfileViews() {
                 </Button>
               </div>
             )}
-            {!error && views.length > 0 && (
+            {!error && !profileMissing && views.length > 0 && (
               <div className="space-y-3">
                 {views.map((view) => {
                   const initials = view.viewerName

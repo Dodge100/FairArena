@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 import { otpEmailTemplate } from '../templates/otp.js';
+import logger from '../../utils/logger.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
 
@@ -52,13 +53,13 @@ export async function sendEmail(
     });
 
     if (error) {
-      console.error('Error sending email:', error);
+      logger.error('Error sending email:', error);
       throw error;
     }
 
     return data;
   } catch (err) {
-    console.error('Failed to send email:', err);
+    logger.error('Failed to send email:', err);
     throw err;
   }
 }
