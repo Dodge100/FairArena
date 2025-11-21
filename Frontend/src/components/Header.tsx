@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useTheme } from '../hooks/useTheme';
+import { Spotlight } from './ui/Spotlight';
 
 function Header() {
   const { theme } = useTheme();
@@ -18,8 +19,10 @@ function Header() {
     <div
       data-scroll
       data-scroll-speed="1"
-      className="w-full sm:h-screen h-[80vh] flex flex-col items-center justify-center"
+      className="w-full sm:h-screen h-[80vh] flex relative flex-col items-center justify-center"
     >
+      <Spotlight className="top-0 left-20" fill="#DDFF00" />
+
       {/* Heading Wrapper */}
       <motion.h1
         initial={{ opacity: 0, y: 40 }}

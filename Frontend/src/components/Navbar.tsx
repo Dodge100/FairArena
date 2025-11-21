@@ -2,8 +2,8 @@ import { useUser } from '@clerk/clerk-react';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { useTheme } from '../hooks/useTheme';
+import { Link } from 'react-router-dom';
+import { useTheme } from '@/hooks/useTheme';
 import ThemeToggleButton from './ui/ThemeChange';
 export default function Navbar() {
   const { theme } = useTheme();
@@ -53,7 +53,7 @@ export default function Navbar() {
               isDark ? 'text-white/80' : 'text-black/70'
             }`}
           >
-            {['benefits', 'how-it-works', 'testimonials', 'about'].map((item, i) => (
+            {[ 'why-choose-us', "pricing",'about'].map((item, i) => (
               <motion.button
                 key={i}
                 initial={{ opacity: 0, y: -10 }}
@@ -188,7 +188,7 @@ export default function Navbar() {
                 }}
                 className="flex flex-col gap-6 text-lg"
               >
-                {['benefits', 'how-it-works', 'testimonials', 'about'].map((item, i) => (
+                {[ 'why-choose-us',"pricing", 'about'].map((item, i) => (
                   <motion.button
                     key={i}
                     variants={{
