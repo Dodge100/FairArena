@@ -114,7 +114,7 @@ export const getProfileViews = async (req: Request, res: Response) => {
             avatarUrl: clerkUser.imageUrl || null,
             viewedAt: view.createdAt.toISOString(),
           };
-        } catch (error) {
+        } catch {
           // If user not found in Clerk, return without avatar
           return {
             ...view,

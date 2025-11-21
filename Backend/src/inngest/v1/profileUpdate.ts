@@ -1,6 +1,7 @@
-import { prisma } from '../../config/database.js';
-import { inngest } from './client.js';
 import { z } from 'zod';
+import { prisma } from '../../config/database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
+import { inngest } from './client.js';
 
 // Validation schema (same as in profileController.ts)
 const profileUpdateSchema = z.object({
@@ -127,6 +128,17 @@ export const updateProfileFunction = inngest.createFunction(
           },
         },
       });
+    });
+
+    // Step 4: Invalidate profile cache
+    await step.run('invalidate-cache', async () => {
+      try {
+        const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${userId}`;
+        await redis.del(cacheKey);
+      } catch (error) {
+        console.warn('Cache invalidation error:', error);
+        // Don't fail the update if cache invalidation fails
+      }
     });
 
     return {

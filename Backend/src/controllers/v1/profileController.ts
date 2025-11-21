@@ -2,6 +2,7 @@ import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 
 // Validation schemas
@@ -47,6 +48,25 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
     const auth = req.auth();
     const viewerUserId = auth?.userId;
+
+    // Check cache first
+    const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${userId}`;
+    try {
+      const cachedProfile = await redis.get(cacheKey);
+      if (cachedProfile) {
+        let profileData;
+        if (typeof cachedProfile === 'string') {
+          profileData = JSON.parse(cachedProfile);
+        } else {
+          // If Redis returns an object (auto-parsed), use it directly
+          profileData = cachedProfile;
+        }
+        return res.status(200).json(profileData);
+      }
+    } catch (cacheError) {
+      console.warn('Cache read error:', cacheError);
+      // Continue without cache
+    }
 
     const readOnlyPrisma = getReadOnlyPrisma();
     const profile = await readOnlyPrisma.profile.findFirst({
@@ -129,7 +149,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       console.error('Error fetching Clerk user:', error);
     }
 
-    return res.status(200).json({
+    const responseData = {
       data: {
         ...profileData,
         avatarUrl,
@@ -138,7 +158,17 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         requiresConsent: shouldTrackViews && !hasConsent,
         isOwner: viewerUserId === profile.userId,
       },
-    });
+    };
+
+    // Cache the response for 1 hour (3600 seconds)
+    try {
+      await redis.setex(cacheKey, 3600, JSON.stringify(responseData));
+      console.log('Profile cached successfully for user:', userId);
+    } catch (cacheError) {
+      console.warn('Cache write error:', cacheError);
+    }
+
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Error fetching public profile:', error);
     return res.status(500).json({
