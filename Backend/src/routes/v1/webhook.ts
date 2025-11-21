@@ -7,7 +7,8 @@ const router = Router();
 
 // Clerk webhook endpoint
 router.post(
-  '/clerk',  express.raw({ type: 'application/json' }),
+  '/clerk',
+  express.raw({ type: 'application/json' }),
   async (req, res, next) => {
     try {
       const wh = new Webhook(ENV.CLERK_WEBHOOK_SECRET);
