@@ -23,15 +23,15 @@ const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Basic plan',
     price: { monthly: 10, annual: 8 },
-    description: 'Basic features for up to 10 users.',
+    description: 'Best for small hackathons.',
     featuresTitle: 'FEATURES',
     featuresSubtitle: 'Everything in our free plan plus…',
     features: [
-      'Access to basic features',
-      'Basic reporting and analytics',
-      'Up to 10 individual users',
-      '20GB individual data each user',
-      'Basic chat and email support',
+      'Up to 50 participants',
+      '5 judges',
+      'Manual scoring system',
+      'Basic leaderboard',
+      'Email support',
     ],
   },
   {
@@ -107,7 +107,7 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
 
       <p className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>${price}</p>
       <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>
-        per user per month
+        For Hackathon Organisers 
       </p>
 
       <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>

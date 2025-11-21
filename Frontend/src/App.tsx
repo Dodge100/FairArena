@@ -7,13 +7,15 @@ import About from './pages/About';
 import Benefits from './pages/Benefits';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
-import HowItWorks from './pages/HowItWorks';
+import HowItWorks from './pages/WhyChooseUsPage';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Testimonials from './pages/Testimonials';
 import Profile from './pages/Profile';
 import Support from './pages/Support';
 import { Protected } from '@/libs/protected';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
 function App() {
   return (
@@ -23,9 +25,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/benefits" element={<Benefits />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/why-choose-us" element={<HowItWorks />} />
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/about" element={<About />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />

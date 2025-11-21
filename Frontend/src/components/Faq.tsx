@@ -5,10 +5,13 @@ import { useTheme } from '../hooks/useTheme';
 
 function Faq() {
   const faqs = [
-    { q: 'What is Fair Arena?', a: '' },
-    { q: 'What it do for Hackathon Judges?', a: '' },
-    { q: 'What it do for Hackthon Members? ', a: '' },
-    { q: 'How Fair Arena Makes Best Decision?', a: '' },
+    { q: 'What is Fair Arena?', a: 'FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking.' },
+    { q: 'Who can use FairArena?', a: 'Organisers (paid), judges (free), and participants (free).' },
+    { q: 'What does the AI analyzer check? ', a: 'It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions.' },
+    { q: 'Can multiple judges score the same project?', a: 'Yes. Scores from all judges are combined automatically.' },
+    { q: 'Does FairArena support multi-round hackathons?', a: 'Yes — preliminary, semi-final, and final rounds.' },
+    { q: 'Is there a free version?', a: 'Judges and participants always use FairArena for free During Hackthon. Organisers choose a paid plan.' },
+    { q: 'Can organisers download reports?', a: 'Yes — detailed score reports, analytics, and winner sheets.' },
   ];
 
   const { theme } = useTheme();
@@ -51,7 +54,7 @@ function Faq() {
         transition={{ delay: 0.3, duration: 0.5 }}
         className={`text-4xl md:text-5xl font-bold tracking-tight ${textPrimary}`}
       >
-        Frequently Asked <span className="text-neutral-400">Questions</span>
+        Frequently Asked <span className="text-neutral-500">Questions</span>
       </motion.h1>
 
       {/* Subtext */}
