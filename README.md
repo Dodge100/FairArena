@@ -260,7 +260,7 @@ NODE_ENV="production"
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY="pk_..."
-VITE_API_URL="https://your-api.com"
+VITE_API_BASE_URL="https://your-api.com"
 ```
 
 ## 📊 Monitoring

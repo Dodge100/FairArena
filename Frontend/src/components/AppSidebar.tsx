@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/sidebar"
 import { useTheme } from "@/hooks/useTheme"
 import { useClerk, useUser } from "@clerk/clerk-react"
-import { BarChart3, Calendar, FileText, HelpCircle, Home, Inbox, LogOut, Search, Settings, Trophy, Users } from "lucide-react"
+import { BarChart3, Calendar, ChevronDown, ChevronRight, FileText, HelpCircle, Home, Inbox, LogOut, Search, Settings, Trophy, Users } from "lucide-react"
+import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 // Menu items
@@ -99,6 +100,7 @@ export function AppSidebar() {
     const { user } = useUser()
     const { signOut } = useClerk()
     const { theme, toggleTheme } = useTheme()
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
     const handleSignOut = async () => {
         await signOut()
@@ -193,25 +195,62 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
-                            onClick={() => navigate("/dashboard/profile")}
-                            className="h-auto py-2 cursor-pointer"
+                            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                            className="h-auto py-2 cursor-pointer w-full"
                             tooltip="Profile"
                         >
-                            <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6">
-                                <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
-                                <AvatarFallback className={`bg-primary text-primary-foreground ${theme === 'dark' ? 'bg-primary/20 text-primary-foreground' : ''}`}>
-                                    {getInitials()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col items-start overflow-hidden">
-                                <span className="text-sm font-medium truncate w-full">
-                                    {user?.firstName} {user?.lastName}
-                                </span>
-                                <span className="text-xs text-muted-foreground truncate w-full">
-                                    {user?.primaryEmailAddress?.emailAddress}
-                                </span>
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                    <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 shrink-0">
+                                        <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                                        <AvatarFallback className={`bg-primary text-primary-foreground ${theme === 'dark' ? 'bg-primary/20 text-primary-foreground' : ''}`}>
+                                            {getInitials()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col items-start overflow-hidden flex-1 min-w-0">
+                                        <span className="text-sm font-medium truncate w-full">
+                                            {user?.firstName} {user?.lastName}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground truncate w-full">
+                                            {user?.primaryEmailAddress?.emailAddress}
+                                        </span>
+                                    </div>
+                                </div>
+                                {profileMenuOpen ? (
+                                    <ChevronDown className="h-4 w-4 shrink-0" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4 shrink-0" />
+                                )}
                             </div>
                         </SidebarMenuButton>
+                        {profileMenuOpen && (
+                            <SidebarMenuSub>
+                                <SidebarMenuSubItem>
+                                    <SidebarMenuSubButton
+                                        onClick={() => {
+                                            navigate("/dashboard/profile")
+                                            setProfileMenuOpen(false)
+                                        }}
+                                        className="cursor-pointer"
+                                        isActive={location.pathname === "/dashboard/profile"}
+                                    >
+                                        <span>Main Profile</span>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                                <SidebarMenuSubItem>
+                                    <SidebarMenuSubButton
+                                        onClick={() => {
+                                            navigate("/dashboard/public-profile")
+                                            setProfileMenuOpen(false)
+                                        }}
+                                        className="cursor-pointer"
+                                        isActive={location.pathname === "/dashboard/public-profile"}
+                                    >
+                                        <span>My Profile</span>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                            </SidebarMenuSub>
+                        )}
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <div className="px-2 py-2">
