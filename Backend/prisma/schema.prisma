@@ -20,5 +20,110 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // Relations with cascading deletes
+  profile           Profile?
+  otps              Otp[]
+  Logs              Logs[]
+
   @@index([userId])
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  // Basic info
+  firstName         String?
+  lastName          String?
+  bio               String   @db.VarChar(500)
+  gender            gender?
+  dateOfBirth       DateTime?
+  phoneNumber       String?
+  location          String?
+  // Professional info
+  jobTitle          String?
+  company           String?
+  yearsOfExperience Int?
+  experiences       String[]
+  education         String[]  // List of degrees/qualifications
+  skills            String[]
+  languages         String[]  // Spoken languages
+  interests         String[]
+  certifications    String[]  // Professional certifications
+  awards            String[]  // Awards and honors
+  // Links
+  githubUsername    String?
+  twitterHandle     String?
+  linkedInProfile   String?
+  resumeUrl         String?
+  portfolioUrl      String?
+  // Privacy settings
+  isPublic          Boolean  @default(false)
+  requireAuth       Boolean  @default(false)  // Require authentication to view profile
+  trackViews        Boolean  @default(false)  // Track who views the profile
+  // Relations
+  profileViews      ProfileView[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+enum gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  email     String
+  otpHash   String   // Hashed OTP for security
+  sentFor   String   // Purpose: 'account-settings', 'password-reset', etc.
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+
+  @@index([email])
+  @@index([userId])
+  @@index([sentFor])
+}
+
+model Logs {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  action      String   // 'account-settings-access', 'profile-update', etc.
+  level       level
+  metadata    Json?    // Additional context (e.g., what was accessed)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+enum level {
+  INFO
+  WARN
+  CRITICAL
+}
+
+model ProfileView {
+  id              String   @id @default(cuid())
+  profileId       String
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  viewerUserId    String   // Clerk user ID (required when tracking is on)
+  viewerEmail     String   // Email of the viewer (from Clerk)
+  viewerName      String?  // Name of the viewer (from Clerk)
+  createdAt       DateTime @default(now())
+
+  @@unique([profileId, viewerUserId])  // One record per profile-viewer pair
+  @@index([profileId])
+  @@index([viewerUserId])
+  @@index([viewerEmail])
+  @@index([createdAt])
 }

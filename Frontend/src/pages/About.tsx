@@ -21,7 +21,7 @@ function About() {
       <h1
         className={`
         text-center mt-20 text-neutral-400 text-sm sm:text-base md:text-lg gap-2
-        flex flex-col px-4 md:px-0 max-w-[90%] sm:max-w-[80%] md:max-w-[60%] 
+        flex flex-col px-4 md:px-0 max-w-[90%] sm:max-w-[80%] md:max-w-[60%]
         lg:max-w-[50%] xl:max-w-[60%] mx-auto
       `}
       >
@@ -53,7 +53,7 @@ function About() {
         </section>
 
         {/* WHO WE ARE */}
-        
+
         {/* MISSION */}
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
@@ -99,25 +99,25 @@ function About() {
 
           <ol className="list-decimal ml-6 space-y-4">
             <li>
-              <strong>All-in-One Hackathon Operating System</strong>  
+              <strong>All-in-One Hackathon Operating System</strong>
               <br />
               Manage, score, analyse, and finalise winners — all in one dashboard.
             </li>
 
             <li>
-              <strong>AI-Powered Project Analysis</strong>  
+              <strong>AI-Powered Project Analysis</strong>
               <br />
               Performance, SEO, UI/UX, accessibility, bugs, uniqueness — analysed instantly.
             </li>
 
             <li>
-              <strong>Transparent Real-Time Leaderboards</strong>  
+              <strong>Transparent Real-Time Leaderboards</strong>
               <br />
               Participants always know where they stand.
             </li>
 
             <li>
-              <strong>Zero Manual Error Workflow</strong>  
+              <strong>Zero Manual Error Workflow</strong>
               <br />
               No mismatched scores. No spreadsheet chaos.
             </li>
@@ -196,7 +196,7 @@ function About() {
           </p>
 
           <p className="mt-4">
-            <strong>Our promise:</strong>  
+            <strong>Our promise:</strong>
             Fair decisions. Clear scoring. No confusion. Pure innovation.
           </p>
         </section>

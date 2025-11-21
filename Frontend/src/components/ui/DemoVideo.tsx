@@ -62,7 +62,7 @@ function DemoVideo() {
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
-        h-auto md:-mt-15
+        h-auto mt-10 md:mt-15
         md:mb-20 mb-40
         p-2
         bg-linear-to-b from-[#DDFF00] ${isDark ? 'to-neutral-950' : 'to-neutral-400'}
