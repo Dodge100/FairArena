@@ -1,24 +1,14 @@
 import express, { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Webhook } from 'svix';
 import { ENV } from '../../config/env.js';
 import { handleClerkWebhook } from '../../controllers/v1/webhookController.js';
+import logger from '../../utils/logger.js';
 
 const router = Router();
-
-// Rate limiter for webhook endpoints
-const webhookLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many webhook requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Clerk webhook endpoint
 router.post(
   '/clerk',
-  webhookLimiter,
   express.raw({ type: 'application/json' }),
   async (req, res, next) => {
     try {
@@ -33,7 +23,7 @@ router.post(
       req.body = payload;
       next();
     } catch (error) {
-      console.error('Webhook signature verification failed:', error);
+      logger.error('Webhook signature verification failed:', error);
       return res.status(400).json({ error: 'Invalid webhook signature' });
     }
   },

@@ -1,8 +1,8 @@
-import LocomotiveScroll from "locomotive-scroll";
-import "locomotive-scroll/dist/locomotive-scroll.css";
-import { useEffect, useRef } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import LocomotiveScroll from 'locomotive-scroll';
+import 'locomotive-scroll/dist/locomotive-scroll.css';
+import { useEffect, useRef } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 export default function PublicLayout() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -18,21 +18,21 @@ export default function PublicLayout() {
       smartphone: { smooth: true },
       tablet: { smooth: true, breakpoint: 768 },
       multiplier: 1,
-      class: "is-reveal",
+      class: 'is-reveal',
     });
 
     const onLoad = () => scrollInstance.current?.update();
     const onResize = () => scrollInstance.current?.update();
 
-    window.addEventListener("load", onLoad);
-    window.addEventListener("resize", onResize);
+    window.addEventListener('load', onLoad);
+    window.addEventListener('resize', onResize);
 
     const delayedUpdate = setTimeout(() => scrollInstance.current?.update(), 500);
 
     return () => {
       clearTimeout(delayedUpdate);
-      window.removeEventListener("load", onLoad);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener('load', onLoad);
+      window.removeEventListener('resize', onResize);
       scrollInstance.current?.destroy();
       scrollInstance.current = null;
     };

@@ -11,12 +11,15 @@ import { inngest } from './inngest/v1/client.js';
 import {
   createLog,
   deleteUser,
+  recordProfileView,
   sendOtpForAccountSettings,
   syncUser,
+  updateProfileFunction,
   updateUser,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
+import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 
 const app = express();
@@ -51,6 +54,9 @@ app.use(cookieParser());
 // Account settings routes
 app.use('/api/v1/account-settings', accountSettingsRouter);
 
+// Profile routes
+app.use('/api/v1/profile', profileRouter);
+
 // Prometheus metrics setup
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ register: client.register });
@@ -69,6 +75,8 @@ app.use(
       deleteUser,
       sendOtpForAccountSettings,
       createLog,
+      updateProfileFunction,
+      recordProfileView,
     ],
   }),
 );

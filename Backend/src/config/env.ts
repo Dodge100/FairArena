@@ -13,6 +13,8 @@ const requiredEnvVars = [
   'JWT_SECRET',
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
+  'DATABASE_URL_READ_ONLY_1',
+  'DATABASE_URL_READ_ONLY_2',
 ];
 
 for (const envVar of requiredEnvVars) {
@@ -29,6 +31,8 @@ export const ENV = {
   CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET!,
   ARCJET_KEY: process.env.ARCJET_KEY,
   DATABASE_URL: process.env.DATABASE_URL!,
+  DATABASE_URL_READ_ONLY_1: process.env.DATABASE_URL_READ_ONLY_1!,
+  DATABASE_URL_READ_ONLY_2: process.env.DATABASE_URL_READ_ONLY_2!,
   INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY!,
   INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY!,
   RESEND_API_KEY: process.env.RESEND_API_KEY!,

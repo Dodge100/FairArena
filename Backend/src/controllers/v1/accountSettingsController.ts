@@ -7,6 +7,7 @@ import { ENV } from '../../config/env.js';
 import { RATE_LIMIT_CONFIG, redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 // Constants for OTP verification
 const TOKEN_EXPIRY_MINUTES = 10;
@@ -136,7 +137,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     }
 
     // Find the most recent non-verified OTP for this user and purpose
-    const otpRecord = await prisma.otp.findFirst({
+    const otpRecord = await getReadOnlyPrisma().otp.findFirst({
       where: {
         userId: auth.userId,
         sentFor: 'account-settings',
@@ -302,7 +303,7 @@ export const getLogs = async (req: Request, res: Response) => {
         },
       });
 
-      const logs = await prisma.logs.findMany({
+      const logs = await getReadOnlyPrisma().logs.findMany({
         where: {
           userId: decoded.userId,
         },

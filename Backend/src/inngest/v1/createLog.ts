@@ -36,6 +36,7 @@ export const createLog = inngest.createFunction(
             userId,
             action,
             level,
+            // @ts-ignore
             metadata: metadata || {},
           },
         });
