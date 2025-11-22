@@ -1,54 +1,52 @@
-import { LegalList, LegalSection } from "@/components/legal/LegalSection";
-import { useTheme } from "@/hooks/useTheme";
-import { useEffect, useState } from "react";
-
-
+import { LegalList, LegalSection } from '@/components/legal/LegalSection';
+import { useTheme } from '@/hooks/useTheme';
+import { useEffect, useState } from 'react';
 
 /* ----------------------------------------------------
    DATA ARRAYS
 ----------------------------------------------------- */
 
 const definitionsList = [
-  "“Organiser” — the entity that creates a hackathon and pays for the plan.",
-  "“Judge” — a person invited to evaluate submissions.",
-  "“Participant” — a user submitting projects.",
-  "“Service” — the FairArena platform and its features.",
+  '“Organiser” — the entity that creates a hackathon and pays for the plan.',
+  '“Judge” — a person invited to evaluate submissions.',
+  '“Participant” — a user submitting projects.',
+  '“Service” — the FairArena platform and its features.',
 ];
 
 const useOfServiceList = [
-  "Organisers must create an account to host a hackathon.",
-  "Judges and participants can join for free through organiser invitations.",
-  "Organisers are responsible for verifying the legitimacy of participants and judges.",
-  "You must not misuse the platform (e.g., hacking, scraping, sending spam).",
+  'Organisers must create an account to host a hackathon.',
+  'Judges and participants can join for free through organiser invitations.',
+  'Organisers are responsible for verifying the legitimacy of participants and judges.',
+  'You must not misuse the platform (e.g., hacking, scraping, sending spam).',
 ];
 
 const paymentsList = [
-  "Organisers must purchase a plan to host a hackathon.",
-  "Payments are processed via secure third-party payment gateways.",
-  "Prices may change with prior notice.",
+  'Organisers must purchase a plan to host a hackathon.',
+  'Payments are processed via secure third-party payment gateways.',
+  'Prices may change with prior notice.',
 ];
 
 const aiAnalysisText =
-  "FairArena provides AI-generated insights, including performance, SEO, accessibility, and uniqueness checks. These results are advisory only, and organisers retain full control over final scoring decisions.";
+  'FairArena provides AI-generated insights, including performance, SEO, accessibility, and uniqueness checks. These results are advisory only, and organisers retain full control over final scoring decisions.';
 
 const intellectualPropertyList = [
-  "FairArena owns all platform designs, algorithms, and software.",
-  "Users retain ownership of their submissions.",
-  "By submitting a project link, you grant FairArena permission to analyse it.",
+  'FairArena owns all platform designs, algorithms, and software.',
+  'Users retain ownership of their submissions.',
+  'By submitting a project link, you grant FairArena permission to analyse it.',
 ];
 
 const liabilityList = [
-  "Errors caused by third-party tools",
-  "Network outages",
-  "Incorrect submissions or scoring mistakes made by organisers or judges",
-  "Any financial, reputational, or data loss",
+  'Errors caused by third-party tools',
+  'Network outages',
+  'Incorrect submissions or scoring mistakes made by organisers or judges',
+  'Any financial, reputational, or data loss',
 ];
 
 const suspensionList = [
-  "Violate these Terms",
-  "Abuse the platform",
-  "Attempt security breaches",
-  "Provide fraudulent payment information",
+  'Violate these Terms',
+  'Abuse the platform',
+  'Attempt security breaches',
+  'Provide fraudulent payment information',
 ];
 
 /* ----------------------------------------------------
@@ -60,18 +58,17 @@ function TermsAndConditions() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   return (
     <div
       className={`
         w-full min-h-screen mt-15 py-20 px-6 flex justify-center
-        ${isDark ? " text-neutral-200" : " text-neutral-800"}
+        ${isDark ? ' text-neutral-200' : ' text-neutral-800'}
       `}
     >
       <div className="max-w-4xl w-full leading-relaxed">
-
         {/* HEADER */}
         <h1
           className={`
@@ -85,15 +82,15 @@ function TermsAndConditions() {
         <p
           className={`
             text-center mb-12 text-sm
-            ${isDark ? "text-neutral-400" : "text-neutral-600"}
+            ${isDark ? 'text-neutral-400' : 'text-neutral-600'}
           `}
         >
           Last Updated: November 2025
         </p>
 
         <p className="mb-10">
-          These Terms & Conditions govern your use of FairArena.
-          By using our platform, you agree to these terms.
+          These Terms & Conditions govern your use of FairArena. By using our platform, you agree to
+          these terms.
         </p>
 
         {/* ------------ SECTION 1 ------------ */}
@@ -139,8 +136,8 @@ function TermsAndConditions() {
         {/* ------------ SECTION 8 ------------ */}
         <LegalSection title="8. Termination" isDark={isDark}>
           <p>
-            Organisers may stop using FairArena anytime.
-            Data from completed hackathons may be retained for compliance and analytics.
+            Organisers may stop using FairArena anytime. Data from completed hackathons may be
+            retained for compliance and analytics.
           </p>
         </LegalSection>
 
@@ -152,11 +149,10 @@ function TermsAndConditions() {
         {/* ------------ SECTION 10 ------------ */}
         <LegalSection title="10. Contact" isDark={isDark}>
           <p>
-            For questions, contact us at:{" "}
+            For questions, contact us at:{' '}
             <span className="text-[#909d00]">fairarena.contact@gmail.com</span>
           </p>
         </LegalSection>
-
       </div>
     </div>
   );

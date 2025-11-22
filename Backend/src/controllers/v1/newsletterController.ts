@@ -25,7 +25,7 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
 
     return res.status(200).json({
       success: true,
-      message: 'Newsletter subscription request received! You will receive a confirmation soon.',
+      message: 'Newsletter subscription request received!.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

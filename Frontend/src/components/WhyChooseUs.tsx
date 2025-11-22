@@ -1,48 +1,46 @@
-import type { LucideIcon } from "lucide-react";
-import { BarChart3, Lightbulb, Users } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useTheme } from "../hooks/useTheme";
-import { Link } from "react-router";
-import BenefitCard from "./BenefitCard"; // ⬅️ IMPORTED
+import { BarChart3, Lightbulb, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
+import { Link } from 'react-router';
+import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
 
 function WhyChooseUs() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   // DATA ARRAY
   const benefits = [
     {
       id: 1,
-      title: "AI-Powered Website Analysis",
-      desc: "Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.",
+      title: 'AI-Powered Website Analysis',
+      desc: 'Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.',
       icon: Lightbulb,
     },
     {
       id: 2,
-      title: "Fair & Transparent Scoring",
-      desc: "Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.",
+      title: 'Fair & Transparent Scoring',
+      desc: 'Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.',
       icon: Users,
     },
     {
       id: 3,
-      title: "One Dashboard for Entire Hackathon",
-      desc: "Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.",
+      title: 'One Dashboard for Entire Hackathon',
+      desc: 'Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.',
       icon: BarChart3,
     },
   ];
 
   return (
     <div className="w-full h-auto pb-20 flex flex-col items-center justify-start">
-      
       {/* Heading */}
       <h2
         className={`
           text-xl md:text-sm font-semibold px-6 py-1 h-15 rounded-full flex items-center overflow-hidden
-          ${isDark ? "bg-neutral-900 text-[#ddef00]" : "bg-neutral-100 text-neutral-800"}
+          ${isDark ? 'bg-neutral-900 text-[#ddef00]' : 'bg-neutral-100 text-neutral-800'}
         `}
       >
         Why Choose
@@ -58,7 +56,7 @@ function WhyChooseUs() {
         className={`
           mt-10 text-center font-semibold
           text-4xl md:text-5xl
-          ${isDark ? "text-neutral-100" : "text-neutral-800"}
+          ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
         `}
       >
         Key Benefits Of Using <span className="text-neutral-500">Fair Arena</span>

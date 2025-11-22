@@ -5,13 +5,34 @@ import { useTheme } from '../hooks/useTheme';
 
 function Faq() {
   const faqs = [
-    { q: 'What is Fair Arena?', a: 'FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking.' },
-    { q: 'Who can use FairArena?', a: 'Organisers (paid), judges (free), and participants (free).' },
-    { q: 'What does the AI analyzer check? ', a: 'It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions.' },
-    { q: 'Can multiple judges score the same project?', a: 'Yes. Scores from all judges are combined automatically.' },
-    { q: 'Does FairArena support multi-round hackathons?', a: 'Yes — preliminary, semi-final, and final rounds.' },
-    { q: 'Is there a free version?', a: 'Judges and participants always use FairArena for free During Hackathons. Organisers choose a paid plan.' },
-    { q: 'Can organisers download reports?', a: 'Yes — detailed score reports, analytics, and winner sheets.' },
+    {
+      q: 'What is Fair Arena?',
+      a: 'FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking.',
+    },
+    {
+      q: 'Who can use FairArena?',
+      a: 'Organisers (paid), judges (free), and participants (free).',
+    },
+    {
+      q: 'What does the AI analyzer check? ',
+      a: 'It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions.',
+    },
+    {
+      q: 'Can multiple judges score the same project?',
+      a: 'Yes. Scores from all judges are combined automatically.',
+    },
+    {
+      q: 'Does FairArena support multi-round hackathons?',
+      a: 'Yes — preliminary, semi-final, and final rounds.',
+    },
+    {
+      q: 'Is there a free version?',
+      a: 'Judges and participants always use FairArena for free During Hackathons. Organisers choose a paid plan.',
+    },
+    {
+      q: 'Can organisers download reports?',
+      a: 'Yes — detailed score reports, analytics, and winner sheets.',
+    },
   ];
 
   const { theme } = useTheme();

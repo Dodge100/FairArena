@@ -1,5 +1,5 @@
-import BenefitCard from "@/components/BenefitCard";
-import { useTheme } from "@/hooks/useTheme";
+import BenefitCard from '@/components/BenefitCard';
+import { useTheme } from '@/hooks/useTheme';
 import {
   Lightbulb,
   Users,
@@ -7,53 +7,53 @@ import {
   BarChart3,
   LineChart,
   CheckCircle2,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 function HowItWorks() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   const benefits = [
     {
       id: 1,
-      title: "AI-Powered Website Analysis",
-      desc: "Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.",
+      title: 'AI-Powered Website Analysis',
+      desc: 'Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.',
       icon: Lightbulb,
     },
     {
       id: 2,
-      title: "Fair & Transparent Scoring",
-      desc: "Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.",
+      title: 'Fair & Transparent Scoring',
+      desc: 'Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.',
       icon: Users,
     },
     {
       id: 3,
-      title: "One Dashboard for Entire Hackathon",
-      desc: "Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.",
+      title: 'One Dashboard for Entire Hackathon',
+      desc: 'Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.',
       icon: LayoutDashboard,
     },
     {
       id: 4,
-      title: "Real-Time Leaderboards",
-      desc: "Participants can track their ranking live. Organisers can highlight top performers instantly.",
+      title: 'Real-Time Leaderboards',
+      desc: 'Participants can track their ranking live. Organisers can highlight top performers instantly.',
       icon: BarChart3,
     },
     {
       id: 5,
-      title: "Automated Reports & Analytics",
-      desc: "Get detailed performance insights, scoring patterns, judge analytics, and final score breakdown.",
+      title: 'Automated Reports & Analytics',
+      desc: 'Get detailed performance insights, scoring patterns, judge analytics, and final score breakdown.',
       icon: LineChart,
     },
     {
       id: 6,
-      title: "Zero Confusion, Zero Errors",
-      desc: "No more spreadsheets. No more manual calculations. FairArena automates everything.",
+      title: 'Zero Confusion, Zero Errors',
+      desc: 'No more spreadsheets. No more manual calculations. FairArena automates everything.',
       icon: CheckCircle2,
     },
   ];

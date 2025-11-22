@@ -17,12 +17,14 @@ import {
   syncUser,
   updateProfileFunction,
   updateUser,
+  inviteToPlatform,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
+import platformInviteRouter from './routes/v1/platformInvite.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -59,6 +61,9 @@ app.use('/api/v1/account-settings', accountSettingsRouter);
 // Newsletter routes
 app.use('/api/v1/newsletter', newsletterRouter);
 
+// Platform invite routes
+app.use('/api/v1/platform', platformInviteRouter);
+
 // Profile routes
 app.use('/api/v1/profile', profileRouter);
 
@@ -83,6 +88,7 @@ app.use(
       updateProfileFunction,
       recordProfileView,
       subscribeToNewsletter,
+      inviteToPlatform,
     ],
   }),
 );

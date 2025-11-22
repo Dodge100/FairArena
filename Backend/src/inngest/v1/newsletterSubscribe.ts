@@ -32,7 +32,7 @@ function getGoogleSheetsClient() {
 }
 
 export const subscribeToNewsletter = inngest.createFunction(
-  { id: 'newsletter-subscribe' },
+  { id: 'newsletter-subscribe', retries: 0 },
   { event: 'newsletter.subscribe' },
   async ({ event, step }) => {
     const { email } = event.data;

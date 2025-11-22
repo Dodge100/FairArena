@@ -1,20 +1,20 @@
-import { useTheme } from "@/hooks/useTheme";
-import { useEffect, useState } from "react";
-import { Rocket, Target, Star, Zap, Handshake, Brain, Heart, ArrowRight } from "lucide-react";
+import { useTheme } from '@/hooks/useTheme';
+import { useEffect, useState } from 'react';
+import { Rocket, Target, Star, Zap, Handshake, Brain, Heart, ArrowRight } from 'lucide-react';
 
 function About() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   return (
     <div
       className={`
       w-full min-h-screen flex flex-col items-center pt-20 pb-20 px-6
-      ${isDark ? "bg-[#0b0b0b] text-neutral-300" : "bg-white text-neutral-800"}
+      ${isDark ? 'bg-[#0b0b0b] text-neutral-300' : 'bg-white text-neutral-800'}
     `}
     >
       {/* Heading */}
@@ -32,7 +32,6 @@ function About() {
 
       {/* Main Content */}
       <div className="max-w-4xl w-full mt-10 space-y-10 leading-relaxed text-lg">
-
         {/* INTRO */}
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
@@ -42,13 +41,16 @@ function About() {
           <p>
             FairArena was created with a simple mission:
             <br />
-            <span className="font-semibold">to make hackathons fair, data-driven, and effortless for everyone.</span>
+            <span className="font-semibold">
+              to make hackathons fair, data-driven, and effortless for everyone.
+            </span>
           </p>
           <p className="mt-4">
-            No more Excel sheets. No more confused judges. No more participants waiting hours for results.
+            No more Excel sheets. No more confused judges. No more participants waiting hours for
+            results.
             <br />
-            We built a platform where organisers, judges, and participants experience hackathons the way
-            they’re meant to be — <strong>fast, transparent, and exciting.</strong>
+            We built a platform where organisers, judges, and participants experience hackathons the
+            way they’re meant to be — <strong>fast, transparent, and exciting.</strong>
           </p>
         </section>
 
@@ -60,12 +62,10 @@ function About() {
             <Target className="w-6 h-6" />
             Our Mission
           </h2>
-          <p>
-            To bring fairness, accuracy, and automation to every hackathon in the world.
-          </p>
+          <p>To bring fairness, accuracy, and automation to every hackathon in the world.</p>
           <p className="mt-3">
-            We believe every team deserves unbiased scoring, every judge deserves a simple workflow, and
-            every organiser deserves a stress-free dashboard.
+            We believe every team deserves unbiased scoring, every judge deserves a simple workflow,
+            and every organiser deserves a stress-free dashboard.
           </p>
         </section>
 
@@ -76,8 +76,8 @@ function About() {
             Our Vision
           </h2>
           <p>
-            To become the world’s most trusted hackathon platform — combining AI, transparency,
-            and technology to create unforgettable innovation events.
+            To become the world’s most trusted hackathon platform — combining AI, transparency, and
+            technology to create unforgettable innovation events.
           </p>
 
           <p className="mt-3">We imagine a future where:</p>
@@ -167,9 +167,7 @@ function About() {
             <li>Secure data systems</li>
           </ul>
 
-          <p className="mt-4">
-            Our AI models analyse projects for:
-          </p>
+          <p className="mt-4">Our AI models analyse projects for:</p>
 
           <ul className="list-disc ml-6 mt-2 space-y-2">
             <li>Performance</li>
@@ -190,9 +188,8 @@ function About() {
           </h2>
 
           <p>
-            FairArena exists because we love hackathons.
-            We've participated in them, organised them, and judged them.
-            We know what makes a great event — and what ruins one.
+            FairArena exists because we love hackathons. We've participated in them, organised them,
+            and judged them. We know what makes a great event — and what ruins one.
           </p>
 
           <p className="mt-4">
@@ -209,8 +206,8 @@ function About() {
           </h2>
 
           <p>
-            FairArena is more than a tool — it’s a movement to make innovation
-            accessible, transparent, and thrilling.
+            FairArena is more than a tool — it’s a movement to make innovation accessible,
+            transparent, and thrilling.
           </p>
 
           <ul className="list-none ml-0 mt-3 space-y-2">
@@ -224,8 +221,7 @@ function About() {
             </li>
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              Contact Us:{" "}
-              <span className="text-[#ddef00]">fairarena.contact@gmail.com</span>
+              Contact Us: <span className="text-[#ddef00]">fairarena.contact@gmail.com</span>
             </li>
           </ul>
         </section>
