@@ -53,7 +53,7 @@ export default function Navbar() {
               isDark ? 'text-white/80' : 'text-black/70'
             }`}
           >
-            {[ 'why-choose-us', "pricing",'about'].map((item, i) => (
+            {['why-choose-us', 'pricing', 'about'].map((item, i) => (
               <motion.button
                 key={i}
                 initial={{ opacity: 0, y: -10 }}
@@ -188,7 +188,7 @@ export default function Navbar() {
                 }}
                 className="flex flex-col gap-6 text-lg"
               >
-                {[ 'why-choose-us',"pricing", 'about'].map((item, i) => (
+                {['why-choose-us', 'pricing', 'about'].map((item, i) => (
                   <motion.button
                     key={i}
                     variants={{

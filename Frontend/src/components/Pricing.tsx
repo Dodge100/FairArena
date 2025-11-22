@@ -107,7 +107,7 @@ function PricingCard({ plan, billing, isDark }: PricingCardProps) {
 
       <p className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>${price}</p>
       <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>
-        For Hackathon Organisers 
+        For Hackathon Organisers
       </p>
 
       <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'} text-sm mb-6`}>

@@ -5,19 +5,15 @@ import Faq from '../components/Faq';
 import Pricing from '../components/Pricing';
 import Newsletter from '@/components/NewsLetter';
 
-
 function Home() {
-
   return (
     <>
-      
       <Header />
       <DemoVideo />
       <WhyChooseUs />
       <Pricing />
       <Faq />
-      <Newsletter/>
-      
+      <Newsletter />
     </>
   );
 }

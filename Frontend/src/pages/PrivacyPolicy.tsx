@@ -1,8 +1,6 @@
-import { LegalList, LegalSection } from "@/components/legal/LegalSection";
-import { useTheme } from "@/hooks/useTheme";
-import { useEffect, useState } from "react";
-
-
+import { LegalList, LegalSection } from '@/components/legal/LegalSection';
+import { useTheme } from '@/hooks/useTheme';
+import { useEffect, useState } from 'react';
 
 /* ---------------------------------------------
    MAIN PAGE: Privacy Policy
@@ -12,18 +10,17 @@ function PrivacyPolicy() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(theme === "dark");
+    setIsDark(theme === 'dark');
   }, [theme]);
 
   return (
     <div
       className={`
         w-full min-h-screen mt-15 py-20 px-6 flex justify-center
-        ${isDark ? " text-neutral-200" : " text-neutral-800"}
+        ${isDark ? ' text-neutral-200' : ' text-neutral-800'}
       `}
     >
       <div className="max-w-4xl w-full leading-relaxed">
-
         {/* Heading */}
         <h1
           className={`
@@ -38,16 +35,16 @@ function PrivacyPolicy() {
         <p
           className={`
             text-center mb-12 text-sm
-            ${isDark ? "text-neutral-400" : "text-neutral-600"}
+            ${isDark ? 'text-neutral-400' : 'text-neutral-600'}
           `}
         >
           Last Updated: November 2025
         </p>
 
         <p className="mb-10">
-          FairArena (“we”, “our”, “us”) provides an AI-powered hackathon management
-          platform used by organisers, judges, and participants. This Privacy Policy
-          explains how we collect, use, and protect your data.
+          FairArena (“we”, “our”, “us”) provides an AI-powered hackathon management platform used by
+          organisers, judges, and participants. This Privacy Policy explains how we collect, use,
+          and protect your data.
         </p>
 
         {/* --------------------------------------------- */}
@@ -58,10 +55,10 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Name and email",
-              "Organisation details",
-              "Payment information (processed securely via third-party gateways)",
-              "Hackathon details (rounds, categories, rubrics)",
+              'Name and email',
+              'Organisation details',
+              'Payment information (processed securely via third-party gateways)',
+              'Hackathon details (rounds, categories, rubrics)',
             ]}
           />
 
@@ -69,29 +66,25 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Name, email, or profile details",
-              "Submitted project link / website URL",
-              "Team information",
+              'Name, email, or profile details',
+              'Submitted project link / website URL',
+              'Team information',
             ]}
           />
 
           <h3 className="text-xl font-semibold mb-2">1.3 Information provided by judges</h3>
           <LegalList
             isDark={isDark}
-            items={[
-              "Name, email",
-              "Score inputs",
-              "Comments/feedback on submissions",
-            ]}
+            items={['Name, email', 'Score inputs', 'Comments/feedback on submissions']}
           />
 
           <h3 className="text-xl font-semibold mb-2">1.4 Automatically collected information</h3>
           <LegalList
             isDark={isDark}
             items={[
-              "Browser type, device, IP address",
-              "Usage logs and actions on the dashboard",
-              "AI website analysis data (SEO, performance, accessibility, etc.)",
+              'Browser type, device, IP address',
+              'Usage logs and actions on the dashboard',
+              'AI website analysis data (SEO, performance, accessibility, etc.)',
             ]}
           />
 
@@ -107,13 +100,13 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Manage and host hackathons",
-              "Allow judges to score submissions",
-              "Display real-time leaderboards",
-              "Run AI-based website analysis",
-              "Generate insights, reports, and analytics",
-              "Provide customer support",
-              "Improve platform performance and security",
+              'Manage and host hackathons',
+              'Allow judges to score submissions',
+              'Display real-time leaderboards',
+              'Run AI-based website analysis',
+              'Generate insights, reports, and analytics',
+              'Provide customer support',
+              'Improve platform performance and security',
             ]}
           />
           <p>We never sell your data to third parties.</p>
@@ -126,9 +119,9 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Payment gateways for billing",
-              "AI analysis engines used to evaluate project URLs",
-              "Cloud hosting providers (for secure storage)",
+              'Payment gateways for billing',
+              'AI analysis engines used to evaluate project URLs',
+              'Cloud hosting providers (for secure storage)',
             ]}
           />
           <p>We do not share data with advertisers.</p>
@@ -141,10 +134,10 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Encrypted data transmission",
-              "Secured databases",
-              "Access-controlled dashboards",
-              "Regular audits",
+              'Encrypted data transmission',
+              'Secured databases',
+              'Access-controlled dashboards',
+              'Regular audits',
             ]}
           />
           <p>
@@ -160,14 +153,13 @@ function PrivacyPolicy() {
           <LegalList
             isDark={isDark}
             items={[
-              "Access to your stored data",
-              "Correction of inaccurate information",
-              "Deletion of your data (except required for legal reasons)",
+              'Access to your stored data',
+              'Correction of inaccurate information',
+              'Deletion of your data (except required for legal reasons)',
             ]}
           />
           <p>
-            Contact us at{" "}
-            <span className="text-[#879400]">fairarena.contact@gmail.com</span>.
+            Contact us at <span className="text-[#879400]">fairarena.contact@gmail.com</span>.
           </p>
         </LegalSection>
 
@@ -193,7 +185,7 @@ function PrivacyPolicy() {
         {/* --------------------------------------------- */}
         <LegalSection title="8. Contact Us" isDark={isDark}>
           <p>
-            For questions or concerns, email:{" "}
+            For questions or concerns, email:{' '}
             <span className="text-[#879400]">fairarena.contact@gmail.com</span>
           </p>
         </LegalSection>
