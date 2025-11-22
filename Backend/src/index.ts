@@ -56,6 +56,16 @@ app.use(express.json());
 // Cookie parser middleware
 app.use(cookieParser());
 
+// Prometheus metrics setup
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ register: client.register });
+
+// Arcjet middleware for security
+app.use(arcjetMiddleware);
+
+// Profile routes
+app.use('/api/v1/profile', profileRouter);
+
 // Account settings routes
 app.use('/api/v1/account-settings', accountSettingsRouter);
 
@@ -64,16 +74,6 @@ app.use('/api/v1/newsletter', newsletterRouter);
 
 // Platform invite routes
 app.use('/api/v1/platform', platformInviteRouter);
-
-// Profile routes
-app.use('/api/v1/profile', profileRouter);
-
-// Prometheus metrics setup
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics({ register: client.register });
-
-// Arcjet middleware for security
-app.use(arcjetMiddleware);
 
 // Inngest serve
 app.use(

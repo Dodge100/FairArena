@@ -10,6 +10,8 @@ function Newsletter() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async () => {
+    if (isLoading) return;
+
     if (!email.trim()) {
       toast.error('Please enter your email.');
       return;

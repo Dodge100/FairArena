@@ -1,7 +1,7 @@
 import { useTheme } from '@/hooks/useTheme';
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
 
 function Footer() {
@@ -16,10 +16,9 @@ function Footer() {
     <footer
       className={`
         w-full pt-16 pb-8 px-6 md:px-12 lg:px-20 border-t
-        ${
-          isDark
-            ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
-            : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
+        ${isDark
+          ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
+          : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
         }
       `}
     >
@@ -29,9 +28,8 @@ function Footer() {
         <div>
           <img src="/fairArenaLogotop.png" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
           <p
-            className={`mt-4 text-sm leading-relaxed ${
-              isDark ? 'text-neutral-400' : 'text-neutral-600'
-            }`}
+            className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+              }`}
           >
             Follow us and never miss an update on the latest tech, productivity, and digital growth
             insights.
@@ -132,7 +130,7 @@ function Footer() {
         </p>
 
         <div className="flex gap-6 mt-4 md:mt-0">
-          {['privacy-policy', 'Terms-and-conditions'].map((item) => (
+          {['privacy-policy', 'terms-and-conditions'].map((item) => (
             <p
               key={item}
               className={`

@@ -1,7 +1,7 @@
 import { BarChart3, Lightbulb, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
-import { Link } from 'react-router';
 import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
 
 function WhyChooseUs() {

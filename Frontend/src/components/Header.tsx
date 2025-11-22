@@ -2,7 +2,7 @@ import { useUser } from '@clerk/clerk-react';
 import { Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import { Spotlight } from './ui/Spotlight';
 

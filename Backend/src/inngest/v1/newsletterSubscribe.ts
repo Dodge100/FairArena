@@ -17,7 +17,7 @@ function getGoogleSheetsClient() {
   }
 
   // Replace escaped newlines in private key
-  const privateKey = GOOGLE_SHEETS_PRIVATE_KEY.replace(/\\\\n/g, '\\n');
+  const privateKey = GOOGLE_SHEETS_PRIVATE_KEY.replace(/\\n/g, '\n');
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -217,6 +217,24 @@ export const unsubscribeFromNewsletter = inngest.createFunction(
           return;
         }
 
+        // Get the sheet ID for 'NewsLetter'
+        const spreadsheet = await sheets.spreadsheets.get({
+          spreadsheetId: ENV.GOOGLE_SHEETS_NEWSLETTER_ID,
+          includeGridData: false,
+        });
+
+        const newsletterSheet = spreadsheet.data.sheets?.find(
+          (sheet) => sheet.properties?.title === 'NewsLetter',
+        );
+        if (!newsletterSheet || !newsletterSheet.properties?.sheetId) {
+          logger.error('NewsLetter sheet not found in spreadsheet', {
+            spreadsheetId: ENV.GOOGLE_SHEETS_NEWSLETTER_ID,
+          });
+          throw new Error('NewsLetter sheet not found');
+        }
+
+        const sheetId = newsletterSheet.properties.sheetId;
+
         // Remove the row
         await sheets.spreadsheets.batchUpdate({
           spreadsheetId: ENV.GOOGLE_SHEETS_NEWSLETTER_ID,
@@ -225,7 +243,7 @@ export const unsubscribeFromNewsletter = inngest.createFunction(
               {
                 deleteDimension: {
                   range: {
-                    sheetId: 0,
+                    sheetId: sheetId,
                     dimension: 'ROWS',
                     startIndex: emailIndex,
                     endIndex: emailIndex + 1,

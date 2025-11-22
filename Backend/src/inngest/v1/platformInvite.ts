@@ -83,14 +83,7 @@ export const inviteToPlatform = inngest.createFunction(
 
     await step.run('send-invite-email', async () => {
       logger.info('Sending platform invite email', { email, inviterName });
-      try {
-        await sendPlatformInviteEmail(email, inviterName);
-      } catch (error) {
-        logger.error('Error sending platform invite email', {
-          email,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
+      await sendPlatformInviteEmail(email, inviterName);
     });
 
     await inngest.send({
