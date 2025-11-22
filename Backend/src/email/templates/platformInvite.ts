@@ -1,6 +1,8 @@
+import { ENV } from '../../config/env';
+
 export const platformInviteEmailTemplate = (params: { inviterName: string }): string => {
-  const signupUrl = 'https://fairarena.vercel.app/signup';
-  const supportUrl = 'https://fairarena.vercel.app/support';
+  const signupUrl = ENV.FRONTEND_URL + '/signup';
+  const supportUrl = ENV.FRONTEND_URL + '/support';
   const currentYear = new Date().getFullYear();
 
   return `

@@ -1,8 +1,8 @@
 import { ENV } from '../../config/env.js';
 
 export const welcomeEmailTemplate = (params: { userName: string }): string => {
-  const dashboardUrl = ENV.BASE_URL + '/dashboard';
-  const supportUrl = ENV.BASE_URL + '/support';
+  const dashboardUrl = ENV.FRONTEND_URL + '/dashboard';
+  const supportUrl = ENV.FRONTEND_URL + '/support';
   const currentYear = new Date().getFullYear();
 
   return `

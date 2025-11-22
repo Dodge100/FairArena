@@ -130,7 +130,7 @@ export const sendPlatformInviteEmail = async (
   to: string,
   inviterName: string,
 ): Promise<unknown> => {
-  const unsubscribeUrl = `https://fairarena.vercel.app/unsubscribe/${encodeURIComponent(to)}`;
+  const unsubscribeUrl = `${ENV.FRONTEND_URL}/api/email/unsubscribe/${encodeURIComponent(to)}`;
   return sendEmail(
     to,
     "You're invited to join FairArena!",

@@ -50,4 +50,5 @@ export const ENV = {
   SMTP_USER: process.env.SMTP_USER!,
   SMTP_PASS: process.env.SMTP_PASS!,
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'resend', // 'resend' or 'nodemailer'
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

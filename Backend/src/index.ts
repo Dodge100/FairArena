@@ -39,7 +39,7 @@ app.set('trust proxy', 1);
 app.use(
   cors({
     origin:
-      ENV.NODE_ENV === 'production' ? 'https://fairarena.vercel.app' : 'http://localhost:5173',
+      ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
     credentials: true,
   }),
 );
