@@ -1,4 +1,4 @@
-import { ENV } from '../../config/env';
+import { ENV } from '../../config/env.js';
 
 export const platformInviteEmailTemplate = (params: { inviterName: string }): string => {
   const signupUrl = ENV.FRONTEND_URL + '/signup';

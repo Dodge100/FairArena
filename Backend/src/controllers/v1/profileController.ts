@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -14,12 +15,12 @@ const profileUpdateSchema = z.object({
   lastName: z.string().min(1).max(100).optional(),
   bio: z.string().max(1000).optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().nullish(),
   phoneNumber: z.string().max(20).optional(),
   location: z.string().max(200).optional(),
   jobTitle: z.string().max(200).optional(),
   company: z.string().max(200).optional(),
-  yearsOfExperience: z.number().int().min(0).max(100).optional(),
+  yearsOfExperience: z.number().int().min(0).max(100).nullish(),
   experiences: z.array(z.string().max(500)).max(20).optional(),
   education: z.array(z.string().max(500)).max(20).optional(),
   skills: z.array(z.string().max(100)).max(100).optional(),
@@ -208,13 +209,20 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     }
 
     const readOnlyPrisma = getReadOnlyPrisma();
-    const profile = await readOnlyPrisma.profile.findUnique({
+    let profile = await readOnlyPrisma.profile.findUnique({
       where: { userId },
     });
 
     if (!profile) {
-      return res.status(404).json({
-        error: { message: 'Profile not found', status: 404 },
+      // Create default profile if not exists
+      profile = await prisma.profile.create({
+        data: {
+          userId,
+          bio: '',
+          isPublic: true,
+          requireAuth: false,
+          trackViews: true,
+        },
       });
     }
 

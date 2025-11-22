@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@clerk/clerk-react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -21,7 +22,7 @@ import {
   Shield,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Log {
   id: string;
@@ -33,7 +34,6 @@ interface Log {
 
 export default function AccountLogs() {
   const [isVerified, setIsVerified] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -44,10 +44,34 @@ export default function AccountLogs() {
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const { getToken } = useAuth();
+
+  const checkVerificationStatus = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+          credentials: 'include',
+        },
+      );
+      const data = await res.json();
+      if (data.success && data.verified) {
+        setIsVerified(true);
+      } else {
+        setIsVerified(false);
+      }
+    } catch (error) {
+      console.error('Verification check failed:', error);
+      setIsVerified(false);
+    }
+  }, [getToken]);
 
   useEffect(() => {
     checkVerificationStatus();
-  }, []);
+  }, [checkVerificationStatus]);
 
   // Countdown timer for rate limiting
   useEffect(() => {
@@ -68,34 +92,35 @@ export default function AccountLogs() {
     };
   }, [isRateLimited, retryAfter]);
 
+  const fetchLogs = useCallback(async () => {
+    setIsLoadingLogs(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLogs(data.logs);
+      } else {
+        setMessage('Failed to fetch logs');
+      }
+    } catch (error) {
+      console.error('Fetch logs failed:', error);
+      setMessage('Failed to fetch logs');
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }, [getToken]);
+
   // Fetch logs when verified
   useEffect(() => {
     if (isVerified) {
       fetchLogs();
     }
-  }, [isVerified]);
-
-  const checkVerificationStatus = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`,
-        {
-          credentials: 'include',
-        },
-      );
-      const data = await res.json();
-      if (data.success && data.verified) {
-        setIsVerified(true);
-      } else {
-        setIsVerified(false);
-      }
-    } catch (error) {
-      console.error('Verification check failed:', error);
-      setIsVerified(false);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  }, [isVerified, fetchLogs]);
 
   const sendOtp = async () => {
     setIsSendingOtp(true);
@@ -107,7 +132,9 @@ export default function AccountLogs() {
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
         {
           method: 'POST',
-          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
         },
       );
       const data = await res.json();
@@ -147,9 +174,9 @@ export default function AccountLogs() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            "Authorization": `Bearer ${await getToken()}`,
           },
           body: JSON.stringify({ otp }),
-          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -175,37 +202,6 @@ export default function AccountLogs() {
       setIsVerifyingOtp(false);
     }
   };
-
-  const fetchLogs = async () => {
-    setIsLoadingLogs(true);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`, {
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.success) {
-        setLogs(data.logs);
-      } else {
-        setMessage('Failed to fetch logs');
-      }
-    } catch (error) {
-      console.error('Fetch logs failed:', error);
-      setMessage('Failed to fetch logs');
-    } finally {
-      setIsLoadingLogs(false);
-    }
-  };
-
-  if (isVerifying) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Checking verification status...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8 px-4">

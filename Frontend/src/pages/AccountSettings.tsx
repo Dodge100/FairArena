@@ -2,12 +2,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@clerk/clerk-react';
 import { CheckCircle, Loader2, Mail, Shield, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AccountSettings() {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');
@@ -42,9 +44,13 @@ export default function AccountSettings() {
 
   const checkVerificationStatus = async () => {
     try {
+      const token = await getToken();
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`,
         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           credentials: 'include',
         },
       );
@@ -68,11 +74,14 @@ export default function AccountSettings() {
     setIsRateLimited(false);
     setRetryAfter(0);
     try {
+      const token = await getToken();
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
         {
           method: 'POST',
-          credentials: 'include',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
       );
       const data = await res.json();
@@ -106,15 +115,16 @@ export default function AccountSettings() {
     setIsRateLimited(false);
     setRetryAfter(0);
     try {
+      const token = await getToken();
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ otp }),
-          credentials: 'include',
         },
       );
       const data = await res.json();

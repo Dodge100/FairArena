@@ -28,7 +28,7 @@ import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 
 const app = express();
-// const PORT = ENV.PORT || 3000;
+const PORT = ENV.PORT || 3000;
 
 // Security middlewares
 app.use(helmet());
@@ -38,8 +38,7 @@ app.set('trust proxy', 1);
 // CORS middleware
 app.use(
   cors({
-    origin:
-      ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
+    origin: ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
     credentials: true,
   }),
 );
@@ -115,6 +114,8 @@ app.use((_, res) => {
 export default app;
 
 // Start the server
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+if (ENV.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
