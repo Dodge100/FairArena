@@ -32,7 +32,7 @@ function getGoogleSheetsClient() {
 }
 
 export const subscribeToNewsletter = inngest.createFunction(
-  { id: 'newsletter-subscribe', retries: 0 },
+  { id: 'newsletter-subscribe', retries: 1 },
   { event: 'newsletter.subscribe' },
   async ({ event, step }) => {
     const { email } = event.data;
@@ -179,5 +179,73 @@ export const subscribeToNewsletter = inngest.createFunction(
     });
 
     logger.info('Newsletter subscription process completed successfully', { email });
+  },
+);
+
+export const unsubscribeFromNewsletter = inngest.createFunction(
+  { id: 'newsletter-unsubscribe', retries: 1 },
+  { event: 'newsletter.unsubscribe' },
+  async ({ event, step }) => {
+    const { email } = event.data;
+
+    if (!email) {
+      logger.error('Missing email in newsletter.unsubscribe event', { email });
+      throw new Error('Email is required');
+    }
+
+    logger.info('Starting newsletter unsubscribe process', { email });
+
+    await step.run('remove-from-google-sheets', async () => {
+      try {
+        const sheets = getGoogleSheetsClient();
+
+        // Get existing data
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: ENV.GOOGLE_SHEETS_NEWSLETTER_ID,
+          range: 'NewsLetter!A:A',
+        });
+
+        const existingData = response.data;
+        const emails = existingData.values || [];
+        const emailIndex = emails.findIndex(
+          (row: string[]) => row[0]?.toLowerCase() === email.toLowerCase(),
+        );
+
+        if (emailIndex === -1) {
+          logger.warn('Email not found in newsletter list', { email });
+          // Not an error, just log
+          return;
+        }
+
+        // Remove the row
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: ENV.GOOGLE_SHEETS_NEWSLETTER_ID,
+          requestBody: {
+            requests: [
+              {
+                deleteDimension: {
+                  range: {
+                    sheetId: 0,
+                    dimension: 'ROWS',
+                    startIndex: emailIndex,
+                    endIndex: emailIndex + 1,
+                  },
+                },
+              },
+            ],
+          },
+        });
+
+        logger.info('Email removed from newsletter list', { email });
+      } catch (error) {
+        logger.error('Error removing email from Google Sheets', {
+          email,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    });
+
+    logger.info('Newsletter unsubscribe process completed successfully', { email });
   },
 );

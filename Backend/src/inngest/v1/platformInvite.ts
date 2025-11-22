@@ -3,7 +3,7 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const inviteToPlatform = inngest.createFunction(
-  { id: 'platform-invite', retries: 0 },
+  { id: 'platform-invite', retries: 1 },
   { event: 'platform.invite' },
   async ({ event, step }) => {
     const { email, inviterName } = event.data;

@@ -47,3 +47,44 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
     });
   }
 }
+
+export async function unsubscribeFromNewsletter(req: Request, res: Response) {
+  try {
+    const { email } = newsletterSchema.parse(req.body);
+
+    logger.info('Newsletter unsubscribe request received', { email });
+
+    // Send event to Inngest for asynchronous processing
+    await inngest.send({
+      name: 'newsletter.unsubscribe',
+      data: {
+        email,
+      },
+    });
+
+    logger.info('Newsletter unsubscribe event sent to Inngest', { email });
+
+    return res.status(200).json({
+      success: true,
+      message: 'You have been successfully unsubscribed from our newsletter.',
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      logger.warn('Invalid newsletter unsubscribe data', { errors: error.issues });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email address',
+        errors: error.issues,
+      });
+    }
+
+    logger.error('Error processing newsletter unsubscribe request', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process newsletter unsubscribe request',
+    });
+  }
+}

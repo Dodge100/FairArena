@@ -11,17 +11,18 @@ import AccountSettings from './pages/AccountSettings';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Home from './pages/Home';
-import HowItWorks from './pages/WhyChooseUsPage';
 import MyProfile from './pages/MyProfile';
+import PricingPage from './pages/PricingPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
 import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Support from './pages/Support';
-import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
-import PricingPage from './pages/PricingPage';
+import Unsubscribe from './pages/Unsubscribe';
+import HowItWorks from './pages/WhyChooseUsPage';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
