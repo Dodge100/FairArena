@@ -44,4 +44,10 @@ export const ENV = {
   GOOGLE_SHEETS_PRIVATE_KEY: process.env.GOOGLE_SHEETS_PRIVATE_KEY,
   GOOGLE_SHEETS_CLIENT_EMAIL: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
   GOOGLE_SHEETS_NEWSLETTER_ID: process.env.GOOGLE_SHEETS_NEWSLETTER_ID,
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587'),
+  SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  SMTP_USER: process.env.SMTP_USER!,
+  SMTP_PASS: process.env.SMTP_PASS!,
+  EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'resend', // 'resend' or 'nodemailer'
 };

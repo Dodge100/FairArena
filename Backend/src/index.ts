@@ -28,7 +28,7 @@ import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 
 const app = express();
-const PORT = ENV.PORT || 3000;
+// const PORT = ENV.PORT || 3000;
 
 // Security middlewares
 app.use(helmet());
@@ -112,7 +112,9 @@ app.use((_, res) => {
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 
+export default app;
+
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });

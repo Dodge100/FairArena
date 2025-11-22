@@ -42,7 +42,7 @@ function Unsubscribe() {
     return (
         <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
             {/* Header with Logo */}
-            <header className="w-full py-6 px-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+            <header className="w-full py-6 px-4 border-b border-gray-200 dark:border-transparent bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto flex justify-center">
                     <div className="flex items-center space-x-3">
                         <img
@@ -61,7 +61,7 @@ function Unsubscribe() {
 
             {/* Main Content */}
             <main className="flex-1 flex items-center justify-center px-4 py-12">
-                <section className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
+                <section className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-transparent dark:shadow-none">
                     <header className="text-center mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
                             Newsletter Unsubscribe
@@ -108,7 +108,7 @@ function Unsubscribe() {
                         )}
                     </div>
 
-                    <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-center">
+                    <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700/30 flex justify-center">
                         <a
                             href="/"
                             className="inline-flex items-center px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -123,7 +123,7 @@ function Unsubscribe() {
             </main>
 
             {/* Footer */}
-            <footer className="w-full py-4 px-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            <footer className="w-full py-4 px-4 border-t border-gray-200 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto text-center">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                         © 2025 FairArena. All rights reserved.
