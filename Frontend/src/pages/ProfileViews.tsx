@@ -35,7 +35,6 @@ export default function ProfileViews() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          credentials: 'include',
         });
 
         if (!response.ok) {

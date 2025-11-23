@@ -4,10 +4,10 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { RATE_LIMIT_CONFIG, redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 // Constants for OTP verification
 const TOKEN_EXPIRY_MINUTES = 10;
@@ -218,7 +218,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     res.cookie('account-settings-token', token, {
       httpOnly: true,
       secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: ENV.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000, // 10 minutes
     });
 

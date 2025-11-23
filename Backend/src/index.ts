@@ -38,8 +38,7 @@ app.set('trust proxy', 1);
 // CORS middleware
 app.use(
   cors({
-    origin:
-      ENV.NODE_ENV === 'production' ? 'https://fairarena.vercel.app' : 'http://localhost:5173',
+    origin: ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
     credentials: true,
   }),
 );
@@ -112,7 +111,11 @@ app.use((_, res) => {
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 
+export default app;
+
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (ENV.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}

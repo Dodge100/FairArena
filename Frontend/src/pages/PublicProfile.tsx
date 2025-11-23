@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/useTheme';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import {
   Briefcase,
   Calendar,
@@ -73,6 +73,7 @@ export default function PublicProfile() {
   const [copied, setCopied] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const { getToken } = useAuth();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -82,7 +83,10 @@ export default function PublicProfile() {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
         const response = await fetch(`${apiUrl}/api/v1/profile/public/${userId}`, {
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${await getToken()}`,
+          },
         });
 
         if (!response.ok) {
@@ -113,7 +117,7 @@ export default function PublicProfile() {
     };
 
     fetchProfile();
-  }, [userId]);
+  }, [userId,getToken]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -153,8 +157,8 @@ export default function PublicProfile() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${await getToken()}`,
         },
-        credentials: 'include',
       });
 
       if (!response.ok) {

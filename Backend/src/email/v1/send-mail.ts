@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
@@ -6,6 +7,17 @@ import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
+
+// Create nodemailer transporter
+const transporter = nodemailer.createTransport({
+  host: ENV.SMTP_HOST,
+  port: ENV.SMTP_PORT,
+  secure: ENV.SMTP_SECURE, // true for 465, false for other ports
+  auth: {
+    user: ENV.SMTP_USER,
+    pass: ENV.SMTP_PASS,
+  },
+});
 
 // Define parameter types for each template
 type WelcomeEmailParams = { userName: string };
@@ -58,29 +70,48 @@ export async function sendEmail(
   }
 
   try {
-    const emailData: {
-      from: string;
-      to: string[];
-      subject: string;
-      html: string;
-      headers?: Record<string, string>;
-    } = {
-      from: ENV.FROM_EMAIL_ADDRESS,
-      to: [to],
-      subject,
-      html,
-    };
-    if (headers) {
-      emailData.headers = headers;
-    }
-    const { data, error } = await resend.emails.send(emailData);
+    if (ENV.EMAIL_PROVIDER === 'nodemailer') {
+      const mailOptions = {
+        from: ENV.FROM_EMAIL_ADDRESS,
+        to,
+        subject,
+        html,
+        headers,
+      };
 
-    if (error) {
-      logger.error('Error sending email:', error);
-      throw error;
-    }
+      const info = await transporter.sendMail(mailOptions);
 
-    return data;
+      logger.info('Email sent successfully via Nodemailer', { messageId: info.messageId });
+
+      return info;
+    } else {
+      // Default to Resend
+      const emailData: {
+        from: string;
+        to: string[];
+        subject: string;
+        html: string;
+        headers?: Record<string, string>;
+      } = {
+        from: ENV.FROM_EMAIL_ADDRESS,
+        to: [to],
+        subject,
+        html,
+      };
+      if (headers) {
+        emailData.headers = headers;
+      }
+      const { data, error } = await resend.emails.send(emailData);
+
+      if (error) {
+        logger.error('Error sending email via Resend:', error);
+        throw error;
+      }
+
+      logger.info('Email sent successfully via Resend', { data });
+
+      return data;
+    }
   } catch (err) {
     logger.error('Failed to send email:', err);
     throw err;
@@ -99,7 +130,7 @@ export const sendPlatformInviteEmail = async (
   to: string,
   inviterName: string,
 ): Promise<unknown> => {
-  const unsubscribeUrl = `https://fairarena.vercel.app/unsubscribe/${encodeURIComponent(to)}`;
+  const unsubscribeUrl = `${ENV.FRONTEND_URL}/api/email/unsubscribe/${encodeURIComponent(to)}`;
   return sendEmail(
     to,
     "You're invited to join FairArena!",

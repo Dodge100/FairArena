@@ -27,7 +27,7 @@ function Newsletter() {
     setIsLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
         method: 'POST',
         headers: {
@@ -111,10 +111,9 @@ function Newsletter() {
             px-5 py-3 rounded-full text-sm md:text-base outline-none
             transition-opacity
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-            ${
-              isDark
-                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
-                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
+            ${isDark
+              ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
+              : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
             }
           `}
         />
