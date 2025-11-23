@@ -53,15 +53,26 @@ function Footer() {
         <div>
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Menu</h3>
           <ul className="mt-4 space-y-2 text-sm">
-            {['about', 'why-choose-us', 'pricing'].map((item) => (
+            {[
+              { label: 'About', path: 'about' },
+              { label: 'Why Choose Us', path: 'why-choose-us' },
+              { label: 'Pricing', path: 'pricing' },
+              { label: 'Status', path: 'https://z956gqbw.status.cron-job.org', external: true }
+            ].map((item) => (
               <li
-                key={item}
+                key={item.path}
                 className={`
                     cursor-pointer
                     ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
                   `}
               >
-                <Link to={item}>{item}</Link>
+                {item.external ? (
+                  <a href={item.path} target="_blank" rel="noopener noreferrer">
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link to={`/${item.path}`}>{item.label}</Link>
+                )}
               </li>
             ))}
           </ul>
@@ -93,13 +104,28 @@ function Footer() {
             Contact
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            <li
-              className={`
-                cursor-pointer
-                ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-              `}
-            >
-              fairarena.contact@gmail.com
+            <li>
+              <Link
+                to="/support"
+                className={`
+                  cursor-pointer
+                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
+                `}
+              >
+                Support
+              </Link>
+            </li>
+            <li>
+              <a
+                href="mailto:fairarena.contact@gmail.com"
+                rel='noopener noreferrer'
+                className={`
+                  cursor-pointer
+                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
+                `}
+              >
+                fairarena.contact@gmail.com
+              </a>
             </li>
             <li
               className={`
@@ -124,12 +150,12 @@ function Footer() {
       ></div>
 
       {/* Bottom Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center mt-6 text-sm">
+      <div className="flex flex-col md:flex-row justify-between items-center mt-6 text-sm gap-4 md:gap-0">
         <p className={`${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
           © 2025 FairArena. All rights reserved.
         </p>
 
-        <div className="flex gap-6 mt-4 md:mt-0">
+        <div className="flex gap-6">
           {['privacy-policy', 'terms-and-conditions'].map((item) => (
             <p
               key={item}
@@ -138,12 +164,12 @@ function Footer() {
                 ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
               `}
             >
-              <Link to={`/${item}`}>{item}</Link>
+              <Link to={`/${item}`}>{item.replace('-', ' ')}</Link>
             </p>
           ))}
         </div>
 
-        <p className={`mt-4 md:mt-0 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
+        <p className={`${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
           Built with ❤️ by FairArena Team
         </p>
       </div>

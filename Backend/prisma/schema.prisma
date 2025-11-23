@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -15,60 +9,425 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  email             String   @unique
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations with cascading deletes
-  profile           Profile?
-  otps              Otp[]
-  Logs              Logs[]
+  id                   String                 @id @default(cuid())
+  userId               String                 @unique
+  email                String                 @unique
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  Logs                 Logs[]
+  otps                 Otp[]
+  userOrganizations    UserOrganization[]
+  teamMemberships      UserTeam[]
+  projectMemberships   UserProject[]
+  teamUserRoles        TeamUserRole[]
+  projectUserRoles     ProjectUserRole[]
+  profile              Profile?
+  OrganizationUserRole OrganizationUserRole[]
 
   @@index([userId])
 }
 
 model Profile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  // Basic info
+  id                String        @id @default(cuid())
+  userId            String        @unique
   firstName         String?
   lastName          String?
-  bio               String   @db.VarChar(500)
-  gender            gender?
-  dateOfBirth       DateTime?
-  phoneNumber       String?
-  location          String?
-  // Professional info
-  jobTitle          String?
+  bio               String        @db.VarChar(500)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   company           String?
-  yearsOfExperience Int?
-  experiences       String[]
-  education         String[]  // List of degrees/qualifications
-  skills            String[]
-  languages         String[]  // Spoken languages
-  interests         String[]
-  certifications    String[]  // Professional certifications
-  awards            String[]  // Awards and honors
-  // Links
+  dateOfBirth       DateTime?
+  education         String[]
+  gender            gender?
   githubUsername    String?
-  twitterHandle     String?
+  interests         String[]
+  isPublic          Boolean       @default(false)
+  jobTitle          String?
+  languages         String[]
   linkedInProfile   String?
-  resumeUrl         String?
+  location          String?
+  phoneNumber       String?
   portfolioUrl      String?
-  // Privacy settings
-  isPublic          Boolean  @default(false)
-  requireAuth       Boolean  @default(false)  // Require authentication to view profile
-  trackViews        Boolean  @default(false)  // Track who views the profile
-  // Relations
+  requireAuth       Boolean       @default(false)
+  resumeUrl         String?
+  skills            String[]
+  trackViews        Boolean       @default(false)
+  twitterHandle     String?
+  yearsOfExperience Int?
+  awards            String[]
+  certifications    String[]
+  experiences       String[]
+  user              User          @relation(fields: [userId], references: [userId], onDelete: Cascade)
   profileViews      ProfileView[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
 
   @@index([userId])
   @@index([isPublic])
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  userId    String
+  email     String
+  otpHash   String
+  sentFor   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([email])
+  @@index([userId])
+  @@index([sentFor])
+}
+
+model Logs {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  level     level
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model ProfileView {
+  id           String   @id @default(cuid())
+  profileId    String
+  viewerUserId String
+  viewerEmail  String
+  viewerName   String?
+  createdAt    DateTime @default(now())
+  profile      Profile  @relation(fields: [profileId], references: [id])
+
+  @@unique([profileId, viewerUserId])
+  @@index([profileId])
+  @@index([viewerUserId])
+  @@index([viewerEmail])
+  @@index([createdAt])
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique // URL-friendly unique identifier
+  joinEnabled Boolean  @default(false)
+  isPublic    Boolean  @default(true)
+  timezone    String? // timezone for localized timestamps or scheduling
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userOrganizations     UserOrganization[]
+  organizationRoles     OrganizationRole[]
+  organizationUserRoles OrganizationUserRole[]
+  inviteCodes           OrganizationInviteCode[]
+  organizationProfile   OrganizationProfile?
+  teams                 Team[]
+
+  @@index([name])
+  @@index([slug])
+  @@index([isPublic])
+  @@index([joinEnabled])
+}
+
+model OrganizationUserRole {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  roleId         String
+  assignedAt     DateTime @default(now())
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId, roleId]) // ensures unique role assignment per user per organization
+  @@index([userId])
+  @@index([organizationId])
+  @@index([roleId])
+}
+
+model UserOrganization {
+  userId         String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@index([organizationId])
+}
+
+model OrganizationRole {
+  id             String   @id @default(cuid())
+  organizationId String
+  roleName       String
+  permissions    Json // more structured permissions for flexibility
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationUserRoles OrganizationUserRole[]
+  organizationInviteCodes OrganizationInviteCode[]
+
+  @@unique([organizationId, roleName]) // unique roles per organization
+  @@index([organizationId])
+}
+
+model OrganizationInviteCode {
+  id             String   @id @default(cuid())
+  organizationId String
+  code           String   @unique
+  email          String
+  roleId         String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  createdBy      String
+  used           Boolean  @default(false)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+}
+
+model OrganizationProfile {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  description    String? // optional description of the organization
+  website        String?
+  logoUrl        String?
+  bannerUrl      String?
+  location       String? // geographic location of the organization
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     // URL-friendly unique identifier
+  joinEnabled Boolean    @default(false)
+  visibility  Visibility @default(INTERNAL) // public/private/team-only visibility
+  timezone    String? // timezone for localized timestamps or scheduling
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  teamMemberships UserTeam[]
+  teamRoles       TeamRole[]
+  teamUserRoles   TeamUserRole[]
+  inviteCodes     InviteCode[]
+  teamProfile     TeamProfile?
+  projects        Project[] // example of linked projects/repos
+
+  @@index([organizationId])
+  @@unique([organizationId, name])
+  @@unique([organizationId, slug])
+  @@index([name])
+  @@index([slug])
+  @@index([visibility])
+  @@index([joinEnabled])
+}
+
+model TeamProfile {
+  id          String   @id @default(cuid())
+  teamId      String   @unique
+  description String? // optional description of the team/org
+  website     String?
+  logoUrl     String?
+  bannerUrl   String?
+  location    String? // geographic location of the team
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  teamId    String
+  code      String   @unique
+  email     String
+  roleId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  createdBy String
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+}
+
+model TeamRole {
+  id          String   @id @default(cuid())
+  teamId      String
+  roleName    String
+  permissions Json // more structured permissions for flexibility
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team          Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamUserRoles TeamUserRole[]
+  inviteCodes   InviteCode[]
+
+  @@unique([teamId, roleName]) // unique roles per team
+  @@index([teamId])
+}
+
+model ProjectRole {
+  id          String   @id @default(cuid())
+  projectId   String
+  roleName    String
+  permissions Json // more structured permissions for flexibility
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectUserRoles ProjectUserRole[]
+  projectInviteCodes ProjectInviteCode[]
+
+  @@unique([projectId, roleName]) // unique roles per project
+  @@index([projectId])
+}
+
+model TeamUserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  teamId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId, roleId]) // ensures unique role assignment per user per team
+  @@index([userId])
+  @@index([teamId])
+  @@index([roleId])
+}
+
+model UserTeam {
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([userId, teamId])
+  @@index([teamId])
+}
+
+model ProjectUserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  projectId  String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role    ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId, roleId]) // ensures unique role assignment per user per project
+  @@index([userId])
+  @@index([projectId])
+  @@index([roleId])
+}
+
+model UserProject {
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, projectId])
+  @@index([projectId])
+}
+
+model Project {
+  id               String            @id @default(cuid())
+  teamId           String
+  projectMemberships UserProject[]
+  name             String
+  slug             String?  // optional URL-friendly identifier
+  projectProfile   projectProfile?
+  joinEnabled      Boolean           @default(false)
+  visibility       Visibility        @default(INTERNAL)
+  projectRoles     ProjectRole[]
+  projectUserRoles ProjectUserRole[]
+  inviteCodes      ProjectInviteCode[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdBy        String
+  updatedBy        String
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, name])
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@index([visibility])
+  @@index([joinEnabled])
+}
+
+model projectProfile {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  description String? // optional description of the project
+  website     String?
+  logoUrl     String?
+  bannerUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+model ProjectInviteCode {
+  id         String   @id @default(cuid())
+  projectId  String
+  email      String?  // optional: invite by email, if null the code is generic
+  code       String   @unique
+  roleId     String  // optional role assignment when accepted
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  createdBy  String  // userId who created the invite
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role    ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  INTERNAL
 }
 
 enum gender {
@@ -77,54 +436,8 @@ enum gender {
   OTHER
 }
 
-model Otp {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  email     String
-  otpHash   String   // Hashed OTP for security
-  sentFor   String   // Purpose: 'account-settings', 'password-reset', etc.
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  verified  Boolean  @default(false)
-
-  @@index([email])
-  @@index([userId])
-  @@index([sentFor])
-}
-
-model Logs {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [userId], onDelete: Restrict)
-  action      String   // 'account-settings-access', 'profile-update', etc.
-  level       level
-  metadata    Json?    // Additional context (e.g., what was accessed)
-  createdAt   DateTime @default(now())
-
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-}
-
 enum level {
   INFO
   WARN
   CRITICAL
-}
-
-model ProfileView {
-  id              String   @id @default(cuid())
-  profileId       String
-  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Restrict)
-  viewerUserId    String   // Clerk user ID (required when tracking is on)
-  viewerEmail     String   // Email of the viewer (from Clerk)
-  viewerName      String?  // Name of the viewer (from Clerk)
-  createdAt       DateTime @default(now())
-
-  @@unique([profileId, viewerUserId])  // One record per profile-viewer pair
-  @@index([profileId])
-  @@index([viewerUserId])
-  @@index([viewerEmail])
-  @@index([createdAt])
 }
