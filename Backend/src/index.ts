@@ -22,6 +22,7 @@ import {
   unsubscribeFromNewsletter,
   updateProfileFunction,
   updateUser,
+  createReport,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
@@ -31,6 +32,7 @@ import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 // import teamRouter from './routes/v1/team.js';
 import organizationRouter from './routes/v1/organization.js';
+import reportsRouter from './routes/v1/reports.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -85,6 +87,9 @@ app.use('/api/v1/platform', platformInviteRouter);
 // Organization routes
 app.use('/api/v1/organization', organizationRouter);
 
+// Report route
+app.use('/api/v1/reports', reportsRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -104,6 +109,7 @@ app.use(
       createOrganizationRoles,
       deleteOrganization,
       updateOrganization,
+      createReport,
     ],
   }),
 );

@@ -18,6 +18,7 @@ import {
   Calendar,
   Edit,
   FileText,
+  Flag,
   Github,
   Globe,
   Linkedin,
@@ -72,6 +73,10 @@ export default function PublicProfile() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const { getToken } = useAuth();
 
@@ -117,7 +122,7 @@ export default function PublicProfile() {
     };
 
     fetchProfile();
-  }, [userId,getToken]);
+  }, [userId, getToken]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -175,6 +180,42 @@ export default function PublicProfile() {
 
   const handleConsentDecline = () => {
     navigate(-1);
+  };
+
+  const handleReport = async () => {
+    if (!profile || !reportReason.trim()) return;
+
+    setIsReporting(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/api/v1/reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await getToken()}`,
+        },
+        body: JSON.stringify({
+          reportedEntityId: profile.id,
+          entityType: 'profile',
+          reason: reportReason,
+          details: reportDetails.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit report');
+      }
+
+      setShowReportDialog(false);
+      setReportReason('');
+      setReportDetails('');
+      toast.success('Report submitted successfully. We will review it shortly.');
+    } catch (err) {
+      console.error('Error submitting report:', err);
+      toast.error('Failed to submit report. Please try again.');
+    } finally {
+      setIsReporting(false);
+    }
   };
 
   if (loading) {
@@ -453,6 +494,17 @@ export default function PublicProfile() {
                     <Share2 className="h-5 w-5 mr-2" />
                     {copied ? 'Copied!' : 'Share Profile'}
                   </Button>
+                  {!isOwner && user && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setShowReportDialog(true)}
+                      className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-red-200 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      <Flag className="h-5 w-5 mr-2" />
+                      Report Profile
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -692,86 +744,86 @@ export default function PublicProfile() {
                 profile.linkedInProfile ||
                 profile.portfolioUrl ||
                 profile.resumeUrl) && (
-                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
-                      Connect
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {profile.email && (
-                        <a
-                          href={`mailto:${profile.email}`}
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <div className="flex-1">
-                            <span className="font-medium block">Email</span>
-                            <span className="text-sm text-muted-foreground">{profile.email}</span>
-                          </div>
-                        </a>
-                      )}
-                      {profile.githubUsername && (
-                        <a
-                          href={`https://github.com/${profile.githubUsername}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">GitHub</span>
-                        </a>
-                      )}
-                      {profile.twitterHandle && (
-                        <a
-                          href={`https://twitter.com/${profile.twitterHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Twitter</span>
-                        </a>
-                      )}
-                      {profile.linkedInProfile && (
-                        <a
-                          href={profile.linkedInProfile}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">LinkedIn</span>
-                        </a>
-                      )}
-                      {profile.portfolioUrl && (
-                        <a
-                          href={profile.portfolioUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Portfolio</span>
-                        </a>
-                      )}
-                      {profile.resumeUrl && (
-                        <a
-                          href={profile.resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Resume</span>
-                        </a>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                        Connect
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        {profile.email && (
+                          <a
+                            href={`mailto:${profile.email}`}
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <div className="flex-1">
+                              <span className="font-medium block">Email</span>
+                              <span className="text-sm text-muted-foreground">{profile.email}</span>
+                            </div>
+                          </a>
+                        )}
+                        {profile.githubUsername && (
+                          <a
+                            href={`https://github.com/${profile.githubUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">GitHub</span>
+                          </a>
+                        )}
+                        {profile.twitterHandle && (
+                          <a
+                            href={`https://twitter.com/${profile.twitterHandle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Twitter</span>
+                          </a>
+                        )}
+                        {profile.linkedInProfile && (
+                          <a
+                            href={profile.linkedInProfile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">LinkedIn</span>
+                          </a>
+                        )}
+                        {profile.portfolioUrl && (
+                          <a
+                            href={profile.portfolioUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Portfolio</span>
+                          </a>
+                        )}
+                        {profile.resumeUrl && (
+                          <a
+                            href={profile.resumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Resume</span>
+                          </a>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
             </div>
           </div>
         </div>
@@ -806,6 +858,76 @@ export default function PublicProfile() {
               Decline & Go Back
             </Button>
             <Button onClick={handleConsentAccept}>Accept & Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Report Profile</DialogTitle>
+            <DialogDescription>
+              Help us keep FairArena safe by reporting inappropriate content or behavior.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="reason" className="text-sm font-medium">
+                Reason for report *
+              </label>
+              <select
+                id="reason"
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                required
+              >
+                <option value="">Select a reason</option>
+                <option value="spam">Spam or misleading content</option>
+                <option value="harassment">Harassment or bullying</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="fake">Fake profile or impersonation</option>
+                <option value="privacy">Privacy violation</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="details" className="text-sm font-medium">
+                Additional details (optional)
+              </label>
+              <textarea
+                id="details"
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                placeholder="Please provide more details about your report..."
+                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-[80px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">
+                {reportDetails.length}/500 characters
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReportDialog(false);
+                setReportReason('');
+                setReportDetails('');
+              }}
+              disabled={isReporting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReport}
+              disabled={!reportReason.trim() || isReporting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isReporting ? 'Submitting...' : 'Submit Report'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
