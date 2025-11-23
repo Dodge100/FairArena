@@ -26,6 +26,7 @@ import {
   MapPin,
   Moon,
   Share2,
+  Star,
   Sun,
   Twitter,
   Zap,
@@ -61,6 +62,11 @@ interface ProfileData {
   portfolioUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  stars: {
+    count: number;
+    hasStarred: boolean;
+    starredAt: string | null;
+  };
 }
 
 export default function PublicProfile() {
@@ -77,6 +83,7 @@ export default function PublicProfile() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [isReporting, setIsReporting] = useState(false);
+  const [isStarring, setIsStarring] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const { getToken } = useAuth();
 
@@ -215,6 +222,63 @@ export default function PublicProfile() {
       toast.error('Failed to submit report. Please try again.');
     } finally {
       setIsReporting(false);
+    }
+  };
+
+  const handleStar = async () => {
+    if (!profile || !user || isOwner) return;
+
+    const wasStarred = profile.stars.hasStarred;
+    const newStarCount = wasStarred ? profile.stars.count - 1 : profile.stars.count + 1;
+
+    // Optimistically update UI
+    setProfile(prev => prev ? {
+      ...prev,
+      stars: {
+        count: newStarCount,
+        hasStarred: !wasStarred,
+        starredAt: wasStarred ? null : new Date().toISOString(),
+      },
+    } : null);
+
+    setIsStarring(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const endpoint = wasStarred ? '/api/v1/stars/unstar' : '/api/v1/stars/star';
+      const response = await fetch(`${apiUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await getToken()}`,
+        },
+        body: JSON.stringify({
+          profileId: profile.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to update star');
+      }
+
+      // Since the operation is async, we don't get immediate data back
+      // The optimistic update should be sufficient
+      toast.success(wasStarred ? 'Profile unstarred' : 'Profile starred');
+    } catch (err) {
+      console.error('Error updating star:', err);
+      toast.error('Failed to update star. Please try again.');
+
+      // Revert optimistic update on error
+      setProfile(prev => prev ? {
+        ...prev,
+        stars: {
+          count: profile.stars.count,
+          hasStarred: wasStarred,
+          starredAt: profile.stars.starredAt,
+        },
+      } : null);
+    } finally {
+      setIsStarring(false);
     }
   };
 
@@ -494,6 +558,18 @@ export default function PublicProfile() {
                     <Share2 className="h-5 w-5 mr-2" />
                     {copied ? 'Copied!' : 'Share Profile'}
                   </Button>
+                  {!isOwner && user && (
+                    <Button
+                      variant={profile.stars.hasStarred ? 'default' : 'outline'}
+                      size="lg"
+                      onClick={handleStar}
+                      disabled={isStarring}
+                      className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
+                    >
+                      <Star className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`} />
+                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} ({profile.stars.count})
+                    </Button>
+                  )}
                   {!isOwner && user && (
                     <Button
                       variant="outline"
@@ -824,6 +900,41 @@ export default function PublicProfile() {
                     </CardContent>
                   </Card>
                 )}
+
+              {/* Stars */}
+              <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    Stars
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-center py-4">
+                    <div className="text-4xl font-bold text-yellow-500 mb-2 group-hover:scale-110 transition-transform">
+                      {profile.stars.count}
+                    </div>
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {profile.stars.count === 1 ? 'Star' : 'Stars'}
+                    </p>
+                    {profile.stars.hasStarred && (
+                      <p className="text-xs text-yellow-600 mt-2 font-medium">
+                        You starred this profile
+                      </p>
+                    )}
+                    {profile.stars.count > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-3 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
+                        onClick={() => navigate(`/profile/${userId}/stars`)}
+                      >
+                        View all stars
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -901,7 +1012,7 @@ export default function PublicProfile() {
                 value={reportDetails}
                 onChange={(e) => setReportDetails(e.target.value)}
                 placeholder="Please provide more details about your report..."
-                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-[80px] resize-none"
+                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-20 resize-none"
                 maxLength={500}
               />
               <p className="text-xs text-muted-foreground">

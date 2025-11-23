@@ -19,6 +19,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import PricingPage from './pages/PricingPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
+import ProfileStars from './pages/ProfileStars';
 import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
 import Signin from './pages/Signin';
@@ -57,6 +58,7 @@ function App() {
           <Route path="/dashboard/organization/:slug/settings" element={<OrganizationSettings />} />
         </Route>
         <Route path="/profile/:userId" element={<PublicProfile />} />
+        <Route path="/profile/:userId/stars" element={<ProfileStars />} />
         <Route path="/support" element={<Support />} />
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signin" element={<Signin />} />

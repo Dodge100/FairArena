@@ -4,8 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@clerk/clerk-react';
 import { CheckCircle, Loader2, Mail, Shield, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+interface Report {
+  id: string;
+  title?: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+}
 
 export default function AccountSettings() {
   const navigate = useNavigate();
@@ -18,31 +27,10 @@ export default function AccountSettings() {
   const [message, setMessage] = useState('');
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
 
-  useEffect(() => {
-    checkVerificationStatus();
-  }, []);
-
-  // Countdown timer for rate limiting
-  useEffect(() => {
-    let interval: number;
-    if (isRateLimited && retryAfter > 0) {
-      interval = setInterval(() => {
-        setRetryAfter((prev) => {
-          if (prev <= 1) {
-            setIsRateLimited(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRateLimited, retryAfter]);
-
-  const checkVerificationStatus = async () => {
+  const checkVerificationStatus = useCallback(async () => {
     try {
       const token = await getToken();
       const res = await fetch(
@@ -66,7 +54,63 @@ export default function AccountSettings() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [getToken]);
+
+  useEffect(() => {
+    checkVerificationStatus();
+  }, [checkVerificationStatus]);
+
+  // Countdown timer for rate limiting
+  useEffect(() => {
+    let interval: number;
+    if (isRateLimited && retryAfter > 0) {
+      interval = setInterval(() => {
+        setRetryAfter((prev) => {
+          if (prev <= 1) {
+            setIsRateLimited(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRateLimited, retryAfter]);
+
+  const fetchReports = useCallback(async () => {
+    setIsLoadingReports(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: 'include',
+        },
+      );
+      const data = await res.json();
+      if (data.success) {
+        setReports(data.reports || []);
+      } else {
+        console.error('Failed to fetch reports:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setIsLoadingReports(false);
+    }
+  }, [getToken]);
+
+  // Fetch reports when verified
+  useEffect(() => {
+    if (isVerified) {
+      fetchReports();
+    }
+  }, [isVerified, fetchReports]);
 
   const sendOtp = async () => {
     setIsSendingOtp(true);
@@ -82,6 +126,7 @@ export default function AccountSettings() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -125,6 +170,7 @@ export default function AccountSettings() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ otp }),
+          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -271,6 +317,45 @@ export default function AccountSettings() {
               <Button onClick={() => navigate('/dashboard/account-settings/logs')}>
                 View Account Logs
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {isVerified && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Your Reports</CardTitle>
+              <CardDescription>View the status of reports you've submitted.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReports ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Loading reports...</span>
+                </div>
+              ) : reports.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No reports found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {reports.map((report: Report) => (
+                    <div key={report.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{report.title || 'Report'}</h4>
+                        <Badge variant={report.status === 'resolved' ? 'default' : report.status === 'pending' ? 'secondary' : 'destructive'}>
+                          {report.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
+                      <div className="text-xs text-muted-foreground">
+                        Submitted: {new Date(report.createdAt).toLocaleDateString()}
+                        {report.updatedAt && report.updatedAt !== report.createdAt && (
+                          <span> • Updated: {new Date(report.updatedAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

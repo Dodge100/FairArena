@@ -9,56 +9,60 @@ datasource db {
 }
 
 model User {
-  id                   String                 @id @default(cuid())
-  userId               String                 @unique
-  email                String                 @unique
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  Logs                 Logs[]
-  otps                 Otp[]
-  userOrganizations    UserOrganization[]
-  teamMemberships      UserTeam[]
-  projectMemberships   UserProject[]
-  teamUserRoles        TeamUserRole[]
-  projectUserRoles     ProjectUserRole[]
-  reports              Report[]
-  profile              Profile?
-  OrganizationUserRole OrganizationUserRole[]
+  id                    String                  @id @default(cuid())
+  userId                String                  @unique
+  email                 String                  @unique
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  Logs                  Logs[]
+  organizationFollowers OrganizationFollowers[]
+  organizationStars     OrganizationStars[]
+  OrganizationUserRole  OrganizationUserRole[]
+  otps                  Otp[]
+  profile               Profile?
+  profileStars          ProfileStars[]
+  projectUserRoles      ProjectUserRole[]
+  reports               Report[]
+  teamUserRoles         TeamUserRole[]
+  userOrganizations     UserOrganization[]
+  projectMemberships    UserProject[]
+  teamMemberships       UserTeam[]
 
   @@index([userId])
 }
 
 model Profile {
-  id                String        @id @default(cuid())
-  userId            String        @unique
+  id                String         @id @default(cuid())
+  userId            String         @unique
   firstName         String?
   lastName          String?
-  bio               String        @db.VarChar(500)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  bio               String         @db.VarChar(500)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   company           String?
   dateOfBirth       DateTime?
   education         String[]
   gender            gender?
   githubUsername    String?
   interests         String[]
-  isPublic          Boolean       @default(false)
+  isPublic          Boolean        @default(false)
   jobTitle          String?
   languages         String[]
   linkedInProfile   String?
   location          String?
   phoneNumber       String?
   portfolioUrl      String?
-  requireAuth       Boolean       @default(false)
+  requireAuth       Boolean        @default(false)
   resumeUrl         String?
   skills            String[]
-  trackViews        Boolean       @default(false)
+  trackViews        Boolean        @default(false)
   twitterHandle     String?
   yearsOfExperience Int?
   awards            String[]
   certifications    String[]
   experiences       String[]
-  user              User          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user              User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  profileStars      ProfileStars[]
   profileViews      ProfileView[]
 
   @@index([userId])
@@ -112,23 +116,23 @@ model ProfileView {
 }
 
 model Organization {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique // URL-friendly unique identifier
-  joinEnabled Boolean  @default(false)
-  isPublic    Boolean  @default(true)
-  timezone    String? // timezone for localized timestamps or scheduling
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  userOrganizations     UserOrganization[]
-  organizationRoles     OrganizationRole[]
-  organizationUserRoles OrganizationUserRole[]
-  inviteCodes           OrganizationInviteCode[]
+  id                    String                   @id @default(cuid())
+  name                  String                   @unique
+  slug                  String                   @unique
+  joinEnabled           Boolean                  @default(false)
+  isPublic              Boolean                  @default(true)
+  timezone              String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
   organizationAuditLogs OrganizationAuditLog[]
+  organizationFollowers OrganizationFollowers[]
+  inviteCodes           OrganizationInviteCode[]
   organizationProfile   OrganizationProfile?
+  organizationRoles     OrganizationRole[]
+  organizationStars     OrganizationStars[]
+  organizationUserRoles OrganizationUserRole[]
   teams                 Team[]
+  userOrganizations     UserOrganization[]
 
   @@index([name])
   @@index([slug])
@@ -137,17 +141,16 @@ model Organization {
 }
 
 model OrganizationUserRole {
-  id             String   @id @default(cuid())
+  id             String           @id @default(cuid())
   userId         String
   organizationId String
   roleId         String
-  assignedAt     DateTime @default(now())
+  assignedAt     DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  role         OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, organizationId, roleId]) // ensures unique role assignment per user per organization
+  @@unique([userId, organizationId, roleId])
   @@index([userId])
   @@index([organizationId])
   @@index([roleId])
@@ -156,44 +159,41 @@ model OrganizationUserRole {
 model UserOrganization {
   userId         String
   organizationId String
-  createdAt      DateTime @default(now())
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, organizationId])
   @@index([organizationId])
 }
 
 model OrganizationRole {
-  id             String   @id @default(cuid())
-  organizationId String
-  roleName       String   @unique
-  permissions    Json // more structured permissions for flexibility
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
+  id                      String                   @id @default(cuid())
+  organizationId          String
+  roleName                String                   @unique
+  permissions             Json
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  organizationInviteCodes OrganizationInviteCode[]
   organization            Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationUserRoles   OrganizationUserRole[]
-  organizationInviteCodes OrganizationInviteCode[]
 
-  @@unique([organizationId, roleName]) // unique roles per organization
+  @@unique([organizationId, roleName])
   @@index([organizationId])
 }
 
 model OrganizationInviteCode {
-  id             String   @id @default(cuid())
+  id             String           @id @default(cuid())
   organizationId String
-  code           String   @unique
+  code           String           @unique
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  createdBy      String
   email          String
   roleId         String
-  expiresAt      DateTime
-  createdAt      DateTime @default(now())
-  createdBy      String
-  used           Boolean  @default(false)
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  role         OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  used           Boolean          @default(false)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([expiresAt])
@@ -202,39 +202,36 @@ model OrganizationInviteCode {
 }
 
 model OrganizationProfile {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  description    String? // optional description of the organization
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  description    String?
   website        String?
   logoUrl        String?
   bannerUrl      String?
-  location       String? // geographic location of the organization
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Team {
-  id             String       @id @default(cuid())
-  name           String
-  slug           String // URL-friendly unique identifier
-  joinEnabled    Boolean      @default(false)
-  visibility     Visibility   @default(INTERNAL) // public/private/team-only visibility
-  timezone       String? // timezone for localized timestamps or scheduling
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  // Relations
-  teamMemberships UserTeam[]
-  teamRoles       TeamRole[]
-  teamUserRoles   TeamUserRole[]
+  id              String         @id @default(cuid())
+  name            String
+  slug            String
+  joinEnabled     Boolean        @default(false)
+  visibility      Visibility     @default(INTERNAL)
+  timezone        String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  organizationId  String
   inviteCodes     InviteCode[]
+  projects        Project[]
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   teamAuditLogs   TeamAuditLog[]
   teamProfile     TeamProfile?
-  projects        Project[] // example of linked projects/repos
+  teamRoles       TeamRole[]
+  teamUserRoles   TeamUserRole[]
+  teamMemberships UserTeam[]
 
   @@unique([organizationId, name])
   @@unique([organizationId, slug])
@@ -248,30 +245,28 @@ model Team {
 model TeamProfile {
   id          String   @id @default(cuid())
   teamId      String   @unique
-  description String? // optional description of the team/org
+  description String?
   website     String?
   logoUrl     String?
   bannerUrl   String?
-  location    String? // geographic location of the team
+  location    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
 
 model InviteCode {
   id        String   @id @default(cuid())
   teamId    String
   code      String   @unique
-  email     String
-  roleId    String
   expiresAt DateTime
-  used      Boolean  @default(false)
   createdAt DateTime @default(now())
   createdBy String
-
-  team Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  role TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  email     String
+  roleId    String
+  used      Boolean  @default(false)
+  role      TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
   @@index([expiresAt])
@@ -280,34 +275,32 @@ model InviteCode {
 }
 
 model TeamRole {
-  id          String   @id @default(cuid())
-  teamId      String
-  roleName    String   @unique
-  permissions Json // more structured permissions for flexibility
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id            String         @id @default(cuid())
+  teamId        String
+  roleName      String         @unique
+  permissions   Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  inviteCodes   InviteCode[]
   team          Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamUserRoles TeamUserRole[]
-  inviteCodes   InviteCode[]
 
-  @@unique([teamId, roleName]) // unique roles per team
+  @@unique([teamId, roleName])
   @@index([teamId])
 }
 
 model ProjectRole {
-  id          String   @id @default(cuid())
-  projectId   String
-  roleName    String   @unique
-  permissions Json // more structured permissions for flexibility
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id                 String              @id @default(cuid())
+  projectId          String
+  roleName           String              @unique
+  permissions        Json
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  projectInviteCodes ProjectInviteCode[]
   project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectUserRoles   ProjectUserRole[]
-  projectInviteCodes ProjectInviteCode[]
 
-  @@unique([projectId, roleName]) // unique roles per project
+  @@unique([projectId, roleName])
   @@index([projectId])
 }
 
@@ -317,12 +310,11 @@ model TeamUserRole {
   teamId     String
   roleId     String
   assignedAt DateTime @default(now())
+  role       TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  role TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, teamId, roleId]) // ensures unique role assignment per user per team
+  @@unique([userId, teamId, roleId])
   @@index([userId])
   @@index([teamId])
   @@index([roleId])
@@ -332,26 +324,24 @@ model UserTeam {
   userId    String
   teamId    String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, teamId])
   @@index([teamId])
 }
 
 model ProjectUserRole {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   userId     String
   projectId  String
   roleId     String
-  assignedAt DateTime @default(now())
+  assignedAt DateTime    @default(now())
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role       ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  role    ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, projectId, roleId]) // ensures unique role assignment per user per project
+  @@unique([userId, projectId, roleId])
   @@index([userId])
   @@index([projectId])
   @@index([roleId])
@@ -361,9 +351,8 @@ model UserProject {
   userId    String
   projectId String
   createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, projectId])
   @@index([projectId])
@@ -372,22 +361,21 @@ model UserProject {
 model Project {
   id                 String              @id @default(cuid())
   teamId             String
-  projectMemberships UserProject[]
   name               String
-  slug               String? // optional URL-friendly identifier
-  projectProfile     projectProfile?
-  joinEnabled        Boolean             @default(false)
-  visibility         Visibility          @default(INTERNAL)
-  projectRoles       ProjectRole[]
-  projectUserRoles   ProjectUserRole[]
-  inviteCodes        ProjectInviteCode[]
-  projectAuditLogs   ProjectAuditLog[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   createdBy          String
   updatedBy          String
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  visibility         Visibility          @default(INTERNAL)
+  joinEnabled        Boolean             @default(false)
+  slug               String?
+  team               Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  projectAuditLogs   ProjectAuditLog[]
+  inviteCodes        ProjectInviteCode[]
+  projectRoles       ProjectRole[]
+  projectUserRoles   ProjectUserRole[]
+  projectMemberships UserProject[]
+  projectProfile     projectProfile?
 
   @@unique([teamId, name])
   @@unique([teamId, slug])
@@ -399,29 +387,27 @@ model Project {
 model projectProfile {
   id          String   @id @default(cuid())
   projectId   String   @unique
-  description String? // optional description of the project
+  description String?
   website     String?
   logoUrl     String?
   bannerUrl   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model ProjectInviteCode {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   projectId String
-  email     String? // optional: invite by email, if null the code is generic
-  code      String   @unique
-  roleId    String // optional role assignment when accepted
+  email     String?
+  code      String      @unique
+  roleId    String
   expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  createdBy String // userId who created the invite
-
-  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  role    ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  used      Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  createdBy String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role      ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([expiresAt])
@@ -430,14 +416,13 @@ model ProjectInviteCode {
 }
 
 model OrganizationAuditLog {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   userId         String
   action         String
   level          level
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([userId])
@@ -452,8 +437,7 @@ model TeamAuditLog {
   action    String
   level     level
   createdAt DateTime @default(now())
-
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
   @@index([userId])
@@ -468,8 +452,7 @@ model ProjectAuditLog {
   action    String
   level     level
   createdAt DateTime @default(now())
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([userId])
@@ -484,14 +467,49 @@ model Report {
   entityType       String
   reason           String
   details          String?
-  state            ReportState @default(QUEUED)
   createdAt        DateTime    @default(now())
-
-  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  state            ReportState @default(QUEUED)
+  reporter         User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
 
   @@index([reporterId])
   @@index([reportedEntityId, entityType])
   @@index([createdAt])
+}
+
+model ProfileStars {
+  id        String   @id @default(cuid())
+  profileId String
+  userId    String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([profileId, userId])
+  @@index([profileId, userId])
+}
+
+model OrganizationFollowers {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, organizationId])
+}
+
+model OrganizationStars {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, organizationId])
 }
 
 enum Visibility {

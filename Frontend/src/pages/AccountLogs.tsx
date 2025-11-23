@@ -135,6 +135,7 @@ export default function AccountLogs() {
           headers: {
             Authorization: `Bearer ${await getToken()}`,
           },
+          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -177,6 +178,7 @@ export default function AccountLogs() {
             "Authorization": `Bearer ${await getToken()}`,
           },
           body: JSON.stringify({ otp }),
+          credentials: 'include',
         },
       );
       const data = await res.json();
