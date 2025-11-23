@@ -111,7 +111,7 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
     logger.info(`Organization update queued: ${userOrganization.organizationId} by user ${userId}`);
 
     // Return immediate response with current organization data
-    res.json({
+    res.status(202).json({
       message: 'Organization settings update has been queued and will be processed shortly',
       organization: {
         id: userOrganization.organization.id,
