@@ -4,7 +4,7 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const starProfile = inngest.createFunction(
-  { id: 'profile.star' },
+  { id: 'profile.star', retries: 3 },
   { event: 'profile.star' },
   async ({ event }) => {
     const { profileId, userId } = event.data;
@@ -45,25 +45,28 @@ export const starProfile = inngest.createFunction(
         return { success: false, error: 'Cannot star your own profile' };
       }
 
-      // Check if already starred
-      const existingStar = await prisma.profileStars.findFirst({
-        where: {
-          profileId,
-          userId,
-        },
-      });
+      // Use transaction to prevent race conditions
+      const star = await prisma.$transaction(async (tx) => {
+        // Check if already starred
+        const existingStar = await tx.profileStars.findFirst({
+          where: {
+            profileId,
+            userId,
+          },
+        });
 
-      if (existingStar) {
-        logger.warn(`Star failed: profile ${profileId} already starred by ${userId}`);
-        return { success: false, error: 'Profile already starred' };
-      }
+        if (existingStar) {
+          logger.warn(`Star failed: profile ${profileId} already starred by ${userId}`);
+          throw new Error('Profile already starred');
+        }
 
-      // Create star
-      const star = await prisma.profileStars.create({
-        data: {
-          profileId,
-          userId,
-        },
+        // Create star
+        return await tx.profileStars.create({
+          data: {
+            profileId,
+            userId,
+          },
+        });
       });
 
       // Get starrer profile info
@@ -111,13 +114,19 @@ export const starProfile = inngest.createFunction(
       };
     } catch (error) {
       logger.error('Error processing star:', error);
+
+      // Handle specific transaction errors
+      if (error instanceof Error && error.message === 'Profile already starred') {
+        return { success: false, error: 'Profile already starred' };
+      }
+
       return { success: false, error: 'Internal server error' };
     }
   },
 );
 
 export const unstarProfile = inngest.createFunction(
-  { id: 'profile.unstar' },
+  { id: 'profile.unstar', retries: 3 },
   { event: 'profile.unstar' },
   async ({ event }) => {
     const { profileId, userId } = event.data;
@@ -136,28 +145,36 @@ export const unstarProfile = inngest.createFunction(
         return { success: false, error: 'User not found' };
       }
 
-      // Find and delete the star
-      const starToDelete = await prisma.profileStars.findFirst({
-        where: {
-          profileId,
-          userId,
-        },
+      // Use transaction to prevent race conditions
+      const result = await prisma.$transaction(async (tx) => {
+        // Find the star
+        const starToDelete = await tx.profileStars.findFirst({
+          where: {
+            profileId,
+            userId,
+          },
+        });
+
+        if (!starToDelete) {
+          logger.warn(`Unstar failed: star not found for profile ${profileId} by ${userId}`);
+          throw new Error('Star not found');
+        }
+
+        // Get profile for cache invalidation
+        const profile = await tx.profile.findUnique({
+          where: { id: profileId },
+          select: { userId: true },
+        });
+
+        // Delete the star
+        await tx.profileStars.delete({
+          where: { id: starToDelete.id },
+        });
+
+        return { profile };
       });
 
-      if (!starToDelete) {
-        logger.warn(`Unstar failed: star not found for profile ${profileId} by ${userId}`);
-        return { success: false, error: 'Star not found' };
-      }
-
-      // Get profile for cache invalidation
-      const profile = await prisma.profile.findUnique({
-        where: { id: profileId },
-        select: { userId: true },
-      });
-
-      await prisma.profileStars.delete({
-        where: { id: starToDelete.id },
-      });
+      const { profile } = result;
 
       // Invalidate cache
       if (profile) {
@@ -177,6 +194,12 @@ export const unstarProfile = inngest.createFunction(
       };
     } catch (error) {
       logger.error('Error processing unstar:', error);
+
+      // Handle specific transaction errors
+      if (error instanceof Error && error.message === 'Star not found') {
+        return { success: false, error: 'Star not found' };
+      }
+
       return { success: false, error: 'Internal server error' };
     }
   },

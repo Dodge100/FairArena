@@ -28,4 +28,6 @@ export const REDIS_KEYS = {
   PROFILE_CACHE: 'profile:cache:',
   PLATFORM_INVITE_ATTEMPTS: 'platform:invite:attempts:',
   PLATFORM_INVITE_LOCKOUT: 'platform:invite:lockout:',
+  STAR_RATE_LIMIT: 'star:ratelimit:',
+  STAR_COUNT_CACHE: 'star:count:',
 } as const;

@@ -1,7 +1,8 @@
-import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { clerkBatchUserBreaker } from '../../config/circuit-breaker.js';
 import { prisma } from '../../config/database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
@@ -25,6 +26,27 @@ export const starProfile = async (req: Request, res: Response) => {
       return res.status(401).json({
         error: { message: 'Unauthorized', status: 401 },
       });
+    }
+
+    // Rate limiting: max 10 star operations per minute
+    const rateLimitKey = `${REDIS_KEYS.STAR_RATE_LIMIT}${userId}:star`;
+    try {
+      const attempts = await redis.incr(rateLimitKey);
+      if (attempts === 1) {
+        await redis.expire(rateLimitKey, 60); // 1 minute window
+      }
+      if (attempts > 10) {
+        return res.status(429).json({
+          error: {
+            message: 'Too many star requests. Please try again later.',
+            status: 429,
+            retryAfter: 60,
+          },
+        });
+      }
+    } catch (rateLimitError) {
+      logger.warn('Rate limit check failed:', rateLimitError);
+      // Continue without rate limiting rather than failing the request
     }
 
     // Validate input
@@ -96,6 +118,27 @@ export const unstarProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // Rate limiting: max 10 unstar operations per minute
+    const rateLimitKey = `${REDIS_KEYS.STAR_RATE_LIMIT}${userId}:unstar`;
+    try {
+      const attempts = await redis.incr(rateLimitKey);
+      if (attempts === 1) {
+        await redis.expire(rateLimitKey, 60); // 1 minute window
+      }
+      if (attempts > 10) {
+        return res.status(429).json({
+          error: {
+            message: 'Too many unstar requests. Please try again later.',
+            status: 429,
+            retryAfter: 60,
+          },
+        });
+      }
+    } catch (rateLimitError) {
+      logger.warn('Rate limit check failed:', rateLimitError);
+      // Continue without rate limiting rather than failing the request
+    }
+
     // Validate input
     const validation = unstarProfileSchema.safeParse({ profileId });
     if (!validation.success) {
@@ -131,11 +174,9 @@ export const unstarProfile = async (req: Request, res: Response) => {
 export const getProfileStars = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { cursor, limit = 20 } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
-    const skip = (pageNum - 1) * limitNum;
 
     // Find the profile by userId
     const profile = await prisma.profile.findUnique({
@@ -156,68 +197,117 @@ export const getProfileStars = async (req: Request, res: Response) => {
       });
     }
 
-    // Get stars with starrer info
-    const [stars, totalCount] = await Promise.all([
-      prisma.profileStars.findMany({
-        where: { profileId: profile.id },
-        include: {
-          user: {
-            select: {
-              userId: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
+    // Use cursor pagination for better performance
+    const stars = await prisma.profileStars.findMany({
+      where: { profileId: profile.id },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
               },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limitNum,
-      }),
-      prisma.profileStars.count({
+      },
+      orderBy: { createdAt: 'desc' },
+      cursor: cursor ? { id: cursor as string } : undefined,
+      take: limitNum + 1, // +1 to check if more results exist
+      skip: cursor ? 1 : 0, // Skip the cursor
+    });
+
+    // Check if there are more results
+    const hasMore = stars.length > limitNum;
+    if (hasMore) {
+      stars.pop(); // Remove the extra item
+    }
+
+    // Get total count from cache or database
+    const cacheKey = `${REDIS_KEYS.STAR_COUNT_CACHE}${profile.id}`;
+    let totalCount: number;
+
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached !== null) {
+        totalCount = parseInt(cached as string, 10);
+      } else {
+        totalCount = await prisma.profileStars.count({
+          where: { profileId: profile.id },
+        });
+        // Cache for 5 minutes
+        await redis.setex(cacheKey, 300, totalCount.toString());
+      }
+    } catch (cacheError) {
+      logger.warn('Cache error, falling back to database:', cacheError);
+      totalCount = await prisma.profileStars.count({
         where: { profileId: profile.id },
-      }),
-    ]);
+      });
+    }
 
-    // Fetch avatar URLs from Clerk and format stars
-    const formattedStars = await Promise.all(
-      stars.map(async (star) => {
-        let avatarUrl = null;
-        try {
-          const clerkUser = await clerkClient.users.getUser(star.userId);
-          avatarUrl = clerkUser.imageUrl || null;
-        } catch (error) {
-          logger.warn(`Failed to fetch avatar for user ${star.userId}:`, error);
+    // Batch fetch all user data from Clerk to avoid N+1 queries
+    const userIds = stars.map((star) => star.userId);
+    let clerkUsersMap = new Map<
+      string,
+      { imageUrl: string | null; firstName: string | null; lastName: string | null }
+    >();
+
+    if (userIds.length > 0) {
+      try {
+        // Batch fetch users from Clerk with circuit breaker protection
+        const clerkUsersResponse = await clerkBatchUserBreaker.fire(userIds);
+
+        // Create a map for O(1) lookup
+        if (clerkUsersResponse && clerkUsersResponse.data) {
+          clerkUsersMap = new Map(
+            clerkUsersResponse.data.map(
+              (u: {
+                id: string;
+                imageUrl: string;
+                firstName: string | null;
+                lastName: string | null;
+              }) => [u.id, { imageUrl: u.imageUrl, firstName: u.firstName, lastName: u.lastName }],
+            ),
+          );
         }
+      } catch (clerkError) {
+        logger.warn('Failed to batch fetch Clerk users (circuit may be open):', clerkError);
+        // Continue with null avatars instead of failing the request
+      }
+    }
 
-        return {
-          id: star.id,
-          userId: star.userId,
-          createdAt: star.createdAt,
-          starrer: {
-            userId: star.user.userId,
-            name:
-              [star.user.profile?.firstName, star.user.profile?.lastName]
-                .filter(Boolean)
-                .join(' ') || 'Anonymous',
-            avatarUrl,
-          },
-        };
-      }),
-    );
+    // Format stars with cached/fetched data
+    const formattedStars = stars.map((star) => {
+      const clerkUser = clerkUsersMap.get(star.userId);
+
+      // Prioritize profile data, fallback to Clerk data, then Anonymous
+      const firstName = star.user.profile?.firstName || clerkUser?.firstName;
+      const lastName = star.user.profile?.lastName || clerkUser?.lastName;
+      const name = [firstName, lastName].filter(Boolean).join(' ') || 'Anonymous';
+
+      return {
+        id: star.id,
+        userId: star.userId,
+        createdAt: star.createdAt,
+        starrer: {
+          userId: star.user.userId,
+          name,
+          avatarUrl: clerkUser?.imageUrl || null,
+        },
+      };
+    });
 
     res.json({
       success: true,
       data: {
         stars: formattedStars,
         pagination: {
-          page: pageNum,
+          cursor: hasMore ? stars[stars.length - 1].id : null,
+          hasMore,
           limit: limitNum,
           total: totalCount,
-          pages: Math.ceil(totalCount / limitNum),
         },
       },
     });

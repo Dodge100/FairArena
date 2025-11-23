@@ -302,11 +302,12 @@ export default function ProfileStars() {
                         {filteredStars.map((star, index) => (
                             <Card
                                 key={star.id}
-                                className="p-8 hover:shadow-lg hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/50 transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-yellow-400 shadow-sm"
+                                className="p-8 hover:shadow-lg hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/50 transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-yellow-400 shadow-sm cursor-pointer"
                                 style={{
                                     animationDelay: `${index * 100}ms`,
                                     animation: 'fadeInUp 0.6s ease-out forwards'
                                 }}
+                                onClick={() => navigate(`/profile/${star.starrer.userId}`)}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
