@@ -21,6 +21,7 @@ model User {
   projectMemberships   UserProject[]
   teamUserRoles        TeamUserRole[]
   projectUserRoles     ProjectUserRole[]
+  reports              Report[]
   profile              Profile?
   OrganizationUserRole OrganizationUserRole[]
 
@@ -125,6 +126,7 @@ model Organization {
   organizationRoles     OrganizationRole[]
   organizationUserRoles OrganizationUserRole[]
   inviteCodes           OrganizationInviteCode[]
+  organizationAuditLogs OrganizationAuditLog[]
   organizationProfile   OrganizationProfile?
   teams                 Team[]
 
@@ -166,13 +168,13 @@ model UserOrganization {
 model OrganizationRole {
   id             String   @id @default(cuid())
   organizationId String
-  roleName       String
+  roleName       String   @unique
   permissions    Json // more structured permissions for flexibility
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  organizationUserRoles OrganizationUserRole[]
+  organization            Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationUserRoles   OrganizationUserRole[]
   organizationInviteCodes OrganizationInviteCode[]
 
   @@unique([organizationId, roleName]) // unique roles per organization
@@ -190,7 +192,7 @@ model OrganizationInviteCode {
   createdBy      String
   used           Boolean  @default(false)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role         OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -214,28 +216,29 @@ model OrganizationProfile {
 }
 
 model Team {
-  id          String     @id @default(cuid())
-  name        String
-  slug        String     // URL-friendly unique identifier
-  joinEnabled Boolean    @default(false)
-  visibility  Visibility @default(INTERNAL) // public/private/team-only visibility
-  timezone    String? // timezone for localized timestamps or scheduling
+  id             String       @id @default(cuid())
+  name           String
+  slug           String // URL-friendly unique identifier
+  joinEnabled    Boolean      @default(false)
+  visibility     Visibility   @default(INTERNAL) // public/private/team-only visibility
+  timezone       String? // timezone for localized timestamps or scheduling
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   // Relations
   teamMemberships UserTeam[]
   teamRoles       TeamRole[]
   teamUserRoles   TeamUserRole[]
   inviteCodes     InviteCode[]
+  teamAuditLogs   TeamAuditLog[]
   teamProfile     TeamProfile?
   projects        Project[] // example of linked projects/repos
 
-  @@index([organizationId])
   @@unique([organizationId, name])
   @@unique([organizationId, slug])
+  @@index([organizationId])
   @@index([name])
   @@index([slug])
   @@index([visibility])
@@ -267,7 +270,7 @@ model InviteCode {
   createdAt DateTime @default(now())
   createdBy String
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   role TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
@@ -279,7 +282,7 @@ model InviteCode {
 model TeamRole {
   id          String   @id @default(cuid())
   teamId      String
-  roleName    String
+  roleName    String   @unique
   permissions Json // more structured permissions for flexibility
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -295,13 +298,13 @@ model TeamRole {
 model ProjectRole {
   id          String   @id @default(cuid())
   projectId   String
-  roleName    String
+  roleName    String   @unique
   permissions Json // more structured permissions for flexibility
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectUserRoles ProjectUserRole[]
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectUserRoles   ProjectUserRole[]
   projectInviteCodes ProjectInviteCode[]
 
   @@unique([projectId, roleName]) // unique roles per project
@@ -367,21 +370,22 @@ model UserProject {
 }
 
 model Project {
-  id               String            @id @default(cuid())
-  teamId           String
+  id                 String              @id @default(cuid())
+  teamId             String
   projectMemberships UserProject[]
-  name             String
-  slug             String?  // optional URL-friendly identifier
-  projectProfile   projectProfile?
-  joinEnabled      Boolean           @default(false)
-  visibility       Visibility        @default(INTERNAL)
-  projectRoles     ProjectRole[]
-  projectUserRoles ProjectUserRole[]
-  inviteCodes      ProjectInviteCode[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  createdBy        String
-  updatedBy        String
+  name               String
+  slug               String? // optional URL-friendly identifier
+  projectProfile     projectProfile?
+  joinEnabled        Boolean             @default(false)
+  visibility         Visibility          @default(INTERNAL)
+  projectRoles       ProjectRole[]
+  projectUserRoles   ProjectUserRole[]
+  inviteCodes        ProjectInviteCode[]
+  projectAuditLogs   ProjectAuditLog[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  createdBy          String
+  updatedBy          String
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -404,24 +408,90 @@ model projectProfile {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
-model ProjectInviteCode {
-  id         String   @id @default(cuid())
-  projectId  String
-  email      String?  // optional: invite by email, if null the code is generic
-  code       String   @unique
-  roleId     String  // optional role assignment when accepted
-  expiresAt  DateTime
-  used       Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  createdBy  String  // userId who created the invite
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+model ProjectInviteCode {
+  id        String   @id @default(cuid())
+  projectId String
+  email     String? // optional: invite by email, if null the code is generic
+  code      String   @unique
+  roleId    String // optional role assignment when accepted
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  createdBy String // userId who created the invite
+
+  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   role    ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([expiresAt])
   @@index([email])
   @@index([used])
+}
+
+model OrganizationAuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  action         String
+  level          level
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model TeamAuditLog {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  action    String
+  level     level
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model ProjectAuditLog {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  action    String
+  level     level
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Report {
+  id               String      @id @default(cuid())
+  reporterId       String
+  reportedEntityId String
+  entityType       String
+  reason           String
+  details          String?
+  state            ReportState @default(QUEUED)
+  createdAt        DateTime    @default(now())
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedEntityId, entityType])
+  @@index([createdAt])
 }
 
 enum Visibility {
@@ -440,4 +510,11 @@ enum level {
   INFO
   WARN
   CRITICAL
+}
+
+enum ReportState {
+  QUEUED
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
 }

@@ -10,6 +10,9 @@ import { ENV } from './config/env.js';
 import { inngest } from './inngest/v1/client.js';
 import {
   createLog,
+  createOrganizationRoles,
+  deleteOrganization,
+  updateOrganization,
   deleteUser,
   inviteToPlatform,
   recordProfileView,
@@ -26,6 +29,8 @@ import newsletterRouter from './routes/v1/newsletter.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
+// import teamRouter from './routes/v1/team.js';
+import organizationRouter from './routes/v1/organization.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -74,6 +79,12 @@ app.use('/api/v1/newsletter', newsletterRouter);
 // Platform invite routes
 app.use('/api/v1/platform', platformInviteRouter);
 
+// Team routes
+// app.use('/api/v1/team', teamRouter);
+
+// Organization routes
+app.use('/api/v1/organization', organizationRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -90,6 +101,9 @@ app.use(
       subscribeToNewsletter,
       unsubscribeFromNewsletter,
       inviteToPlatform,
+      createOrganizationRoles,
+      deleteOrganization,
+      updateOrganization,
     ],
   }),
 );
