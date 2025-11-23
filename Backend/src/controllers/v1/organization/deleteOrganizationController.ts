@@ -57,7 +57,7 @@ export const DeleteOrganization = async (req: Request, res: Response) => {
     );
 
     // Return immediate response
-    res.json({
+    res.status(202).json({
       message: 'Organization deletion has been queued and will be processed shortly',
       organization: {
         id: organizationId,
