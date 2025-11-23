@@ -164,7 +164,7 @@ function Footer() {
                 ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
               `}
             >
-              <Link to={`/${item}`}>{item.replace('-', ' ')}</Link>
+              <Link to={`/${item}`}>{item.replace(/-/g, ' ')}</Link>
             </p>
           ))}
         </div>
