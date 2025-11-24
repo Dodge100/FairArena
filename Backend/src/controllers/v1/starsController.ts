@@ -176,7 +176,11 @@ export const getProfileStars = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { cursor, limit = 20 } = req.query;
 
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
+    // Safely parse and validate limit
+    const rawLimit = Number(limit);
+    const safeLimit = Number.isFinite(rawLimit)
+      ? Math.min(100, Math.max(1, Math.floor(rawLimit)))
+      : 20;
 
     // Find the profile by userId
     const profile = await prisma.profile.findUnique({
@@ -215,12 +219,12 @@ export const getProfileStars = async (req: Request, res: Response) => {
       },
       orderBy: { createdAt: 'desc' },
       cursor: cursor ? { id: cursor as string } : undefined,
-      take: limitNum + 1, // +1 to check if more results exist
+      take: safeLimit + 1, // +1 to check if more results exist
       skip: cursor ? 1 : 0, // Skip the cursor
     });
 
     // Check if there are more results
-    const hasMore = stars.length > limitNum;
+    const hasMore = stars.length > safeLimit;
     if (hasMore) {
       stars.pop(); // Remove the extra item
     }
@@ -306,7 +310,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
         pagination: {
           cursor: hasMore ? stars[stars.length - 1].id : null,
           hasMore,
-          limit: limitNum,
+          limit: safeLimit,
           total: totalCount,
         },
       },

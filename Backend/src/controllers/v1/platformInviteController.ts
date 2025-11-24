@@ -1,8 +1,8 @@
 import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { inngest } from '../../inngest/v1/client.js';
 import { RATE_LIMIT_CONFIG, REDIS_KEYS, redis } from '../../config/redis.js';
+import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 const newsletterSchema = z.object({
@@ -49,17 +49,21 @@ export async function inviteToPlatform(req: Request, res: Response) {
       });
     }
 
-    // Check invite attempts
-    const currentInviteAttempts = await redis.incr(inviteKey);
-
-    // Set expiry on the invite attempts key if this is the first attempt
-    if (currentInviteAttempts === 1) {
-      await redis.expire(inviteKey, RATE_LIMIT_CONFIG.PLATFORM_INVITE_WINDOW_MINUTES * 60);
-    }
+    // Atomically increment invite attempts and set expiry if first attempt
+    const luaScript = `
+      local count = redis.call('INCR', KEYS[1])
+      if count == 1 then
+        redis.call('EXPIRE', KEYS[1], ARGV[1])
+      end
+      return count
+    `;
+    const expirySeconds = RATE_LIMIT_CONFIG.PLATFORM_INVITE_WINDOW_MINUTES * 60;
+    const currentInviteAttempts = Number(await redis.eval(luaScript, [inviteKey], [expirySeconds]));
 
     if (currentInviteAttempts > RATE_LIMIT_CONFIG.PLATFORM_INVITE_MAX_ATTEMPTS) {
       // Lock out the user from sending invites
-      const inviteLockoutUntil = Date.now() + RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60 * 1000;
+      const inviteLockoutUntil =
+        Date.now() + RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60 * 1000;
       await redis.set(inviteLockoutKey, inviteLockoutUntil.toString(), {
         ex: RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60,
       });

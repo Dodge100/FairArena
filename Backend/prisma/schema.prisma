@@ -170,7 +170,7 @@ model UserOrganization {
 model OrganizationRole {
   id                      String                   @id @default(cuid())
   organizationId          String
-  roleName                String                   @unique
+  roleName                String
   permissions             Json
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -277,7 +277,7 @@ model InviteCode {
 model TeamRole {
   id            String         @id @default(cuid())
   teamId        String
-  roleName      String         @unique
+  roleName      String
   permissions   Json
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -292,7 +292,7 @@ model TeamRole {
 model ProjectRole {
   id                 String              @id @default(cuid())
   projectId          String
-  roleName           String              @unique
+  roleName           String
   permissions        Json
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt

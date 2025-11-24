@@ -79,8 +79,13 @@ export default function ProfileStars() {
     }, [userId, getToken]);
 
     useEffect(() => {
+        if (!userId) {
+            setError('Profile not found');
+            setLoading(false);
+            return;
+        }
         fetchStars();
-    }, [fetchStars]);
+    }, [fetchStars, userId]);
 
     const filteredStars = stars
         .filter(star => star.starrer.name.toLowerCase().includes(searchTerm.toLowerCase()))

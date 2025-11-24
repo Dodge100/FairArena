@@ -59,7 +59,7 @@ export const GetOrganizationMembers = async (req: Request, res: Response) => {
       id: member.user.id,
       name: member.user.profile
         ? `${member.user.profile.firstName || ''} ${member.user.profile.lastName || ''}`.trim()
-        : member.user.email.split('@')[0], // fallback to email username
+        : member.user.email.split('@')[0] || 'Unknown', // fallback to email username
       email: member.user.email,
       role: {
         id: member.role.id,

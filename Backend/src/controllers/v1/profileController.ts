@@ -13,7 +13,7 @@ const userIdSchema = z.string().min(1).max(255);
 const profileUpdateSchema = z.object({
   firstName: z.string().min(1).max(100).nullish(),
   lastName: z.string().min(1).max(100).nullish(),
-  bio: z.string().max(1000).nullish(),
+  bio: z.string().max(500).nullish(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullish(),
   dateOfBirth: z.string().nullish(),
   phoneNumber: z.string().max(20).nullish(),

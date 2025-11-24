@@ -8,7 +8,7 @@ import { inngest } from './client.js';
 const profileUpdateSchema = z.object({
   firstName: z.string().min(1).max(100).nullish(),
   lastName: z.string().min(1).max(100).nullish(),
-  bio: z.string().max(1000).nullish(),
+  bio: z.string().max(500).nullish(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullish(),
   dateOfBirth: z.string().nullish(),
   phoneNumber: z.string().max(20).nullish(),
@@ -65,41 +65,40 @@ export const updateProfileFunction = inngest.createFunction(
 
     // Step 2: Update or create profile
     const profile = await step.run('upsert-profile', async () => {
-      // Filter out null/undefined values for update
+      // Include fields that were provided in the update (including null for clearing)
       const updateData: Record<string, unknown> = {};
-      if (validatedData.firstName != null) updateData.firstName = validatedData.firstName;
-      if (validatedData.lastName != null) updateData.lastName = validatedData.lastName;
-      if (validatedData.bio != null) updateData.bio = validatedData.bio;
-      if (validatedData.gender != null) updateData.gender = validatedData.gender;
-      if (validatedData.dateOfBirth != null)
+      if ('firstName' in validatedData) updateData.firstName = validatedData.firstName;
+      if ('lastName' in validatedData) updateData.lastName = validatedData.lastName;
+      if ('bio' in validatedData) updateData.bio = validatedData.bio;
+      if ('gender' in validatedData) updateData.gender = validatedData.gender;
+      if ('dateOfBirth' in validatedData)
         updateData.dateOfBirth = validatedData.dateOfBirth
           ? new Date(validatedData.dateOfBirth)
           : null;
-      if (validatedData.phoneNumber != null) updateData.phoneNumber = validatedData.phoneNumber;
-      if (validatedData.location != null) updateData.location = validatedData.location;
-      if (validatedData.jobTitle != null) updateData.jobTitle = validatedData.jobTitle;
-      if (validatedData.company != null) updateData.company = validatedData.company;
-      if (validatedData.yearsOfExperience != null)
+      if ('phoneNumber' in validatedData) updateData.phoneNumber = validatedData.phoneNumber;
+      if ('location' in validatedData) updateData.location = validatedData.location;
+      if ('jobTitle' in validatedData) updateData.jobTitle = validatedData.jobTitle;
+      if ('company' in validatedData) updateData.company = validatedData.company;
+      if ('yearsOfExperience' in validatedData)
         updateData.yearsOfExperience = validatedData.yearsOfExperience;
-      if (validatedData.experiences != null) updateData.experiences = validatedData.experiences;
-      if (validatedData.education != null) updateData.education = validatedData.education;
-      if (validatedData.skills != null) updateData.skills = validatedData.skills;
-      if (validatedData.languages != null) updateData.languages = validatedData.languages;
-      if (validatedData.interests != null) updateData.interests = validatedData.interests;
-      if (validatedData.certifications != null)
+      if ('experiences' in validatedData) updateData.experiences = validatedData.experiences;
+      if ('education' in validatedData) updateData.education = validatedData.education;
+      if ('skills' in validatedData) updateData.skills = validatedData.skills;
+      if ('languages' in validatedData) updateData.languages = validatedData.languages;
+      if ('interests' in validatedData) updateData.interests = validatedData.interests;
+      if ('certifications' in validatedData)
         updateData.certifications = validatedData.certifications;
-      if (validatedData.awards != null) updateData.awards = validatedData.awards;
-      if (validatedData.githubUsername != null)
+      if ('awards' in validatedData) updateData.awards = validatedData.awards;
+      if ('githubUsername' in validatedData)
         updateData.githubUsername = validatedData.githubUsername;
-      if (validatedData.twitterHandle != null)
-        updateData.twitterHandle = validatedData.twitterHandle;
-      if (validatedData.linkedInProfile != null)
+      if ('twitterHandle' in validatedData) updateData.twitterHandle = validatedData.twitterHandle;
+      if ('linkedInProfile' in validatedData)
         updateData.linkedInProfile = validatedData.linkedInProfile;
-      if (validatedData.resumeUrl != null) updateData.resumeUrl = validatedData.resumeUrl;
-      if (validatedData.portfolioUrl != null) updateData.portfolioUrl = validatedData.portfolioUrl;
-      if (validatedData.isPublic != null) updateData.isPublic = validatedData.isPublic;
-      if (validatedData.requireAuth != null) updateData.requireAuth = validatedData.requireAuth;
-      if (validatedData.trackViews != null) updateData.trackViews = validatedData.trackViews;
+      if ('resumeUrl' in validatedData) updateData.resumeUrl = validatedData.resumeUrl;
+      if ('portfolioUrl' in validatedData) updateData.portfolioUrl = validatedData.portfolioUrl;
+      if ('isPublic' in validatedData) updateData.isPublic = validatedData.isPublic;
+      if ('requireAuth' in validatedData) updateData.requireAuth = validatedData.requireAuth;
+      if ('trackViews' in validatedData) updateData.trackViews = validatedData.trackViews;
 
       // Filter out null/undefined values for create
       const createData = {

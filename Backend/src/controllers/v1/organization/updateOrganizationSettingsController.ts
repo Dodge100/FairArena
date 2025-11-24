@@ -53,8 +53,7 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
 
     // Check if user has edit permissions
     const permissions = userOrganization.role.permissions as Record<string, boolean>;
-    const canEdit =
-      permissions?.canEditSettings || userOrganization.role.roleName.toLowerCase() === 'owner';
+    const canEdit =permissions?.canEditSettings;
 
     if (!canEdit) {
       return res
@@ -88,7 +87,7 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
       });
 
       if (existingOrg) {
-        return res.status(400).json({ error: 'Organization name already exists' });
+        return res.status(409).json({ error: 'Organization name already exists' });
       }
     }
 

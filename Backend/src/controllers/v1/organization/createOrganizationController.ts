@@ -79,26 +79,6 @@ export const CreateOrganization = async (req: Request, res: Response) => {
         },
       });
 
-      inngest
-        .send({
-          name: 'organization.created',
-          data: {
-            organizationId: org.id,
-            creatorId: userId,
-          },
-        })
-        .catch((err) => logger.error('Failed to send Inngest event', err));
-
-      inngest.send({
-        name: 'log.create',
-        data: {
-          userId: auth.userId,
-          action: 'organization_created',
-          level: 'INFO',
-        },
-        metadata: { organizationName: org.name },
-      });
-
       // Add user to organization
       await tx.userOrganization.create({
         data: {
@@ -108,6 +88,26 @@ export const CreateOrganization = async (req: Request, res: Response) => {
       });
 
       return org;
+    });
+
+    inngest
+      .send({
+        name: 'organization.created',
+        data: {
+          organizationId: organization.id,
+          creatorId: userId,
+        },
+      })
+      .catch((err) => logger.error('Failed to send Inngest event', err));
+
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId: auth.userId,
+        action: 'organization_created',
+        level: 'INFO',
+      },
+      metadata: { organizationName: organization.name },
     });
 
     logger.info('Organization created successfully', { organizationId: organization.id, userId });

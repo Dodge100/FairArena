@@ -328,6 +328,7 @@ export default function EditProfile() {
                 onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                 placeholder="Tell us about yourself..."
                 rows={4}
+                maxLength={500}
               />
             </div>
 

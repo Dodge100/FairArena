@@ -76,33 +76,52 @@ export const createOrganizationRoles = inngest.createFunction(
           },
         ];
 
-        const rolePromises = rolesData.map((roleData) =>
-          prisma.organizationRole.create({
-            data: {
-              organizationId,
-              ...roleData,
-            },
-          }),
-        );
+        await prisma.$transaction(async (tx) => {
+          const roles = await Promise.all(
+            rolesData.map((roleData) =>
+              tx.organizationRole.upsert({
+                where: {
+                  organizationId_roleName: {
+                    organizationId,
+                    roleName: roleData.roleName,
+                  },
+                },
+                update: {}, // No update needed for existing roles
+                create: {
+                  organizationId,
+                  ...roleData,
+                },
+              }),
+            ),
+          );
 
-        const roles = await Promise.all(rolePromises);
-        logger.info('Roles created', { roleIds: roles.map((r) => r.id) });
+          logger.info('Roles ensured', { roleIds: roles.map((r) => r.id) });
 
-        // Assign owner role to creator
-        const ownerRole = roles.find((r) => r.roleName === 'Owner');
-        if (ownerRole) {
-          await prisma.organizationUserRole.create({
-            data: {
+          // Assign owner role to creator using upsert
+          const ownerRole = roles.find((r) => r.roleName === 'Owner');
+          if (ownerRole) {
+            await tx.organizationUserRole.upsert({
+              where: {
+                userId_organizationId_roleId: {
+                  userId: creatorId,
+                  organizationId,
+                  roleId: ownerRole.id,
+                },
+              },
+              update: {}, // No update needed
+              create: {
+                userId: creatorId,
+                organizationId,
+                roleId: ownerRole.id,
+              },
+            });
+
+            logger.info('Owner role assigned to creator', {
               userId: creatorId,
-              organizationId,
               roleId: ownerRole.id,
-            },
-          });
-          logger.info('Owner role assigned to creator', {
-            userId: creatorId,
-            roleId: ownerRole.id,
-          });
-        }
+            });
+          }
+        });
       } catch (error) {
         logger.error('Error creating roles or assigning owner', {
           organizationId,

@@ -203,8 +203,8 @@ const OrganizationSettings = () => {
         );
     }
 
-    const canEdit = organization.userRole.permissions?.canEditSettings || organization.userRole.name.toLowerCase() === 'owner';
-    const canDelete = organization.userRole.name.toLowerCase() === 'owner';
+    const canEdit = Boolean(organization.userRole.permissions?.canEditSettings);
+    const canDelete = Boolean(organization.userRole.permissions?.canDeleteOrganization);
 
     return (
         <div className="container mx-auto py-8 px-4 max-w-4xl">
