@@ -14,6 +14,9 @@ export const RATE_LIMIT_CONFIG = {
   MAX_SEND_ATTEMPTS: 3,
   SEND_WINDOW_MINUTES: 60,
   SEND_LOCKOUT_MINUTES: 30,
+  PLATFORM_INVITE_MAX_ATTEMPTS: 3,
+  PLATFORM_INVITE_WINDOW_MINUTES: 60,
+  PLATFORM_INVITE_LOCKOUT_MINUTES: 30,
 } as const;
 
 // Redis key prefixes
@@ -23,4 +26,8 @@ export const REDIS_KEYS = {
   OTP_SEND_ATTEMPTS: 'otp:send:attempts:',
   OTP_SEND_LOCKOUT: 'otp:send:lockout:',
   PROFILE_CACHE: 'profile:cache:',
+  PLATFORM_INVITE_ATTEMPTS: 'platform:invite:attempts:',
+  PLATFORM_INVITE_LOCKOUT: 'platform:invite:lockout:',
+  STAR_RATE_LIMIT: 'star:ratelimit:',
+  STAR_COUNT_CACHE: 'star:count:',
 } as const;

@@ -175,7 +175,7 @@ export default function ProfileViews() {
                 <Button
                   variant="outline"
                   className="mt-4"
-                  onClick={() => navigate('/dashboard/profile')}
+                  onClick={() => navigate('/dashboard/public-profile')}
                 >
                   Go to Profile
                 </Button>

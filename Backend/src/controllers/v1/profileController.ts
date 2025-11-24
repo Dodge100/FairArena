@@ -11,31 +11,31 @@ import logger from '../../utils/logger.js';
 const userIdSchema = z.string().min(1).max(255);
 
 const profileUpdateSchema = z.object({
-  firstName: z.string().min(1).max(100).optional(),
-  lastName: z.string().min(1).max(100).optional(),
-  bio: z.string().max(1000).optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  firstName: z.string().min(1).max(100).nullish(),
+  lastName: z.string().min(1).max(100).nullish(),
+  bio: z.string().max(500).nullish(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullish(),
   dateOfBirth: z.string().nullish(),
-  phoneNumber: z.string().max(20).optional(),
-  location: z.string().max(200).optional(),
-  jobTitle: z.string().max(200).optional(),
-  company: z.string().max(200).optional(),
+  phoneNumber: z.string().max(20).nullish(),
+  location: z.string().max(200).nullish(),
+  jobTitle: z.string().max(200).nullish(),
+  company: z.string().max(200).nullish(),
   yearsOfExperience: z.number().int().min(0).max(100).nullish(),
-  experiences: z.array(z.string().max(500)).max(20).optional(),
-  education: z.array(z.string().max(500)).max(20).optional(),
-  skills: z.array(z.string().max(100)).max(100).optional(),
-  languages: z.array(z.string().max(50)).max(50).optional(),
-  interests: z.array(z.string().max(100)).max(50).optional(),
-  certifications: z.array(z.string().max(200)).max(20).optional(),
-  awards: z.array(z.string().max(200)).max(20).optional(),
-  githubUsername: z.string().max(100).optional(),
-  twitterHandle: z.string().max(100).optional(),
-  linkedInProfile: z.union([z.string().url().max(500), z.literal('')]).optional(),
-  portfolioUrl: z.union([z.string().url().max(500), z.literal('')]).optional(),
-  resumeUrl: z.union([z.string().url().max(500), z.literal('')]).optional(),
-  isPublic: z.boolean().optional(),
-  requireAuth: z.boolean().optional(),
-  trackViews: z.boolean().optional(),
+  experiences: z.array(z.string().max(500)).max(20).nullish(),
+  education: z.array(z.string().max(500)).max(20).nullish(),
+  skills: z.array(z.string().max(100)).max(100).nullish(),
+  languages: z.array(z.string().max(50)).max(50).nullish(),
+  interests: z.array(z.string().max(100)).max(50).nullish(),
+  certifications: z.array(z.string().max(200)).max(20).nullish(),
+  awards: z.array(z.string().max(200)).max(20).nullish(),
+  githubUsername: z.string().max(100).nullish(),
+  twitterHandle: z.string().max(100).nullish(),
+  linkedInProfile: z.union([z.string().url().max(500), z.literal('')]).nullish(),
+  portfolioUrl: z.union([z.string().url().max(500), z.literal('')]).nullish(),
+  resumeUrl: z.union([z.string().url().max(500), z.literal('')]).nullish(),
+  isPublic: z.boolean().nullish(),
+  requireAuth: z.boolean().nullish(),
+  trackViews: z.boolean().nullish(),
 });
 
 // Get public profile by userId
@@ -54,6 +54,8 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     const auth = req.auth();
     const viewerUserId = auth?.userId;
 
+    const readOnlyPrisma = getReadOnlyPrisma();
+
     // Check cache first
     const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${userId}`;
     try {
@@ -66,14 +68,73 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           // If Redis returns an object (auto-parsed), use it directly
           profileData = cachedProfile;
         }
-        return res.status(200).json(profileData);
+
+        // Compute viewer-specific meta
+        const shouldTrackViews =
+          profileData.requireAuth &&
+          profileData.trackViews &&
+          viewerUserId &&
+          viewerUserId !== profileData.userId;
+        let hasConsent = false;
+        if (shouldTrackViews) {
+          const existingView = await readOnlyPrisma.profileView.findUnique({
+            where: {
+              profileId_viewerUserId: {
+                profileId: profileData.id,
+                viewerUserId: viewerUserId!,
+              },
+            },
+          });
+          hasConsent = !!existingView;
+        }
+
+        // Get fresh star data for viewer
+        let starCount = 0;
+        let hasStarred = false;
+        let starredAt = null;
+
+        try {
+          starCount = await prisma.profileStars.count({
+            where: { profileId: profileData.id },
+          });
+
+          if (viewerUserId && viewerUserId !== profileData.userId) {
+            const userStar = await prisma.profileStars.findFirst({
+              where: {
+                profileId: profileData.id,
+                userId: viewerUserId,
+              },
+              select: { createdAt: true },
+            });
+            hasStarred = !!userStar;
+            starredAt = userStar?.createdAt || null;
+          }
+        } catch (starError) {
+          logger.warn('Error fetching star data from cache:', starError);
+        }
+
+        const responseData = {
+          data: {
+            ...profileData,
+            stars: {
+              count: starCount,
+              hasStarred,
+              starredAt,
+            },
+          },
+          meta: {
+            requiresConsent: shouldTrackViews && !hasConsent,
+            isOwner: viewerUserId === profileData.userId,
+          },
+        };
+
+        return res.status(200).json(responseData);
       }
     } catch (cacheError) {
       logger.warn('Cache read error:', cacheError);
       // Continue without cache
     }
 
-    const readOnlyPrisma = getReadOnlyPrisma();
     const profile = await readOnlyPrisma.profile.findFirst({
       where: {
         userId,
@@ -159,11 +220,48 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       logger.error('Error fetching Clerk user:', error);
     }
 
+    const profileWithExtras = {
+      ...profileData,
+      avatarUrl,
+      email,
+    };
+
+    // Get star count and user's star status
+    let starCount = 0;
+    let hasStarred = false;
+    let starredAt = null;
+
+    try {
+      // Get star count
+      starCount = await prisma.profileStars.count({
+        where: { profileId: profile.id },
+      });
+
+      // Check if viewer has starred (only if authenticated)
+      if (viewerUserId && viewerUserId !== profile.userId) {
+        const userStar = await prisma.profileStars.findFirst({
+          where: {
+            profileId: profile.id,
+            userId: viewerUserId,
+          },
+          select: { createdAt: true },
+        });
+        hasStarred = !!userStar;
+        starredAt = userStar?.createdAt || null;
+      }
+    } catch (starError) {
+      logger.warn('Error fetching star data:', starError);
+      // Continue without star data
+    }
+
     const responseData = {
       data: {
-        ...profileData,
-        avatarUrl,
-        email,
+        ...profileWithExtras,
+        stars: {
+          count: starCount,
+          hasStarred,
+          starredAt,
+        },
       },
       meta: {
         requiresConsent: shouldTrackViews && !hasConsent,
@@ -171,9 +269,9 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       },
     };
 
-    // Cache the response for 1 hour (3600 seconds)
+    // Cache the profile data for 1 hour (3600 seconds)
     try {
-      await redis.setex(cacheKey, 3600, JSON.stringify(responseData));
+      await redis.setex(cacheKey, 3600, JSON.stringify(profileWithExtras));
       logger.info('Profile cached successfully for user:', userId);
     } catch (cacheError) {
       logger.warn('Cache write error:', cacheError);
@@ -214,6 +312,34 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     });
 
     if (!profile) {
+      // Ensure user exists in database
+      let email = '';
+      try {
+        const clerkUser = await clerkClient.users.getUser(userId);
+        email = clerkUser.primaryEmailAddress?.emailAddress || '';
+      } catch (error) {
+        logger.error('Error fetching Clerk user for profile creation:', error);
+      }
+
+      try {
+        await prisma.user.upsert({
+          where: { userId },
+          update: { email },
+          create: { userId, email },
+        });
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string; meta?: { target?: string[] } };
+        if (prismaError.code === 'P2002' && prismaError.meta?.target?.includes('email')) {
+          // Email conflict, update the existing user with this userId
+          await prisma.user.update({
+            where: { email },
+            data: { userId },
+          });
+        } else {
+          throw error;
+        }
+      }
+
       // Create default profile if not exists
       profile = await prisma.profile.create({
         data: {
