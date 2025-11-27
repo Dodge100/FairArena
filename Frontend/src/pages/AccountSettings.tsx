@@ -212,8 +212,8 @@ export default function AccountSettings() {
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 flex items-center space-x-2">
-          <Shield className="h-8 w-8" />
-          <span>Account Settings</span>
+          {/* <Shield className="h-8 w-8 " /> */}
+          <span className=''>Account Settings</span>
         </h1>
 
         <Card>
@@ -224,7 +224,7 @@ export default function AccountSettings() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span>Account Verification</span>
+              <span className=''>Account Verification</span>
             </CardTitle>
             <CardDescription>
               Verify your account to access sensitive settings. Verification expires in 10 minutes.
@@ -247,10 +247,10 @@ export default function AccountSettings() {
                   <Input
                     id="otp"
                     type="text"
-                    placeholder="Enter 6-digit OTP"
+                    placeholder="Enter 12-digit OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
+                    maxLength={12}
                     disabled={isRateLimited}
                   />
                   {isRateLimited && retryAfter > 0 && (
@@ -263,7 +263,7 @@ export default function AccountSettings() {
                   <Button
                     onClick={sendOtp}
                     disabled={isSendingOtp || isRateLimited}
-                    variant="outline"
+                    variant="default"
                     className="flex-1"
                   >
                     {isSendingOtp ? (
