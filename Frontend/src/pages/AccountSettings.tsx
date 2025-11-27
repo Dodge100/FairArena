@@ -247,7 +247,7 @@ export default function AccountSettings() {
                   <Input
                     id="otp"
                     type="text"
-                    placeholder="Enter 12-digit OTP"
+                    placeholder="Enter 6 to 12 digits OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={12}
