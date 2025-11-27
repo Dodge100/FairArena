@@ -1,6 +1,7 @@
 import { ThemeSwitcher } from '@/components/kibo-ui/theme-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import logo from "/fairArenaLogotop.png"
 import {
   Sidebar,
   SidebarContent,
@@ -132,11 +133,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r bg-sidebar">
       <SidebarHeader className="border-b px-4 py-3 bg-sidebar group-data-[collapsible=icon]:px-1">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-r from-[#DDFF00] to-[#9AC400]">
-            <Trophy className="h-5 w-5 text-neutral-900" />
-          </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold">FairArena</span>
+          <img src={logo} className='w-30 -my-8' alt="" />
+            {/* <span className="text-sm font-semibold">FairArena</span> */}
             <span className="text-xs text-muted-foreground">Hackathon Platform</span>
           </div>
         </div>
