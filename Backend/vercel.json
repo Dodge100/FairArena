@@ -7,5 +7,11 @@
       "dest": "dist/index.js"
     }
   ],
-  "buildCommand": "pnpm run build"
+  "buildCommand": "pnpm run build",
+  "crons": [
+    {
+      "path": "/api/v1/cleanup",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

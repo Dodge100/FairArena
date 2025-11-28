@@ -311,7 +311,7 @@ export default function AccountLogs() {
                 <Clock className="h-5 w-5" />
                 <span>Account Logs</span>
               </CardTitle>
-              <CardDescription>Your recent account activity and security events.</CardDescription>
+              <CardDescription>Your recent account activity and security events. Retained till 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 mb-4">

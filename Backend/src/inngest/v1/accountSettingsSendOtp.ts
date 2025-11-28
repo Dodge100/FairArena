@@ -1,15 +1,27 @@
 import bcrypt from 'bcrypt';
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { sendOtpEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 const SALT_ROUNDS = 12;
 const OTP_EXPIRY_MINUTES = 10;
 
 function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const length = Math.floor(Math.random() * (12 - 6 + 1)) + 6;
+  const digits = '0123456789';
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+  let otp = '';
+  for (let i = 0; i < length; i++) {
+    if (Math.random() < 0.6) {
+      otp += digits.charAt(Math.floor(Math.random() * digits.length));
+    } else {
+      otp += alpha.charAt(Math.floor(Math.random() * alpha.length));
+    }
+  }
+  return otp;
 }
 
 export const sendOtpForAccountSettings = inngest.createFunction(

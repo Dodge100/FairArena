@@ -33,6 +33,7 @@ import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 // import teamRouter from './routes/v1/team.js';
+import cleanupRouter from './routes/v1/cleanup.js';
 import organizationRouter from './routes/v1/organization.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
@@ -49,6 +50,7 @@ app.set('trust proxy', 1);
 app.use(
   cors({
     origin: ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
+    allowedHeaders: ['Content-Type', 'Authorization', 'ip.src'],
     credentials: true,
   }),
 );
@@ -95,6 +97,9 @@ app.use('/api/v1/reports', reportsRouter);
 
 // Stars routes
 app.use('/api/v1/stars', starsRouter);
+
+// Cleanup routes
+app.use('/api/v1', cleanupRouter);
 
 // Inngest serve
 app.use(

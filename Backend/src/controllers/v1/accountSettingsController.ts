@@ -14,7 +14,7 @@ const TOKEN_EXPIRY_MINUTES = 10;
 
 // Validation schemas
 const verifyOtpSchema = z.object({
-  otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must contain only digits'),
+  otp: z.string().min(6, 'OTP must be at least 6 characters').max(12, 'OTP must be at most 12 characters').regex(/^[a-zA-Z0-9]+$/, 'OTP must be alphanumeric'),
 });
 
 export const sendOtp = async (req: Request, res: Response) => {
@@ -109,7 +109,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
       });
       return res.status(400).json({
         success: false,
-        message: 'OTP must be 6 digits',
+        message: 'OTP must be 6-12 alphanumeric characters',
       });
     }
 
