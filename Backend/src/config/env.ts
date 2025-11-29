@@ -49,6 +49,6 @@ export const ENV = {
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   SMTP_USER: process.env.SMTP_USER!,
   SMTP_PASS: process.env.SMTP_PASS!,
-  EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'resend', // 'resend' or 'nodemailer'
+  EMAIL_PROVIDER: process.env.NODE_ENV === 'production' ? process.env.EMAIL_PROVIDER : 'nodemailer',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

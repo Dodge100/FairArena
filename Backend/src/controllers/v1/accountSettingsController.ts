@@ -2,19 +2,30 @@ import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
-import { RATE_LIMIT_CONFIG, redis, REDIS_KEYS } from '../../config/redis.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 // Constants for OTP verification
 const TOKEN_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_SECONDS = 600; // 10 minutes
+const MAX_OTP_SEND_ATTEMPTS = 5; // Maximum 5 OTP requests
+const OTP_SEND_WINDOW_SECONDS = 1800; // Within 30 minutes
+const OTP_COOLDOWN_SECONDS = 60; // 1 minute between requests
+const MAX_OTP_VERIFY_ATTEMPTS = 5; // Maximum 5 verification attempts
+const OTP_VERIFY_WINDOW_SECONDS = 1800; // Within 30 minutes (half hour)
 
 // Validation schemas
 const verifyOtpSchema = z.object({
-  otp: z.string().min(6, 'OTP must be at least 6 characters').max(12, 'OTP must be at most 12 characters').regex(/^[a-zA-Z0-9]+$/, 'OTP must be alphanumeric'),
+  otp: z
+    .string()
+    .trim()
+    .min(6, 'OTP must be at least 6 characters')
+    .max(12, 'OTP must be at most 12 characters')
+    .regex(/^[a-zA-Z0-9]+$/, 'OTP must be alphanumeric')
+    .transform((val) => val.toUpperCase()), // Normalize to uppercase for case-insensitive comparison
 });
 
 export const sendOtp = async (req: Request, res: Response) => {
@@ -26,48 +37,79 @@ export const sendOtp = async (req: Request, res: Response) => {
 
     logger.info('Sending OTP for account settings', { userId: auth.userId });
 
-    // Check rate limiting for OTP sending
-    const sendKey = `${REDIS_KEYS.OTP_SEND_ATTEMPTS}${auth.userId}:account-settings`;
-    const sendLockoutKey = `${REDIS_KEYS.OTP_SEND_LOCKOUT}${auth.userId}:account-settings`;
+    const cooldownKey = `${REDIS_KEYS.OTP_STORE}${auth.userId}:account-settings:cooldown`;
+    const attemptsKey = `${REDIS_KEYS.OTP_STORE}${auth.userId}:account-settings:attempts`;
 
-    // Check if user is currently locked out from sending OTPs
-    const sendLockoutUntil = await redis.get(sendLockoutKey);
-    if (sendLockoutUntil && typeof sendLockoutUntil === 'string') {
-      const remainingMinutes = Math.ceil((parseInt(sendLockoutUntil) - Date.now()) / (60 * 1000));
-      logger.warn('User is locked out from sending OTP', {
+    // Check cooldown period (1 minute between requests)
+    let cooldown, ttl;
+    try {
+      cooldown = await redis.get(cooldownKey);
+      if (cooldown) {
+        ttl = await redis.ttl(cooldownKey);
+        if (ttl > 0) {
+          logger.warn('OTP request blocked by cooldown', {
+            userId: auth.userId,
+            remainingSeconds: ttl,
+          });
+          return res.status(429).json({
+            success: false,
+            message: `Please wait ${ttl} seconds before requesting another OTP`,
+            retryAfter: ttl,
+          });
+        }
+      }
+    } catch (redisError) {
+      logger.error('Redis error checking cooldown', {
         userId: auth.userId,
-        remainingMinutes,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
       });
-      return res.status(429).json({
-        success: false,
-        message: `Too many OTP requests. Please try again in ${remainingMinutes} minutes.`,
-        retryAfter: remainingMinutes * 60,
-      });
+      // Continue without rate limiting if Redis is down (fail open for availability)
     }
 
-    // Check send attempts
-    const currentSendAttempts = await redis.incr(sendKey);
+    // Check rate limiting (5 requests per 30 minutes)
+    let currentAttempts = 0;
+    try {
+      const attempts = await redis.get(attemptsKey);
+      currentAttempts = typeof attempts === 'number' ? attempts : 0;
 
-    // Set expiry on the send attempts key if this is the first attempt
-    if (currentSendAttempts === 1) {
-      await redis.expire(sendKey, RATE_LIMIT_CONFIG.SEND_WINDOW_MINUTES * 60);
+      if (currentAttempts >= MAX_OTP_SEND_ATTEMPTS) {
+        const ttl = await redis.ttl(attemptsKey);
+        const remainingMinutes = Math.ceil(ttl / 60);
+        logger.warn('OTP request blocked by rate limit', {
+          userId: auth.userId,
+          attempts: currentAttempts,
+          remainingMinutes,
+        });
+        return res.status(429).json({
+          success: false,
+          message: `Too many OTP requests. Please try again in ${remainingMinutes} minutes`,
+          retryAfter: ttl,
+        });
+      }
+    } catch (redisError) {
+      logger.error('Redis error checking rate limit', {
+        userId: auth.userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      // Continue without rate limiting if Redis is down
     }
 
-    if (currentSendAttempts > RATE_LIMIT_CONFIG.MAX_SEND_ATTEMPTS) {
-      // Lock out the user from sending OTPs
-      const sendLockoutUntil = Date.now() + RATE_LIMIT_CONFIG.SEND_LOCKOUT_MINUTES * 60 * 1000;
-      await redis.set(sendLockoutKey, sendLockoutUntil.toString(), {
-        ex: RATE_LIMIT_CONFIG.SEND_LOCKOUT_MINUTES * 60,
-      });
-      logger.warn('User locked out from sending OTP after too many requests', {
+    // Set cooldown (1 minute)
+    try {
+      await redis.setex(cooldownKey, OTP_COOLDOWN_SECONDS, '1');
+
+      // Increment attempts counter (30-minute window)
+      if (currentAttempts === 0) {
+        await redis.setex(attemptsKey, OTP_SEND_WINDOW_SECONDS, 1);
+      } else {
+        await redis.incr(attemptsKey);
+      }
+    } catch (redisError) {
+      logger.error('Redis error setting rate limit', {
         userId: auth.userId,
-        attempts: currentSendAttempts,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
       });
-      return res.status(429).json({
-        success: false,
-        message: `Too many OTP requests. Please try again in ${RATE_LIMIT_CONFIG.SEND_LOCKOUT_MINUTES} minutes.`,
-        retryAfter: RATE_LIMIT_CONFIG.SEND_LOCKOUT_MINUTES * 60,
-      });
+      // Continue - OTP will still be sent even if rate limiting fails
     }
 
     await inngest.send({
@@ -82,6 +124,11 @@ export const sendOtp = async (req: Request, res: Response) => {
         action: 'sensitive-action-attempted',
         level: 'WARN',
       },
+    });
+
+    logger.info('OTP request accepted, rate limit updated', {
+      userId: auth.userId,
+      attempts: currentAttempts + 1,
     });
 
     res.json({ success: true, message: 'OTP sent to your email' });
@@ -118,96 +165,189 @@ export const verifyOtp = async (req: Request, res: Response) => {
     logger.info('Verifying OTP for account settings', { userId: auth.userId });
 
     // Check for rate limiting (brute force protection) using Redis
-    const attemptKey = `${REDIS_KEYS.OTP_ATTEMPTS}${auth.userId}:account-settings`;
-    const lockoutKey = `${REDIS_KEYS.OTP_LOCKOUT}${auth.userId}:account-settings`;
+    const verifyAttemptsKey = `${REDIS_KEYS.OTP_ATTEMPTS}${auth.userId}:account-settings:verify`;
+    const verifyLockoutKey = `${REDIS_KEYS.OTP_LOCKOUT}${auth.userId}:account-settings:verify`;
 
-    // Check if user is currently locked out
-    const lockoutUntil = await redis.get(lockoutKey);
-    if (lockoutUntil && typeof lockoutUntil === 'string') {
-      const remainingMinutes = Math.ceil((parseInt(lockoutUntil) - Date.now()) / (60 * 1000));
-      logger.warn('User is locked out from OTP verification', {
-        userId: auth.userId,
-        remainingMinutes,
-      });
-      return res.status(429).json({
-        success: false,
-        message: `Too many failed attempts. Please try again in ${remainingMinutes} minutes.`,
-        retryAfter: remainingMinutes * 60, // seconds
-      });
-    }
-
-    // Find the most recent non-verified OTP for this user and purpose
-    const otpRecord = await getReadOnlyPrisma().otp.findFirst({
-      where: {
-        userId: auth.userId,
-        sentFor: 'account-settings',
-        verified: false,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    if (!otpRecord) {
-      logger.warn('No valid OTP found', { userId: auth.userId });
-      return res.status(400).json({
-        success: false,
-        message: 'OTP expired or not found',
-      });
-    }
-
-    // Verify the OTP
-    const isValid = await bcrypt.compare(otp, otpRecord.otpHash);
-
-    if (!isValid) {
-      // Increment failed attempts in Redis
-      const currentAttempts = await redis.incr(attemptKey);
-
-      // Set expiry on the attempts key if this is the first attempt
-      if (currentAttempts === 1) {
-        await redis.expire(attemptKey, RATE_LIMIT_CONFIG.WINDOW_MINUTES * 60);
+    // Check if user is currently locked out from verification
+    try {
+      const lockoutUntil = await redis.get(verifyLockoutKey);
+      if (lockoutUntil) {
+        const ttl = await redis.ttl(verifyLockoutKey);
+        if (ttl > 0) {
+          const remainingMinutes = Math.ceil(ttl / 60);
+          logger.warn('User is locked out from OTP verification', {
+            userId: auth.userId,
+            remainingMinutes,
+          });
+          return res.status(429).json({
+            success: false,
+            message: `Too many failed attempts. Please try again in ${remainingMinutes} minutes`,
+            retryAfter: ttl,
+          });
+        }
       }
+    } catch (redisError) {
+      logger.error('Redis error checking lockout', {
+        userId: auth.userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      // Continue - fail open for availability
+    }
 
-      if (currentAttempts >= RATE_LIMIT_CONFIG.MAX_ATTEMPTS) {
+    // Check current verification attempts in the window
+    let verifyAttempts = 0;
+    try {
+      const currentVerifyAttempts = await redis.get(verifyAttemptsKey);
+      verifyAttempts = typeof currentVerifyAttempts === 'number' ? currentVerifyAttempts : 0;
+
+      if (verifyAttempts >= MAX_OTP_VERIFY_ATTEMPTS) {
         // Lock out the user
-        const lockoutUntil = Date.now() + RATE_LIMIT_CONFIG.LOCKOUT_MINUTES * 60 * 1000;
-        await redis.set(lockoutKey, lockoutUntil.toString(), {
-          ex: RATE_LIMIT_CONFIG.LOCKOUT_MINUTES * 60,
-        });
-        logger.warn('User locked out after too many failed OTP attempts', {
+        await redis.setex(verifyLockoutKey, OTP_VERIFY_WINDOW_SECONDS, '1');
+        logger.warn('User locked out after too many verification attempts', {
           userId: auth.userId,
-          attempts: currentAttempts,
+          attempts: verifyAttempts,
         });
         return res.status(429).json({
           success: false,
-          message: `Too many failed attempts. Please try again in ${RATE_LIMIT_CONFIG.LOCKOUT_MINUTES} minutes.`,
-          retryAfter: RATE_LIMIT_CONFIG.LOCKOUT_MINUTES * 60, // seconds
+          message: `Too many failed attempts. Please try again in ${Math.ceil(OTP_VERIFY_WINDOW_SECONDS / 60)} minutes`,
+          retryAfter: OTP_VERIFY_WINDOW_SECONDS,
         });
       }
+    } catch (redisError) {
+      logger.error('Redis error checking verification attempts', {
+        userId: auth.userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      // Continue - fail open
+    }
 
-      logger.warn('Invalid OTP provided', { userId: auth.userId, attempts: currentAttempts });
-      return res.status(400).json({
+    // Get OTP data from Redis
+    const otpKey = `${REDIS_KEYS.OTP_STORE}${auth.userId}:account-settings`;
+    let otpDataRaw;
+
+    try {
+      otpDataRaw = await redis.get(otpKey);
+    } catch (redisError) {
+      logger.error('Redis error fetching OTP', {
+        userId: auth.userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      return res.status(500).json({
         success: false,
-        message: 'Invalid OTP',
+        message: 'Failed to verify OTP. Please try again',
       });
     }
 
-    // Success - clear any previous failed attempts
-    await redis.del(attemptKey);
-    await redis.del(lockoutKey);
+    if (!otpDataRaw) {
+      logger.warn('No valid OTP found in Redis', { userId: auth.userId });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP expired or not found. Please request a new OTP',
+      });
+    }
 
-    // Mark only this specific OTP as verified (keep others for audit trail)
-    await prisma.otp.update({
-      where: {
-        id: otpRecord.id,
-      },
-      data: {
-        verified: true,
-      },
-    });
+    // Upstash Redis returns object directly when value is JSON
+    let otpData;
+    try {
+      otpData = typeof otpDataRaw === 'string' ? JSON.parse(otpDataRaw) : otpDataRaw;
+
+      // Validate OTP data structure
+      if (!otpData.otpHash || !otpData.userId || typeof otpData.attempts !== 'number') {
+        throw new Error('Invalid OTP data structure');
+      }
+    } catch (parseError) {
+      logger.error('Failed to parse OTP data', {
+        userId: auth.userId,
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      await redis.del(otpKey); // Clean up corrupted data
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP data. Please request a new OTP',
+      });
+    }
+
+    // Check if OTP has been verified too many times (max 5 attempts)
+    if (otpData.attempts >= 5) {
+      logger.warn('OTP verification attempts exceeded', { userId: auth.userId });
+      await redis.del(otpKey); // Delete the OTP
+      return res.status(400).json({
+        success: false,
+        message: 'OTP expired due to too many attempts',
+      });
+    }
+
+    // Verify the OTP using constant-time comparison
+    let isValid = false;
+    try {
+      isValid = await bcrypt.compare(otp.toUpperCase(), otpData.otpHash);
+    } catch (bcryptError) {
+      logger.error('Bcrypt comparison error', {
+        userId: auth.userId,
+        error: bcryptError instanceof Error ? bcryptError.message : String(bcryptError),
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to verify OTP. Please try again',
+      });
+    }
+
+    if (!isValid) {
+      // Increment OTP-specific verification attempts (max 5 per OTP)
+      otpData.attempts = (otpData.attempts || 0) + 1;
+
+      try {
+        if (otpData.attempts >= 5) {
+          // Delete OTP after 5 failed attempts
+          await redis.del(otpKey);
+          logger.warn('OTP deleted after 5 failed attempts', { userId: auth.userId });
+        } else {
+          // Update OTP data with new attempt count
+          await redis.set(otpKey, JSON.stringify(otpData), {
+            ex: OTP_EXPIRY_SECONDS,
+          });
+        }
+
+        // Increment global verification attempts (rate limiting)
+        if (verifyAttempts === 0) {
+          await redis.setex(verifyAttemptsKey, OTP_VERIFY_WINDOW_SECONDS, 1);
+        } else {
+          await redis.incr(verifyAttemptsKey);
+        }
+      } catch (redisError) {
+        logger.error('Redis error updating verification attempts', {
+          userId: auth.userId,
+          error: redisError instanceof Error ? redisError.message : String(redisError),
+        });
+        // Continue - user will still get error response
+      }
+
+      logger.warn('Invalid OTP provided', {
+        userId: auth.userId,
+        otpAttempts: otpData.attempts,
+        windowAttempts: verifyAttempts + 1,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP',
+        remainingAttempts: Math.max(0, 5 - otpData.attempts),
+      });
+    }
+
+    // Success - clear lockout and delete the OTP (keep verification attempts counter)
+    try {
+      await Promise.all([
+        redis.del(verifyLockoutKey),
+        redis.del(otpKey), // Delete OTP after successful verification
+      ]);
+    } catch (redisError) {
+      logger.error('Redis error cleaning up after successful verification', {
+        userId: auth.userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      // Continue - verification was successful
+    }
 
     // Generate JWT token for account settings access
     const token = jwt.sign({ userId: auth.userId, purpose: 'account-settings' }, ENV.JWT_SECRET, {

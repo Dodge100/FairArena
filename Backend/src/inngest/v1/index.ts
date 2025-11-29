@@ -8,6 +8,7 @@ export { inviteToPlatform } from './platformInvite.js';
 export { starProfile, unstarProfile } from './profileStars.js';
 export { updateProfileFunction } from './profileUpdate.js';
 export { recordProfileView } from './recordProfileView.js';
+export { sendEmailHandler } from './sendEmail.js';
 export { updateOrganization } from './updateOrganization.js';
 export { deleteUser } from './userDelete.js';
 export { upsertUser } from './userOperations.js';

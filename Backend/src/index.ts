@@ -25,6 +25,7 @@ import {
   updateOrganization,
   updateProfileFunction,
   updateUser,
+  sendEmailHandler,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
@@ -123,6 +124,7 @@ app.use(
       createReport,
       starProfile,
       unstarProfile,
+      sendEmailHandler,
     ],
   }),
 );

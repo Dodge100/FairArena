@@ -6,49 +6,101 @@ export async function upsertUser(userId: string, email: string) {
   if (!userId || !email) {
     throw new Error('userId and email are required');
   }
+
+  userId = userId.trim();
+  email = email.trim().toLowerCase();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error('Invalid email format');
+  }
   try {
-    await prisma.user.upsert({
-      where: { userId },
-      update: { email },
-      create: { userId, email },
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { isDeleted: true, email: true },
     });
 
-    // Send async log event instead of direct database call
-    inngest.send({
-      name: 'log.create',
-      data: {
-        userId,
-        action: 'user-created',
-        level: 'INFO',
-        metadata: { email },
-      },
-    });
+    if (existingUser && existingUser.isDeleted) {
+      await prisma.user.update({
+        where: { email },
+        data: {
+          userId,
+          isDeleted: false,
+          deletedAt: null,
+        },
+      });
 
-    logger.info('User upserted', { userId, email });
-  } catch (error: unknown) {
-    const prismaError = error as { code?: string; meta?: { target?: string[] } };
-    if (prismaError.code === 'P2002') {
-      const target = prismaError.meta?.target;
-      if (target?.includes('email')) {
-        await prisma.user.update({
-          where: { email },
-          data: { userId },
-        });
-        logger.info('User updated via email conflict', { userId, email });
+      logger.info('User account recovered', { userId, email });
 
-        // Send async log event for update
-        inngest.send({
-          name: 'log.create',
-          data: {
-            userId,
-            action: 'user-update',
-            level: 'INFO',
-            metadata: { email, reason: 'email_conflict' },
+      inngest.send({
+        name: 'email.send',
+        data: {
+          to: email,
+          subject: 'Your account has been recovered',
+          template: 'account-recovery',
+          templateData: {},
+        },
+      });
+
+      inngest.send({
+        name: 'log.create',
+        data: {
+          userId,
+          action: 'Account recovered',
+          level: 'INFO',
+          metadata: { email },
+        },
+      });
+    } else if (existingUser) {
+      await prisma.user.update({
+        where: { email },
+        data: { userId },
+      });
+
+      logger.info('User updated', { userId, email });
+
+      inngest.send({
+        name: 'log.create',
+        data: {
+          userId,
+          action: 'user-updated',
+          level: 'INFO',
+          metadata: { email },
+        },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          userId,
+          email,
+        },
+      });
+
+      logger.info('User created', { userId, email });
+
+      inngest.send({
+        name: 'email.send',
+        data: {
+          to: email,
+          subject: 'Welcome to our platform',
+          template: 'welcome',
+          templateData: {
+            userName: email.split('@')[0],
           },
-        });
-        return;
-      }
+        },
+      });
+
+      inngest.send({
+        name: 'log.create',
+        data: {
+          userId,
+          action: 'user-created',
+          level: 'INFO',
+          metadata: { email },
+        },
+      });
     }
+  } catch (error: unknown) {
     logger.error('Error upserting user', {
       userId,
       email,
@@ -64,22 +116,59 @@ export async function deleteUser(userId: string) {
   }
 
   try {
-    // Prisma will handle cascading deletes automatically due to onDelete: Cascade in schema
-    await prisma.user.delete({
+    // Fetch user to get email for notification
+    const user = await prisma.user.findUnique({
       where: { userId },
+      select: { email: true },
     });
 
-    // Send async log event for deletion
+    if (!user) {
+      logger.warn(`User ${userId} not found in database, cannot send deletion email`);
+      return;
+    }
+
+    await prisma.user.update({
+      where: { userId },
+      data: {
+        deletedAt: new Date(),
+        isDeleted: true,
+      },
+    });
+
+    // Send email notification asynchronously
+    try {
+      inngest.send({
+        name: 'email.send',
+        data: {
+          to: user.email,
+          subject: 'Your Account Has Been Deleted',
+          template: 'account-deletion-warning',
+          templateData: {
+            recoveryInstructions:
+              'You can recover your account by signing in again with the same email.',
+            deadline: '90 days',
+          },
+        },
+      });
+    } catch (emailError) {
+      logger.error('Failed to send account deletion email', {
+        userId,
+        email: user.email,
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+      });
+      // Don't throw, as user deletion should succeed even if email fails
+    }
+
     inngest.send({
       name: 'log.create',
       data: {
         userId,
-        action: 'user-deleted',
+        action: 'user-deletion-process-started',
         level: 'CRITICAL',
       },
     });
 
-    logger.info('User deleted successfully with cascading deletes', { userId });
+    logger.info('User deletion initiation successful', { userId });
   } catch (error: unknown) {
     const prismaError = error as { code?: string };
     if (prismaError.code === 'P2025') {

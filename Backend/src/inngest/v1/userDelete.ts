@@ -12,7 +12,6 @@ export const deleteUser = inngest.createFunction(
       logger.error('Missing required field: userId in user.deleted event');
       throw new Error('userId is required');
     }
-
     logger.info('Starting user deletion process', { userId });
 
     await step.run('delete-user-from-db', async () => {

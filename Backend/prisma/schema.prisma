@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex", "fullTextSearch"]
   binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
-  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -19,8 +19,9 @@ model User {
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
-  otps                  Otp[]
   profile               Profile?
+  isDeleted             Boolean                 @default(false)
+  deletedAt             DateTime?
   profileStars          ProfileStars[]
   projectUserRoles      ProjectUserRole[]
   reports               Report[]
@@ -73,26 +74,6 @@ model Profile {
   @@index([trackViews])
 }
 
-model Otp {
-  id        String   @id @default(cuid())
-  userId    String
-  email     String
-  otpHash   String
-  sentFor   String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  verified  Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([email])
-  @@index([sentFor])
-  @@index([createdAt])
-  @@index([verified])
-  @@index([expiresAt])
-  @@index([userId, verified, expiresAt]) // Composite index for active OTP lookup
-}
-
 model Logs {
   id        String   @id @default(cuid())
   userId    String
@@ -100,14 +81,14 @@ model Logs {
   level     level
   metadata  Json?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [userId])
+  user      User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([action])
   @@index([level])
   @@index([createdAt])
-  @@index([userId, createdAt]) // User activity timeline
-  @@index([action, createdAt]) // Action-based queries
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
 }
 
 model ProfileView {
@@ -124,7 +105,7 @@ model ProfileView {
   @@index([viewerUserId])
   @@index([viewerEmail])
   @@index([createdAt])
-  @@index([profileId, createdAt]) // Profile view timeline
+  @@index([profileId, createdAt])
 }
 
 model Organization {
@@ -167,7 +148,7 @@ model OrganizationUserRole {
   @@index([userId])
   @@index([organizationId])
   @@index([roleId])
-  @@index([organizationId, userId]) // Org member lookup
+  @@index([organizationId, userId])
 }
 
 model UserOrganization {
@@ -217,7 +198,7 @@ model OrganizationInviteCode {
   @@index([email])
   @@index([used])
   @@index([roleId])
-  @@index([organizationId, used, expiresAt]) // Active invites lookup
+  @@index([organizationId, used, expiresAt])
 }
 
 model OrganizationProfile {
@@ -262,7 +243,7 @@ model Team {
   @@index([visibility])
   @@index([joinEnabled])
   @@index([createdAt])
-  @@index([organizationId, visibility]) // Org team filtering
+  @@index([organizationId, visibility])
 }
 
 model TeamProfile {
@@ -299,7 +280,7 @@ model InviteCode {
   @@index([email])
   @@index([used])
   @@index([roleId])
-  @@index([teamId, used, expiresAt]) // Active invites
+  @@index([teamId, used, expiresAt])
 }
 
 model TeamRole {
@@ -348,7 +329,7 @@ model TeamUserRole {
   @@index([userId])
   @@index([teamId])
   @@index([roleId])
-  @@index([teamId, userId]) // Team member lookup
+  @@index([teamId, userId])
 }
 
 model UserTeam {
@@ -377,7 +358,7 @@ model ProjectUserRole {
   @@index([userId])
   @@index([projectId])
   @@index([roleId])
-  @@index([projectId, userId]) // Project member lookup
+  @@index([projectId, userId])
 }
 
 model UserProject {
@@ -419,7 +400,7 @@ model Project {
   @@index([visibility])
   @@index([joinEnabled])
   @@index([createdAt])
-  @@index([teamId, visibility]) // Team project filtering
+  @@index([teamId, visibility])
 }
 
 model projectProfile {
@@ -454,7 +435,7 @@ model ProjectInviteCode {
   @@index([expiresAt])
   @@index([email])
   @@index([used])
-  @@index([projectId, used, expiresAt]) // Active invites
+  @@index([projectId, used, expiresAt])
 }
 
 model OrganizationAuditLog {
@@ -471,8 +452,8 @@ model OrganizationAuditLog {
   @@index([action])
   @@index([level])
   @@index([createdAt])
-  @@index([organizationId, createdAt]) // Org audit timeline
-  @@index([organizationId, userId, createdAt]) // User activity in org
+  @@index([organizationId, createdAt])
+  @@index([organizationId, userId, createdAt])
 }
 
 model TeamAuditLog {
@@ -489,8 +470,8 @@ model TeamAuditLog {
   @@index([action])
   @@index([level])
   @@index([createdAt])
-  @@index([teamId, createdAt]) // Team audit timeline
-  @@index([teamId, userId, createdAt]) // User activity in team
+  @@index([teamId, createdAt])
+  @@index([teamId, userId, createdAt])
 }
 
 model ProjectAuditLog {
@@ -507,8 +488,8 @@ model ProjectAuditLog {
   @@index([action])
   @@index([level])
   @@index([createdAt])
-  @@index([projectId, createdAt]) // Project audit timeline
-  @@index([projectId, userId, createdAt]) // User activity in project
+  @@index([projectId, createdAt])
+  @@index([projectId, userId, createdAt])
 }
 
 model Report {
@@ -526,7 +507,7 @@ model Report {
   @@index([reportedEntityId, entityType])
   @@index([state])
   @@index([createdAt])
-  @@index([entityType, state]) // Reports by type and state
+  @@index([entityType, state])
 }
 
 model ProfileStars {

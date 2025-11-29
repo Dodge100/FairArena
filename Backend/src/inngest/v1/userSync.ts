@@ -1,4 +1,3 @@
-import { sendWelcomeEmail } from '../../email/v1/index.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
@@ -26,19 +25,6 @@ export const syncUser = inngest.createFunction(
           error: error instanceof Error ? error.message : String(error),
         });
         throw error;
-      }
-    });
-
-    await step.run('send-welcome-email', async () => {
-      try {
-        await sendWelcomeEmail(email, email.split('@')[0]);
-        logger.info('Welcome email sent', { email });
-      } catch (error) {
-        logger.error('Error sending welcome email', {
-          email,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        // Don't throw here to avoid failing the entire function
       }
     });
   },
