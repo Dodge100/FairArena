@@ -26,6 +26,7 @@ for (const envVar of requiredEnvVars) {
 export const ENV = {
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
+  MAINTENANCE_MODE: process.env.MAINTENANCE_MODE === 'true',
   CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
   CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET!,
@@ -52,5 +53,6 @@ export const ENV = {
   SMTP_USER: process.env.SMTP_USER!,
   SMTP_PASS: process.env.SMTP_PASS!,
   EMAIL_PROVIDER: process.env.NODE_ENV === 'production' ? process.env.EMAIL_PROVIDER : 'nodemailer',
+  SENTRY_DSN: process.env.SENTRY_DSN || '',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

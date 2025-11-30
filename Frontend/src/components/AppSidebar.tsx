@@ -133,13 +133,18 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r bg-sidebar">
       <SidebarHeader className="border-b px-4 py-3 bg-sidebar group-data-[collapsible=icon]:px-1">
         <Link to="/">
-        <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+        {/* Show logo and text when expanded */}
+        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
           <img src={logo} className='w-30 -my-8' alt="" />
-            {/* <span className="text-sm font-semibold">FairArena</span> */}
-            <span className="text-xs text-muted-foreground">Hackathon Platform</span>
-          </div>
+          {/* <span className="text-sm font-semibold">FairArena</span> */}
+          <span className="text-xs text-muted-foreground">Hackathon Platform</span>
         </div>
+        {/* Show trophy icon when collapsed */}
+        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+          <Trophy className="h-7 w-7 text-primary" />
+        </div>
+          </div>
         </Link>
       </SidebarHeader>
 

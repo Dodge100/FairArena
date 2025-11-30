@@ -28,6 +28,7 @@ import {
   updateUser,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
+import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
@@ -38,9 +39,12 @@ import cleanupRouter from './routes/v1/cleanup.js';
 import organizationRouter from './routes/v1/organization.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
+import './instrument.js'
+import * as Sentry from "@sentry/node"
 
 const app = express();
 const PORT = ENV.PORT || 3000;
+Sentry.setupExpressErrorHandler(app);
 
 // Security middlewares
 app.use(helmet());
@@ -76,6 +80,9 @@ collectDefaultMetrics({ register: client.register });
 {
   ENV.NODE_ENV === 'production' && app.use(arcjetMiddleware);
 }
+
+// Maintenance mode middleware (check before all API routes)
+app.use(maintenanceMiddleware);
 
 // Profile routes
 app.use('/api/v1/profile', profileRouter);

@@ -40,6 +40,8 @@ export function OTPVerification({
     const [retryAfter, setRetryAfter] = useState(0);
     const recaptchaWidgetId = useRef<number | null>(null);
     const [captchaCompleted, setCaptchaCompleted] = useState(false);
+    const [scriptLoaded, setScriptLoaded] = useState(false);
+    const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
     // Cooldown state
     const [lastOtpRequestTime, setLastOtpRequestTime] = useState<number>(0);
@@ -111,7 +113,7 @@ export function OTPVerification({
         };
     }, [otpCooldown]);
 
-    // Load Google reCAPTCHA v2 script and render a visible checkbox
+    // Load Google reCAPTCHA v2 script
     useEffect(() => {
         const siteKey = import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY;
         if (!siteKey) {
@@ -119,47 +121,106 @@ export function OTPVerification({
             return;
         }
 
-        const ensureScript = () => {
-            if (typeof window === 'undefined') return;
-            const existing = document.querySelector('script[data-grecaptcha]');
-            if (existing) return true;
-            const script = document.createElement('script');
-            script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
-            script.async = true;
-            script.defer = true;
-            script.setAttribute('data-grecaptcha', 'true');
-            script.onload = () => {
-                // Render visible widget once api is available
-                if (window.grecaptcha) {
-                    window.grecaptcha.ready(() => {
-                        if (recaptchaWidgetId.current === null) {
-                            const el = document.getElementById('recaptcha-visible');
-                            if (el) {
-                                try {
-                                    recaptchaWidgetId.current = window.grecaptcha.render('recaptcha-visible', {
-                                        sitekey: siteKey,
-                                        size: 'normal',
-                                        callback: () => {
-                                            setCaptchaCompleted(true);
-                                        },
-                                        'expired-callback': () => {
-                                            setCaptchaCompleted(false);
-                                        },
-                                    } as any);
-                                } catch (e) {
-                                    console.error('reCAPTCHA render error', e);
-                                }
-                            }
-                        }
-                    });
-                }
-            };
-            document.body.appendChild(script);
-            return true;
+        if (typeof window === 'undefined') return;
+
+        // Check if script already exists
+        const existing = document.querySelector('script[data-grecaptcha]');
+        if (existing) {
+            // Script exists, check if grecaptcha is ready
+            if (window.grecaptcha && window.grecaptcha.render) {
+                setScriptLoaded(true);
+            } else {
+                // Wait for it to load with timeout
+                const checkInterval = setInterval(() => {
+                    if (window.grecaptcha && window.grecaptcha.render) {
+                        setScriptLoaded(true);
+                        clearInterval(checkInterval);
+                    }
+                }, 100);
+                const timeout = setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.error('reCAPTCHA script load timeout');
+                }, 10000);
+                return () => {
+                    clearInterval(checkInterval);
+                    clearTimeout(timeout);
+                };
+            }
+            return;
+        }
+
+        // Create and load script
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit&onload=onRecaptchaLoad';
+        script.async = true;
+        script.defer = true;
+        script.setAttribute('data-grecaptcha', 'true');
+
+        // Global callback for when reCAPTCHA is loaded
+        (window as any).onRecaptchaLoad = () => {
+            setScriptLoaded(true);
         };
 
-        ensureScript();
+        script.onerror = () => {
+            console.error('Failed to load reCAPTCHA script');
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            delete (window as any).onRecaptchaLoad;
+        };
     }, []);
+
+    // Render reCAPTCHA widget when script is loaded and container is ready
+    useEffect(() => {
+        const siteKey = import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY;
+
+        if (!scriptLoaded || !siteKey || !window.grecaptcha || !window.grecaptcha.render) {
+            return;
+        }
+
+        if (!recaptchaContainerRef.current) {
+            return;
+        }
+
+        // If widget already rendered, skip
+        if (recaptchaWidgetId.current !== null) {
+            return;
+        }
+
+        // Small delay to ensure DOM is fully ready
+        const timeoutId = setTimeout(() => {
+            if (!recaptchaContainerRef.current) return;
+
+            try {
+                window.grecaptcha.ready(() => {
+                    if (!recaptchaContainerRef.current || recaptchaWidgetId.current !== null) return;
+
+                    // Clear any existing content
+                    recaptchaContainerRef.current.innerHTML = '';
+
+                    recaptchaWidgetId.current = window.grecaptcha.render(recaptchaContainerRef.current, {
+                        sitekey: siteKey,
+                        size: 'normal',
+                        callback: () => {
+                            setCaptchaCompleted(true);
+                        },
+                        'expired-callback': () => {
+                            setCaptchaCompleted(false);
+                        },
+                        'error-callback': () => {
+                            console.error('reCAPTCHA error');
+                            setCaptchaCompleted(false);
+                        },
+                    } as any);
+                });
+            } catch (e) {
+                console.error('reCAPTCHA render error', e);
+            }
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
+    }, [scriptLoaded, isVerified]);
 
     const getRecaptchaToken = async () => {
         if (recaptchaWidgetId.current === null || !window.grecaptcha) {
@@ -340,7 +401,7 @@ export function OTPVerification({
                     <>
                         {/* Visible reCAPTCHA v2 checkbox */}
                         <div className="mb-3">
-                            <div id="recaptcha-visible" />
+                            <div ref={recaptchaContainerRef} />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="otp" className="text-sm font-medium">
