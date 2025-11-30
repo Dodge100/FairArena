@@ -1,7 +1,7 @@
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ENV } from '../../config/env.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
@@ -107,14 +107,16 @@ export const CreateReport = async (req: Request, res: Response) => {
 
     const existingReport = await readOnlyPrisma.report.findFirst({
       where: {
-      reporterId: userId,
-      reportedEntityId,
-      state: { in: ['QUEUED', 'IN_REVIEW'] },
+        reporterId: userId,
+        reportedEntityId,
+        state: { in: ['QUEUED', 'IN_REVIEW', 'ESCALATED'] },
       },
     });
 
     if (existingReport) {
-      return res.status(409).json({ error: 'You have already reported this entity and it is under review' });
+      return res
+        .status(409)
+        .json({ error: 'You have already reported this entity and it is under review' });
     }
 
     // Send to Inngest for async processing

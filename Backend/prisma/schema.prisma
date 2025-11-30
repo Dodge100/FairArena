@@ -562,6 +562,7 @@ enum gender {
   MALE
   FEMALE
   OTHER
+  PREFER_NOT_TO_SAY
 }
 
 enum level {
@@ -575,4 +576,5 @@ enum ReportState {
   IN_REVIEW
   RESOLVED
   DISMISSED
+  ESCALATED
 }

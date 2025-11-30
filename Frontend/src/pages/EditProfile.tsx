@@ -197,6 +197,12 @@ export default function EditProfile() {
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate required fields
+    if (!profile.firstName || !profile.firstName.trim()) {
+      toast.error('First name is required');
+      return;
+    }
+
     // Validate all URL fields
     if (!validateAllUrls()) {
       toast.error('Please fix the validation errors before saving');
@@ -216,6 +222,7 @@ export default function EditProfile() {
 
       const payload = {
         ...profile,
+        gender: profile.gender || null,
         yearsOfExperience: profile.yearsOfExperience ? Number(profile.yearsOfExperience) : null,
         dateOfBirth: profile.dateOfBirth || null,
       };
@@ -301,12 +308,15 @@ export default function EditProfile() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="firstName"
                   value={profile.firstName}
                   onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                   placeholder="John"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -346,6 +356,7 @@ export default function EditProfile() {
                     <SelectItem value="MALE">Male</SelectItem>
                     <SelectItem value="FEMALE">Female</SelectItem>
                     <SelectItem value="OTHER">Other</SelectItem>
+                    <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -828,7 +839,13 @@ export default function EditProfile() {
                 id="requireAuth"
                 checked={profile.requireAuth}
                 disabled={!profile.isPublic}
-                onCheckedChange={(checked) => setProfile({ ...profile, requireAuth: checked })}
+                onCheckedChange={(checked) => {
+                  setProfile({ 
+                    ...profile, 
+                    requireAuth: checked,
+                    trackViews: checked ? profile.trackViews : false
+                  });
+                }}
               />
             </div>
 

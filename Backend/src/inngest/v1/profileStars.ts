@@ -83,8 +83,10 @@ export const starProfile = inngest.createFunction(
         },
       });
 
-      // Invalidate cache
-      await redis.del(`${REDIS_KEYS.PROFILE_CACHE}:${profile.userId}`);
+      // Invalidate caches
+      await redis.del(`${REDIS_KEYS.PROFILE_CACHE}${profile.userId}`);
+      // Invalidate the star status cache for this viewer
+      await redis.del(`${REDIS_KEYS.PROFILE_STAR}${profileId}:${userId}`);
 
       // Get updated star count
       const starCount = await prisma.profileStars.count({
@@ -176,9 +178,11 @@ export const unstarProfile = inngest.createFunction(
 
       const { profile } = result;
 
-      // Invalidate cache
+      // Invalidate caches
       if (profile) {
-        await redis.del(`${REDIS_KEYS.PROFILE_CACHE}:${profile.userId}`);
+        await redis.del(`${REDIS_KEYS.PROFILE_CACHE}${profile.userId}`);
+        // Invalidate the star status cache for this viewer
+        await redis.del(`${REDIS_KEYS.PROFILE_STAR}${profileId}:${userId}`);
       }
 
       // Get updated star count

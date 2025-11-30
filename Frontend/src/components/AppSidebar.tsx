@@ -35,7 +35,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 // Menu items
 const menuItems = [
@@ -132,6 +132,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r bg-sidebar">
       <SidebarHeader className="border-b px-4 py-3 bg-sidebar group-data-[collapsible=icon]:px-1">
+        <Link to="/">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
           <img src={logo} className='w-30 -my-8' alt="" />
@@ -139,6 +140,7 @@ export function AppSidebar() {
             <span className="text-xs text-muted-foreground">Hackathon Platform</span>
           </div>
         </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar scrollbar-hide">

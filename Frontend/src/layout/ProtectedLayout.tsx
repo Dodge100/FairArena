@@ -1,4 +1,4 @@
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useUser } from '@clerk/clerk-react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AppSidebar } from '../components/AppSidebar';
@@ -24,6 +24,9 @@ export default function ProtectedLayout() {
         <AppSidebar />
         <main className="flex-1 overflow-auto bg-background">
           <div className="p-6 min-h-screen">
+            <div className="mb-4">
+              <SidebarTrigger />
+            </div>
             <Outlet />
           </div>
         </main>

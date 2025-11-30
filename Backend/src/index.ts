@@ -16,6 +16,7 @@ import {
   deleteUser,
   inviteToPlatform,
   recordProfileView,
+  sendEmailHandler,
   sendOtpForAccountSettings,
   starProfile,
   subscribeToNewsletter,
@@ -25,7 +26,6 @@ import {
   updateOrganization,
   updateProfileFunction,
   updateUser,
-  sendEmailHandler,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
@@ -51,7 +51,7 @@ app.set('trust proxy', 1);
 app.use(
   cors({
     origin: ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
-    allowedHeaders: ['Content-Type', 'Authorization', 'ip.src'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ip.src', 'X-Recaptcha-Token'],
     credentials: true,
   }),
 );
@@ -73,7 +73,9 @@ const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ register: client.register });
 
 // Arcjet middleware for security
-app.use(arcjetMiddleware);
+{
+  ENV.NODE_ENV === 'production' && app.use(arcjetMiddleware);
+}
 
 // Profile routes
 app.use('/api/v1/profile', profileRouter);

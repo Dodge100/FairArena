@@ -368,7 +368,9 @@ export default function PublicProfile() {
   }
 
   const fullName =
-    [profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Anonymous User';
+    profile.firstName && profile.lastName
+      ? `${profile.firstName} ${profile.lastName}`
+      : profile.firstName || profile.lastName || 'Anonymous User';
   const initials = fullName
     .split(' ')
     .map((n) => n[0])

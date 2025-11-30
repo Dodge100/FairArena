@@ -26,6 +26,7 @@ export const REDIS_KEYS = {
   OTP_SEND_ATTEMPTS: 'otp:send:attempts:',
   OTP_SEND_LOCKOUT: 'otp:send:lockout:',
   PROFILE_CACHE: 'profile:cache:',
+  PROFILE_STAR: 'profile:star:',
   PLATFORM_INVITE_ATTEMPTS: 'platform:invite:attempts:',
   PLATFORM_INVITE_LOCKOUT: 'platform:invite:lockout:',
   OTP_STORE: 'otp:store:',

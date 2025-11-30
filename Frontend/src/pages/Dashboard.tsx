@@ -1,7 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useUser } from '@clerk/clerk-react';
 import {
   Activity,
@@ -99,21 +98,18 @@ function Dashboard() {
   ];
 
 
-  
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back, {user?.firstName}! 👋
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Here's what's happening with your projects today.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user?.firstName}! 👋
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here's what's happening with your projects today.
+          </p>
         </div>
         <Button className="bg-linear-to-r from-[#DDFF00] to-[#9AC400] text-neutral-900 hover:opacity-90">
           <Zap className="mr-2 h-4 w-4" />
