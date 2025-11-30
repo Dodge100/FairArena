@@ -35,12 +35,13 @@ import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
 import webhookRouter from './routes/v1/webhook.js';
 // import teamRouter from './routes/v1/team.js';
+import * as Sentry from '@sentry/node';
+import './instrument.js';
 import cleanupRouter from './routes/v1/cleanup.js';
 import organizationRouter from './routes/v1/organization.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
-import './instrument.js'
-import * as Sentry from "@sentry/node"
+import logger from './utils/logger.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -51,11 +52,29 @@ app.use(helmet());
 app.use(hpp());
 app.set('trust proxy', 1);
 
-// CORS middleware
+// CORS middleware (enhanced for production multi-origin + preflight)
+const allowedOrigins = [
+  ENV.FRONTEND_URL,
+  ENV.NODE_ENV === 'development' && 'http://localhost:5173',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: ENV.NODE_ENV === 'production' ? ENV.FRONTEND_URL : 'http://localhost:5173',
-    allowedHeaders: ['Content-Type', 'Authorization', 'ip.src', 'X-Recaptcha-Token'],
+    origin: (origin, callback) => {
+      if (!origin) return callback(new Error('Not allowed by CORS'));
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      logger.warn('CORS blocked origin', { origin });
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'ip.src',
+      'X-Recaptcha-Token',
+      'X-Clerk-Auth',
+      'X-Requested-With',
+    ],
     credentials: true,
   }),
 );
@@ -146,12 +165,14 @@ app.get('/metrics', async (_, res) => {
 });
 
 // Health check endpoint
-app.get('/healthz', (_, res) => {
+app.get('/healthz', (req, res) => {
+  logger.info('Health check ping received', { ip: req.ip });
   res.status(200).send('Server is healthy...');
 });
 
 // 404 handler for unmatched routes
 app.use((_, res) => {
+  logger.info('404 Not Found');
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 
@@ -160,6 +181,6 @@ export default app;
 // Start the server
 if (ENV.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    logger.info(`Server is running on port ${PORT}`);
   });
 }

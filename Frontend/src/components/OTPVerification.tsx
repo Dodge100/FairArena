@@ -15,6 +15,7 @@ declare global {
             getResponse: (widgetId?: number) => string;
             reset: (widgetId?: number) => void;
         };
+        onRecaptchaLoad?: () => void;
     }
 }
 
@@ -127,12 +128,12 @@ export function OTPVerification({
         const existing = document.querySelector('script[data-grecaptcha]');
         if (existing) {
             // Script exists, check if grecaptcha is ready
-            if (window.grecaptcha && window.grecaptcha.render) {
+            if (window.grecaptcha && typeof window.grecaptcha.render === 'function') {
                 setScriptLoaded(true);
             } else {
                 // Wait for it to load with timeout
                 const checkInterval = setInterval(() => {
-                    if (window.grecaptcha && window.grecaptcha.render) {
+                    if (window.grecaptcha && typeof window.grecaptcha.render === 'function') {
                         setScriptLoaded(true);
                         clearInterval(checkInterval);
                     }
@@ -156,8 +157,7 @@ export function OTPVerification({
         script.defer = true;
         script.setAttribute('data-grecaptcha', 'true');
 
-        // Global callback for when reCAPTCHA is loaded
-        (window as any).onRecaptchaLoad = () => {
+        window.onRecaptchaLoad = () => {
             setScriptLoaded(true);
         };
 
@@ -165,9 +165,8 @@ export function OTPVerification({
             console.error('Failed to load reCAPTCHA script');
         };
         document.body.appendChild(script);
-
         return () => {
-            delete (window as any).onRecaptchaLoad;
+            delete window.onRecaptchaLoad;
         };
     }, []);
 
@@ -199,7 +198,14 @@ export function OTPVerification({
                     // Clear any existing content
                     recaptchaContainerRef.current.innerHTML = '';
 
-                    recaptchaWidgetId.current = window.grecaptcha.render(recaptchaContainerRef.current, {
+                    interface RecaptchaRenderParameters {
+                        sitekey: string;
+                        size?: 'invisible' | 'compact' | 'normal';
+                        callback?: () => void;
+                        'expired-callback'?: () => void;
+                        'error-callback'?: () => void;
+                    }
+                    const renderParams: RecaptchaRenderParameters = {
                         sitekey: siteKey,
                         size: 'normal',
                         callback: () => {
@@ -212,7 +218,8 @@ export function OTPVerification({
                             console.error('reCAPTCHA error');
                             setCaptchaCompleted(false);
                         },
-                    } as any);
+                    };
+                    recaptchaWidgetId.current = window.grecaptcha.render(recaptchaContainerRef.current, renderParams);
                 });
             } catch (e) {
                 console.error('reCAPTCHA render error', e);

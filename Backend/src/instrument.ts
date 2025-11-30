@@ -1,9 +1,8 @@
-import * as Sentry from "@sentry/node";
-import { ENV } from "./config/env";
+// Import OpenTelemetry tracing FIRST to ensure proper instrumentation
+import * as Sentry from '@sentry/node';
+import './tracing.js';
 
 Sentry.init({
-  dsn: ENV.SENTRY_DSN,
-  // Setting this option to true will send default PII data to Sentry.
-  // For example, automatic IP address collection on events
+  dsn: process.env.SENTRY_DSN || '',
   sendDefaultPii: true,
 });
