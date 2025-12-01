@@ -169,7 +169,7 @@ export function AppSidebar() {
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
             {/* Show logo and text when expanded */}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <img src={logo} className='w-30 -my-8' alt="" />
+              <img src={logo} className='w-30 -my-8' alt="FairArena Logo" style={{ filter: theme === 'light' ? 'invert(1)' : 'none' }} />
               {/* <span className="text-sm font-semibold">FairArena</span> */}
               <span className="text-xs text-muted-foreground">Hackathon Platform</span>
             </div>

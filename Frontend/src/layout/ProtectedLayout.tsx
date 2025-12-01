@@ -1,10 +1,14 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useUser } from '@clerk/clerk-react';
+import { useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { AIButton } from '../components/AIButton';
+import { AISidebar } from '../components/AISidebar';
 import { AppSidebar } from '../components/AppSidebar';
 
 export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useUser();
+  const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
 
   if (!isLoaded) {
     return (
@@ -30,6 +34,8 @@ export default function ProtectedLayout() {
             <Outlet />
           </div>
         </main>
+        <AIButton onClick={() => setIsAISidebarOpen(true)} />
+        <AISidebar isOpen={isAISidebarOpen} onClose={() => setIsAISidebarOpen(false)} />
       </div>
     </SidebarProvider>
   );

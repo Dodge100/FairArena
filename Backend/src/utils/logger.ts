@@ -31,7 +31,7 @@ const logger = createLogger({
         format.colorize(),
         format.printf((info) => {
           const { timestamp, level, message, trace_id, span_id, ...meta } = info;
-          const traceInfo = trace_id ? ` [trace:${trace_id.slice(0, 8)}]` : '';
+          const traceInfo = trace_id ? ` [trace:${(trace_id as string).slice(0, 8)}]` : '';
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
           return `${timestamp} ${level}: ${message}${traceInfo}${metaStr}`;
         }),

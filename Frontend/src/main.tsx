@@ -1,6 +1,6 @@
 import { ClerkProvider } from '@clerk/clerk-react';
 import Clarity from '@microsoft/clarity';
-import * as Sentry from '@sentry/react';
+// import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -10,17 +10,17 @@ import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
 
 // Initialize Sentry before rendering React
-Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  sendDefaultPii: true,
-  integrations: [
-    Sentry.feedbackIntegration({
-      colorScheme: 'system',
-      isNameRequired: true,
-      isEmailRequired: true,
-    }),
-  ],
-});
+// Sentry.init({
+//   dsn: import.meta.env.VITE_SENTRY_DSN,
+//   sendDefaultPii: true,
+//   integrations: [
+//     Sentry.feedbackIntegration({
+//       colorScheme: 'system',
+//       isNameRequired: true,
+//       isEmailRequired: true,
+//     }),
+//   ],
+// });
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -28,7 +28,7 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key');
 }
 
-const projectId = 'u6uytcxpce';
+const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
 
 Clarity.init(projectId);
 Clarity.consent(true);

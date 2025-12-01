@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis } from '../../config/redis.js';
@@ -34,8 +35,13 @@ class NotificationService {
     try {
       // Try cache first
       const cached = await redis.get(cacheKey);
-      if (cached) {
-        return cached as any;
+      if (cached !== null) {
+        // @ts-ignore
+        return JSON.parse(cached) as {
+          notifications: unknown[];
+          total: number;
+          hasMore: boolean;
+        };
       }
     } catch (error) {
       logger.warn('Redis cache read failed for notifications list', { error, userId });
