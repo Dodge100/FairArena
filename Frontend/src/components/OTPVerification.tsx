@@ -406,10 +406,7 @@ export function OTPVerification({
 
                 {!isVerified && (
                     <>
-                        {/* Visible reCAPTCHA v2 checkbox */}
-                        <div className="mb-3">
-                            <div ref={recaptchaContainerRef} />
-                        </div>
+
                         <div className="space-y-2">
                             <label htmlFor="otp" className="text-sm font-medium">
                                 Enter OTP
@@ -423,6 +420,10 @@ export function OTPVerification({
                                 maxLength={12}
                                 disabled={isRateLimited}
                             />
+                            {/* Visible reCAPTCHA v2 checkbox */}
+                            <div className="mb-3">
+                                <div ref={recaptchaContainerRef} />
+                            </div>
                             {isRateLimited && retryAfter > 0 && (
                                 <div className="text-sm text-orange-600">
                                     Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.

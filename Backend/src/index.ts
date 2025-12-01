@@ -9,12 +9,18 @@ import * as client from 'prom-client';
 import { ENV } from './config/env.js';
 import { inngest } from './inngest/v1/client.js';
 import {
+  cleanupOldNotifications,
   createLog,
   createOrganizationRoles,
   createReport,
+  deleteAllReadNotifications,
+  deleteNotifications,
   deleteOrganization,
   deleteUser,
   inviteToPlatform,
+  markAllNotificationsAsRead,
+  markNotificationsAsRead,
+  markNotificationsAsUnread,
   recordProfileView,
   sendEmailHandler,
   sendOtpForAccountSettings,
@@ -38,6 +44,7 @@ import webhookRouter from './routes/v1/webhook.js';
 import * as Sentry from '@sentry/node';
 import './instrument.js';
 import cleanupRouter from './routes/v1/cleanup.js';
+import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
@@ -61,8 +68,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(new Error('Not allowed by CORS'));
+      // Allow requests with no origin (like mobile apps, Postman, or same-origin requests)
+      if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
       logger.warn('CORS blocked origin', { origin });
       return callback(new Error('Not allowed by CORS'));
     },
@@ -127,6 +137,9 @@ app.use('/api/v1/reports', reportsRouter);
 // Stars routes
 app.use('/api/v1/stars', starsRouter);
 
+// Notification routes
+app.use('/api/v1/notifications', notificationRouter);
+
 // Cleanup routes
 app.use('/api/v1', cleanupRouter);
 
@@ -153,6 +166,13 @@ app.use(
       starProfile,
       unstarProfile,
       sendEmailHandler,
+      // Notification async operations
+      markNotificationsAsRead,
+      markNotificationsAsUnread,
+      markAllNotificationsAsRead,
+      deleteNotifications,
+      deleteAllReadNotifications,
+      cleanupOldNotifications,
     ],
   }),
 );

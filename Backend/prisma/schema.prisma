@@ -16,6 +16,7 @@ model User {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   Logs                  Logs[]
+  notifications         Notification[]
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
@@ -552,6 +553,29 @@ model OrganizationStars {
   @@index([createdAt])
 }
 
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  read        Boolean          @default(false)
+  actionUrl   String?
+  actionLabel String?
+  metadata    Json?
+  description String           @db.Text
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  user        User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -577,4 +601,19 @@ enum ReportState {
   RESOLVED
   DISMISSED
   ESCALATED
+}
+
+enum NotificationType {
+  SYSTEM
+  MENTION
+  INVITATION
+  ACHIEVEMENT
+  UPDATE
+  REMINDER
+  ALERT
+  MESSAGE
+  FOLLOW
+  STAR
+  COMMENT
+  ANNOUNCEMENT
 }

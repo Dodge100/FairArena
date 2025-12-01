@@ -1,7 +1,6 @@
 import { ThemeSwitcher } from '@/components/kibo-ui/theme-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import logo from "/fairArenaLogotop.png"
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +17,7 @@ import {
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useTheme } from '@/hooks/useTheme';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import {
   BarChart3,
   Calendar,
@@ -34,57 +33,9 @@ import {
   Trophy,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-
-// Menu items
-const menuItems = [
-  {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: Home,
-  },
-  {
-    title: 'Projects',
-    url: '/dashboard/projects',
-    icon: FileText,
-    items: [
-      {
-        title: 'All Projects',
-        url: '/dashboard/projects/all',
-      },
-      {
-        title: 'Active',
-        url: '/dashboard/projects/active',
-      },
-      {
-        title: 'Completed',
-        url: '/dashboard/projects/completed',
-      },
-    ],
-  },
-  {
-    title: 'Hackathons',
-    url: '/dashboard/hackathons',
-    icon: Trophy,
-  },
-  {
-    title: 'Analytics',
-    url: '/dashboard/analytics',
-    icon: BarChart3,
-  },
-  {
-    title: 'Team',
-    url: '/dashboard/team',
-    icon: Users,
-  },
-  {
-    title: 'Inbox',
-    url: '/dashboard/inbox',
-    icon: Inbox,
-    badge: '3',
-  },
-];
+import logo from "/fairArenaLogotop.png";
 
 const secondaryItems = [
   {
@@ -113,9 +64,91 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCount(data.data.count);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [getToken]);
+
+  // Menu items - defined inside component to access unreadCount
+  const menuItems = [
+    {
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: Home,
+    },
+    {
+      title: 'Projects',
+      url: '/dashboard/projects',
+      icon: FileText,
+      items: [
+        {
+          title: 'All Projects',
+          url: '/dashboard/projects/all',
+        },
+        {
+          title: 'Active',
+          url: '/dashboard/projects/active',
+        },
+        {
+          title: 'Completed',
+          url: '/dashboard/projects/completed',
+        },
+      ],
+    },
+    {
+      title: 'Hackathons',
+      url: '/dashboard/hackathons',
+      icon: Trophy,
+    },
+    {
+      title: 'Analytics',
+      url: '/dashboard/analytics',
+      icon: BarChart3,
+    },
+    {
+      title: 'Team',
+      url: '/dashboard/team',
+      icon: Users,
+    },
+    {
+      title: 'Inbox',
+      url: '/dashboard/inbox',
+      icon: Inbox,
+      badge: unreadCount > 0 ? unreadCount.toString() : undefined,
+    },
+  ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -134,16 +167,16 @@ export function AppSidebar() {
       <SidebarHeader className="border-b px-4 py-3 bg-sidebar group-data-[collapsible=icon]:px-1">
         <Link to="/">
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-        {/* Show logo and text when expanded */}
-        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-          <img src={logo} className='w-30 -my-8' alt="" />
-          {/* <span className="text-sm font-semibold">FairArena</span> */}
-          <span className="text-xs text-muted-foreground">Hackathon Platform</span>
-        </div>
-        {/* Show trophy icon when collapsed */}
-        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
-          <Trophy className="h-7 w-7 text-primary" />
-        </div>
+            {/* Show logo and text when expanded */}
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <img src={logo} className='w-30 -my-8' alt="" />
+              {/* <span className="text-sm font-semibold">FairArena</span> */}
+              <span className="text-xs text-muted-foreground">Hackathon Platform</span>
+            </div>
+            {/* Show trophy icon when collapsed */}
+            <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+              <Trophy className="h-7 w-7 text-primary" />
+            </div>
           </div>
         </Link>
       </SidebarHeader>

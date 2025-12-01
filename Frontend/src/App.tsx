@@ -12,6 +12,7 @@ import CreateOrganization from './pages/CreateOrganization';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Home from './pages/Home';
+import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
 import OrganizationDetails from './pages/OrganizationDetails';
@@ -61,6 +62,7 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/dashboard/inbox" element={<Inbox />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/profile/edit" element={<EditProfile />} />
           <Route path="/dashboard/profile/views" element={<ProfileViews />} />

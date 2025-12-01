@@ -4,6 +4,14 @@ export { createOrganizationRoles } from './createOrganizationRoles.js';
 export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { subscribeToNewsletter, unsubscribeFromNewsletter } from './newsletterSubscribe.js';
+export {
+  cleanupOldNotifications,
+  deleteAllReadNotifications,
+  deleteNotifications,
+  markAllNotificationsAsRead,
+  markNotificationsAsRead,
+  markNotificationsAsUnread,
+} from './notificationOperations.js';
 export { inviteToPlatform } from './platformInvite.js';
 export { starProfile, unstarProfile } from './profileStars.js';
 export { updateProfileFunction } from './profileUpdate.js';
