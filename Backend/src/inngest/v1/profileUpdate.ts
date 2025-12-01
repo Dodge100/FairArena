@@ -6,15 +6,15 @@ import { inngest } from './client.js';
 
 // Validation schema (same as in profileController.ts)
 const profileUpdateSchema = z.object({
-  firstName: z.string().min(1).max(100).nullish(),
-  lastName: z.string().min(1).max(100).nullish(),
-  bio: z.string().max(500).nullish(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullish(),
+  firstName: z.string().trim().min(1, 'First name is required').max(100),
+  lastName: z.string().trim().max(100).nullish(),
+  bio: z.string().trim().max(500).nullish(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).nullish(),
   dateOfBirth: z.string().nullish(),
-  phoneNumber: z.string().max(20).nullish(),
-  location: z.string().max(200).nullish(),
-  jobTitle: z.string().max(200).nullish(),
-  company: z.string().max(200).nullish(),
+  phoneNumber: z.string().trim().max(20).nullish(),
+  location: z.string().trim().max(200).nullish(),
+  jobTitle: z.string().trim().max(200).nullish(),
+  company: z.string().trim().max(200).nullish(),
   yearsOfExperience: z.number().int().min(0).max(100).nullish(),
   experiences: z.array(z.string().max(500)).max(20).nullish(),
   education: z.array(z.string().max(500)).max(20).nullish(),
@@ -23,8 +23,8 @@ const profileUpdateSchema = z.object({
   interests: z.array(z.string().max(100)).max(50).nullish(),
   certifications: z.array(z.string().max(200)).max(20).nullish(),
   awards: z.array(z.string().max(200)).max(20).nullish(),
-  githubUsername: z.string().max(100).nullish(),
-  twitterHandle: z.string().max(100).nullish(),
+  githubUsername: z.string().trim().max(100).nullish(),
+  twitterHandle: z.string().trim().max(100).nullish(),
   linkedInProfile: z.string().url().max(500).nullish().or(z.literal('')),
   portfolioUrl: z.string().url().max(500).nullish().or(z.literal('')),
   resumeUrl: z.string().url().max(500).nullish().or(z.literal('')),
@@ -97,8 +97,16 @@ export const updateProfileFunction = inngest.createFunction(
       if ('resumeUrl' in validatedData) updateData.resumeUrl = validatedData.resumeUrl;
       if ('portfolioUrl' in validatedData) updateData.portfolioUrl = validatedData.portfolioUrl;
       if ('isPublic' in validatedData) updateData.isPublic = validatedData.isPublic;
-      if ('requireAuth' in validatedData) updateData.requireAuth = validatedData.requireAuth;
-      if ('trackViews' in validatedData) updateData.trackViews = validatedData.trackViews;
+      if ('requireAuth' in validatedData) {
+        updateData.requireAuth = validatedData.requireAuth;
+        // If requireAuth is being set to false, also set trackViews to false
+        if (!validatedData.requireAuth) {
+          updateData.trackViews = false;
+        }
+      }
+      if ('trackViews' in validatedData && validatedData.requireAuth !== false) {
+        updateData.trackViews = validatedData.trackViews;
+      }
 
       // Filter out null/undefined values for create
       const createData = {

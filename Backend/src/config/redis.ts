@@ -8,11 +8,11 @@ export const redis = new Redis({
 
 // Rate limiting configuration
 export const RATE_LIMIT_CONFIG = {
-  MAX_ATTEMPTS: 5,
-  WINDOW_MINUTES: 15,
-  LOCKOUT_MINUTES: 15,
-  MAX_SEND_ATTEMPTS: 3,
-  SEND_WINDOW_MINUTES: 60,
+  MAX_ATTEMPTS: 5, // Max 5 verification attempts
+  WINDOW_MINUTES: 30, // Within 30 minutes
+  LOCKOUT_MINUTES: 30, // Lockout for 30 minutes after exceeding
+  MAX_SEND_ATTEMPTS: 5,
+  SEND_WINDOW_MINUTES: 30,
   SEND_LOCKOUT_MINUTES: 30,
   PLATFORM_INVITE_MAX_ATTEMPTS: 3,
   PLATFORM_INVITE_WINDOW_MINUTES: 60,
@@ -26,8 +26,10 @@ export const REDIS_KEYS = {
   OTP_SEND_ATTEMPTS: 'otp:send:attempts:',
   OTP_SEND_LOCKOUT: 'otp:send:lockout:',
   PROFILE_CACHE: 'profile:cache:',
+  PROFILE_STAR: 'profile:star:',
   PLATFORM_INVITE_ATTEMPTS: 'platform:invite:attempts:',
   PLATFORM_INVITE_LOCKOUT: 'platform:invite:lockout:',
+  OTP_STORE: 'otp:store:',
   STAR_RATE_LIMIT: 'star:ratelimit:',
   STAR_COUNT_CACHE: 'star:count:',
 } as const;

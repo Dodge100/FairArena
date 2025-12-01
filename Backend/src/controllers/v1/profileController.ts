@@ -11,15 +11,15 @@ import logger from '../../utils/logger.js';
 const userIdSchema = z.string().min(1).max(255);
 
 const profileUpdateSchema = z.object({
-  firstName: z.string().min(1).max(100).nullish(),
-  lastName: z.string().min(1).max(100).nullish(),
-  bio: z.string().max(500).nullish(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).nullish(),
+  firstName: z.string().trim().min(1, 'First name is required').max(100),
+  lastName: z.string().trim().max(100).nullish(),
+  bio: z.string().trim().max(500).nullish(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).nullish(),
   dateOfBirth: z.string().nullish(),
-  phoneNumber: z.string().max(20).nullish(),
-  location: z.string().max(200).nullish(),
-  jobTitle: z.string().max(200).nullish(),
-  company: z.string().max(200).nullish(),
+  phoneNumber: z.string().trim().max(20).nullish(),
+  location: z.string().trim().max(200).nullish(),
+  jobTitle: z.string().trim().max(200).nullish(),
+  company: z.string().trim().max(200).nullish(),
   yearsOfExperience: z.number().int().min(0).max(100).nullish(),
   experiences: z.array(z.string().max(500)).max(20).nullish(),
   education: z.array(z.string().max(500)).max(20).nullish(),
@@ -27,9 +27,9 @@ const profileUpdateSchema = z.object({
   languages: z.array(z.string().max(50)).max(50).nullish(),
   interests: z.array(z.string().max(100)).max(50).nullish(),
   certifications: z.array(z.string().max(200)).max(20).nullish(),
-  awards: z.array(z.string().max(200)).max(20).nullish(),
-  githubUsername: z.string().max(100).nullish(),
-  twitterHandle: z.string().max(100).nullish(),
+  awards: z.array(z.string().trim().max(200)).max(20).nullish(),
+  githubUsername: z.string().trim().max(100).nullish(),
+  twitterHandle: z.string().trim().max(100).nullish(),
   linkedInProfile: z.union([z.string().url().max(500), z.literal('')]).nullish(),
   portfolioUrl: z.union([z.string().url().max(500), z.literal('')]).nullish(),
   resumeUrl: z.union([z.string().url().max(500), z.literal('')]).nullish(),
@@ -69,6 +69,24 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           profileData = cachedProfile;
         }
 
+        // Check if profile is public
+        if (!profileData.isPublic) {
+          return res.status(404).json({
+            error: { message: 'Profile not found or not public', status: 404 },
+          });
+        }
+
+        // Check if authentication is required
+        if (profileData.requireAuth && !viewerUserId) {
+          return res.status(401).json({
+            error: {
+              message: 'Authentication required to view this profile',
+              status: 401,
+              code: 'AUTH_REQUIRED',
+            },
+          });
+        }
+
         // Compute viewer-specific meta
         const shouldTrackViews =
           profileData.requireAuth &&
@@ -76,48 +94,60 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           viewerUserId &&
           viewerUserId !== profileData.userId;
         let hasConsent = false;
+
         if (shouldTrackViews) {
-          const existingView = await readOnlyPrisma.profileView.findUnique({
-            where: {
-              profileId_viewerUserId: {
-                profileId: profileData.id,
-                viewerUserId: viewerUserId!,
+          try {
+            const existingView = await readOnlyPrisma.profileView.findUnique({
+              where: {
+                profileId_viewerUserId: {
+                  profileId: profileData.id,
+                  viewerUserId: viewerUserId!,
+                },
               },
-            },
-          });
-          hasConsent = !!existingView;
+            });
+            hasConsent = !!existingView;
+          } catch (viewError) {
+            logger.warn('Error checking view consent:', viewError);
+          }
         }
 
-        // Get fresh star data for viewer
-        let starCount = 0;
+        // Get viewer star status with caching
         let hasStarred = false;
         let starredAt = null;
 
-        try {
-          starCount = await prisma.profileStars.count({
-            where: { profileId: profileData.id },
-          });
-
-          if (viewerUserId && viewerUserId !== profileData.userId) {
-            const userStar = await prisma.profileStars.findFirst({
-              where: {
-                profileId: profileData.id,
-                userId: viewerUserId,
-              },
-              select: { createdAt: true },
-            });
-            hasStarred = !!userStar;
-            starredAt = userStar?.createdAt || null;
+        if (viewerUserId && viewerUserId !== profileData.userId) {
+          // Cache key for user star status
+          const starCacheKey = `${REDIS_KEYS.PROFILE_STAR}${profileData.id}:${viewerUserId}`;
+          try {
+            const cachedStar = await redis.get(starCacheKey);
+            if (cachedStar !== null) {
+              const starData = typeof cachedStar === 'string' ? JSON.parse(cachedStar) : cachedStar;
+              hasStarred = starData.hasStarred || false;
+              starredAt = starData.starredAt || null;
+            } else {
+              const userStar = await readOnlyPrisma.profileStars.findFirst({
+                where: {
+                  profileId: profileData.id,
+                  userId: viewerUserId,
+                },
+                select: { createdAt: true },
+              });
+              hasStarred = !!userStar;
+              starredAt = userStar?.createdAt || null;
+              // Cache the star status for 1 hour
+              await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
+            }
+          } catch (starError) {
+            logger.warn('Error fetching star data from cache:', starError);
           }
-        } catch (starError) {
-          logger.warn('Error fetching star data from cache:', starError);
         }
 
+        logger.info('Serving public profile from cache for user:', userId);
         const responseData = {
           data: {
             ...profileData,
             stars: {
-              count: starCount,
+              count: profileData.starCount || 0,
               hasStarred,
               starredAt,
             },
@@ -135,43 +165,55 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       // Continue without cache
     }
 
-    const profile = await readOnlyPrisma.profile.findFirst({
-      where: {
-        userId,
-        isPublic: true,
-      },
-      select: {
-        id: true,
-        userId: true,
-        firstName: true,
-        lastName: true,
-        bio: true,
-        gender: true,
-        dateOfBirth: true,
-        location: true,
-        jobTitle: true,
-        company: true,
-        yearsOfExperience: true,
-        experiences: true,
-        education: true,
-        skills: true,
-        languages: true,
-        interests: true,
-        certifications: true,
-        awards: true,
-        githubUsername: true,
-        twitterHandle: true,
-        linkedInProfile: true,
-        resumeUrl: true,
-        portfolioUrl: true,
-        requireAuth: true,
-        trackViews: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const profile = await readOnlyPrisma.profile.findUnique({
+      where: { userId },
     });
 
     if (!profile) {
+      return res.status(404).json({
+        error: { message: 'Profile not found', status: 404 },
+      });
+    }
+
+    // Fetch Clerk user data for avatar and email
+    let avatarUrl = null;
+    let email = null;
+    try {
+      const clerkUser = await clerkClient.users.getUser(profile.userId);
+      avatarUrl = clerkUser.imageUrl || null;
+      email = clerkUser.primaryEmailAddress?.emailAddress || null;
+    } catch (error) {
+      logger.error('Error fetching Clerk user:', error);
+    }
+
+    // Get star count (cache this as it's expensive)
+    let starCount = 0;
+    try {
+      starCount = await readOnlyPrisma.profileStars.count({
+        where: { profileId: profile.id },
+      });
+    } catch (starError) {
+      logger.warn('Error fetching star count:', starError);
+    }
+
+    const profileWithExtras = {
+      ...profile,
+      avatarUrl,
+      email,
+      starCount,
+    };
+
+    // Cache the complete profile data for 1 hour (3600 seconds) - including private profiles
+    try {
+      await redis.setex(cacheKey, 3600, JSON.stringify(profileWithExtras));
+      logger.info('Profile cached successfully for user:', userId);
+    } catch (cacheError) {
+      logger.warn('Cache write error:', cacheError);
+    }
+
+    // Now apply access control checks AFTER caching
+    // Check if profile is public
+    if (!profile.isPublic) {
       return res.status(404).json({
         error: { message: 'Profile not found or not public', status: 404 },
       });
@@ -195,70 +237,56 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     // Check if viewer has already given consent
     let hasConsent = false;
     if (shouldTrackViews) {
-      const existingView = await readOnlyPrisma.profileView.findUnique({
-        where: {
-          profileId_viewerUserId: {
-            profileId: profile.id,
-            viewerUserId: viewerUserId!,
+      try {
+        const existingView = await readOnlyPrisma.profileView.findUnique({
+          where: {
+            profileId_viewerUserId: {
+              profileId: profile.id,
+              viewerUserId: viewerUserId!,
+            },
           },
-        },
-      });
-      hasConsent = !!existingView;
+        });
+        hasConsent = !!existingView;
+      } catch (viewError) {
+        logger.warn('Error checking view consent:', viewError);
+      }
     }
 
-    // Remove privacy settings from response
-    const { ...profileData } = profile;
-
-    // Fetch Clerk user data for avatar and email
-    let avatarUrl = null;
-    let email = null;
-    try {
-      const clerkUser = await clerkClient.users.getUser(profile.userId);
-      avatarUrl = clerkUser.imageUrl || null;
-      email = clerkUser.primaryEmailAddress?.emailAddress || null;
-    } catch (error) {
-      logger.error('Error fetching Clerk user:', error);
-    }
-
-    const profileWithExtras = {
-      ...profileData,
-      avatarUrl,
-      email,
-    };
-
-    // Get star count and user's star status
-    let starCount = 0;
+    // Get viewer-specific star status with caching
     let hasStarred = false;
     let starredAt = null;
 
-    try {
-      // Get star count
-      starCount = await prisma.profileStars.count({
-        where: { profileId: profile.id },
-      });
-
-      // Check if viewer has starred (only if authenticated)
-      if (viewerUserId && viewerUserId !== profile.userId) {
-        const userStar = await prisma.profileStars.findFirst({
-          where: {
-            profileId: profile.id,
-            userId: viewerUserId,
-          },
-          select: { createdAt: true },
-        });
-        hasStarred = !!userStar;
-        starredAt = userStar?.createdAt || null;
+    if (viewerUserId && viewerUserId !== profile.userId) {
+      const starCacheKey = `${REDIS_KEYS.PROFILE_STAR}${profile.id}:${viewerUserId}`;
+      try {
+        const cachedStar = await redis.get(starCacheKey);
+        if (cachedStar !== null) {
+          const starData = typeof cachedStar === 'string' ? JSON.parse(cachedStar) : cachedStar;
+          hasStarred = starData.hasStarred || false;
+          starredAt = starData.starredAt || null;
+        } else {
+          const userStar = await readOnlyPrisma.profileStars.findFirst({
+            where: {
+              profileId: profile.id,
+              userId: viewerUserId,
+            },
+            select: { createdAt: true },
+          });
+          hasStarred = !!userStar;
+          starredAt = userStar?.createdAt || null;
+          // Cache the star status for 1 hour
+          await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
+        }
+      } catch (starError) {
+        logger.warn('Error fetching viewer star data:', starError);
       }
-    } catch (starError) {
-      logger.warn('Error fetching star data:', starError);
-      // Continue without star data
     }
 
     const responseData = {
       data: {
         ...profileWithExtras,
         stars: {
-          count: starCount,
+          count: profileWithExtras.starCount,
           hasStarred,
           starredAt,
         },
@@ -268,14 +296,6 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         isOwner: viewerUserId === profile.userId,
       },
     };
-
-    // Cache the profile data for 1 hour (3600 seconds)
-    try {
-      await redis.setex(cacheKey, 3600, JSON.stringify(profileWithExtras));
-      logger.info('Profile cached successfully for user:', userId);
-    } catch (cacheError) {
-      logger.warn('Cache write error:', cacheError);
-    }
 
     return res.status(200).json(responseData);
   } catch (error) {
@@ -306,7 +326,22 @@ export const getOwnProfile = async (req: Request, res: Response) => {
       });
     }
 
+    // Check cache first
+    const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${userId}`;
+    try {
+      const cachedProfile = await redis.get(cacheKey);
+      if (cachedProfile) {
+        logger.info('Serving own profile from cache for user:', userId);
+        const profileData =
+          typeof cachedProfile === 'string' ? JSON.parse(cachedProfile) : cachedProfile;
+        return res.status(200).json({ data: profileData });
+      }
+    } catch (cacheError) {
+      logger.warn('Cache read error:', cacheError);
+    }
+
     const readOnlyPrisma = getReadOnlyPrisma();
+
     let profile = await readOnlyPrisma.profile.findUnique({
       where: { userId },
     });
@@ -350,6 +385,14 @@ export const getOwnProfile = async (req: Request, res: Response) => {
           trackViews: true,
         },
       });
+    }
+
+    // Cache the profile data for 1 hour (3600 seconds)
+    try {
+      await redis.setex(cacheKey, 3600, JSON.stringify(profile));
+      logger.info('Own profile cached successfully for user:', userId);
+    } catch (cacheError) {
+      logger.warn('Cache write error:', cacheError);
     }
 
     return res.status(200).json({ data: profile });

@@ -1,5 +1,5 @@
 import { GoogleOneTap } from '@clerk/clerk-react';
-import { Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import NotFound from './components/NotFound';
 import WaitList from './components/WaitList';
@@ -12,6 +12,8 @@ import CreateOrganization from './pages/CreateOrganization';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Home from './pages/Home';
+import Inbox from './pages/Inbox';
+import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
 import OrganizationDetails from './pages/OrganizationDetails';
 import Organizations from './pages/Organizations';
@@ -30,11 +32,25 @@ import Unsubscribe from './pages/Unsubscribe';
 import HowItWorks from './pages/WhyChooseUsPage';
 
 function App() {
+  const location = useLocation();
+  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+
+  // Redirect all routes to maintenance if enabled
+  if (isMaintenanceMode && location.pathname !== '/maintenance') {
+    return <Navigate to="/maintenance" replace />;
+  }
+
+  // Prevent access to maintenance page when not in maintenance mode
+  if (!isMaintenanceMode && location.pathname === '/maintenance') {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <>
       <Toaster richColors position="top-right" />
       <GoogleOneTap />
       <Routes>
+        <Route path="/maintenance" element={<Maintenance />} />
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
@@ -46,6 +62,7 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/dashboard/inbox" element={<Inbox />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/profile/edit" element={<EditProfile />} />
           <Route path="/dashboard/profile/views" element={<ProfileViews />} />

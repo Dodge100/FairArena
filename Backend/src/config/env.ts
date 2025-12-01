@@ -26,6 +26,7 @@ for (const envVar of requiredEnvVars) {
 export const ENV = {
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
+  MAINTENANCE_MODE: process.env.MAINTENANCE_MODE === 'true',
   CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
   CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET!,
@@ -41,7 +42,9 @@ export const ENV = {
   BASE_URL: process.env.BASE_URL || '',
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL!,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  GOOGLE_SHEETS_PRIVATE_KEY: process.env.GOOGLE_SHEETS_PRIVATE_KEY,
+  GOOGLE_SHEETS_PRIVATE_KEY: process.env.GOOGLE_SHEETS_PRIVATE_KEY!,
+  GOOGLE_RECAPTCHA_SITE_KEY: process.env.GOOGLE_RECAPTCHA_SITE_KEY || '',
+  GOOGLE_RECAPTCHA_SECRET: process.env.GOOGLE_RECAPTCHA_SECRET || '',
   GOOGLE_SHEETS_CLIENT_EMAIL: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
   GOOGLE_SHEETS_NEWSLETTER_ID: process.env.GOOGLE_SHEETS_NEWSLETTER_ID,
   SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -49,6 +52,6 @@ export const ENV = {
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   SMTP_USER: process.env.SMTP_USER!,
   SMTP_PASS: process.env.SMTP_PASS!,
-  EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'resend', // 'resend' or 'nodemailer'
+  EMAIL_PROVIDER: process.env.NODE_ENV === 'production' ? process.env.EMAIL_PROVIDER : 'nodemailer',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };

@@ -2,6 +2,9 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
+import { accountDeletionWarningEmailTemplate } from '../templates/accountDeletionWarning.js';
+import { accountPermanentDeletionEmailTemplate } from '../templates/accountPermanentDeletion.js';
+import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { otpEmailTemplate } from '../templates/otp.js';
 import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
@@ -23,12 +26,24 @@ const transporter = nodemailer.createTransport({
 type WelcomeEmailParams = { userName: string };
 type OtpEmailParams = { otp: string };
 type PlatformInviteEmailParams = { inviterName: string };
+type AccountDeletionWarningEmailParams = { recoveryInstructions: string; deadline: string };
+type AccountRecoveryEmailParams = { userName?: string };
+type AccountPermanentDeletionEmailParams = {};
 
 // Collect all templates with correct types
 export const emailTemplates = {
   welcome: welcomeEmailTemplate as (params: WelcomeEmailParams) => string,
   otp: otpEmailTemplate as (params: OtpEmailParams) => string,
   platformInvite: platformInviteEmailTemplate as (params: PlatformInviteEmailParams) => string,
+  'account-deletion-warning': accountDeletionWarningEmailTemplate as (
+    params: AccountDeletionWarningEmailParams,
+  ) => string,
+  'account-recovery': accountRecoveryEmailTemplate as (
+    params: AccountRecoveryEmailParams,
+  ) => string,
+  'account-permanent-deletion': accountPermanentDeletionEmailTemplate as (
+    params: AccountPermanentDeletionEmailParams,
+  ) => string,
 };
 
 // Function overloads for sendEmail
@@ -51,11 +66,41 @@ export function sendEmail(
   params: PlatformInviteEmailParams,
   headers?: Record<string, string>,
 ): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'account-deletion-warning',
+  params: AccountDeletionWarningEmailParams,
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'account-recovery',
+  params: AccountRecoveryEmailParams,
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'account-permanent-deletion',
+  params: AccountPermanentDeletionEmailParams,
+): Promise<unknown>;
 export async function sendEmail(
   to: string,
   subject: string,
-  templateName: 'welcome' | 'otp' | 'platformInvite',
-  params: WelcomeEmailParams | OtpEmailParams | PlatformInviteEmailParams,
+  templateName:
+    | 'welcome'
+    | 'otp'
+    | 'platformInvite'
+    | 'account-deletion-warning'
+    | 'account-recovery'
+    | 'account-permanent-deletion',
+  params:
+    | WelcomeEmailParams
+    | OtpEmailParams
+    | PlatformInviteEmailParams
+    | AccountDeletionWarningEmailParams
+    | AccountRecoveryEmailParams
+    | AccountPermanentDeletionEmailParams,
   headers?: Record<string, string>,
 ): Promise<unknown> {
   let html: string;
@@ -65,6 +110,14 @@ export async function sendEmail(
     html = emailTemplates.otp(params as OtpEmailParams);
   } else if (templateName === 'platformInvite') {
     html = emailTemplates.platformInvite(params as PlatformInviteEmailParams);
+  } else if (templateName === 'account-deletion-warning') {
+    html = emailTemplates['account-deletion-warning'](params as AccountDeletionWarningEmailParams);
+  } else if (templateName === 'account-recovery') {
+    html = emailTemplates['account-recovery'](params as AccountRecoveryEmailParams);
+  } else if (templateName === 'account-permanent-deletion') {
+    html = emailTemplates['account-permanent-deletion'](
+      params as AccountPermanentDeletionEmailParams,
+    );
   } else {
     throw new Error(`Unknown template name: ${templateName}`);
   }
@@ -139,5 +192,29 @@ export const sendPlatformInviteEmail = async (
     {
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
     },
+  );
+};
+
+export const sendAccountDeletionWarningEmail = async (
+  to: string,
+  recoveryInstructions: string,
+  deadline: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Your Account Has Been Deleted', 'account-deletion-warning', {
+    recoveryInstructions,
+    deadline,
+  });
+};
+
+export const sendAccountRecoveryEmail = async (to: string, userName?: string): Promise<unknown> => {
+  return sendEmail(to, 'Your Account Has Been Recovered', 'account-recovery', { userName });
+};
+
+export const sendAccountPermanentDeletionEmail = async (to: string): Promise<unknown> => {
+  return sendEmail(
+    to,
+    'Your Account Has Been Permanently Deleted',
+    'account-permanent-deletion',
+    {},
   );
 };

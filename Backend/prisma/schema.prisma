@@ -1,6 +1,7 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex", "fullTextSearch"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -15,11 +16,13 @@ model User {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   Logs                  Logs[]
+  notifications         Notification[]
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
-  otps                  Otp[]
   profile               Profile?
+  isDeleted             Boolean                 @default(false)
+  deletedAt             DateTime?
   profileStars          ProfileStars[]
   projectUserRoles      ProjectUserRole[]
   reports               Report[]
@@ -29,6 +32,7 @@ model User {
   teamMemberships       UserTeam[]
 
   @@index([userId])
+  @@index([email])
 }
 
 model Profile {
@@ -67,22 +71,8 @@ model Profile {
 
   @@index([userId])
   @@index([isPublic])
-}
-
-model Otp {
-  id        String   @id @default(cuid())
-  userId    String
-  email     String
-  otpHash   String
-  sentFor   String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  verified  Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([email])
-  @@index([userId])
-  @@index([sentFor])
+  @@index([requireAuth])
+  @@index([trackViews])
 }
 
 model Logs {
@@ -92,11 +82,14 @@ model Logs {
   level     level
   metadata  Json?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [userId])
+  user      User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([action])
+  @@index([level])
   @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
 }
 
 model ProfileView {
@@ -113,6 +106,7 @@ model ProfileView {
   @@index([viewerUserId])
   @@index([viewerEmail])
   @@index([createdAt])
+  @@index([profileId, createdAt])
 }
 
 model Organization {
@@ -138,6 +132,7 @@ model Organization {
   @@index([slug])
   @@index([isPublic])
   @@index([joinEnabled])
+  @@index([createdAt])
 }
 
 model OrganizationUserRole {
@@ -154,6 +149,7 @@ model OrganizationUserRole {
   @@index([userId])
   @@index([organizationId])
   @@index([roleId])
+  @@index([organizationId, userId])
 }
 
 model UserOrganization {
@@ -165,6 +161,7 @@ model UserOrganization {
 
   @@id([userId, organizationId])
   @@index([organizationId])
+  @@index([createdAt])
 }
 
 model OrganizationRole {
@@ -180,6 +177,7 @@ model OrganizationRole {
 
   @@unique([organizationId, roleName])
   @@index([organizationId])
+  @@index([roleName])
 }
 
 model OrganizationInviteCode {
@@ -196,9 +194,12 @@ model OrganizationInviteCode {
   role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+  @@index([code])
   @@index([expiresAt])
   @@index([email])
   @@index([used])
+  @@index([roleId])
+  @@index([organizationId, used, expiresAt])
 }
 
 model OrganizationProfile {
@@ -212,6 +213,8 @@ model OrganizationProfile {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model Team {
@@ -240,6 +243,8 @@ model Team {
   @@index([slug])
   @@index([visibility])
   @@index([joinEnabled])
+  @@index([createdAt])
+  @@index([organizationId, visibility])
 }
 
 model TeamProfile {
@@ -253,6 +258,8 @@ model TeamProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
 }
 
 model InviteCode {
@@ -269,9 +276,12 @@ model InviteCode {
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
+  @@index([code])
   @@index([expiresAt])
   @@index([email])
   @@index([used])
+  @@index([roleId])
+  @@index([teamId, used, expiresAt])
 }
 
 model TeamRole {
@@ -287,6 +297,7 @@ model TeamRole {
 
   @@unique([teamId, roleName])
   @@index([teamId])
+  @@index([roleName])
 }
 
 model ProjectRole {
@@ -302,6 +313,7 @@ model ProjectRole {
 
   @@unique([projectId, roleName])
   @@index([projectId])
+  @@index([roleName])
 }
 
 model TeamUserRole {
@@ -318,6 +330,7 @@ model TeamUserRole {
   @@index([userId])
   @@index([teamId])
   @@index([roleId])
+  @@index([teamId, userId])
 }
 
 model UserTeam {
@@ -329,6 +342,7 @@ model UserTeam {
 
   @@id([userId, teamId])
   @@index([teamId])
+  @@index([createdAt])
 }
 
 model ProjectUserRole {
@@ -345,6 +359,7 @@ model ProjectUserRole {
   @@index([userId])
   @@index([projectId])
   @@index([roleId])
+  @@index([projectId, userId])
 }
 
 model UserProject {
@@ -356,6 +371,7 @@ model UserProject {
 
   @@id([userId, projectId])
   @@index([projectId])
+  @@index([createdAt])
 }
 
 model Project {
@@ -380,8 +396,12 @@ model Project {
   @@unique([teamId, name])
   @@unique([teamId, slug])
   @@index([teamId])
+  @@index([name])
+  @@index([slug])
   @@index([visibility])
   @@index([joinEnabled])
+  @@index([createdAt])
+  @@index([teamId, visibility])
 }
 
 model projectProfile {
@@ -394,6 +414,8 @@ model projectProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model ProjectInviteCode {
@@ -410,9 +432,11 @@ model ProjectInviteCode {
   role      ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([code])
   @@index([expiresAt])
   @@index([email])
   @@index([used])
+  @@index([projectId, used, expiresAt])
 }
 
 model OrganizationAuditLog {
@@ -427,7 +451,10 @@ model OrganizationAuditLog {
   @@index([organizationId])
   @@index([userId])
   @@index([action])
+  @@index([level])
   @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, userId, createdAt])
 }
 
 model TeamAuditLog {
@@ -442,7 +469,10 @@ model TeamAuditLog {
   @@index([teamId])
   @@index([userId])
   @@index([action])
+  @@index([level])
   @@index([createdAt])
+  @@index([teamId, createdAt])
+  @@index([teamId, userId, createdAt])
 }
 
 model ProjectAuditLog {
@@ -457,7 +487,10 @@ model ProjectAuditLog {
   @@index([projectId])
   @@index([userId])
   @@index([action])
+  @@index([level])
   @@index([createdAt])
+  @@index([projectId, createdAt])
+  @@index([projectId, userId, createdAt])
 }
 
 model Report {
@@ -473,7 +506,9 @@ model Report {
 
   @@index([reporterId])
   @@index([reportedEntityId, entityType])
+  @@index([state])
   @@index([createdAt])
+  @@index([entityType, state])
 }
 
 model ProfileStars {
@@ -485,7 +520,9 @@ model ProfileStars {
   user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([profileId, userId])
-  @@index([profileId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model OrganizationFollowers {
@@ -497,7 +534,9 @@ model OrganizationFollowers {
   user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([organizationId, userId])
-  @@index([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model OrganizationStars {
@@ -509,7 +548,32 @@ model OrganizationStars {
   user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([organizationId, userId])
-  @@index([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  read        Boolean          @default(false)
+  actionUrl   String?
+  actionLabel String?
+  metadata    Json?
+  description String           @db.Text
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  user        User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 enum Visibility {
@@ -522,6 +586,7 @@ enum gender {
   MALE
   FEMALE
   OTHER
+  PREFER_NOT_TO_SAY
 }
 
 enum level {
@@ -535,4 +600,20 @@ enum ReportState {
   IN_REVIEW
   RESOLVED
   DISMISSED
+  ESCALATED
+}
+
+enum NotificationType {
+  SYSTEM
+  MENTION
+  INVITATION
+  ACHIEVEMENT
+  UPDATE
+  REMINDER
+  ALERT
+  MESSAGE
+  FOLLOW
+  STAR
+  COMMENT
+  ANNOUNCEMENT
 }

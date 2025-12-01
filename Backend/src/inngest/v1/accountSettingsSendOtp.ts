@@ -1,15 +1,29 @@
 import bcrypt from 'bcrypt';
-import { prisma } from '../../config/database.js';
+import crypto from 'crypto';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendOtpEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 const SALT_ROUNDS = 12;
-const OTP_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_SECONDS = 600; // 10 minutes
 
 function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const length = crypto.randomInt(6, 13); // 6-12 characters
+  const digits = '0123456789';
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  let otp = '';
+  for (let i = 0; i < length; i++) {
+    // 70% digits, 30% letters for better readability
+    if (crypto.randomInt(0, 10) < 7) {
+      otp += digits.charAt(crypto.randomInt(0, digits.length));
+    } else {
+      otp += alpha.charAt(crypto.randomInt(0, alpha.length));
+    }
+  }
+  return otp;
 }
 
 export const sendOtpForAccountSettings = inngest.createFunction(
@@ -43,34 +57,48 @@ export const sendOtpForAccountSettings = inngest.createFunction(
     });
 
     const otp = await step.run('generate-and-store-otp', async () => {
+      const otpKey = `${REDIS_KEYS.OTP_STORE}${userId}:account-settings`;
+
+      // Generate OTP
       const plainOtp = generateOtp();
-      const otpHash = await bcrypt.hash(plainOtp, SALT_ROUNDS);
-      const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-      // Delete any existing OTPs for this user and purpose
-      await prisma.otp.deleteMany({
-        where: {
+      // Hash the OTP
+      let otpHash;
+      try {
+        otpHash = await bcrypt.hash(plainOtp.toUpperCase(), SALT_ROUNDS);
+      } catch (hashError) {
+        logger.error('Failed to hash OTP', {
           userId,
-          sentFor: 'account-settings',
-          verified: false,
-        },
-      });
+          error: hashError instanceof Error ? hashError.message : String(hashError),
+        });
+        throw new Error('Failed to generate OTP');
+      }
 
-      // Store the hashed OTP
-      await prisma.otp.create({
-        data: {
-          userId,
-          email: user.email,
-          otpHash,
-          sentFor: 'account-settings',
-          expiresAt,
-        },
-      });
-
-      logger.info('OTP generated and stored', {
+      // Store OTP data in Redis with TTL
+      const otpData = {
         userId,
         email: user.email,
-        expiresAt,
+        otpHash,
+        sentFor: 'account-settings',
+        createdAt: Date.now(),
+        attempts: 0,
+      };
+
+      try {
+        await redis.setex(otpKey, OTP_EXPIRY_SECONDS, JSON.stringify(otpData));
+      } catch (redisError) {
+        logger.error('Failed to store OTP in Redis', {
+          userId,
+          email: user.email,
+          error: redisError instanceof Error ? redisError.message : String(redisError),
+        });
+        throw new Error('Failed to store OTP');
+      }
+
+      logger.info('OTP generated and stored in Redis', {
+        userId,
+        email: user.email,
+        expiresIn: OTP_EXPIRY_SECONDS,
       });
 
       return plainOtp;
