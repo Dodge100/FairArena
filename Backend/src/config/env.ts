@@ -15,6 +15,7 @@ const requiredEnvVars = [
   'UPSTASH_REDIS_REST_TOKEN',
   'DATABASE_URL_READ_ONLY_1',
   'DATABASE_URL_READ_ONLY_2',
+  'GOOGLE_GEMINI_API_KEY',
 ];
 
 for (const envVar of requiredEnvVars) {
@@ -54,4 +55,8 @@ export const ENV = {
   SMTP_PASS: process.env.SMTP_PASS!,
   EMAIL_PROVIDER: process.env.NODE_ENV === 'production' ? process.env.EMAIL_PROVIDER : 'nodemailer',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  GOOGLE_GEMINI_API_KEY: process.env.GOOGLE_GEMINI_API_KEY!,
+  LANGCHAIN_API_KEY: process.env.LANGCHAIN_API_KEY || '',
+  LANGCHAIN_PROJECT: process.env.LANGCHAIN_PROJECT || 'fairarena-ai',
+  LANGCHAIN_TRACING_V2: process.env.LANGCHAIN_TRACING_V2 === 'true',
 };

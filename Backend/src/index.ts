@@ -9,7 +9,6 @@ import * as client from 'prom-client';
 import { ENV } from './config/env.js';
 import { inngest } from './inngest/v1/client.js';
 import {
-  cleanupOldNotifications,
   createLog,
   createOrganizationRoles,
   createReport,
@@ -36,6 +35,7 @@ import {
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
+import aiRouter from './routes/v1/ai.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
@@ -140,6 +140,9 @@ app.use('/api/v1/stars', starsRouter);
 // Notification routes
 app.use('/api/v1/notifications', notificationRouter);
 
+// AI Assistant routes
+app.use('/api/v1/ai', aiRouter);
+
 // Cleanup routes
 app.use('/api/v1', cleanupRouter);
 
@@ -172,7 +175,6 @@ app.use(
       markAllNotificationsAsRead,
       deleteNotifications,
       deleteAllReadNotifications,
-      cleanupOldNotifications,
     ],
   }),
 );

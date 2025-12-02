@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 export const cleanupExpiredData = async (req: Request, res: Response) => {
+  const readOnlyPrisma = await getReadOnlyPrisma();
   try {
     // Calculate dates
     const fiveDaysAgo = new Date();
@@ -11,6 +13,9 @@ export const cleanupExpiredData = async (req: Request, res: Response) => {
 
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Delete old logs
     const deletedLogs = await prisma.logs.deleteMany({
@@ -22,7 +27,7 @@ export const cleanupExpiredData = async (req: Request, res: Response) => {
     });
 
     // Get users to be permanently deleted
-    const usersToDelete = await prisma.user.findMany({
+    const usersToDelete = await readOnlyPrisma.user.findMany({
       where: {
         isDeleted: true,
         deletedAt: {
@@ -58,10 +63,19 @@ export const cleanupExpiredData = async (req: Request, res: Response) => {
       },
     });
 
+    const deletedNotifications = await prisma.notification.deleteMany({
+      where: {
+        createdAt: {
+          lt: thirtyDaysAgo,
+        },
+      },
+    });
+
     res.status(200).json({
       message: 'Cleanup completed',
       deletedLogs: deletedLogs.count,
       deletedUsers: deletedUsers.count,
+      deletedNotifications: deletedNotifications.count,
     });
   } catch (error) {
     logger.error('Error during cleanup:', error);

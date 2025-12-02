@@ -5,6 +5,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { AIButton } from '../components/AIButton';
 import { AISidebar } from '../components/AISidebar';
 import { AppSidebar } from '../components/AppSidebar';
+import { ChatProvider } from '../contexts/ChatContext';
 
 export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useUser();
@@ -23,20 +24,22 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-screen overflow-hidden">
-        <AppSidebar />
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="p-6 min-h-screen">
-            <div className="mb-4">
-              <SidebarTrigger />
+    <ChatProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-screen overflow-hidden">
+          <AppSidebar />
+          <main className="flex-1 overflow-auto bg-background">
+            <div className="p-6 min-h-screen">
+              <div className="mb-4">
+                <SidebarTrigger />
+              </div>
+              <Outlet />
             </div>
-            <Outlet />
-          </div>
-        </main>
-        <AIButton onClick={() => setIsAISidebarOpen(true)} />
-        <AISidebar isOpen={isAISidebarOpen} onClose={() => setIsAISidebarOpen(false)} />
-      </div>
-    </SidebarProvider>
+          </main>
+          <AIButton onClick={() => setIsAISidebarOpen(true)} />
+          <AISidebar isOpen={isAISidebarOpen} onClose={() => setIsAISidebarOpen(false)} />
+        </div>
+      </SidebarProvider>
+    </ChatProvider>
   );
 }

@@ -5,7 +5,6 @@ export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { subscribeToNewsletter, unsubscribeFromNewsletter } from './newsletterSubscribe.js';
 export {
-  cleanupOldNotifications,
   deleteAllReadNotifications,
   deleteNotifications,
   markAllNotificationsAsRead,

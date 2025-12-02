@@ -77,6 +77,9 @@ importers:
       '@tsparticles/slim':
         specifier: ^3.9.1
         version: 3.9.1
+      '@types/marked':
+        specifier: ^6.0.0
+        version: 6.0.0
       aceternity-ui:
         specifier: ^0.2.2
         version: 0.2.2(typescript@5.9.3)
@@ -101,6 +104,9 @@ importers:
       lucide-react:
         specifier: ^0.553.0
         version: 0.553.0(react@19.2.0)
+      marked:
+        specifier: ^17.0.1
+        version: 17.0.1
       motion:
         specifier: ^12.23.24
         version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -137,6 +143,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.17
         version: 4.1.17
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
       video.js:
         specifier: ^8.23.4
         version: 8.23.4
@@ -1903,6 +1912,10 @@ packages:
   '@types/locomotive-scroll@4.1.4':
     resolution: {integrity: sha512-G8GUr/ML/Ssxxl83VYbtFHMFoPNOQh/glzPWi5Z3Jk7Hng26Sl0ckAV11uq1AGKEq40jFMPhyAIuQ6fGPiBmHQ==}
 
+  '@types/marked@6.0.0':
+    resolution: {integrity: sha512-jmjpa4BwUsmhxcfsgUit/7A9KbrC48Q0q8KvnY107ogcjGgTFDlIL3RpihNpx2Mu1hM4mdFQjoVc4O6JoGKHsA==}
+    deprecated: This is a stub types definition. marked provides its own type definitions, so you do not need this installed.
+
   '@types/next-server@9.0.0':
     resolution: {integrity: sha512-8PDYdAX0aDCiGJEL22UwvwT26b5+XFCtsuFprqIr9ISCRD/At2ndO4sylGq+pnuOEI40FEALzNg4aD2t+wi5Tg==}
     deprecated: This is a stub types definition. next-server provides its own type definitions, so you do not need this installed.
@@ -3180,6 +3193,11 @@ packages:
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
+  marked@17.0.1:
+    resolution: {integrity: sha512-boeBdiS0ghpWcSwoNm/jJBwdpFaMnZWRzjA6SkUMYb40SVaN1x7mmfGKp0jvexGcx+7y2La5zRZsYFZI6Qpypg==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -4099,6 +4117,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
 
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
@@ -5990,6 +6012,10 @@ snapshots:
 
   '@types/locomotive-scroll@4.1.4': {}
 
+  '@types/marked@6.0.0':
+    dependencies:
+      marked: 17.0.1
+
   '@types/next-server@9.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       next-server: 9.0.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -7310,6 +7336,8 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  marked@17.0.1: {}
+
   math-intrinsics@1.1.0: {}
 
   media-typer@1.1.0: {}
@@ -8295,6 +8323,8 @@ snapshots:
       react: 19.2.0
 
   util-deprecate@1.0.2: {}
+
+  uuid@13.0.0: {}
 
   vary@1.1.2: {}
 
