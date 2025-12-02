@@ -9,7 +9,7 @@ import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 // Constants for OTP verification
-const TOKEN_EXPIRY_MINUTES = 10;
+const TOKEN_EXPIRY_MINUTES = ENV.NODE_ENV === 'production' ? 10 : 120;
 const OTP_EXPIRY_SECONDS = 600; // 10 minutes
 const MAX_OTP_SEND_ATTEMPTS = 5; // Maximum 5 OTP requests
 const OTP_SEND_WINDOW_SECONDS = 1800; // Within 30 minutes
@@ -471,5 +471,102 @@ export const getLogs = async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : String(error),
     });
     res.status(500).json({ success: false, message: 'Failed to fetch logs' });
+  }
+};
+
+export const exportUserData = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies['account-settings-token'];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
+        userId: string;
+        purpose: string;
+      };
+
+      // Verify the token is for account settings
+      if (decoded.purpose !== 'account-settings') {
+        logger.warn('Invalid token purpose', { purpose: decoded.purpose });
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
+
+      logger.info('User data export requested', { userId: decoded.userId });
+
+      // Check rate limiting for data export (once per 24 hours)
+      const exportKey = `${REDIS_KEYS.DATA_EXPORT}${decoded.userId}:last-export`;
+      try {
+        const lastExport = await redis.get(exportKey);
+        if (lastExport) {
+          const lastExportTime = new Date(typeof lastExport === 'string' ? lastExport : '');
+          const now = new Date();
+          const hoursSinceLastExport =
+            (now.getTime() - lastExportTime.getTime()) / (1000 * 60 * 60);
+          if (hoursSinceLastExport < 24) {
+            const remainingHours = Math.ceil(24 - hoursSinceLastExport);
+            logger.warn('Data export request blocked by rate limit', {
+              userId: decoded.userId,
+              lastExport: lastExportTime,
+              remainingHours,
+            });
+            return res.status(429).json({
+              success: false,
+              message: `You can request a data export once every 24 hours. Please try again in ${remainingHours} hours.`,
+            });
+          }
+        }
+      } catch (redisError) {
+        logger.error('Redis error checking data export rate limit', {
+          userId: decoded.userId,
+          error: redisError instanceof Error ? redisError.message : String(redisError),
+        });
+        // Continue without rate limiting if Redis is down
+      }
+
+      // Trigger the Inngest function for data export
+      await inngest.send({
+        name: 'user/export-data',
+        data: { userId: decoded.userId },
+      });
+
+      // Set the last export time
+      try {
+        await redis.setex(exportKey, 24 * 60 * 60, new Date().toISOString()); // 24 hours
+      } catch (redisError) {
+        logger.error('Redis error setting data export timestamp', {
+          userId: decoded.userId,
+          error: redisError instanceof Error ? redisError.message : String(redisError),
+        });
+        // Continue - export will still proceed
+      }
+
+      // Log the export request
+      inngest.send({
+        name: 'log.create',
+        data: {
+          userId: decoded.userId,
+          action: 'data-export-requested',
+          level: 'INFO',
+        },
+      });
+
+      res.json({
+        success: true,
+        message:
+          'Data export has been initiated. You will receive an email with your data shortly.',
+      });
+    } catch (jwtError) {
+      logger.warn('Invalid or expired token', {
+        error: jwtError instanceof Error ? jwtError.message : String(jwtError),
+      });
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+  } catch (error) {
+    logger.error('Export user data error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({ success: false, message: 'Failed to initiate data export' });
   }
 };

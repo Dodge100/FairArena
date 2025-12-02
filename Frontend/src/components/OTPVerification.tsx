@@ -232,11 +232,21 @@ export function OTPVerification({
     const getRecaptchaToken = async () => {
         if (recaptchaWidgetId.current === null || !window.grecaptcha) {
             setMessage('Please complete the CAPTCHA');
+            // Reset CAPTCHA if not properly loaded
+            if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                window.grecaptcha.reset(recaptchaWidgetId.current);
+                setCaptchaCompleted(false);
+            }
             return '';
         }
         const token = await window.grecaptcha.getResponse(recaptchaWidgetId.current);
         if (!token) {
             setMessage('Please complete the CAPTCHA');
+            // Reset CAPTCHA if no token
+            if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                window.grecaptcha.reset(recaptchaWidgetId.current);
+                setCaptchaCompleted(false);
+            }
             return '';
         }
         return token;
@@ -296,8 +306,18 @@ export function OTPVerification({
                 }
             } else if (res.status === 400 && data?.message?.toLowerCase().includes('captcha')) {
                 setMessage(data.message || 'Captcha verification failed. Please retry.');
+                // Reset CAPTCHA on captcha failure
+                if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                    window.grecaptcha.reset(recaptchaWidgetId.current);
+                    setCaptchaCompleted(false);
+                }
             } else {
                 setMessage(data.message || 'Failed to send OTP');
+                // Reset CAPTCHA on send failure
+                if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                    window.grecaptcha.reset(recaptchaWidgetId.current);
+                    setCaptchaCompleted(false);
+                }
             }
         } catch (error) {
             console.error('Send OTP failed:', error);
@@ -357,8 +377,18 @@ export function OTPVerification({
                 }
             } else if (res.status === 400 && data?.message?.toLowerCase().includes('captcha')) {
                 setMessage(data.message || 'Captcha verification failed. Please retry.');
+                // Reset CAPTCHA on captcha failure
+                if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                    window.grecaptcha.reset(recaptchaWidgetId.current);
+                    setCaptchaCompleted(false);
+                }
             } else {
                 setMessage(data.message || 'Verification failed');
+                // Reset CAPTCHA on verification failure
+                if (recaptchaWidgetId.current !== null && window.grecaptcha) {
+                    window.grecaptcha.reset(recaptchaWidgetId.current);
+                    setCaptchaCompleted(false);
+                }
             }
         } catch (error) {
             console.error('Verify OTP failed:', error);

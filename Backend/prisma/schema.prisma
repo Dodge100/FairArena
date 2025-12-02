@@ -143,7 +143,7 @@ model OrganizationUserRole {
   assignedAt     DateTime         @default(now())
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, organizationId, roleId])
   @@index([userId])
@@ -157,7 +157,7 @@ model UserOrganization {
   organizationId String
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, organizationId])
   @@index([organizationId])
@@ -324,7 +324,7 @@ model TeamUserRole {
   assignedAt DateTime @default(now())
   role       TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
   team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, teamId, roleId])
   @@index([userId])
@@ -338,7 +338,7 @@ model UserTeam {
   teamId    String
   createdAt DateTime @default(now())
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, teamId])
   @@index([teamId])
@@ -353,7 +353,7 @@ model ProjectUserRole {
   assignedAt DateTime    @default(now())
   project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   role       ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, projectId, roleId])
   @@index([userId])
@@ -367,7 +367,7 @@ model UserProject {
   projectId String
   createdAt DateTime @default(now())
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, projectId])
   @@index([projectId])

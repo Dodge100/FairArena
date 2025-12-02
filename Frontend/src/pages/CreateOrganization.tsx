@@ -78,7 +78,7 @@ const CreateOrganization = () => {
             if (response.ok) {
                 toast.success('Organization created successfully!');
                 // Redirect to dashboard or organization page
-                navigate('/dashboard/organizations');
+                navigate('/dashboard/organization');
             } else {
                 if (result.error === 'Slug already exists' && result.suggestion) {
                     toast.error(`Slug already exists. Try: ${result.suggestion}`);

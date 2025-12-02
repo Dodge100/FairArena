@@ -102,7 +102,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const originalConsoleWarn = console.warn;
         const originalConsoleError = console.error;
 
-        const captureLog = (level: string, ...args: any[]) => {
+        const captureLog = (level: string, ...args: unknown[]) => {
             const message = args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
             ).join(' ');
@@ -498,6 +498,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useChat() {
     const context = useContext(ChatContext);
     if (context === undefined) {

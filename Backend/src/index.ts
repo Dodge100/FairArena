@@ -16,6 +16,7 @@ import {
   deleteNotifications,
   deleteOrganization,
   deleteUser,
+  exportUserDataHandler,
   inviteToPlatform,
   markAllNotificationsAsRead,
   markNotificationsAsRead,
@@ -169,6 +170,7 @@ app.use(
       starProfile,
       unstarProfile,
       sendEmailHandler,
+      exportUserDataHandler,
       // Notification async operations
       markNotificationsAsRead,
       markNotificationsAsUnread,
@@ -194,7 +196,7 @@ app.get('/healthz', (req, res) => {
 
 // 404 handler for unmatched routes
 app.use((_, res) => {
-  logger.info('404 Not Found');
+  logger.info('404 Not Found', { path: _.originalUrl });
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 

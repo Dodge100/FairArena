@@ -32,4 +32,5 @@ export const REDIS_KEYS = {
   OTP_STORE: 'otp:store:',
   STAR_RATE_LIMIT: 'star:ratelimit:',
   STAR_COUNT_CACHE: 'star:count:',
+  DATA_EXPORT: 'data:export:',
 } as const;

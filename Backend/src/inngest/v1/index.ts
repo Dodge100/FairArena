@@ -3,6 +3,7 @@ export { createLog } from './createLog.js';
 export { createOrganizationRoles } from './createOrganizationRoles.js';
 export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
+export { exportUserDataHandler } from './exportUserData.js';
 export { subscribeToNewsletter, unsubscribeFromNewsletter } from './newsletterSubscribe.js';
 export {
   deleteAllReadNotifications,

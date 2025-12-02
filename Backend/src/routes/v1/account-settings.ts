@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   checkStatus,
+  exportUserData,
   getLogs,
   sendOtp,
   verifyOtp,
@@ -21,5 +22,8 @@ router.get('/status', protectRoute, checkStatus);
 
 // Get account logs
 router.get('/logs', protectRoute, getLogs);
+
+// Export user data
+router.post('/export-data', protectRoute, exportUserData);
 
 export default router;
