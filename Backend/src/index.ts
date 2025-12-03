@@ -23,6 +23,9 @@ import {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
+  paymentOrderCreated,
+  paymentVerified,
+  paymentWebhookReceived,
   recordProfileView,
   sendEmailHandler,
   sendOtpForAccountSettings,
@@ -47,6 +50,7 @@ import webhookRouter from './routes/v1/webhook.js';
 import * as Sentry from '@sentry/node';
 import './instrument.js';
 import cleanupRouter from './routes/v1/cleanup.js';
+import creditsRouter from './routes/v1/credits.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import paymentsRouter from './routes/v1/payments.js';
@@ -201,6 +205,9 @@ app.use('/api/v1', cleanupRouter);
 // Payments routes
 app.use('/api/v1/payments', paymentsRouter);
 
+// Credits routes
+app.use('/api/v1/credits', creditsRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -225,12 +232,14 @@ app.use(
       unstarProfile,
       sendEmailHandler,
       exportUserDataHandler,
-      // Notification async operations
       markNotificationsAsRead,
       markNotificationsAsUnread,
       markAllNotificationsAsRead,
       deleteNotifications,
       deleteAllReadNotifications,
+      paymentOrderCreated,
+      paymentVerified,
+      paymentWebhookReceived,
     ],
   }),
 );

@@ -19,6 +19,8 @@ model User {
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
+  payments              Payment[]
+  creditTransactions    CreditTransaction[]
   profile               Profile?
   isDeleted             Boolean                 @default(false)
   deletedAt             DateTime?
@@ -32,6 +34,134 @@ model User {
 
   @@index([userId])
   @@index([email])
+}
+
+model Plan {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  planId      String    @unique  // e.g., "basic_plan", "business_plan"
+  amount      Int                // Amount in paisa
+  currency    String    @default("INR")
+  credits     Int                // Credits awarded after payment
+  description String?   @db.Text
+  features    String[]           // Array of feature strings
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+
+  @@index([planId])
+  @@index([isActive])
+  @@index([name])
+}
+
+model Payment {
+  id                   String              @id @default(cuid())
+  userId               String
+  razorpayOrderId      String              @unique
+  razorpayPaymentId    String?             @unique
+  razorpaySignature    String?
+  planId               String
+  planName             String
+  amount               Int                 // Amount in paisa
+  currency             String              @default("INR")
+  credits              Int
+  status               PaymentStatus       @default(PENDING)
+  paymentMethod        String?
+  paymentContact       String?
+  receipt              String?
+  notes                Json?               // Store razorpay order notes
+  ipAddress            String?
+  userAgent            String?             @db.Text
+  idempotencyKey       String?             @unique
+  webhookProcessed     Boolean             @default(false)
+  webhookProcessedAt   DateTime?
+  failureReason        String?             @db.Text
+  refundId             String?             @unique
+  refundAmount         Int?
+  refundReason         String?             @db.Text
+  refundedAt           DateTime?
+  createdAt            DateTime            @default(now())
+  completedAt          DateTime?
+  user                 User                @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  plan                 Plan                @relation(fields: [planId], references: [planId], onDelete: SetNull)
+  webhookEvents        PaymentWebhookEvent[]
+  creditTransactions   CreditTransaction[]
+
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([idempotencyKey])
+  @@index([webhookProcessed])
+  @@index([refundId])
+  @@index([planId])
+}
+
+model CreditTransaction {
+  id              String                @id @default(cuid())
+  userId          String
+  paymentId       String?
+  amount          Int                   // Positive for credit, negative for debit
+  balance         Int                   // Running balance after this transaction
+  type            CreditTransactionType
+  description     String
+  metadata        Json?                 // Additional context (planId, orderId, etc)
+  createdAt       DateTime              @default(now())
+  user            User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  payment         Payment?              @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([paymentId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model PaymentWebhookEvent {
+  id                  String   @id @default(cuid())
+  paymentId           String?
+  razorpayEventId     String?  @unique
+  eventType           String
+  payload             Json     // Full webhook payload
+  signature           String?
+  processed           Boolean  @default(false)
+  processedAt         DateTime?
+  errorMessage        String?  @db.Text
+  retryCount          Int      @default(0)
+  createdAt           DateTime @default(now())
+  payment             Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([razorpayEventId])
+  @@index([eventType])
+  @@index([processed])
+  @@index([createdAt])
+  @@index([eventType, processed])
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum CreditTransactionType {
+  PURCHASE           // Credits purchased via payment
+  REFUND            // Credits refunded
+  BONUS             // Promotional credits
+  DEDUCTION         // Credits used/deducted
+  ADJUSTMENT        // Manual adjustment by admin
+  EXPIRY            // Credits expired
+  TRANSFER_IN       // Credits transferred in
+  TRANSFER_OUT      // Credits transferred out
 }
 
 model Profile {

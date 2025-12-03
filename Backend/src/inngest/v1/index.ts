@@ -12,6 +12,9 @@ export {
   markNotificationsAsRead,
   markNotificationsAsUnread,
 } from './notificationOperations.js';
+export { paymentOrderCreated } from './payment-order-created.js';
+export { paymentVerified } from './payment-verified.js';
+export { paymentWebhookReceived } from './payment-webhook.js';
 export { inviteToPlatform } from './platformInvite.js';
 export { starProfile, unstarProfile } from './profileStars.js';
 export { updateProfileFunction } from './profileUpdate.js';

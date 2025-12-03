@@ -1,8 +1,24 @@
+import { clerkClient } from '@clerk/express';
 import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { getPlanById, razorpay, validatePlan } from '../../config/razorpay.js';
+import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+
+interface RazorpayOrderOptions {
+  amount: number;
+  currency: string;
+  receipt: string;
+  notes: {
+    userId: string;
+    planId: string;
+    planName: string;
+    credits: number;
+    userEmail: string;
+    receipt: string;
+  };
+}
 
 // Validation schemas
 const createOrderSchema = z.object({
@@ -62,8 +78,23 @@ export const createOrder = async (req: Request, res: Response) => {
 
     const plan = planValidation.plan!;
 
-    // Create Razorpay order
-    const orderOptions = {
+    // Get user email from auth
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const userEmail = clerkUser.primaryEmailAddress?.emailAddress;
+
+    // Additional security: Log payment attempt for fraud monitoring
+    logger.info('Payment order creation attempt', {
+      userId,
+      userEmail,
+      planId,
+      planName: plan.name,
+      amount: plan.amount,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+      timestamp: new Date().toISOString(),
+    });
+
+    const orderOptions: RazorpayOrderOptions = {
       amount: plan.amount,
       currency: plan.currency,
       receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-6)}`, // Keep under 40 chars (Razorpay limit)
@@ -72,11 +103,31 @@ export const createOrder = async (req: Request, res: Response) => {
         planId: plan.id,
         planName: plan.name,
         credits: plan.credits,
+        userEmail: userEmail || 'unknown',
         receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-6)}`, // Store full receipt for reference
       },
     };
 
     const order = await razorpay.orders.create(orderOptions);
+
+    // Send event to Inngest for async payment record creation
+    await inngest.send({
+      name: 'payment/order.created',
+      data: {
+        userId,
+        userEmail: userEmail || null,
+        orderId: order.id,
+        planId: plan.id,
+        planName: plan.name,
+        amount: plan.amount,
+        currency: plan.currency,
+        credits: plan.credits,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        notes: orderOptions.notes,
+        receipt: orderOptions.receipt,
+      },
+    });
 
     logger.info('Razorpay order created', {
       userId,
@@ -99,6 +150,9 @@ export const createOrder = async (req: Request, res: Response) => {
         description: plan.description,
         credits: plan.credits,
       },
+      // Include server-calculated amount for additional client-side validation
+      serverAmount: plan.amount,
+      serverCurrency: plan.currency,
     });
   } catch (error) {
     logger.error('Create order error', {
@@ -198,8 +252,41 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Log successful payment (in production, this would update user credits)
-    logger.info('Payment verified successfully', {
+    // Additional security: Verify that the order amount matches the plan amount
+    if (order.amount !== plan.amount) {
+      logger.error('Order amount mismatch detected', {
+        userId,
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        orderAmount: order.amount,
+        expectedAmount: plan.amount,
+        planId,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Payment amount verification failed',
+      });
+    }
+
+    // Update payment record and award credits
+    // Send verification event to Inngest for async processing
+    await inngest.send({
+      name: 'payment/verified',
+      data: {
+        userId,
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        signature: razorpay_signature,
+        planId,
+        planName: plan.name,
+        amount: order.amount,
+        credits: credits || plan.credits,
+        paymentMethod: payment.method,
+        paymentContact: payment.contact,
+      },
+    });
+
+    logger.info('Payment verification initiated', {
       userId,
       planId,
       planName: plan.name,
@@ -210,23 +297,14 @@ export const verifyPayment = async (req: Request, res: Response) => {
       paymentStatus: payment.status,
     });
 
-    // TODO: Update user credits in database
-    // For now, just log the credit award
-    logger.info('Credits awarded to user', {
-      userId,
-      credits: credits || plan.credits,
-      planId,
-      reason: 'payment_completed',
-    });
-
     res.json({
       success: true,
-      message: 'Payment verified successfully',
+      message: 'Payment verification in progress. Credits will be awarded shortly.',
       data: {
         planId,
         planName: plan.name,
         credits: credits || plan.credits,
-        amount: Number(order.amount) / 100, // Convert from paisa to rupees
+        amount: Number(order.amount) / 100,
         currency: order.currency,
         orderId: razorpay_order_id,
         paymentId: razorpay_payment_id,
@@ -274,66 +352,31 @@ export const handleWebhook = async (req: Request, res: Response) => {
     }
 
     const event = req.body.event;
-    const paymentEntity = req.body.payload?.payment?.entity;
+    const eventId = req.body.id || `evt_${Date.now()}`;
 
     logger.info('Razorpay webhook received', {
+      eventId,
       event,
-      paymentId: paymentEntity?.id,
-      orderId: paymentEntity?.order_id,
-      amount: paymentEntity?.amount,
-      status: paymentEntity?.status,
     });
 
-    // Handle different webhook events
-    switch (event) {
-      case 'payment.captured':
-        // Payment was successfully captured
-        if (paymentEntity?.order_id) {
-          const order = await razorpay.orders.fetch(paymentEntity.order_id);
-          const planId = order.notes?.planId;
-          const userId = order.notes?.userId; // Full userId from notes
-          const credits = order.notes?.credits;
+    // Send webhook to Inngest for async processing
+    await inngest.send({
+      name: 'payment/webhook.received',
+      data: {
+        eventId: event,
+        eventType: event,
+        payload: req.body,
+        signature: razorpaySignature,
+      },
+    });
 
-          if (userId && planId) {
-            logger.info('Payment captured - awarding credits', {
-              userId,
-              planId,
-              credits,
-              paymentId: paymentEntity.id,
-              orderId: paymentEntity.order_id,
-            });
+    logger.info('Webhook event queued for processing', {
+      eventId,
+      eventType: event,
+    });
 
-            // TODO: Update user credits in database
-            // For now, just log
-            logger.info('Credits awarded via webhook', {
-              userId,
-              credits,
-              planId,
-              paymentId: paymentEntity.id,
-              orderId: paymentEntity.order_id,
-            });
-          } else {
-            logger.warn('Missing userId or planId in order notes', {
-              orderId: paymentEntity.order_id,
-              notes: order.notes,
-            });
-          }
-        }
-        break;
-
-      case 'payment.failed':
-        logger.warn('Payment failed', {
-          paymentId: paymentEntity?.id,
-          orderId: paymentEntity?.order_id,
-          error: paymentEntity?.error_description,
-        });
-        break;
-
-      default:
-        logger.info('Unhandled webhook event', { event });
-    }
-
-    res.json({ success: true, message: 'Webhook processed' });
+    // Always respond quickly to webhook to prevent retries
+    res.json({ success: true, message: 'Webhook received and queued for processing' });
   } catch (error) {
     logger.error('Webhook processing error', {
       error: error instanceof Error ? error.message : String(error),
