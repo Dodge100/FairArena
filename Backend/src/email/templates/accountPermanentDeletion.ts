@@ -1,6 +1,6 @@
 import { ENV } from '../../config/env.js';
 
-export const accountPermanentDeletionEmailTemplate = (params: {}): string => {
+export const accountPermanentDeletionEmailTemplate = (_params: {}): string => {
   const supportUrl = ENV.FRONTEND_URL + '/support';
   const currentYear = new Date().getFullYear();
 

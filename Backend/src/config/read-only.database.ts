@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/client';
 import { ENV } from './env.js';
 
 const prismaClients: PrismaClient[] = [];
@@ -8,15 +9,18 @@ let currentIndex = 0;
 const urls = [ENV.DATABASE_URL_READ_ONLY_1, ENV.DATABASE_URL_READ_ONLY_2];
 
 for (const url of urls) {
-  const client = new PrismaClient({
-    log: ENV.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url,
-      },
-    },
-  });
-  prismaClients.push(client);
+  if (url) {
+    // Create the PostgreSQL adapter for each read-only URL
+    const adapter = new PrismaPg({
+      connectionString: url,
+    });
+
+    const client = new PrismaClient({
+      adapter,
+      log: ENV.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+    prismaClients.push(client);
+  }
 }
 
 // Function to get the next client in round robin

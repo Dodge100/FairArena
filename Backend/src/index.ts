@@ -248,16 +248,13 @@ app.get('/healthz', (req, res) => {
   res.status(200).send('Server is healthy...');
 });
 
-// Redirect root to API documentation
-app.get('/', (_, res) => {
-  res.redirect('/api-docs');
-});
-
-// API documentation JSON endpoint
-app.get('/api-docs.json', (_, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+// Serve Swagger UI in development mode
+if (ENV.NODE_ENV === 'development') {
+  app.get('/api-docs', (_, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // 404 handler for unmatched routes
 app.use((_, res) => {
