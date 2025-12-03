@@ -6,7 +6,9 @@ import helmet from 'helmet';
 import hpp from 'hpp';
 import { serve } from 'inngest/express';
 import * as client from 'prom-client';
+import swaggerUi from 'swagger-ui-express';
 import { ENV } from './config/env.js';
+import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
   createLog,
@@ -47,6 +49,7 @@ import './instrument.js';
 import cleanupRouter from './routes/v1/cleanup.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
+import paymentsRouter from './routes/v1/payments.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
 import logger from './utils/logger.js';
@@ -55,8 +58,20 @@ const app = express();
 const PORT = ENV.PORT || 3000;
 Sentry.setupExpressErrorHandler(app);
 
-// Security middlewares
-app.use(helmet());
+// Security middlewares - relaxed CSP for Swagger UI
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", 'data:'],
+      },
+    },
+  }),
+);
 app.use(hpp());
 app.set('trust proxy', 1);
 
@@ -114,6 +129,42 @@ collectDefaultMetrics({ register: client.register });
 // Maintenance mode middleware (check before all API routes)
 app.use(maintenanceMiddleware);
 
+// Swagger API Documentation - Enhanced UI with better styling
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: `
+      .swagger-ui .topbar { display: none }
+      .swagger-ui .info { margin: 30px 0 }
+      .swagger-ui .scheme-container { background: #fafafa; padding: 15px; border-radius: 4px; margin: 20px 0 }
+      .swagger-ui .info .title { font-size: 36px; color: #182837 }
+      .swagger-ui .info .description { font-size: 14px; line-height: 1.6 }
+      .swagger-ui .opblock-tag { font-size: 18px; font-weight: 600; padding: 10px 20px }
+      .swagger-ui .opblock { margin: 0 0 15px; border-radius: 4px }
+      .swagger-ui .opblock .opblock-summary { padding: 10px; border-radius: 4px }
+      .swagger-ui .btn.authorize { background: #182837; border-color: #182837 }
+      .swagger-ui .btn.authorize svg { fill: white }
+    `,
+    customSiteTitle: 'FairArena API Documentation',
+    customfavIcon: 'https://fairarena.vercel.app/fairArenaLogotop.png',
+    explorer: true,
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      docExpansion: 'list',
+      defaultModelsExpandDepth: 3,
+      defaultModelExpandDepth: 3,
+      syntaxHighlight: {
+        activate: true,
+        theme: 'monokai',
+      },
+      tryItOutEnabled: true,
+    },
+  }),
+);
+
 // Profile routes
 app.use('/api/v1/profile', profileRouter);
 
@@ -146,6 +197,9 @@ app.use('/api/v1/ai', aiRouter);
 
 // Cleanup routes
 app.use('/api/v1', cleanupRouter);
+
+// Payments routes
+app.use('/api/v1/payments', paymentsRouter);
 
 // Inngest serve
 app.use(
@@ -192,6 +246,17 @@ app.get('/metrics', async (_, res) => {
 app.get('/healthz', (req, res) => {
   logger.info('Health check ping received', { ip: req.ip });
   res.status(200).send('Server is healthy...');
+});
+
+// Redirect root to API documentation
+app.get('/', (_, res) => {
+  res.redirect('/api-docs');
+});
+
+// API documentation JSON endpoint
+app.get('/api-docs.json', (_, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // 404 handler for unmatched routes

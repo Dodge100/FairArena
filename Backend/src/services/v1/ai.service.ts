@@ -17,6 +17,17 @@ import { ENV } from '../../config/env.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import logger from '../../utils/logger.js';
 
+// Helper function to sanitize text for TOON format
+function sanitizeTOON(text: string | null | undefined): string {
+  if (!text) return '';
+  // Escape tabs, newlines, and special characters for TOON format
+  return String(text)
+    .replace(/\t/g, ' ') // Replace tabs with spaces
+    .replace(/\r?\n/g, ' ') // Replace newlines with spaces
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim();
+}
+
 // Initialize LangSmith client for monitoring
 const langsmithClient = ENV.LANGCHAIN_API_KEY
   ? new Client({
@@ -66,7 +77,26 @@ const tools = [
           return 'No profile found. Please complete your profile first.';
         }
 
-        return JSON.stringify(profile, null, 2);
+        // Return in TOON format for token efficiency
+        const lines = [
+          `name: ${sanitizeTOON(profile.firstName)} ${sanitizeTOON(profile.lastName)}`.trim(),
+          profile.bio && `bio: ${sanitizeTOON(profile.bio)}`,
+          profile.company && `company: ${sanitizeTOON(profile.company)}`,
+          profile.jobTitle && `jobTitle: ${sanitizeTOON(profile.jobTitle)}`,
+          profile.location && `location: ${sanitizeTOON(profile.location)}`,
+          profile.yearsOfExperience && `yearsOfExperience: ${profile.yearsOfExperience}`,
+          profile.skills?.length && `skills[${profile.skills.length}]: ${profile.skills.join(',')}`,
+          profile.interests?.length &&
+            `interests[${profile.interests.length}]: ${profile.interests.join(',')}`,
+          profile.languages?.length &&
+            `languages[${profile.languages.length}]: ${profile.languages.join(',')}`,
+          profile.githubUsername && `github: ${sanitizeTOON(profile.githubUsername)}`,
+          profile.linkedInProfile && `linkedin: ${sanitizeTOON(profile.linkedInProfile)}`,
+          profile.twitterHandle && `twitter: ${sanitizeTOON(profile.twitterHandle)}`,
+          profile.portfolioUrl && `portfolio: ${sanitizeTOON(profile.portfolioUrl)}`,
+          `isPublic: ${profile.isPublic}`,
+        ].filter(Boolean);
+        return lines.join('\n');
       } catch (error) {
         logger.error('Error getting user profile:', error);
         return 'Error retrieving profile information. Please try again.';
@@ -107,19 +137,24 @@ const tools = [
           },
         });
 
-        const formattedOrgs = organizations.map((uo) => ({
-          id: uo.organization.id,
-          name: uo.organization.name,
-          slug: uo.organization.slug,
-          isPublic: uo.organization.isPublic,
-          description: uo.organization.organizationProfile?.description,
-          website: uo.organization.organizationProfile?.website,
-          memberCount: uo.organization._count.userOrganizations,
-          teamCount: uo.organization._count.teams,
-          joinedAt: uo.createdAt,
-        }));
+        if (organizations.length === 0) return 'No organizations found.';
 
-        return JSON.stringify(formattedOrgs, null, 2);
+        // Return in TOON format with tabular array
+        const rows = organizations.map((uo) => [
+          sanitizeTOON(uo.organization.name),
+          sanitizeTOON(uo.organization.slug),
+          uo.organization.isPublic ? 'public' : 'private',
+          sanitizeTOON(uo.organization.organizationProfile?.description),
+          sanitizeTOON(uo.organization.organizationProfile?.website),
+          uo.organization._count.userOrganizations,
+          uo.organization._count.teams,
+          uo.createdAt.toISOString().split('T')[0],
+        ]);
+
+        return [
+          `organizations[${organizations.length}]{name,slug,visibility,description,website,memberCount,teamCount,joinedAt}:`,
+          ...rows.map((row) => `  ${row.join('\t')}`),
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting user organizations:', error);
         return 'Error retrieving organizations. Please try again.';
@@ -165,19 +200,24 @@ const tools = [
           },
         });
 
-        const formattedTeams = teams.map((ut) => ({
-          id: ut.team.id,
-          name: ut.team.name,
-          slug: ut.team.slug,
-          visibility: ut.team.visibility,
-          organization: ut.team.organization.name,
-          description: ut.team.teamProfile?.description,
-          memberCount: ut.team._count.teamMemberships,
-          projectCount: ut.team._count.projects,
-          joinedAt: ut.createdAt,
-        }));
+        if (teams.length === 0) return 'No teams found.';
 
-        return JSON.stringify(formattedTeams, null, 2);
+        // Return in TOON format with tabular array
+        const rows = teams.map((ut) => [
+          sanitizeTOON(ut.team.name),
+          sanitizeTOON(ut.team.slug),
+          ut.team.visibility,
+          sanitizeTOON(ut.team.organization.name),
+          sanitizeTOON(ut.team.teamProfile?.description),
+          ut.team._count.teamMemberships,
+          ut.team._count.projects,
+          ut.createdAt.toISOString().split('T')[0],
+        ]);
+
+        return [
+          `teams[${teams.length}]{name,slug,visibility,organization,description,memberCount,projectCount,joinedAt}:`,
+          ...rows.map((row) => `  ${row.join('\t')}`),
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting user teams:', error);
         return 'Error retrieving teams. Please try again.';
@@ -221,18 +261,23 @@ const tools = [
           },
         });
 
-        const formattedProjects = projects.map((up) => ({
-          id: up.project.id,
-          name: up.project.name,
-          slug: up.project.slug,
-          visibility: up.project.visibility,
-          team: up.project.team.name,
-          organization: up.project.team.organization.name,
-          description: up.project.projectProfile?.description,
-          joinedAt: up.createdAt,
-        }));
+        if (projects.length === 0) return 'No projects found.';
 
-        return JSON.stringify(formattedProjects, null, 2);
+        // Return in TOON format with tabular array
+        const rows = projects.map((up) => [
+          sanitizeTOON(up.project.name),
+          sanitizeTOON(up.project.slug),
+          up.project.visibility,
+          sanitizeTOON(up.project.team.name),
+          sanitizeTOON(up.project.team.organization.name),
+          sanitizeTOON(up.project.projectProfile?.description),
+          up.createdAt.toISOString().split('T')[0],
+        ]);
+
+        return [
+          `projects[${projects.length}]{name,slug,visibility,team,organization,description,joinedAt}:`,
+          ...rows.map((row) => `  ${row.join('\t')}`),
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting user projects:', error);
         return 'Error retrieving projects. Please try again.';
@@ -272,7 +317,23 @@ const tools = [
           take: Math.min(limit, 50), // Max 50 to prevent abuse
         });
 
-        return JSON.stringify(notifications, null, 2);
+        if (notifications.length === 0) return 'No notifications found.';
+
+        // Return in TOON format with tabular array
+        const rows = notifications.map((n) => [
+          n.read ? 'read' : 'unread',
+          sanitizeTOON(n.type),
+          sanitizeTOON(n.title),
+          sanitizeTOON(n.message),
+          sanitizeTOON(n.actionUrl),
+          sanitizeTOON(n.actionLabel),
+          n.createdAt.toISOString(),
+        ]);
+
+        return [
+          `notifications[${notifications.length}]{status,type,title,message,actionUrl,actionLabel,createdAt}:`,
+          ...rows.map((row) => `  ${row.join('\t')}`),
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting user notifications:', error);
         return 'Error retrieving notifications. Please try again.';
@@ -305,7 +366,19 @@ const tools = [
           take: Math.min(limit, 50), // Max 50 to prevent abuse
         });
 
-        return JSON.stringify(logs, null, 2);
+        if (logs.length === 0) return 'No activity logs found.';
+
+        // Return in TOON format with tabular array
+        const rows = logs.map((log) => [
+          sanitizeTOON(log.level),
+          sanitizeTOON(log.action),
+          log.createdAt.toISOString(),
+        ]);
+
+        return [
+          `activityLogs[${logs.length}]{level,action,createdAt}:`,
+          ...rows.map((row) => `  ${row.join('\t')}`),
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting user activity logs:', error);
         return 'Error retrieving activity logs. Please try again.';
@@ -337,16 +410,14 @@ const tools = [
             (pageContext.content.length > 2000 ? '...' : '')
           : 'No content available';
 
-        return JSON.stringify(
-          {
-            currentRoute: pageContext.route,
-            pageTitle: pageContext.title,
-            contentPreview: sanitizedContent,
-            lastUpdated: pageContext.timestamp,
-          },
-          null,
-          2,
-        );
+        // Return in TOON format
+        return [
+          `pageContext:`,
+          `  route: ${sanitizeTOON(pageContext.route)}`,
+          `  title: ${sanitizeTOON(pageContext.title)}`,
+          `  lastUpdated: ${pageContext.timestamp}`,
+          `  content: ${sanitizeTOON(sanitizedContent)}`,
+        ].join('\n');
       } catch (error) {
         logger.error('Error getting page context:', error);
         return 'Error retrieving current page context. Please try again.';
@@ -390,16 +461,32 @@ const tools = [
               timestamp: error.timestamp,
             })) || [];
 
-        return JSON.stringify(
-          {
-            consoleLogs: sanitizedLogs,
-            errors: sanitizedErrors,
-            capturedAt: debugInfo.timestamp,
-            note: 'This debug information is sanitized and limited for security purposes.',
-          },
-          null,
-          2,
-        );
+        // Return in TOON format with nested structure
+        const lines = [
+          `debugInfo:`,
+          `  capturedAt: ${debugInfo.timestamp}`,
+          `  note: Sanitized for security`,
+        ];
+
+        if (sanitizedLogs.length > 0) {
+          lines.push(`  consoleLogs[${sanitizedLogs.length}]{level,message,timestamp}:`);
+          sanitizedLogs.forEach((log) => {
+            lines.push(
+              `    ${sanitizeTOON(log.level)}\t${sanitizeTOON(log.message)}\t${log.timestamp}`,
+            );
+          });
+        }
+
+        if (sanitizedErrors.length > 0) {
+          lines.push(`  errors[${sanitizedErrors.length}]{message,stack,timestamp}:`);
+          sanitizedErrors.forEach((err) => {
+            lines.push(
+              `    ${sanitizeTOON(err.message)}\t${sanitizeTOON(err.stack || '')}\t${err.timestamp}`,
+            );
+          });
+        }
+
+        return lines.join('\n');
       } catch (error) {
         logger.error('Error getting debug info:', error);
         return 'Error retrieving debug information. Please try again.';
@@ -457,7 +544,10 @@ const tools = [
         const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${context.userId}`;
         await redis.del(cacheKey).catch(() => {}); // Ignore cache clearing errors
 
-        return `Successfully updated ${field}: ${JSON.stringify(updatedProfile[field])}. Cache cleared for immediate effect.`;
+        const valueStr = Array.isArray(updatedProfile[field])
+          ? updatedProfile[field].join(',')
+          : updatedProfile[field];
+        return `Successfully updated ${field}: ${valueStr}`;
       } catch (error) {
         logger.error('Error updating user profile:', error);
         return 'Error updating profile. Please try again.';
@@ -558,6 +648,25 @@ export class AIService {
       apiKey: ENV.GOOGLE_GEMINI_API_KEY,
       temperature: 0.7,
       maxOutputTokens: 2048,
+      // Add safety settings to prevent undefined responses
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+      ],
     });
   }
 
@@ -659,7 +768,7 @@ export class AIService {
 **FAIRARENA PLATFORM KNOWLEDGE:**
 
 **Platform Structure:**
-FairArena is a professional collaboration and portfolio platform. The website is hosted at: https://fairarena.com (or your configured domain).
+FairArena is a professional collaboration and portfolio platform. The website is hosted at: https://fairarena.vercel.app (or your configured domain).
 
 **Main Routes & Pages:**
 
@@ -764,11 +873,6 @@ FairArena is a professional collaboration and portfolio platform. The website is
     - Use when: "How do I get started?", "Help me with organizations", "Guide to creating profile"
     - DON'T use when: You can provide a quick answer from your platform knowledge
 
-11. **navigate_user** - Use when user wants to go to a specific page or perform navigation
-    - Use when: "Take me to my profile", "Go to dashboard", "Open settings", "Show me organizations"
-    - DON'T use when: User is just asking what a page is or where something is located
-    - Examples: "Go to inbox" = CALL navigate_user, "Where is inbox?" = NO TOOL CALL (just tell them)
-
 **Navigation Guidance - ALWAYS Provide Clickable Links:**
 When user asks to navigate, wants to go somewhere, or needs to see a specific page, ALWAYS respond with a markdown link they can click.
 
@@ -827,10 +931,15 @@ Current context: ${metadata?.context || 'General assistance'}`,
       const conversationMessages = [systemMessage, ...session.messages];
 
       // Invoke the model with tools
-      const modelWithTools = this.model.bindTools(tools);
-
-      // Stream the response
-      const stream = await modelWithTools.stream(conversationMessages);
+      let stream;
+      try {
+        const modelWithTools = this.model.bindTools(tools);
+        stream = await modelWithTools.stream(conversationMessages);
+      } catch (modelError) {
+        logger.error('Error initializing model stream:', modelError);
+        yield 'I apologize, but I encountered an error initializing the AI model. Please try again.';
+        return;
+      }
 
       let fullResponse = '';
       let toolCalls: Array<{ id?: string; name: string; args: Record<string, unknown> }> = [];
@@ -839,15 +948,22 @@ Current context: ${metadata?.context || 'General assistance'}`,
         if (signal?.aborted) {
           return;
         }
-        // Handle content chunks
-        if (chunk.content && typeof chunk.content === 'string') {
-          fullResponse += chunk.content;
-          yield chunk.content;
-        }
 
-        // Collect tool calls
-        if (chunk.tool_calls && Array.isArray(chunk.tool_calls)) {
-          toolCalls.push(...chunk.tool_calls);
+        try {
+          // Handle content chunks with defensive programming
+          if (chunk && chunk.content && typeof chunk.content === 'string') {
+            fullResponse += chunk.content;
+            yield chunk.content;
+          }
+
+          // Collect tool calls with validation
+          if (chunk && chunk.tool_calls && Array.isArray(chunk.tool_calls)) {
+            toolCalls.push(...chunk.tool_calls);
+          }
+        } catch (chunkError) {
+          logger.error('Error processing stream chunk:', chunkError);
+          // Continue processing other chunks instead of failing completely
+          continue;
         }
       }
 
@@ -907,11 +1023,14 @@ Current context: ${metadata?.context || 'General assistance'}`,
                 continue;
               }
 
-              // @ts-ignore - Tool function signatures are custom
               const toolResult =
-                tool.name === 'get_platform_help' || tool.name === 'navigate_user'
-                  ? await tool.func(toolArgs)
-                  : await tool.func(toolArgs, { userId, sessionId, metadata });
+                tool.name === 'get_platform_help'
+                  ? await tool.func(toolArgs as { topic: string })
+                  : await tool.func(toolArgs as Record<string, unknown>, {
+                      userId,
+                      sessionId,
+                      metadata,
+                    });
               toolMessages.push(
                 new ToolMessage({
                   content: toolResult,
@@ -934,15 +1053,39 @@ Current context: ${metadata?.context || 'General assistance'}`,
         session.messages.push(...toolMessages);
 
         // Get final response from AI based on tool results
-        const finalConversationMessages = [systemMessage, ...session.messages];
-        const finalStream = await this.model.stream(finalConversationMessages);
+        let finalStream;
+        try {
+          const finalConversationMessages = [systemMessage, ...session.messages];
+          finalStream = await this.model.stream(finalConversationMessages);
+        } catch (finalModelError) {
+          logger.error('Error initializing final model stream:', finalModelError);
+          yield 'I apologize, but I encountered an error processing the tool results. Please try again.';
+          return;
+        }
 
         let finalResponse = '';
-        for await (const chunk of finalStream) {
-          if (chunk.content && typeof chunk.content === 'string') {
-            finalResponse += chunk.content;
-            yield chunk.content;
+        try {
+          for await (const chunk of finalStream) {
+            if (signal?.aborted) {
+              return;
+            }
+
+            try {
+              // Handle content chunks with defensive programming
+              if (chunk && chunk.content && typeof chunk.content === 'string') {
+                finalResponse += chunk.content;
+                yield chunk.content;
+              }
+            } catch (chunkError) {
+              logger.error('Error processing final stream chunk:', chunkError);
+              // Continue processing other chunks instead of failing completely
+              continue;
+            }
           }
+        } catch (finalStreamError) {
+          logger.error('Error in final streaming response:', finalStreamError);
+          yield 'I apologize, but I encountered an error finalizing the response. Please try again.';
+          return;
         }
 
         // Update full response

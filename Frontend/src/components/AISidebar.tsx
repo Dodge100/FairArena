@@ -187,7 +187,7 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        const messageToSend = input;
+        const messageToSend = input.trim();
         setInput('');
 
         try {
@@ -921,11 +921,11 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                                                 </div>
                                                 {message.role === 'user' && (
 
-                                                            <img
-                                                                src={window.Clerk.user.imageUrl}
-                                                                alt="User avatar"
-                                                                className="w-6 h-6 rounded-full object-cover"
-                                                            />
+                                                    <img
+                                                        src={window.Clerk.user.imageUrl}
+                                                        alt="User avatar"
+                                                        className="w-6 h-6 rounded-full object-cover"
+                                                    />
 
                                                 )}
                                             </motion.div>

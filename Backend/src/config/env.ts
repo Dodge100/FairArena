@@ -16,6 +16,8 @@ const requiredEnvVars = [
   'DATABASE_URL_READ_ONLY_1',
   'DATABASE_URL_READ_ONLY_2',
   'GOOGLE_GEMINI_API_KEY',
+  'RAZORPAY_KEY_ID',
+  'RAZORPAY_KEY_SECRET',
 ];
 
 for (const envVar of requiredEnvVars) {
@@ -59,4 +61,7 @@ export const ENV = {
   LANGCHAIN_API_KEY: process.env.LANGCHAIN_API_KEY || '',
   LANGCHAIN_PROJECT: process.env.LANGCHAIN_PROJECT || 'fairarena-ai',
   LANGCHAIN_TRACING_V2: process.env.LANGCHAIN_TRACING_V2 === 'true',
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID!,
+  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET!,
+  RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || '',
 };

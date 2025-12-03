@@ -1,7 +1,9 @@
 import { GoogleOneTap } from '@clerk/clerk-react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import NotFound from './components/NotFound';
+import PricingModal from './components/PricingModal';
 import WaitList from './components/WaitList';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
@@ -33,7 +35,30 @@ import HowItWorks from './pages/WhyChooseUsPage';
 
 function App() {
   const location = useLocation();
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+
+  // Handle hash routing for pricing modal
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#pricing') {
+        setShowPricingModal(true);
+      } else if (hash === '') {
+        setShowPricingModal(false);
+      }
+    };
+
+    // Check initial hash
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
 
   // Redirect all routes to maintenance if enabled
   if (isMaintenanceMode && location.pathname !== '/maintenance') {
@@ -49,6 +74,13 @@ function App() {
     <>
       <Toaster richColors position="top-right" />
       <GoogleOneTap />
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => {
+          setShowPricingModal(false);
+          window.location.hash = '';
+        }}
+      />
       <Routes>
         <Route path="/maintenance" element={<Maintenance />} />
         <Route element={<PublicLayout />}>

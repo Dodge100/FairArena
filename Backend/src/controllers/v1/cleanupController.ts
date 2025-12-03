@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -7,6 +7,11 @@ import logger from '../../utils/logger.js';
 export const cleanupExpiredData = async (req: Request, res: Response) => {
   const readOnlyPrisma = await getReadOnlyPrisma();
   try {
+    const auth = req.headers.authorization;
+    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     // Calculate dates
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
