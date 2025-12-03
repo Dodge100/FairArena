@@ -1,5 +1,12 @@
+import { clerkClient } from '@clerk/express';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
+import {
+  sendPaymentFailedEmail,
+  sendRefundCompletedEmail,
+  sendRefundFailedEmail,
+  sendRefundInitiatedEmail,
+} from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
@@ -249,12 +256,45 @@ export const paymentWebhookReceived = inngest.createFunction(
                 name: 'notification/send',
                 data: {
                   userId: payment.userId,
-                  type: 'ALERT',
+                  type: 'SYSTEM',
                   title: 'Payment Failed',
                   message: 'Your payment could not be processed.',
                   description: paymentEntity.error_description || 'Please try again.',
                 },
               });
+
+              // Send failure email
+              try {
+                const user = await clerkClient.users.getUser(payment.userId);
+                const userName = user.firstName || user.username || 'User';
+                const userEmail = user.emailAddresses[0]?.emailAddress;
+
+                if (userEmail) {
+                  await sendPaymentFailedEmail(
+                    userEmail,
+                    userName,
+                    payment.planName,
+                    payment.amount,
+                    payment.currency,
+                    payment.razorpayOrderId,
+                    paymentEntity.error_description || 'Payment processing failed',
+                    new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                    paymentEntity.id,
+                  );
+
+                  logger.info('Payment failure email sent', {
+                    userId: payment.userId,
+                    paymentId: payment.id,
+                    email: userEmail,
+                  });
+                }
+              } catch (emailError) {
+                logger.error('Failed to send failure email', {
+                  error: emailError instanceof Error ? emailError.message : String(emailError),
+                  userId: payment.userId,
+                  paymentId: payment.id,
+                });
+              }
 
               logger.info('Payment marked as failed from webhook', {
                 paymentId: payment.id,
@@ -328,6 +368,60 @@ export const paymentWebhookReceived = inngest.createFunction(
                 }
               });
 
+              // Send refund email
+              try {
+                const user = await clerkClient.users.getUser(payment.userId);
+                const userName = user.firstName || user.username || 'User';
+                const userEmail = user.emailAddresses[0]?.emailAddress;
+
+                if (userEmail) {
+                  const refundCredits = Math.floor(
+                    (refundEntity.amount / payment.amount) * payment.credits,
+                  );
+
+                  await sendRefundInitiatedEmail(
+                    userEmail,
+                    userName,
+                    payment.planName,
+                    refundEntity.amount,
+                    payment.amount,
+                    payment.currency,
+                    refundCredits,
+                    payment.razorpayOrderId,
+                    payment.razorpayPaymentId || 'N/A',
+                    refundEntity.id,
+                    new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                    '5-7 business days',
+                  );
+
+                  logger.info('Refund email sent', {
+                    userId: payment.userId,
+                    paymentId: payment.id,
+                    email: userEmail,
+                  });
+                }
+              } catch (emailError) {
+                logger.error('Failed to send refund email', {
+                  error: emailError instanceof Error ? emailError.message : String(emailError),
+                  userId: payment.userId,
+                  paymentId: payment.id,
+                });
+              }
+
+              // Send refund initiated notification
+              await inngest.send({
+                name: 'notification/send',
+                data: {
+                  userId: payment.userId,
+                  type: 'SYSTEM',
+                  title: 'Refund Initiated',
+                  message: `Your refund request for ₹${(refundEntity.amount / 100).toFixed(2)} has been initiated.`,
+                  description: `Refund for ${payment.planName} is being processed. You will receive the amount in 5-7 business days.`,
+                  actionUrl: '/dashboard/billing',
+                  actionLabel: 'View Details',
+                },
+              });
+
               logger.info('Refund processed from webhook', {
                 paymentId: payment.id,
                 refundId: refundEntity.id,
@@ -336,6 +430,142 @@ export const paymentWebhookReceived = inngest.createFunction(
             }
 
             return { success: true, action: 'refund_created' };
+          }
+
+          case 'refund.processed': {
+            const refundEntity = payload.payload?.refund?.entity;
+            if (!refundEntity?.payment_id) {
+              return { success: false, reason: 'missing_payment_id' };
+            }
+
+            const payment = await readOnlyPrisma.payment.findUnique({
+              where: { razorpayPaymentId: refundEntity.payment_id },
+            });
+
+            if (payment) {
+              // Send refund completed notification
+              await inngest.send({
+                name: 'notification/send',
+                data: {
+                  userId: payment.userId,
+                  type: 'SYSTEM',
+                  title: 'Refund Completed',
+                  message: `Your refund of ₹${(refundEntity.amount / 100).toFixed(2)} has been processed successfully.`,
+                  description: `Refund for ${payment.planName} has been credited to your account.`,
+                  actionUrl: '/dashboard/billing',
+                  actionLabel: 'View Details',
+                },
+              });
+
+              // Send refund completed email
+              try {
+                const user = await clerkClient.users.getUser(payment.userId);
+                const userName = user.firstName || user.username || 'User';
+                const userEmail = user.emailAddresses[0]?.emailAddress;
+
+                if (userEmail) {
+                  await sendRefundCompletedEmail(
+                    userEmail,
+                    userName,
+                    payment.planName,
+                    refundEntity.amount,
+                    payment.currency,
+                    payment.razorpayOrderId,
+                    payment.razorpayPaymentId || 'N/A',
+                    refundEntity.id,
+                    new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                    paymentEntity?.method || 'bank account',
+                  );
+
+                  logger.info('Refund completed email sent', {
+                    userId: payment.userId,
+                    paymentId: payment.id,
+                    email: userEmail,
+                  });
+                }
+              } catch (emailError) {
+                logger.error('Failed to send refund completed email', {
+                  error: emailError instanceof Error ? emailError.message : String(emailError),
+                  userId: payment.userId,
+                  paymentId: payment.id,
+                });
+              }
+
+              logger.info('Refund processed notification sent', {
+                paymentId: payment.id,
+                refundId: refundEntity.id,
+              });
+            }
+
+            return { success: true, action: 'refund_processed' };
+          }
+
+          case 'refund.failed': {
+            const refundEntity = payload.payload?.refund?.entity;
+            if (!refundEntity?.payment_id) {
+              return { success: false, reason: 'missing_payment_id' };
+            }
+
+            const payment = await readOnlyPrisma.payment.findUnique({
+              where: { razorpayPaymentId: refundEntity.payment_id },
+            });
+
+            if (payment) {
+              // Send refund failed notification
+              await inngest.send({
+                name: 'notification/send',
+                data: {
+                  userId: payment.userId,
+                  type: 'SYSTEM',
+                  title: 'Refund Failed',
+                  message: `Your refund request for ₹${(refundEntity.amount / 100).toFixed(2)} could not be processed.`,
+                  description: `Please contact support for assistance with your refund for ${payment.planName}.`,
+                  actionUrl: '/support',
+                  actionLabel: 'Contact Support',
+                },
+              });
+
+              // Send refund failed email
+              try {
+                const user = await clerkClient.users.getUser(payment.userId);
+                const userName = user.firstName || user.username || 'User';
+                const userEmail = user.emailAddresses[0]?.emailAddress;
+
+                if (userEmail) {
+                  await sendRefundFailedEmail(
+                    userEmail,
+                    userName,
+                    payment.planName,
+                    refundEntity.amount,
+                    payment.currency,
+                    payment.razorpayOrderId,
+                    payment.razorpayPaymentId || 'N/A',
+                    refundEntity.id,
+                    refundEntity.error_description || 'Refund processing failed',
+                    new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                  );
+
+                  logger.info('Refund failed email sent', {
+                    userId: payment.userId,
+                    paymentId: payment.id,
+                    email: userEmail,
+                  });
+                }
+              } catch (emailError) {
+                logger.error('Failed to send refund failed email', {
+                  error: emailError instanceof Error ? emailError.message : String(emailError),
+                  userId: payment.userId,
+                  paymentId: payment.id,
+                });
+              }
+
+              logger.info('Refund failed notification sent', {
+                paymentId: payment.id,
+                refundId: refundEntity.id,
+              });
+            }
+
+            return { success: true, action: 'refund_failed' };
           }
 
           default:

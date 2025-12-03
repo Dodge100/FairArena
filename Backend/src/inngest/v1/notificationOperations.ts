@@ -3,6 +3,60 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 /**
+ * Send a notification to a user
+ */
+export const sendNotification = inngest.createFunction(
+  {
+    id: 'notification/send',
+    name: 'Send Notification',
+    concurrency: {
+      limit: 100,
+    },
+    retries: 3,
+  },
+  { event: 'notification/send' },
+  async ({ event, step }) => {
+    const { userId, type, title, message, description, actionUrl, actionLabel, metadata } =
+      event.data;
+
+    return await step.run('send-notification', async () => {
+      try {
+        // All notifications are system notifications
+        const notification = await notificationService.createNotification({
+          userId,
+          type: 'SYSTEM',
+          title,
+          message,
+          description,
+          actionUrl,
+          actionLabel,
+          metadata,
+        });
+
+        logger.info('Notification sent', {
+          userId,
+          notificationId: notification.id,
+          type: 'SYSTEM',
+          title,
+        });
+
+        return {
+          success: true,
+          notificationId: notification.id,
+        };
+      } catch (error) {
+        logger.error('Failed to send notification', {
+          error,
+          userId,
+          title,
+        });
+        throw error;
+      }
+    });
+  },
+);
+
+/**
  * Mark multiple notifications as read asynchronously
  * Use this for bulk operations to avoid blocking the HTTP request
  */

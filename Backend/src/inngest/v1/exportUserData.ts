@@ -17,6 +17,21 @@ export const exportUserDataHandler = inngest.createFunction(
     try {
       logger.info('Starting user data export', { userId });
 
+      // Send initiation notification
+      await inngest.send({
+        name: 'notification/send',
+        data: {
+          userId,
+          type: 'ALERT',
+          title: 'Data Export Started',
+          message: 'Your data export has been initiated.',
+          description:
+            'We are preparing your data for download. You will receive an email with your data shortly.',
+          actionUrl: '/dashboard/settings',
+          actionLabel: 'View Settings',
+        },
+      });
+
       // Get user basic info
       const user = await prisma.user.findUnique({
         where: { userId },
@@ -339,6 +354,21 @@ export const exportUserDataHandler = inngest.createFunction(
         ],
       );
 
+      // Send completion notification
+      await inngest.send({
+        name: 'notification/send',
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: 'Data Export Completed',
+          message: 'Your data export is ready!',
+          description:
+            'Check your email for the download link. The export contains all your profile data, activity logs, and account information.',
+          actionUrl: '/dashboard/settings',
+          actionLabel: 'View Settings',
+        },
+      });
+
       // Log the export
       inngest.send({
         name: 'log.create',
@@ -364,7 +394,7 @@ export const exportUserDataHandler = inngest.createFunction(
         error: error instanceof Error ? error.message : String(error),
       });
 
-      // Try to send error notification email
+      // Try to send error notification email and in-app notification
       try {
         const user = await prisma.user.findUnique({
           where: { userId },
@@ -372,9 +402,25 @@ export const exportUserDataHandler = inngest.createFunction(
         });
 
         if (user) {
+          // Send error email
           await sendEmail(user.email, 'Data Export Failed', 'data-export-error', {
             userName: user.profile?.firstName || user.email.split('@')[0],
             errorMessage: 'Data export failed. Please try again later.',
+          });
+
+          // Send error notification
+          await inngest.send({
+            name: 'notification/send',
+            data: {
+              userId,
+              type: 'SYSTEM',
+              title: 'Data Export Failed',
+              message: 'Your data export request could not be completed.',
+              description:
+                'An error occurred while preparing your data. Please try again or contact support if the issue persists.',
+              actionUrl: '/dashboard/settings',
+              actionLabel: 'Try Again',
+            },
           });
         }
       } catch (emailError) {

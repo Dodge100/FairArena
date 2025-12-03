@@ -21,16 +21,54 @@ interface PricingModalProps {
     onClose: () => void;
 }
 
+interface SuccessPaymentData {
+    planName: string;
+    credits: number;
+    amount: number;
+    currency: string;
+    orderId: string;
+    paymentId: string;
+}
+
+    interface FailurePaymentData {
+        planName: string;
+        amount: number;
+        currency: string;
+        orderId?: string;
+        errorMessage: string;
+    }
+
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     const { getToken } = useAuth();
-    const [plans] = useState<PaymentPlan[]>(paymentService.getAllPlans());
+    const [plans, setPlans] = useState<PaymentPlan[]>([]);
+    const [loadingPlans, setLoadingPlans] = useState(true);
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [successPaymentData, setSuccessPaymentData] = useState<any>(null);
+    const [successPaymentData, setSuccessPaymentData] = useState<SuccessPaymentData | null>(null);
     const [showFailureModal, setShowFailureModal] = useState(false);
-    const [failurePaymentData, setFailurePaymentData] = useState<any>(null);
+    const [failurePaymentData, setFailurePaymentData] = useState<FailurePaymentData | null>(null);
     const [currentPlan, setCurrentPlan] = useState<PaymentPlan | null>(null);
+
+    // Fetch pricing plans from API
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                setLoadingPlans(true);
+                const fetchedPlans = await paymentService.getAllPlans();
+                setPlans(fetchedPlans);
+            } catch (error) {
+                console.error('Failed to fetch plans:', error);
+                toast.error('Failed to load pricing plans');
+            } finally {
+                setLoadingPlans(false);
+            }
+        };
+
+        if (isOpen) {
+            fetchPlans();
+        }
+    }, [isOpen]);
 
     // Load Razorpay script
     useEffect(() => {
@@ -71,7 +109,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
             }
 
             // Create order
-            const orderResponse = await paymentService.createOrder(plan.id, token);
+            const orderResponse = await paymentService.createOrder(plan.planId, token);
 
             if (!orderResponse.success || !orderResponse.order) {
                 throw new Error(orderResponse.message || 'Failed to create order');
@@ -85,11 +123,11 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                 const { order } = orderResponse;
 
                 // Validate that the server amount matches the expected plan amount
-                if (order.amount !== plan.amount) {
+                if (!order || order.amount !== plan.amount) {
                     console.error('Amount mismatch detected', {
                         expected: plan.amount,
-                        received: order.amount,
-                        planId: plan.id,
+                        received: order?.amount,
+                        planId: plan.planId,
                     });
                     toast.error('Payment amount validation failed. Please try again.');
                     return;
@@ -173,9 +211,13 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                                 });
                                 setShowFailureModal(true);
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error('Payment verification failed:', error);
-                            const errorMessage = error?.response?.data?.message || error?.message || 'Payment verification failed. Please contact support if amount was deducted.';
+                            let errorMessage = 'Payment verification failed. Please contact support if amount was deducted.';
+                            if (typeof error === 'object' && error !== null) {
+                                // @ts-expect-error: dynamic error shape
+                                errorMessage = error?.response?.data?.message || error?.message || errorMessage;
+                            }
                             setFailurePaymentData({
                                 planName: plan.name,
                                 amount: plan.amount,
@@ -203,7 +245,6 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     },
                 };
 
-                // @ts-ignore
                 const rzp = new RazorpayConstructor(options);
                 rzp.open();
             }, 100);
@@ -229,74 +270,84 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     </DialogHeader>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                        {plans.map((plan) => (
-                            <Card
-                                key={plan.id}
-                                className={`relative transition-all duration-200 hover:shadow-lg ${plan.id === 'business' ? 'border-[#d9ff00] border-2' : ''
-                                    }`}
-                            >
-                                {plan.id === 'business' && (
-                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                                        <span className="bg-[#d9ff00] text-black px-3 py-1 rounded-full text-sm font-semibold">
-                                            Most Popular
-                                        </span>
-                                    </div>
-                                )}
-
-                                <CardHeader className="text-center">
-                                    <CardTitle className="text-xl">{plan.name}</CardTitle>
-                                    <CardDescription>{plan.description}</CardDescription>
-                                    <div className="mt-4">
-                                        {plan.amount === 0 ? (
-                                            <div className="text-3xl font-bold">Custom</div>
-                                        ) : (
-                                            <>
-                                                <div className="text-3xl font-bold">₹{plan.amount / 100}</div>
-                                                <div className="text-sm text-muted-foreground">one-time payment</div>
-                                            </>
-                                        )}
-                                    </div>
-                                </CardHeader>
-
-                                <CardContent>
-                                    <ul className="space-y-2 mb-6">
-                                        {plan.features.map((feature, index) => (
-                                            <li key={index} className="flex items-center gap-2 text-sm">
-                                                <Check className="h-4 w-4 text-[#d9ff00] shrink-0" />
-                                                {feature}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <Button
-                                        onClick={() => handlePayment(plan)}
-                                        disabled={loadingPlan === plan.id}
-                                        className={`w-full ${plan.id === 'business'
-                                            ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
-                                            : ''
-                                            }`}
-                                        variant={plan.id === 'business' ? 'default' : 'outline'}
-                                    >
-                                        {loadingPlan === plan.id ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Processing...
-                                            </>
-                                        ) : plan.amount === 0 ? (
-                                            'Contact Sales'
-                                        ) : (
-                                            'Purchase Now'
-                                        )}
-                                    </Button>
-
-                                    {plan.credits > 0 && (
-                                        <p className="text-xs text-center text-muted-foreground mt-2">
-                                            Includes {plan.credits} hackathon credits
-                                        </p>
+                        {loadingPlans ? (
+                            <div className="col-span-3 flex justify-center items-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-[#d9ff00]" />
+                            </div>
+                        ) : plans.length === 0 ? (
+                            <div className="col-span-3 text-center py-12">
+                                <p className="text-muted-foreground">No pricing plans available at the moment.</p>
+                            </div>
+                        ) : (
+                            plans.map((plan) => (
+                                <Card
+                                    key={plan.id}
+                                    className={`relative transition-all duration-200 hover:shadow-lg ${plan.planId === 'business_plan' ? 'border-[#d9ff00] border-2' : ''
+                                        }`}
+                                >
+                                    {plan.planId === 'business_plan' && (
+                                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                                            <span className="bg-[#d9ff00] text-black px-3 py-1 rounded-full text-sm font-semibold">
+                                                Most Popular
+                                            </span>
+                                        </div>
                                     )}
-                                </CardContent>
-                            </Card>
-                        ))}
+
+                                    <CardHeader className="text-center">
+                                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                                        <CardDescription>{plan.description}</CardDescription>
+                                        <div className="mt-4">
+                                            {plan.amount === 0 ? (
+                                                <div className="text-3xl font-bold">Custom</div>
+                                            ) : (
+                                                <>
+                                                    <div className="text-3xl font-bold">₹{plan.amount / 100}</div>
+                                                    <div className="text-sm text-muted-foreground">one-time payment</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent>
+                                        <ul className="space-y-2 mb-6">
+                                            {plan.features.map((feature, index) => (
+                                                <li key={index} className="flex items-center gap-2 text-sm">
+                                                    <Check className="h-4 w-4 text-[#d9ff00] shrink-0" />
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <Button
+                                            onClick={() => handlePayment(plan)}
+                                            disabled={loadingPlan === plan.id}
+                                            className={`w-full ${plan.planId === 'business_plan'
+                                                ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
+                                                : ''
+                                                }`}
+                                            variant={plan.planId === 'business_plan' ? 'default' : 'outline'}
+                                        >
+                                            {loadingPlan === plan.id ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Processing...
+                                                </>
+                                            ) : plan.amount === 0 ? (
+                                                'Contact Sales'
+                                            ) : (
+                                                'Purchase Now'
+                                            )}
+                                        </Button>
+
+                                        {plan.credits > 0 && (
+                                            <p className="text-xs text-center text-muted-foreground mt-2">
+                                                Includes {plan.credits} hackathon credits
+                                            </p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            ))
+                        )}
                     </div>
 
                     <div className="text-center mt-6 text-sm text-muted-foreground">

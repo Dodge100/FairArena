@@ -61,6 +61,8 @@ model Payment {
   razorpayOrderId      String              @unique
   razorpayPaymentId    String?             @unique
   razorpaySignature    String?
+  razorpayInvoiceId    String?             @unique
+  invoiceUrl           String?
   planId               String
   planName             String
   amount               Int                 // Amount in paisa
@@ -91,6 +93,7 @@ model Payment {
   @@index([userId])
   @@index([razorpayOrderId])
   @@index([razorpayPaymentId])
+  @@index([razorpayInvoiceId])
   @@index([status])
   @@index([createdAt])
   @@index([userId, status])

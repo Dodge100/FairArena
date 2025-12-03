@@ -1,4 +1,4 @@
-import { AlertCircle, Home, RefreshCcw, X } from 'lucide-react';
+import { AlertCircle, Home, RefreshCcw, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent } from '../components/ui/dialog';
@@ -33,81 +33,93 @@ export default function PaymentFailureModal({ isOpen, onClose, onRetry, errorDat
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md mx-auto bg-linear-to-br from-gray-900 via-gray-800 to-black border border-red-500/20 shadow-2xl">
+            <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto bg-linear-to-br from-gray-900 via-gray-850 to-gray-900 border border-red-500/30 shadow-2xl backdrop-blur-xl">
+                {/* Animated background gradient */}
+                <div className="absolute inset-0 bg-linear-to-br from-red-500/5 via-transparent to-blue-500/5 animate-pulse" />
+
                 {/* Main content */}
-                <div className={`relative z-10 transition-all duration-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                    {/* Error icon with animation */}
-                    <div className="flex justify-center mb-6">
+                <div className={`relative z-10 transition-all duration-700 ease-out ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    {/* Error icon with enhanced animation */}
+                    <div className="flex justify-center mb-8">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-red-500 rounded-full animate-pulse opacity-20"></div>
-                            <div className="relative bg-red-500 rounded-full p-4 shadow-lg shadow-red-500/30">
-                                <X className="h-8 w-8 text-white" />
+                            <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping" />
+                            <div className="absolute inset-0 bg-red-500/10 rounded-full blur-xl" />
+                            <div className="relative bg-linear-to-br from-red-500 to-red-600 rounded-full p-5 shadow-2xl shadow-red-500/50 ring-4 ring-red-500/20">
+                                <XCircle className="h-10 w-10 text-white" strokeWidth={2.5} />
                             </div>
                         </div>
                     </div>
 
                     {/* Error message */}
-                    <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold text-white mb-2">
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
                             Payment Failed
                         </h2>
-                        <p className="text-gray-300 text-sm">
-                            We couldn't process your payment
+                        <p className="text-gray-400 text-base">
+                            We couldn't process your payment. Please try again.
                         </p>
                     </div>
 
                     {/* Error details card */}
-                    <div className="bg-gray-800/50 rounded-xl p-6 mb-6 border border-gray-700/50">
+                    <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-gray-700/60 shadow-xl">
                         <div className="space-y-4">
                             {/* Plan info */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-gray-400">Plan:</span>
-                                <span className="text-white font-medium">{errorData.planName}</span>
+                            <div className="flex items-center justify-between py-1">
+                                <span className="text-gray-400 text-sm font-medium">Plan</span>
+                                <span className="text-white font-semibold text-base">{errorData.planName}</span>
                             </div>
 
                             {/* Amount */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-gray-400">Amount:</span>
-                                <span className="text-white font-medium">
-                                    ₹{errorData.amount / 100}
+                            <div className="flex items-center justify-between py-1">
+                                <span className="text-gray-400 text-sm font-medium">Amount</span>
+                                <span className="text-white font-semibold text-lg">
+                                    ₹{(errorData.amount / 100).toLocaleString('en-IN')}
                                 </span>
                             </div>
 
+                            {/* Order ID if available */}
+                            {errorData.orderId && (
+                                <div className="flex items-center justify-between py-1">
+                                    <span className="text-gray-400 text-sm font-medium">Order ID</span>
+                                    <span className="text-gray-300 font-mono text-xs bg-gray-700/50 px-3 py-1 rounded-md">
+                                        {errorData.orderId.slice(-12)}
+                                    </span>
+                                </div>
+                            )}
+
                             {/* Divider */}
-                            <div className="border-t border-gray-700/50"></div>
+                            <div className="border-t border-gray-700/70 my-4" />
 
                             {/* Error reason */}
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                            <div className="bg-linear-to-br from-red-500/15 to-red-600/10 border border-red-500/30 rounded-xl p-4 shadow-lg">
                                 <div className="flex items-start gap-3">
-                                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+                                    <div className="bg-red-500/20 rounded-lg p-1.5 mt-0.5">
+                                        <AlertCircle className="h-5 w-5 text-red-400" strokeWidth={2.5} />
+                                    </div>
                                     <div className="flex-1">
-                                        <p className="text-red-400 font-medium text-sm mb-1">
+                                        <p className="text-red-300 font-semibold text-sm mb-1.5">
                                             Error Details
                                         </p>
-                                        <p className="text-gray-300 text-sm">
+                                        <p className="text-gray-300 text-sm leading-relaxed">
                                             {errorData.errorMessage}
                                         </p>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Order ID if available */}
-                            {errorData.orderId && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Order ID:</span>
-                                    <span className="text-gray-300 font-mono text-xs">
-                                        {errorData.orderId.slice(-8)}
-                                    </span>
-                                </div>
-                            )}
                         </div>
                     </div>
 
                     {/* Help message */}
-                    <div className="bg-linear-to-r from-blue-500/10 to-blue-500/5 rounded-lg p-4 mb-6 border border-blue-500/20">
-                        <p className="text-center text-sm text-gray-300">
-                            <span className="text-blue-400 font-semibold">Need help?</span> Contact our support team at{' '}
-                            <a href="mailto:fairarena.contact@gmail.com" className="text-blue-400 hover:underline">
+                    <div className="bg-linear-to-r from-blue-500/10 via-blue-500/5 to-transparent rounded-xl p-4 mb-6 border border-blue-500/30 shadow-lg">
+                        <p className="text-center text-sm text-gray-300 leading-relaxed">
+                            <span className="text-blue-400 font-semibold">Need assistance?</span>
+                            <br className="sm:hidden" />
+                            <span className="hidden sm:inline"> </span>
+                            Contact us at{' '}
+                            <a
+                                href="mailto:fairarena.contact@gmail.com"
+                                className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 hover:decoration-blue-300 underline-offset-2 transition-colors font-medium"
+                            >
                                 fairarena.contact@gmail.com
                             </a>
                         </p>
@@ -118,7 +130,7 @@ export default function PaymentFailureModal({ isOpen, onClose, onRetry, errorDat
                         <Button
                             onClick={onClose}
                             variant="outline"
-                            className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                            className="flex-1 border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white hover:bg-gray-800/80 transition-all duration-200 h-11 font-medium"
                         >
                             <Home className="mr-2 h-4 w-4" />
                             Go Back
@@ -128,7 +140,7 @@ export default function PaymentFailureModal({ isOpen, onClose, onRetry, errorDat
                                 onClose();
                                 onRetry();
                             }}
-                            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+                            className="flex-1 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 h-11 font-semibold"
                         >
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             Try Again

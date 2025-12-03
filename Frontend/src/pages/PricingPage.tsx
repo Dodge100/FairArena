@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { Check } from 'lucide-react';
-
-/* ======================================================================================
-   PRICING CARD COMPONENT (Your Style, Fully Responsive)
-====================================================================================== */
+import { useEffect, useState } from 'react';
 
 function PricingCard({ plan, billing, isDark }: any) {
   const price = plan.price[billing];
@@ -14,14 +10,13 @@ function PricingCard({ plan, billing, isDark }: any) {
   return (
     <div
       className={`rounded-2xl p-6 sm:p-8 flex flex-col relative transition-colors
-        ${
-          highlight
-            ? isDark
-              ? 'bg-[#0f0f0f] border-[3px] border-[#d9ff00]'
-              : 'bg-white border-2 border-[#d9ff00]'
-            : isDark
-              ? 'bg-[#0d0d0d] border border-white/10'
-              : 'bg-white border border-neutral-300'
+        ${highlight
+          ? isDark
+            ? 'bg-[#0f0f0f] border-[3px] border-[#d9ff00]'
+            : 'bg-white border-2 border-[#d9ff00]'
+          : isDark
+            ? 'bg-[#0d0d0d] border border-white/10'
+            : 'bg-white border border-neutral-300'
         }
       `}
     >
@@ -32,9 +27,8 @@ function PricingCard({ plan, billing, isDark }: any) {
       )}
 
       <h3
-        className={`text-lg sm:text-xl font-semibold mb-2 ${
-          highlight ? 'text-[#d9ff00]' : isDark ? 'text-white' : 'text-black'
-        }`}
+        className={`text-lg sm:text-xl font-semibold mb-2 ${highlight ? 'text-[#d9ff00]' : isDark ? 'text-white' : 'text-black'
+          }`}
       >
         {plan.name}
       </h3>
@@ -54,12 +48,11 @@ function PricingCard({ plan, billing, isDark }: any) {
       {/* CTA Buttons */}
       <button
         className={`w-full py-3 rounded-lg font-semibold transition text-sm sm:text-base
-          ${
-            highlight
-              ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
-              : isDark
-                ? 'bg-white text-black hover:opacity-90'
-                : 'bg-black text-white hover:opacity-90'
+          ${highlight
+            ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
+            : isDark
+              ? 'bg-white text-black hover:opacity-90'
+              : 'bg-black text-white hover:opacity-90'
           }
         `}
       >
@@ -68,10 +61,9 @@ function PricingCard({ plan, billing, isDark }: any) {
 
       <button
         className={`w-full py-3 rounded-lg mt-3 font-semibold transition border text-sm sm:text-base
-          ${
-            isDark
-              ? 'bg-transparent border-white/20 text-white hover:bg-white/10'
-              : 'bg-transparent border-neutral-300 text-black hover:bg-neutral-100'
+          ${isDark
+            ? 'bg-transparent border-white/20 text-white hover:bg-white/10'
+            : 'bg-transparent border-neutral-300 text-black hover:bg-neutral-100'
           }
         `}
       >
@@ -92,9 +84,8 @@ function PricingCard({ plan, billing, isDark }: any) {
           {plan.features.map((feature: string, i: number) => (
             <li
               key={i}
-              className={`flex items-center gap-3 text-sm sm:text-base ${
-                isDark ? 'text-white' : 'text-black'
-              }`}
+              className={`flex items-center gap-3 text-sm sm:text-base ${isDark ? 'text-white' : 'text-black'
+                }`}
             >
               <Check size={18} className="text-[#d9ff00]" />
               {feature}
@@ -105,10 +96,6 @@ function PricingCard({ plan, billing, isDark }: any) {
     </div>
   );
 }
-
-/* ======================================================================================
-   PRICING DATA
-====================================================================================== */
 
 const PLANS = [
   {
@@ -207,9 +194,8 @@ export default function PricingPage() {
       <div className="flex justify-center mt-10 gap-4 sm:gap-6">
         <button
           onClick={() => setBilling('monthly')}
-          className={`px-5 sm:px-6 py-2 rounded-full text-sm sm:text-base ${
-            billing === 'monthly' ? 'bg-[#ddef00] text-black' : 'bg-neutral-700 text-white'
-          }`}
+          className={`px-5 sm:px-6 py-2 rounded-full text-sm sm:text-base ${billing === 'monthly' ? 'bg-[#ddef00] text-black' : 'bg-neutral-700 text-white'
+            }`}
         >
           Per Event
         </button>
@@ -241,15 +227,13 @@ export default function PricingPage() {
 
       <div className="overflow-x-auto mt-8 sm:mt-10">
         <table
-          className={`w-full border-collapse text-xs sm:text-sm ${
-            isDark ? 'text-neutral-300' : 'text-neutral-800'
-          }`}
+          className={`w-full border-collapse text-xs sm:text-sm ${isDark ? 'text-neutral-300' : 'text-neutral-800'
+            }`}
         >
           <thead>
             <tr
-              className={`${
-                isDark ? 'bg-neutral-800' : 'bg-neutral-200'
-              } text-left text-sm sm:text-base`}
+              className={`${isDark ? 'bg-neutral-800' : 'bg-neutral-200'
+                } text-left text-sm sm:text-base`}
             >
               <th className="p-3 sm:p-4">Feature</th>
               <th className="p-3 sm:p-4 text-center">Basic</th>

@@ -8,7 +8,12 @@ import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
 import { otpEmailTemplate } from '../templates/otp.js';
+import { paymentFailedEmailTemplate } from '../templates/paymentFailed.js';
+import { paymentSuccessEmailTemplate } from '../templates/paymentSuccess.js';
 import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
+import { refundCompletedEmailTemplate } from '../templates/refundCompleted.js';
+import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
+import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
@@ -37,6 +42,63 @@ type DataExportEmailParams = {
   dataSize: string;
 };
 type DataExportErrorEmailParams = { userName: string; errorMessage: string };
+type PaymentSuccessEmailParams = {
+  userName: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  credits: number;
+  orderId: string;
+  paymentId: string;
+  paymentMethod: string;
+  transactionDate: string;
+  invoiceUrl?: string;
+};
+type PaymentFailedEmailParams = {
+  userName: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  orderId: string;
+  paymentId?: string;
+  failureReason: string;
+  transactionDate: string;
+};
+type RefundInitiatedEmailParams = {
+  userName: string;
+  planName: string;
+  refundAmount: number;
+  originalAmount: number;
+  currency: string;
+  credits: number;
+  orderId: string;
+  paymentId: string;
+  refundId: string;
+  refundDate: string;
+  estimatedDays: string;
+};
+type RefundCompletedEmailParams = {
+  userName: string;
+  planName: string;
+  refundAmount: number;
+  currency: string;
+  orderId: string;
+  paymentId: string;
+  refundId: string;
+  completedDate: string;
+  paymentMethod: string;
+};
+type RefundFailedEmailParams = {
+  userName: string;
+  planName: string;
+  refundAmount: number;
+  currency: string;
+  orderId: string;
+  paymentId: string;
+  refundId: string;
+  failureReason: string;
+  failureDate: string;
+};
 
 // Collect all templates with correct types
 export const emailTemplates = {
@@ -56,6 +118,15 @@ export const emailTemplates = {
   'data-export-error': dataExportErrorEmailTemplate as (
     params: DataExportErrorEmailParams,
   ) => string,
+  'payment-success': paymentSuccessEmailTemplate as (params: PaymentSuccessEmailParams) => string,
+  'payment-failed': paymentFailedEmailTemplate as (params: PaymentFailedEmailParams) => string,
+  'refund-initiated': refundInitiatedEmailTemplate as (
+    params: RefundInitiatedEmailParams,
+  ) => string,
+  'refund-completed': refundCompletedEmailTemplate as (
+    params: RefundCompletedEmailParams,
+  ) => string,
+  'refund-failed': refundFailedEmailTemplate as (params: RefundFailedEmailParams) => string,
 };
 
 // Function overloads for sendEmail
@@ -123,6 +194,46 @@ export function sendEmail(
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'payment-success',
+  params: PaymentSuccessEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'payment-failed',
+  params: PaymentFailedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'refund-initiated',
+  params: RefundInitiatedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'refund-completed',
+  params: RefundCompletedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'refund-failed',
+  params: RefundFailedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
 export async function sendEmail(
   to: string,
   subject: string,
@@ -134,7 +245,13 @@ export async function sendEmail(
     | 'account-recovery'
     | 'account-permanent-deletion'
     | 'data-export'
-    | 'data-export-error',
+    | 'data-export-error'
+    | 'payment-success'
+    | 'payment-order-created'
+    | 'payment-failed'
+    | 'refund-initiated'
+    | 'refund-completed'
+    | 'refund-failed',
   params:
     | WelcomeEmailParams
     | OtpEmailParams
@@ -143,7 +260,12 @@ export async function sendEmail(
     | AccountRecoveryEmailParams
     | AccountPermanentDeletionEmailParams
     | DataExportEmailParams
-    | DataExportErrorEmailParams,
+    | DataExportErrorEmailParams
+    | PaymentSuccessEmailParams
+    | PaymentFailedEmailParams
+    | RefundInitiatedEmailParams
+    | RefundCompletedEmailParams
+    | RefundFailedEmailParams,
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown> {
@@ -166,6 +288,16 @@ export async function sendEmail(
     html = emailTemplates['data-export'](params as DataExportEmailParams);
   } else if (templateName === 'data-export-error') {
     html = emailTemplates['data-export-error'](params as DataExportErrorEmailParams);
+  } else if (templateName === 'payment-success') {
+    html = emailTemplates['payment-success'](params as PaymentSuccessEmailParams);
+  } else if (templateName === 'payment-failed') {
+    html = emailTemplates['payment-failed'](params as PaymentFailedEmailParams);
+  } else if (templateName === 'refund-initiated') {
+    html = emailTemplates['refund-initiated'](params as RefundInitiatedEmailParams);
+  } else if (templateName === 'refund-completed') {
+    html = emailTemplates['refund-completed'](params as RefundCompletedEmailParams);
+  } else if (templateName === 'refund-failed') {
+    html = emailTemplates['refund-failed'](params as RefundFailedEmailParams);
   } else {
     throw new Error(`Unknown template name: ${templateName}`);
   }
@@ -310,5 +442,134 @@ export const sendDataExportErrorEmail = async (
   return sendEmail(to, 'Data Export Failed', 'data-export-error', {
     userName,
     errorMessage,
+  });
+};
+
+export const sendPaymentSuccessEmail = async (
+  to: string,
+  userName: string,
+  planName: string,
+  amount: number,
+  currency: string,
+  credits: number,
+  orderId: string,
+  paymentId: string,
+  paymentMethod: string,
+  transactionDate: string,
+  invoiceUrl?: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Payment Successful - FairArena', 'payment-success', {
+    userName,
+    planName,
+    amount,
+    currency,
+    credits,
+    orderId,
+    paymentId,
+    paymentMethod,
+    transactionDate,
+    invoiceUrl,
+  });
+};
+
+export const sendPaymentFailedEmail = async (
+  to: string,
+  userName: string,
+  planName: string,
+  amount: number,
+  currency: string,
+  orderId: string,
+  failureReason: string,
+  transactionDate: string,
+  paymentId?: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Payment Failed - FairArena', 'payment-failed', {
+    userName,
+    planName,
+    amount,
+    currency,
+    orderId,
+    paymentId,
+    failureReason,
+    transactionDate,
+  });
+};
+
+export const sendRefundInitiatedEmail = async (
+  to: string,
+  userName: string,
+  planName: string,
+  refundAmount: number,
+  originalAmount: number,
+  currency: string,
+  credits: number,
+  orderId: string,
+  paymentId: string,
+  refundId: string,
+  refundDate: string,
+  estimatedDays: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Refund Initiated - FairArena', 'refund-initiated', {
+    userName,
+    planName,
+    refundAmount,
+    originalAmount,
+    currency,
+    credits,
+    orderId,
+    paymentId,
+    refundId,
+    refundDate,
+    estimatedDays,
+  });
+};
+
+export const sendRefundCompletedEmail = async (
+  to: string,
+  userName: string,
+  planName: string,
+  refundAmount: number,
+  currency: string,
+  orderId: string,
+  paymentId: string,
+  refundId: string,
+  completedDate: string,
+  paymentMethod: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Refund Completed - FairArena', 'refund-completed', {
+    userName,
+    planName,
+    refundAmount,
+    currency,
+    orderId,
+    paymentId,
+    refundId,
+    completedDate,
+    paymentMethod,
+  });
+};
+
+export const sendRefundFailedEmail = async (
+  to: string,
+  userName: string,
+  planName: string,
+  refundAmount: number,
+  currency: string,
+  orderId: string,
+  paymentId: string,
+  refundId: string,
+  failureReason: string,
+  failureDate: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Refund Failed - FairArena', 'refund-failed', {
+    userName,
+    planName,
+    refundAmount,
+    currency,
+    orderId,
+    paymentId,
+    refundId,
+    failureReason,
+    failureDate,
   });
 };

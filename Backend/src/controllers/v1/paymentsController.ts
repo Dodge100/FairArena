@@ -2,7 +2,9 @@ import { clerkClient } from '@clerk/express';
 import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { getPlanById, razorpay, validatePlan } from '../../config/razorpay.js';
+import { prisma } from '../../config/database.js';
+import { razorpay } from '../../config/razorpay.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
@@ -66,17 +68,36 @@ export const createOrder = async (req: Request, res: Response) => {
 
     const { planId } = validation.data;
 
-    // Validate plan
-    const planValidation = validatePlan(planId);
-    if (!planValidation.valid) {
-      logger.warn('Invalid plan requested', { userId, planId, error: planValidation.error });
+    // Fetch plan from database
+    const readOnlyPrisma = await getReadOnlyPrisma();
+    const plan = await readOnlyPrisma.plan.findUnique({
+      where: { planId, isActive: true },
+    });
+
+    if (!plan) {
+      logger.warn('Invalid plan requested', { userId, planId });
       return res.status(400).json({
         success: false,
-        message: planValidation.error,
+        message: 'Invalid plan ID',
       });
     }
 
-    const plan = planValidation.plan!;
+    // Check for custom pricing plans
+    if (plan.amount === 0) {
+      logger.warn('Custom pricing plan requested', { userId, planId });
+      return res.status(400).json({
+        success: false,
+        message: 'Custom pricing plans require manual processing',
+      });
+    }
+
+    const planData = {
+      id: plan.planId,
+      name: plan.name,
+      amount: plan.amount,
+      currency: plan.currency,
+      credits: plan.credits,
+    };
 
     // Get user email from auth
     const clerkUser = await clerkClient.users.getUser(userId);
@@ -95,14 +116,14 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     const orderOptions: RazorpayOrderOptions = {
-      amount: plan.amount,
-      currency: plan.currency,
+      amount: planData.amount,
+      currency: planData.currency,
       receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-6)}`, // Keep under 40 chars (Razorpay limit)
       notes: {
         userId, // Full userId stored in notes for verification (not affected by receipt truncation)
-        planId: plan.id,
-        planName: plan.name,
-        credits: plan.credits,
+        planId: planData.id,
+        planName: planData.name,
+        credits: planData.credits,
         userEmail: userEmail || 'unknown',
         receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-6)}`, // Store full receipt for reference
       },
@@ -117,11 +138,11 @@ export const createOrder = async (req: Request, res: Response) => {
         userId,
         userEmail: userEmail || null,
         orderId: order.id,
-        planId: plan.id,
-        planName: plan.name,
-        amount: plan.amount,
-        currency: plan.currency,
-        credits: plan.credits,
+        planId: planData.id,
+        planName: planData.name,
+        amount: planData.amount,
+        currency: planData.currency,
+        credits: planData.credits,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         notes: orderOptions.notes,
@@ -133,7 +154,7 @@ export const createOrder = async (req: Request, res: Response) => {
       userId,
       planId,
       orderId: order.id,
-      amount: plan.amount,
+      amount: planData.amount,
     });
 
     res.json({
@@ -145,14 +166,14 @@ export const createOrder = async (req: Request, res: Response) => {
         key: process.env.RAZORPAY_KEY_ID, // Public key for frontend
       },
       plan: {
-        id: plan.id,
-        name: plan.name,
+        id: planData.id,
+        name: planData.name,
         description: plan.description,
-        credits: plan.credits,
+        credits: planData.credits,
       },
       // Include server-calculated amount for additional client-side validation
-      serverAmount: plan.amount,
-      serverCurrency: plan.currency,
+      serverAmount: planData.amount,
+      serverCurrency: planData.currency,
     });
   } catch (error) {
     logger.error('Create order error', {
@@ -239,7 +260,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    const plan = getPlanById(String(planId));
+    // Fetch plan from database
+    const plan = await prisma.plan.findUnique({
+      where: { planId: String(planId) },
+    });
     if (!plan) {
       logger.error('Plan not found', {
         userId,
@@ -277,7 +301,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
         orderId: razorpay_order_id,
         paymentId: razorpay_payment_id,
         signature: razorpay_signature,
-        planId,
+        planId: plan.planId,
         planName: plan.name,
         amount: order.amount,
         credits: credits || plan.credits,
@@ -288,7 +312,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
     logger.info('Payment verification initiated', {
       userId,
-      planId,
+      planId: plan.planId,
       planName: plan.name,
       amount: order.amount,
       credits: credits || plan.credits,

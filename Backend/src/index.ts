@@ -37,6 +37,7 @@ import {
   updateOrganization,
   updateProfileFunction,
   updateUser,
+  sendNotification,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
@@ -54,6 +55,7 @@ import creditsRouter from './routes/v1/credits.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import paymentsRouter from './routes/v1/payments.js';
+import plansRouter from './routes/v1/plans.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
 import logger from './utils/logger.js';
@@ -205,6 +207,9 @@ app.use('/api/v1', cleanupRouter);
 // Payments routes
 app.use('/api/v1/payments', paymentsRouter);
 
+// Plans routes
+app.use('/api/v1/plans', plansRouter);
+
 // Credits routes
 app.use('/api/v1/credits', creditsRouter);
 
@@ -240,6 +245,7 @@ app.use(
       paymentOrderCreated,
       paymentVerified,
       paymentWebhookReceived,
+      sendNotification,
     ],
   }),
 );

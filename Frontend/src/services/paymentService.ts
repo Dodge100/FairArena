@@ -2,12 +2,20 @@ import axios from 'axios';
 
 export interface PaymentPlan {
   id: string;
+  planId: string;
   name: string;
   amount: number;
   currency: string;
   credits: number;
   description: string;
   features: string[];
+  isActive: boolean;
+}
+
+export interface PlansResponse {
+  success: boolean;
+  plans: PaymentPlan[];
+  cached?: boolean;
 }
 
 export interface CreateOrderResponse {
@@ -42,63 +50,12 @@ export interface VerifyPaymentResponse {
   };
 }
 
-// Hardcoded plans (easily replaceable with API call)
-export const PAYMENT_PLANS: Record<string, PaymentPlan> = {
-  basic: {
-    id: 'basic_plan',
-    name: 'Basic Plan',
-    amount: 89900, // ₹899 in paisa
-    currency: 'INR',
-    credits: 50,
-    description: 'Perfect for small hackathons & student-led events',
-    features: [
-      '50 Participants',
-      '5 Judges',
-      'Manual Scoring System',
-      'Basic Real-time Leaderboard',
-      'Submission Management',
-      'Email Support',
-    ],
-  },
-  business: {
-    id: 'business_plan',
-    name: 'Business Plan',
-    amount: 299900, // ₹2999 in paisa
-    currency: 'INR',
-    credits: 300,
-    description: 'Our most popular plan with AI-powered scoring',
-    features: [
-      '300 Participants',
-      '20 Judges',
-      'AI Website Analysis',
-      'Advanced Leaderboard',
-      'Judge Collaboration Tools',
-      'AI Scoring Assistance',
-      'Priority Support',
-    ],
-  },
-  enterprise: {
-    id: 'enterprise_plan',
-    name: 'Enterprise Plan',
-    amount: 0, // Custom pricing
-    currency: 'INR',
-    credits: 0,
-    description: 'For large-scale, enterprise-grade hackathons',
-    features: [
-      'Unlimited Participants',
-      'Unlimited Judges',
-      'Deep AI Analytics',
-      'Plagiarism Detection',
-      'Custom Rubrics & Permissions',
-      'Dedicated Account Manager',
-      'SLA-backed Support',
-    ],
-  },
-};
-
 export class PaymentService {
   private static instance: PaymentService;
   private baseURL: string;
+  private plansCache: PaymentPlan[] | null = null;
+  private plansCacheTimestamp: number = 0;
+  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
   private constructor() {
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -152,12 +109,60 @@ export class PaymentService {
     }
   }
 
-  getPlanById(planId: string): PaymentPlan | null {
-    return PAYMENT_PLANS[planId] || null;
+  /**
+   * Fetch pricing plans from backend API with client-side caching
+   * Cache is stored in memory for 1 day
+   */
+  async fetchPlans(): Promise<PaymentPlan[]> {
+    try {
+      // Check if cache is valid
+      const now = Date.now();
+      if (this.plansCache && now - this.plansCacheTimestamp < this.CACHE_DURATION) {
+        console.log('Using cached plans from memory');
+        return this.plansCache;
+      }
+
+      // Fetch from API
+      const response = await axios.get<PlansResponse>(`${this.baseURL}/api/v1/plans`);
+
+      if (response.data.success && response.data.plans) {
+        this.plansCache = response.data.plans;
+        this.plansCacheTimestamp = now;
+        console.log(
+          `Fetched ${response.data.plans.length} plans from API ${response.data.cached ? '(server cache)' : '(database)'}`,
+        );
+        return response.data.plans;
+      }
+
+      throw new Error('Failed to fetch plans from API');
+    } catch (error) {
+      console.error('Failed to fetch plans:', error);
+      // Return empty array on error
+      return [];
+    }
   }
 
-  getAllPlans(): PaymentPlan[] {
-    return Object.values(PAYMENT_PLANS);
+  /**
+   * Get plan by planId from cache or API
+   */
+  async getPlanById(planId: string): Promise<PaymentPlan | null> {
+    const plans = await this.fetchPlans();
+    return plans.find((plan) => plan.planId === planId) || null;
+  }
+
+  /**
+   * Get all active plans from cache or API
+   */
+  async getAllPlans(): Promise<PaymentPlan[]> {
+    return await this.fetchPlans();
+  }
+
+  /**
+   * Clear the client-side cache
+   */
+  clearCache(): void {
+    this.plansCache = null;
+    this.plansCacheTimestamp = 0;
   }
 }
 

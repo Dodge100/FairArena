@@ -13,7 +13,6 @@ export const paymentOrderCreated = inngest.createFunction(
   async ({ event, step }) => {
     const {
       userId,
-      userEmail,
       orderId,
       planId,
       planName,
@@ -79,33 +78,6 @@ export const paymentOrderCreated = inngest.createFunction(
           orderId,
         });
         throw error;
-      }
-    });
-
-    // Send notification to user
-    await step.run('send-order-notification', async () => {
-      try {
-        await inngest.send({
-          name: 'notification/send',
-          data: {
-            userId,
-            type: 'SYSTEM',
-            title: 'Payment Order Created',
-            message: `Your payment order for ${planName} has been created. Please complete the payment.`,
-            description: `Amount: ₹${amount / 100}`,
-          },
-        });
-
-        logger.info('Payment order notification sent', { userId, orderId });
-        return { success: true };
-      } catch (error) {
-        logger.error('Failed to send order notification', {
-          error: error instanceof Error ? error.message : String(error),
-          userId,
-          orderId,
-        });
-        // Non-critical error, don't throw
-        return { success: false };
       }
     });
   },

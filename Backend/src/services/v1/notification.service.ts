@@ -299,16 +299,35 @@ class NotificationService {
   }
 
   /**
-   * Get a single notification by ID
+   * Create a new notification
    */
-  async getNotificationById(notificationId: string, userId: string) {
-    const readOnlyPrisma = await getReadOnlyPrisma();
-    return await readOnlyPrisma.notification.findFirst({
-      where: {
-        id: notificationId,
-        userId,
+  async createNotification(data: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    description?: string;
+    actionUrl?: string;
+    actionLabel?: string;
+    metadata?: any;
+  }) {
+    const notification = await prisma.notification.create({
+      data: {
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        description: data.description,
+        actionUrl: data.actionUrl,
+        actionLabel: data.actionLabel,
+        metadata: data.metadata,
       },
     });
+
+    // Invalidate cache
+    await this.invalidateUserCache(data.userId);
+
+    return notification;
   }
 
   /**

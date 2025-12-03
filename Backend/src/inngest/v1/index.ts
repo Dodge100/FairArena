@@ -11,6 +11,7 @@ export {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
+  sendNotification,
 } from './notificationOperations.js';
 export { paymentOrderCreated } from './payment-order-created.js';
 export { paymentVerified } from './payment-verified.js';
