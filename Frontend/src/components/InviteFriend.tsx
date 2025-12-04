@@ -73,9 +73,10 @@ function InviteFriend() {
             placeholder="friend@example.com"
             className={`
               flex-1 px-3 py-2 text-sm rounded-lg outline-none transition
-              ${isDark
-                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700 focus:border-[#DDFF00]'
-                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300 focus:border-[#556000]'
+              ${
+                isDark
+                  ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700 focus:border-[#DDFF00]'
+                  : 'bg-white text-black placeholder-neutral-500 border border-neutral-300 focus:border-[#556000]'
               }
             `}
           />
@@ -84,9 +85,10 @@ function InviteFriend() {
             className={`
               px-4 py-2 text-sm font-medium rounded-lg transition
               flex items-center gap-2 whitespace-nowrap
-              ${isDark
-                ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
-                : 'bg-[#556000] text-white hover:bg-[#8aa300]'
+              ${
+                isDark
+                  ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
+                  : 'bg-[#556000] text-white hover:bg-[#8aa300]'
               }
             `}
           >

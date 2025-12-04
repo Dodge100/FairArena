@@ -232,14 +232,18 @@ export default function PublicProfile() {
     const newStarCount = wasStarred ? profile.stars.count - 1 : profile.stars.count + 1;
 
     // Optimistically update UI
-    setProfile(prev => prev ? {
-      ...prev,
-      stars: {
-        count: newStarCount,
-        hasStarred: !wasStarred,
-        starredAt: wasStarred ? null : new Date().toISOString(),
-      },
-    } : null);
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            stars: {
+              count: newStarCount,
+              hasStarred: !wasStarred,
+              starredAt: wasStarred ? null : new Date().toISOString(),
+            },
+          }
+        : null,
+    );
 
     setIsStarring(true);
     try {
@@ -269,14 +273,18 @@ export default function PublicProfile() {
       toast.error('Failed to update star. Please try again.');
 
       // Revert optimistic update on error
-      setProfile(prev => prev ? {
-        ...prev,
-        stars: {
-          count: profile.stars.count,
-          hasStarred: wasStarred,
-          starredAt: profile.stars.starredAt,
-        },
-      } : null);
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              stars: {
+                count: profile.stars.count,
+                hasStarred: wasStarred,
+                starredAt: profile.stars.starredAt,
+              },
+            }
+          : null,
+      );
     } finally {
       setIsStarring(false);
     }
@@ -568,8 +576,11 @@ export default function PublicProfile() {
                       disabled={isStarring}
                       className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
                     >
-                      <Star className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`} />
-                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} ({profile.stars.count})
+                      <Star
+                        className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`}
+                      />
+                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} (
+                      {profile.stars.count})
                     </Button>
                   )}
                   {!isOwner && user && (
@@ -822,86 +833,86 @@ export default function PublicProfile() {
                 profile.linkedInProfile ||
                 profile.portfolioUrl ||
                 profile.resumeUrl) && (
-                  <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
-                        Connect
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        {profile.email && (
-                          <a
-                            href={`mailto:${profile.email}`}
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <div className="flex-1">
-                              <span className="font-medium block">Email</span>
-                              <span className="text-sm text-muted-foreground">{profile.email}</span>
-                            </div>
-                          </a>
-                        )}
-                        {profile.githubUsername && (
-                          <a
-                            href={`https://github.com/${profile.githubUsername}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <span className="font-medium">GitHub</span>
-                          </a>
-                        )}
-                        {profile.twitterHandle && (
-                          <a
-                            href={`https://twitter.com/${profile.twitterHandle}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <span className="font-medium">Twitter</span>
-                          </a>
-                        )}
-                        {profile.linkedInProfile && (
-                          <a
-                            href={profile.linkedInProfile}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <span className="font-medium">LinkedIn</span>
-                          </a>
-                        )}
-                        {profile.portfolioUrl && (
-                          <a
-                            href={profile.portfolioUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <span className="font-medium">Portfolio</span>
-                          </a>
-                        )}
-                        {profile.resumeUrl && (
-                          <a
-                            href={profile.resumeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                          >
-                            <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                            <span className="font-medium">Resume</span>
-                          </a>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                      Connect
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {profile.email && (
+                        <a
+                          href={`mailto:${profile.email}`}
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <div className="flex-1">
+                            <span className="font-medium block">Email</span>
+                            <span className="text-sm text-muted-foreground">{profile.email}</span>
+                          </div>
+                        </a>
+                      )}
+                      {profile.githubUsername && (
+                        <a
+                          href={`https://github.com/${profile.githubUsername}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <span className="font-medium">GitHub</span>
+                        </a>
+                      )}
+                      {profile.twitterHandle && (
+                        <a
+                          href={`https://twitter.com/${profile.twitterHandle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <span className="font-medium">Twitter</span>
+                        </a>
+                      )}
+                      {profile.linkedInProfile && (
+                        <a
+                          href={profile.linkedInProfile}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <span className="font-medium">LinkedIn</span>
+                        </a>
+                      )}
+                      {profile.portfolioUrl && (
+                        <a
+                          href={profile.portfolioUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <span className="font-medium">Portfolio</span>
+                        </a>
+                      )}
+                      {profile.resumeUrl && (
+                        <a
+                          href={profile.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                        >
+                          <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                          <span className="font-medium">Resume</span>
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Stars */}
               <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
@@ -1017,9 +1028,7 @@ export default function PublicProfile() {
                 className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-20 resize-none"
                 maxLength={500}
               />
-              <p className="text-xs text-muted-foreground">
-                {reportDetails.length}/500 characters
-              </p>
+              <p className="text-xs text-muted-foreground">{reportDetails.length}/500 characters</p>
             </div>
           </div>
           <DialogFooter>

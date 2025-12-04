@@ -3,60 +3,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertTriangle, Clock, Mail } from 'lucide-react';
 
 export default function Maintenance() {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
-            <Card className="w-full max-w-2xl">
-                <CardHeader className="text-center space-y-4">
-                    <div className="mx-auto w-20 h-20 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
-                        <AlertTriangle className="w-10 h-10 text-yellow-600 dark:text-yellow-500" />
-                    </div>
-                    <CardTitle className="text-3xl font-bold">Site Under Maintenance</CardTitle>
-                    <CardDescription className="text-lg">
-                        We're currently performing scheduled maintenance to improve your experience
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 space-y-3">
-                        <div className="flex items-center space-x-3">
-                            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                Expected Duration
-                            </p>
-                        </div>
-                        <p className="text-sm text-blue-700 dark:text-blue-300 ml-8">
-                            We expect to be back online shortly. Thank you for your patience.
-                        </p>
-                    </div>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Card className="w-full max-w-2xl">
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-20 h-20 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-10 h-10 text-yellow-600 dark:text-yellow-500" />
+          </div>
+          <CardTitle className="text-3xl font-bold">Site Under Maintenance</CardTitle>
+          <CardDescription className="text-lg">
+            We're currently performing scheduled maintenance to improve your experience
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 space-y-3">
+            <div className="flex items-center space-x-3">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Expected Duration
+              </p>
+            </div>
+            <p className="text-sm text-blue-700 dark:text-blue-300 ml-8">
+              We expect to be back online shortly. Thank you for your patience.
+            </p>
+          </div>
 
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 space-y-3">
-                        <div className="flex items-center space-x-3">
-                            <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                Need Assistance?
-                            </p>
-                        </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 ml-8">
-                            For urgent matters, please contact our support team.
-                        </p>
-                        <Button
-                            variant="outline"
-                            className="ml-8"
-                            onClick={() => window.location.href = 'mailto:fairarena.contact@gmail.com'}
-                        >
-                            Contact Support
-                        </Button>
-                    </div>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 space-y-3">
+            <div className="flex items-center space-x-3">
+              <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Need Assistance?
+              </p>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 ml-8">
+              For urgent matters, please contact our support team.
+            </p>
+            <Button
+              variant="outline"
+              className="ml-8"
+              onClick={() => (window.location.href = 'mailto:fairarena.contact@gmail.com')}
+            >
+              Contact Support
+            </Button>
+          </div>
 
-                    <div className="text-center">
-                        <Button
-                            onClick={() => window.location.reload()}
-                            className="w-full sm:w-auto"
-                        >
-                            Check Status
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
+          <div className="text-center">
+            <Button onClick={() => window.location.reload()} className="w-full sm:w-auto">
+              Check Status
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

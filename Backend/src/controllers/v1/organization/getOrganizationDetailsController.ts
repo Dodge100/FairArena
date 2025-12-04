@@ -62,7 +62,7 @@ export const GetOrganizationDetails = async (req: Request, res: Response) => {
 
     res.json({ organization });
   } catch (error) {
-    logger.error('Error fetching organization details:', error);
+    logger.error('Error fetching organization details:', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 };

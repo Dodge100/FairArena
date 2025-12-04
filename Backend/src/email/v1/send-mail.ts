@@ -360,7 +360,7 @@ export async function sendEmail(
       return data;
     }
   } catch (err) {
-    logger.error('Failed to send email:', err);
+    logger.error('Failed to send email:', {err});
     throw err;
   }
 }

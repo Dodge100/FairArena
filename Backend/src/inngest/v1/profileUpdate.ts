@@ -169,7 +169,7 @@ export const updateProfileFunction = inngest.createFunction(
         await redis.del(cacheKey);
         logger.info(`Invalidated cache for userId: ${userId}`);
       } catch (error) {
-        logger.error('Cache invalidation error:', error);
+        logger.error('Cache invalidation error:', {error});
         // Don't fail the update if cache invalidation fails
       }
     });

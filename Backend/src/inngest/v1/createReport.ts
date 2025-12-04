@@ -59,7 +59,7 @@ export const createReport = inngest.createFunction(
         message: 'Report processed successfully',
       };
     } catch (error) {
-      logger.error('Error processing report:', error);
+      logger.error('Error processing report:', {error});
       return { success: false, error: 'Failed to process report' };
     }
   },

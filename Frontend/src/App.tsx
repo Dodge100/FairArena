@@ -11,6 +11,7 @@ import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
 import CreateOrganization from './pages/CreateOrganization';
+import CreditsPage from './pages/CreditsPage';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Home from './pages/Home';
@@ -94,6 +95,7 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/dashboard/credits" element={<CreditsPage />} />
           <Route path="/dashboard/inbox" element={<Inbox />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/profile/edit" element={<EditProfile />} />

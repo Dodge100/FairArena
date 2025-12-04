@@ -32,15 +32,12 @@ export default function AccountSettings() {
     setIsLoadingReports(true);
     try {
       const token = await getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        credentials: 'include',
+      });
       const data = await res.json();
       if (data.success) {
         setReports(data.reports || []);
@@ -77,7 +74,9 @@ export default function AccountSettings() {
       );
       const data = await res.json();
       if (data.success) {
-        setExportMessage('Data export initiated! Check your email for the download link. You will recieve an email Soon...');
+        setExportMessage(
+          'Data export initiated! Check your email for the download link. You will recieve an email Soon...',
+        );
         setConfirmationText(''); // Reset confirmation text
       } else {
         setExportMessage(data.message || 'Failed to initiate data export');
@@ -102,7 +101,7 @@ export default function AccountSettings() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 flex items-center space-x-2">
           {/* <Shield className="h-8 w-8 " /> */}
-          <span className=''>Account Settings</span>
+          <span className="">Account Settings</span>
         </h1>
 
         <OTPVerification onVerified={() => setIsVerified(true)} />
@@ -143,19 +142,28 @@ export default function AccountSettings() {
                         <h4 className="font-medium">{report.title || 'Report'}</h4>
                         <Badge
                           variant={
-                            report.status === 'resolved' ? 'default' :
-                              report.status === 'dismissed' ? 'secondary' :
-                                report.status === 'escalated' ? 'destructive' :
-                                  report.status === 'in_review' ? 'outline' :
-                                    'secondary'
+                            report.status === 'resolved'
+                              ? 'default'
+                              : report.status === 'dismissed'
+                                ? 'secondary'
+                                : report.status === 'escalated'
+                                  ? 'destructive'
+                                  : report.status === 'in_review'
+                                    ? 'outline'
+                                    : 'secondary'
                           }
                         >
-                          {report.status === 'queued' ? 'Queued' :
-                            report.status === 'in_review' ? 'In Review' :
-                              report.status === 'resolved' ? 'Resolved' :
-                                report.status === 'dismissed' ? 'Dismissed' :
-                                  report.status === 'escalated' ? 'Escalated' :
-                                    report.status}
+                          {report.status === 'queued'
+                            ? 'Queued'
+                            : report.status === 'in_review'
+                              ? 'In Review'
+                              : report.status === 'resolved'
+                                ? 'Resolved'
+                                : report.status === 'dismissed'
+                                  ? 'Dismissed'
+                                  : report.status === 'escalated'
+                                    ? 'Escalated'
+                                    : report.status}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
@@ -195,9 +203,7 @@ export default function AccountSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                <p>
-                  You can request a complete export of all your personal data, including:
-                </p>
+                <p>You can request a complete export of all your personal data, including:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Your profile information and settings</li>
                   <li>Account activity logs and notifications</li>
@@ -206,9 +212,7 @@ export default function AccountSettings() {
                   <li>Social interactions (stars, follows)</li>
                   <li>Reports and feedback submitted</li>
                 </ul>
-                <p className="mt-2">
-                  The export will be sent to your registered email address.
-                </p>
+                <p className="mt-2">The export will be sent to your registered email address.</p>
               </div>
 
               <div className="space-y-4">
@@ -252,10 +256,11 @@ export default function AccountSettings() {
 
               {exportMessage && (
                 <div
-                  className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
+                  className={`text-sm p-3 rounded-md ${
+                    exportMessage.includes('Check your email')
                       ? 'text-green-600 bg-green-50 border border-green-200'
                       : 'text-red-600 bg-red-50 border border-red-200'
-                    }`}
+                  }`}
                 >
                   {exportMessage}
                 </div>

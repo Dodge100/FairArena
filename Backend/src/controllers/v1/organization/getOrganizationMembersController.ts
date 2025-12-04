@@ -70,7 +70,7 @@ export const GetOrganizationMembers = async (req: Request, res: Response) => {
 
     res.json({ members: formattedMembers });
   } catch (error) {
-    logger.error('Error fetching organization members:', error);
+    logger.error('Error fetching organization members:', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -53,7 +53,7 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
 
     // Check if user has edit permissions
     const permissions = userOrganization.role.permissions as Record<string, boolean>;
-    const canEdit =permissions?.canEditSettings;
+    const canEdit = permissions?.canEditSettings;
 
     if (!canEdit) {
       return res
@@ -125,7 +125,7 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
       },
     });
   } catch (error) {
-    logger.error('Error queuing organization settings update:', error);
+    logger.error('Error queuing organization settings update:', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 };

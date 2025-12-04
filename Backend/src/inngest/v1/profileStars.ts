@@ -115,7 +115,7 @@ export const starProfile = inngest.createFunction(
         },
       };
     } catch (error) {
-      logger.error('Error processing star:', error);
+      logger.error('Error processing star:', {error});
 
       // Handle specific transaction errors
       if (error instanceof Error && error.message === 'Profile already starred') {
@@ -197,7 +197,7 @@ export const unstarProfile = inngest.createFunction(
         data: { starCount },
       };
     } catch (error) {
-      logger.error('Error processing unstar:', error);
+      logger.error('Error processing unstar:', {error});
 
       // Handle specific transaction errors
       if (error instanceof Error && error.message === 'Star not found') {

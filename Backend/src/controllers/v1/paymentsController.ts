@@ -7,6 +7,7 @@ import { razorpay } from '../../config/razorpay.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { ENV } from '../../config/env.js';
 
 interface RazorpayOrderOptions {
   amount: number;
@@ -38,6 +39,15 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const auth = req.auth();
     const userId = auth.userId;
+
+    if (ENV.PAYMENTS_ENABLED === false) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: 'Payments are currently disabled. Please try again later.',
+        });
+    }
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -163,7 +173,7 @@ export const createOrder = async (req: Request, res: Response) => {
         id: order.id,
         amount: order.amount,
         currency: order.currency,
-        key: process.env.RAZORPAY_KEY_ID, // Public key for frontend
+        key: ENV.RAZORPAY_KEY_ID, // Public key for frontend
       },
       plan: {
         id: planData.id,
@@ -224,7 +234,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
     // Verify payment signature
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
-    const expectedSign = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    const expectedSign = createHmac('sha256', ENV.RAZORPAY_KEY_SECRET!)
       .update(sign.toString())
       .digest('hex');
 
@@ -354,7 +364,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
       logger.error('Razorpay not configured for webhook');
       return res.status(500).json({ success: false, message: 'Payment service not configured' });
     }
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const secret = ENV.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
       logger.error('Razorpay webhook secret not configured');
       return res.status(500).json({ success: false, message: 'Server configuration error' });

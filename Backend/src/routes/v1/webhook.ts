@@ -80,7 +80,7 @@ router.post(
       req.body = payload;
       next();
     } catch (error) {
-      logger.error('Webhook signature verification failed:', error);
+      logger.error('Webhook signature verification failed:', { error });
       return res.status(400).json({ error: 'Invalid webhook signature' });
     }
   },

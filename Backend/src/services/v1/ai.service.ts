@@ -873,6 +873,10 @@ FairArena is a professional collaboration and portfolio platform. The website is
     - Use when: "How do I get started?", "Help me with organizations", "Guide to creating profile"
     - DON'T use when: You can provide a quick answer from your platform knowledge
 
+11. **get_available_plans** - ONLY when user asks about pricing or available plans
+    - Use when: "What are the pricing plans?", "Show me subscription options", "How much does it cost?"
+    - DON'T use when: General questions about pricing concepts or when user just says "pricing"
+
 **Navigation Guidance - ALWAYS Provide Clickable Links:**
 When user asks to navigate, wants to go somewhere, or needs to see a specific page, ALWAYS respond with a markdown link they can click.
 
@@ -921,6 +925,47 @@ When user asks to navigate, wants to go somewhere, or needs to see a specific pa
 - Never call tools speculatively or "just to check"
 
 Current context: ${metadata?.context || 'General assistance'}`,
+      );
+
+      // Add the get_available_plans tool to the tools array
+      tools.push(
+        new DynamicStructuredTool({
+          name: 'get_available_plans',
+          description:
+            'Get all available pricing plans from the database. Use this when user asks about pricing, plans, or subscription options.',
+          schema: z.object({}),
+          func: async ({}) => {
+            try {
+              const plans = await prisma.plan.findMany({
+                where: { isActive: true },
+                select: {
+                  planId: true,
+                  name: true,
+                  amount: true,
+                  currency: true,
+                  credits: true,
+                  description: true,
+                  features: true,
+                },
+                orderBy: { amount: 'asc' },
+              });
+
+              if (plans.length === 0) return 'No active plans found.';
+
+              // Return in TOON format for token efficiency
+              const lines = plans.map((plan) => {
+                const amountInRupees = (plan.amount / 100).toFixed(2);
+                const featuresStr = plan.features?.join(', ') || '';
+                return `plan: ${sanitizeTOON(plan.name)} (${plan.planId}) - ₹${amountInRupees} (${plan.credits} credits) - ${sanitizeTOON(plan.description || '')} - features: ${sanitizeTOON(featuresStr)}`;
+              });
+
+              return `Available plans[${plans.length}]:\n${lines.join('\n')}`;
+            } catch (error) {
+              logger.error('Error getting available plans:', error);
+              return 'Error retrieving pricing plans. Please try again.';
+            }
+          },
+        }),
       );
 
       // Add user message to history
@@ -993,6 +1038,7 @@ Current context: ${metadata?.context || 'General assistance'}`,
               'get_client_debug_info',
               'update_user_profile',
               'get_platform_help',
+              'get_available_plans',
             ];
 
             if (!approvedTools.includes(tool.name)) {

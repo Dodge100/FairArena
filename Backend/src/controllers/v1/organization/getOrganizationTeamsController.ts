@@ -58,7 +58,7 @@ export const GetOrganizationTeams = async (req: Request, res: Response) => {
 
     res.json({ teams: formattedTeams });
   } catch (error) {
-    logger.error('Error fetching organization teams:', error);
+    logger.error('Error fetching organization teams:', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -52,7 +52,7 @@ export const updateOrganization = inngest.createFunction(
         logger.info('Organization update log created', { organizationId, userId });
       });
     } catch (error) {
-      logger.error('Error updating organization:', error);
+      logger.error('Error updating organization:', {error});
       throw error;
     }
   },

@@ -309,7 +309,7 @@ class NotificationService {
     description?: string;
     actionUrl?: string;
     actionLabel?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }) {
     const notification = await prisma.notification.create({
       data: {
@@ -317,10 +317,10 @@ class NotificationService {
         type: data.type,
         title: data.title,
         message: data.message,
-        description: data.description,
+        description: data.description ?? '',
         actionUrl: data.actionUrl,
         actionLabel: data.actionLabel,
-        metadata: data.metadata,
+        metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
       },
     });
 

@@ -353,12 +353,11 @@ export default function EditProfile() {
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border dark:bg-black/80 dark:border-white/20">
-  <SelectItem value="MALE">Male</SelectItem>
-  <SelectItem value="FEMALE">Female</SelectItem>
-  <SelectItem value="OTHER">Other</SelectItem>
-  <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
-</SelectContent>
-
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                    <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -844,7 +843,7 @@ export default function EditProfile() {
                   setProfile({
                     ...profile,
                     requireAuth: checked,
-                    trackViews: checked ? profile.trackViews : false
+                    trackViews: checked ? profile.trackViews : false,
                   });
                 }}
               />

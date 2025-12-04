@@ -65,7 +65,7 @@ export const DeleteOrganization = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error queuing organization deletion:', error);
+    logger.error('Error queuing organization deletion:', { error });
     res.status(500).json({ error: 'Internal server error' });
   }
 };

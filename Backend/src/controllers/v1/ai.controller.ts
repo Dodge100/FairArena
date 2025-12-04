@@ -110,7 +110,7 @@ export class AIController {
         res.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);
         res.end();
       } catch (streamError) {
-        logger.error('Error during streaming:', streamError);
+        logger.error('Error during streaming:', { error: streamError });
         res.write(
           `data: ${JSON.stringify({
             type: 'error',
@@ -120,7 +120,7 @@ export class AIController {
         res.end();
       }
     } catch (error) {
-      logger.error('Error in streamChat controller:', error);
+      logger.error('Error in streamChat controller:', { error });
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -186,7 +186,7 @@ export class AIController {
         },
       });
     } catch (error) {
-      logger.error('Error in chat controller:', error);
+      logger.error('Error in chat controller:', { error });
       res.status(500).json({
         success: false,
         error: 'Internal server error',
@@ -218,7 +218,7 @@ export class AIController {
         message: 'Session cleared successfully',
       });
     } catch (error) {
-      logger.error('Error clearing session:', error);
+      logger.error('Error clearing session:', { error });
       res.status(500).json({
         success: false,
         error: 'Internal server error',

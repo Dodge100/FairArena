@@ -319,6 +319,50 @@ For support, please contact the development team.
             },
           },
         },
+        Plan: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            planId: {
+              type: 'string',
+              description: 'Unique plan identifier',
+            },
+            name: {
+              type: 'string',
+              description: 'Plan name',
+            },
+            amount: {
+              type: 'integer',
+              description: 'Plan amount in smallest currency unit',
+            },
+            currency: {
+              type: 'string',
+              description: 'Currency code (e.g., INR)',
+            },
+            credits: {
+              type: 'integer',
+              description: 'Number of credits included in the plan',
+            },
+            description: {
+              type: 'string',
+              description: 'Plan description',
+            },
+            features: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              description: 'List of plan features',
+            },
+            isActive: {
+              type: 'boolean',
+              description: 'Whether the plan is active',
+            },
+          },
+        },
       },
       parameters: {
         ProfileIdParam: {
@@ -369,6 +413,15 @@ For support, please contact the development team.
             default: 20,
           },
           description: 'Number of items per page',
+        },
+        PlanIdParam: {
+          name: 'planId',
+          in: 'path',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+          description: 'Plan ID',
         },
       },
       responses: {
@@ -510,6 +563,10 @@ For support, please contact the development team.
       {
         name: 'Payments',
         description: 'Payment processing with Razorpay',
+      },
+      {
+        name: 'Plans',
+        description: 'Pricing plans and subscriptions',
       },
       {
         name: 'Newsletter',

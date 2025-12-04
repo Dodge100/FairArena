@@ -8,7 +8,7 @@ export const deleteOrganization = inngest.createFunction(
   { event: 'organization.delete' },
   async ({ event, step }) => {
     const { organizationId, userId, organizationName } = event.data;
-    const readOnlyPrisma = getReadOnlyPrisma()
+    const readOnlyPrisma = getReadOnlyPrisma();
 
     if (!organizationId || !userId) {
       logger.error('Missing required fields in organization.delete event', {
@@ -79,7 +79,7 @@ export const deleteOrganization = inngest.createFunction(
         logger.info('Organization deletion log created', { organizationId, userId });
       });
     } catch (error) {
-      logger.error('Error deleting organization:', error);
+      logger.error('Error deleting organization:', {error});
       throw error;
     }
   },

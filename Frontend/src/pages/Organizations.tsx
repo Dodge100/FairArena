@@ -8,7 +8,7 @@ import {
   Plus,
   Search,
   UserCheck,
-  Users
+  Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -44,9 +44,10 @@ const Organizations = () => {
   const { getToken } = useAuth();
 
   const filteredOrganizations = useMemo(() => {
-    return organizations.filter(org =>
-      org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      org.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    return organizations.filter(
+      (org) =>
+        org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        org.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [organizations, searchQuery]);
 
@@ -79,7 +80,7 @@ const Organizations = () => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -125,9 +126,7 @@ const Organizations = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Organizations</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and explore your organizations
-          </p>
+          <p className="text-muted-foreground mt-1">Manage and explore your organizations</p>
         </div>
         <Button onClick={() => navigate('/dashboard/organization/create')} className="shrink-0">
           <Plus className="mr-2 h-4 w-4" />
@@ -194,10 +193,7 @@ const Organizations = () => {
                       <CardDescription className="truncate">@{org.slug}</CardDescription>
                     </div>
                   </div>
-                  <Badge
-                    variant={org.isPublic ? 'default' : 'secondary'}
-                    className="shrink-0 ml-2"
-                  >
+                  <Badge variant={org.isPublic ? 'default' : 'secondary'} className="shrink-0 ml-2">
                     {org.isPublic ? (
                       <>
                         <Globe className="mr-1 h-3 w-3" />

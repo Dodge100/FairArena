@@ -38,7 +38,7 @@ export const arcjetMiddleware = async (req: Request, res: Response, next: NextFu
 
     next();
   } catch (error) {
-    logger.error('Arcjet middleware error:', error);
+    logger.error('Arcjet middleware error:', { error });
     next();
   }
 };
