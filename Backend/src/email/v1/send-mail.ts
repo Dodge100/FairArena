@@ -14,6 +14,7 @@ import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { refundCompletedEmailTemplate } from '../templates/refundCompleted.js';
 import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
 import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
+import { weeklyFeedbackEmailTemplate } from '../templates/weekly-feedback.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
@@ -77,6 +78,7 @@ type RefundInitiatedEmailParams = {
   refundDate: string;
   estimatedDays: string;
 };
+type WeeklyFeedbackEmailParams = { name: string; feedbackUrl: string };
 type RefundCompletedEmailParams = {
   userName: string;
   planName: string;
@@ -127,6 +129,7 @@ export const emailTemplates = {
     params: RefundCompletedEmailParams,
   ) => string,
   'refund-failed': refundFailedEmailTemplate as (params: RefundFailedEmailParams) => string,
+  'weekly-feedback': weeklyFeedbackEmailTemplate as (params: WeeklyFeedbackEmailParams) => string,
 };
 
 // Function overloads for sendEmail
@@ -234,6 +237,14 @@ export function sendEmail(
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'weekly-feedback',
+  params: WeeklyFeedbackEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
 export async function sendEmail(
   to: string,
   subject: string,
@@ -251,7 +262,8 @@ export async function sendEmail(
     | 'payment-failed'
     | 'refund-initiated'
     | 'refund-completed'
-    | 'refund-failed',
+    | 'refund-failed'
+    | 'weekly-feedback',
   params:
     | WelcomeEmailParams
     | OtpEmailParams
@@ -265,7 +277,8 @@ export async function sendEmail(
     | PaymentFailedEmailParams
     | RefundInitiatedEmailParams
     | RefundCompletedEmailParams
-    | RefundFailedEmailParams,
+    | RefundFailedEmailParams
+    | WeeklyFeedbackEmailParams,
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown> {
@@ -298,6 +311,8 @@ export async function sendEmail(
     html = emailTemplates['refund-completed'](params as RefundCompletedEmailParams);
   } else if (templateName === 'refund-failed') {
     html = emailTemplates['refund-failed'](params as RefundFailedEmailParams);
+  } else if (templateName === 'weekly-feedback') {
+    html = emailTemplates['weekly-feedback'](params as WeeklyFeedbackEmailParams);
   } else {
     throw new Error(`Unknown template name: ${templateName}`);
   }
@@ -360,7 +375,7 @@ export async function sendEmail(
       return data;
     }
   } catch (err) {
-    logger.error('Failed to send email:', {err});
+    logger.error('Failed to send email:', { err });
     throw err;
   }
 }

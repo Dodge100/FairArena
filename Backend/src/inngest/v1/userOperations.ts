@@ -88,6 +88,12 @@ export async function upsertUser(userId: string, email: string) {
         },
       });
 
+      // Create default settings for the new user
+      await inngest.send({
+        name: 'user.settings.create',
+        data: { userId },
+      });
+
       await inngest.send({
         name: 'notification/send',
         data: {

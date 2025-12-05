@@ -33,4 +33,7 @@ export const REDIS_KEYS = {
   STAR_RATE_LIMIT: 'star:ratelimit:',
   STAR_COUNT_CACHE: 'star:count:',
   DATA_EXPORT: 'data:export:',
+  SETTINGS_CACHE: 'settings:cache:',
+  FEEDBACK_RATE_LIMIT: 'feedback:ratelimit:',
+  USER_REPORTS_CACHE: 'user:reports:',
 } as const;

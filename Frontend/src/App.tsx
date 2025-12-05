@@ -14,6 +14,7 @@ import CreateOrganization from './pages/CreateOrganization';
 import CreditsPage from './pages/CreditsPage';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
+import Feedback from './pages/Feedback';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
@@ -108,6 +109,7 @@ function App() {
           <Route path="/dashboard/organization/:slug" element={<OrganizationDetails />} />
           <Route path="/dashboard/organization/:slug/settings" element={<OrganizationSettings />} />
         </Route>
+        <Route path="/feedback/:feedbackCode" element={<Feedback />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/profile/:userId/stars" element={<ProfileStars />} />
         <Route path="/support" element={<Support />} />

@@ -4,6 +4,7 @@ export { createOrganizationRoles } from './createOrganizationRoles.js';
 export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { exportUserDataHandler } from './exportUserData.js';
+export { processFeedbackSubmission } from './feedbackSubmit.js';
 export { subscribeToNewsletter, unsubscribeFromNewsletter } from './newsletterSubscribe.js';
 export {
   deleteAllReadNotifications,
@@ -21,6 +22,8 @@ export { starProfile, unstarProfile } from './profileStars.js';
 export { updateProfileFunction } from './profileUpdate.js';
 export { recordProfileView } from './recordProfileView.js';
 export { sendEmailHandler } from './sendEmail.js';
+export { sendWeeklyFeedbackEmail } from './sendWeeklyFeedbackEmail.js';
+export { createUserSettingsFunction, resetSettingsFunction, updateSettingsFunction } from './settingsOperations.js';
 export { updateOrganization } from './updateOrganization.js';
 export { deleteUser } from './userDelete.js';
 export { upsertUser } from './userOperations.js';

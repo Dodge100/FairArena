@@ -383,6 +383,11 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
 export const checkStatus = async (req: Request, res: Response) => {
   try {
+    const auth = await req.auth();
+
+    if (!auth?.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const token = req.cookies['account-settings-token'];
     if (!token) {
       return res.json({ success: false, verified: false });
@@ -395,7 +400,7 @@ export const checkStatus = async (req: Request, res: Response) => {
       };
 
       // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings') {
+      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
         logger.warn('Invalid token purpose', { purpose: decoded.purpose });
         return res.json({ success: false, verified: false });
       }
@@ -417,6 +422,11 @@ export const checkStatus = async (req: Request, res: Response) => {
 
 export const getLogs = async (req: Request, res: Response) => {
   try {
+    const auth = await req.auth();
+
+    if (!auth?.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const token = req.cookies['account-settings-token'];
     if (!token) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -429,7 +439,7 @@ export const getLogs = async (req: Request, res: Response) => {
       };
 
       // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings') {
+      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
         logger.warn('Invalid token purpose', { purpose: decoded.purpose });
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }
@@ -476,6 +486,10 @@ export const getLogs = async (req: Request, res: Response) => {
 
 export const exportUserData = async (req: Request, res: Response) => {
   try {
+    const auth = await req.auth();
+    if (!auth?.userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const token = req.cookies['account-settings-token'];
     if (!token) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -488,7 +502,7 @@ export const exportUserData = async (req: Request, res: Response) => {
       };
 
       // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings') {
+      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
         logger.warn('Invalid token purpose', { purpose: decoded.purpose });
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }

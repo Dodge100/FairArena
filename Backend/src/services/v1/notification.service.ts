@@ -1,8 +1,8 @@
-import type { Prisma } from '@prisma/client';
-import { NotificationType } from '@prisma/client';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis } from '../../config/redis.js';
+import { NotificationType } from '../../generated/enums.js';
+import * as Prisma from '../../generated/internal/prismaNamespace.js';
 import logger from '../../utils/logger.js';
 
 // Cache configuration
@@ -317,7 +317,7 @@ class NotificationService {
         type: data.type,
         title: data.title,
         message: data.message,
-        description: data.description ?? '',
+        description: data.description || '',
         actionUrl: data.actionUrl,
         actionLabel: data.actionLabel,
         metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,

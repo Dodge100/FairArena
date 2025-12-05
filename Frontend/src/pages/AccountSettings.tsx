@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@clerk/clerk-react';
 import { Download, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Report {
   id: string;
@@ -16,6 +18,11 @@ interface Report {
   status: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+interface UserSettings {
+  wantToGetFeedbackMail?: boolean;
+  wantFeedbackNotifications?: boolean;
 }
 
 export default function AccountSettings() {
@@ -27,6 +34,70 @@ export default function AccountSettings() {
   const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
   const [confirmationText, setConfirmationText] = useState('');
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const fetchSettings = useCallback(async () => {
+    setIsLoadingSettings(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.data);
+      } else {
+        toast.error('Failed to load settings');
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }, [getToken]);
+
+  const updateSettingsValue = async (key: keyof UserSettings, value: boolean) => {
+    if (!settings) return;
+
+    const originalSettings = settings;
+    const updatedSettings = { ...settings, [key]: value };
+    setSettings(updatedSettings);
+
+    setIsSavingSettings(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ [key]: value }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Refetch settings to get the latest data
+        toast.success('Settings updated successfully');
+      } else {
+        toast.error(data.message || 'Failed to update settings');
+        setSettings(originalSettings);
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      toast.error('Failed to update settings');
+      // Revert on failure
+      setSettings(originalSettings);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const fetchReports = useCallback(async () => {
     setIsLoadingReports(true);
@@ -89,12 +160,13 @@ export default function AccountSettings() {
     }
   }, [getToken, confirmationText]);
 
-  // Fetch reports when verified
+  // Fetch reports and settings when verified
   useEffect(() => {
     if (isVerified) {
       fetchReports();
+      fetchSettings();
     }
-  }, [isVerified, fetchReports]);
+  }, [isVerified, fetchReports, fetchSettings]);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -184,13 +256,62 @@ export default function AccountSettings() {
         {isVerified && (
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>Manage your profile information and preferences.</CardDescription>
+              <CardTitle>Messages Preferences</CardTitle>
+              <CardDescription>Control how you receive and interact with messages</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Profile settings form will be implemented here.
-              </p>
+            <CardContent className="space-y-6">
+              {isLoadingSettings ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Loading settings...</span>
+                </div>
+              ) : settings ? (
+                <div className="space-y-8">
+                  {/* Feedback Preferences */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="feedback-emails" className="text-sm font-medium">
+                          Weekly Feedback Emails
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Receive a weekly email asking for your feedback to help us improve
+                        </p>
+                      </div>
+                      <Switch
+                        id="feedback-emails"
+                        checked={settings.wantToGetFeedbackMail || false}
+                        onCheckedChange={(checked) =>
+                          updateSettingsValue('wantToGetFeedbackMail', checked)
+                        }
+                        disabled={isSavingSettings}
+                      />
+                    </div>
+
+                    {/* Feedback Notifications */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="feedback-notifications" className="text-sm font-medium">
+                          Weekly Feedback in-app Notifications
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Get in app notification when new feedback is available
+                        </p>
+                      </div>
+                      <Switch
+                        id="feedback-notifications"
+                        checked={settings.wantFeedbackNotifications || false}
+                        onCheckedChange={(checked) =>
+                          updateSettingsValue('wantFeedbackNotifications', checked)
+                        }
+                        disabled={isSavingSettings}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Failed to load settings</p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -256,11 +377,10 @@ export default function AccountSettings() {
 
               {exportMessage && (
                 <div
-                  className={`text-sm p-3 rounded-md ${
-                    exportMessage.includes('Check your email')
+                  className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
                       ? 'text-green-600 bg-green-50 border border-green-200'
                       : 'text-red-600 bg-red-50 border border-red-200'
-                  }`}
+                    }`}
                 >
                   {exportMessage}
                 </div>

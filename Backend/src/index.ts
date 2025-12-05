@@ -26,9 +26,13 @@ import {
   paymentOrderCreated,
   paymentVerified,
   paymentWebhookReceived,
+  processFeedbackSubmission,
   recordProfileView,
+  resetSettingsFunction,
   sendEmailHandler,
+  sendNotification,
   sendOtpForAccountSettings,
+  sendWeeklyFeedbackEmail,
   starProfile,
   subscribeToNewsletter,
   syncUser,
@@ -36,16 +40,19 @@ import {
   unsubscribeFromNewsletter,
   updateOrganization,
   updateProfileFunction,
+  updateSettingsFunction,
   updateUser,
-  sendNotification,
+  createUserSettingsFunction,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
+import feedbackRouter from './routes/v1/feedback.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
+import settingsRouter from './routes/v1/settings.js';
 import webhookRouter from './routes/v1/webhook.js';
 // import teamRouter from './routes/v1/team.js';
 import * as Sentry from '@sentry/node';
@@ -213,6 +220,12 @@ app.use('/api/v1/plans', plansRouter);
 // Credits routes
 app.use('/api/v1/credits', creditsRouter);
 
+// Settings routes
+app.use('/api/v1/settings', settingsRouter);
+
+// Feedback routes
+app.use('/api/v1/feedback', feedbackRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -236,6 +249,7 @@ app.use(
       starProfile,
       unstarProfile,
       sendEmailHandler,
+      sendWeeklyFeedbackEmail,
       exportUserDataHandler,
       markNotificationsAsRead,
       markNotificationsAsUnread,
@@ -246,6 +260,10 @@ app.use(
       paymentVerified,
       paymentWebhookReceived,
       sendNotification,
+      updateSettingsFunction,
+      resetSettingsFunction,
+      createUserSettingsFunction,
+      processFeedbackSubmission,
     ],
   }),
 );

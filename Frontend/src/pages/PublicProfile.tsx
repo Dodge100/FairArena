@@ -394,7 +394,7 @@ export default function PublicProfile() {
             <div className="flex items-center justify-between h-16">
               {/* FairArena Logo */}
               <a
-                href="https://fairarena.vercel.app"
+                href={import.meta.env.VITE_FRONTEND_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"

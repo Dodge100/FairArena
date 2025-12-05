@@ -278,7 +278,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
         }
       } catch (starError) {
-        logger.warn('Error fetching viewer star data:', starError);
+        logger.warn('Error fetching viewer star data:', {error: starError});
       }
     }
 
@@ -299,7 +299,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
     return res.status(200).json(responseData);
   } catch (error) {
-    logger.error('Error fetching public profile:', error);
+    logger.error('Error fetching public profile:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -331,7 +331,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     try {
       const cachedProfile = await redis.get(cacheKey);
       if (cachedProfile) {
-        logger.info('Serving own profile from cache for user:', userId);
+        logger.info('Serving own profile from cache for user:', { userId });
         const profileData =
           typeof cachedProfile === 'string' ? JSON.parse(cachedProfile) : cachedProfile;
         return res.status(200).json({ data: profileData });
@@ -353,7 +353,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
         const clerkUser = await clerkClient.users.getUser(userId);
         email = clerkUser.primaryEmailAddress?.emailAddress || '';
       } catch (error) {
-        logger.error('Error fetching Clerk user for profile creation:', error);
+        logger.error('Error fetching Clerk user for profile creation:', {error});
       }
 
       try {
@@ -390,14 +390,14 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     // Cache the profile data for 1 hour (3600 seconds)
     try {
       await redis.setex(cacheKey, 3600, JSON.stringify(profile));
-      logger.info('Own profile cached successfully for user:', userId);
+      logger.info('Own profile cached successfully for user:', {userId});
     } catch (cacheError) {
-      logger.warn('Cache write error:', cacheError);
+      logger.warn('Cache write error:', {cacheError});
     }
 
     return res.status(200).json({ data: profile });
   } catch (error) {
-    logger.error('Error fetching own profile:', error);
+    logger.error('Error fetching own profile:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -445,7 +445,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       status: 'processing',
     });
   } catch (error) {
-    logger.error('Error queuing profile update:', error);
+    logger.error('Error queuing profile update:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
