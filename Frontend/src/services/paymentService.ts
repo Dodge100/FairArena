@@ -108,11 +108,6 @@ export class PaymentService {
       throw error;
     }
   }
-
-  /**
-   * Fetch pricing plans from backend API with client-side caching
-   * Cache is stored in memory for 1 day
-   */
   async fetchPlans(): Promise<PaymentPlan[]> {
     try {
       // Check if cache is valid
@@ -142,24 +137,15 @@ export class PaymentService {
     }
   }
 
-  /**
-   * Get plan by planId from cache or API
-   */
   async getPlanById(planId: string): Promise<PaymentPlan | null> {
     const plans = await this.fetchPlans();
     return plans.find((plan) => plan.planId === planId) || null;
   }
 
-  /**
-   * Get all active plans from cache or API
-   */
   async getAllPlans(): Promise<PaymentPlan[]> {
     return await this.fetchPlans();
   }
 
-  /**
-   * Clear the client-side cache
-   */
   clearCache(): void {
     this.plansCache = null;
     this.plansCacheTimestamp = 0;

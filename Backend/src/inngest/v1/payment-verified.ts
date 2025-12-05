@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/express';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendPaymentSuccessEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { createRazorpayInvoice, getInvoiceUrl } from '../../utils/razorpay-invoice.js';
@@ -119,6 +120,27 @@ export const paymentVerified = inngest.createFunction(
           paymentId,
         });
         throw error;
+      }
+    });
+
+    // Invalidate user credits cache after credits are awarded
+    await step.run('invalidate-credits-cache', async () => {
+      try {
+        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`;
+        const historyCachePattern = `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`;
+
+        // Delete specific cache keys
+        await redis.del(creditsCacheKey);
+
+        // Delete all credit history cache keys for this user
+        const historyKeys = await redis.keys(historyCachePattern);
+        if (historyKeys.length > 0) {
+          await redis.del(...historyKeys);
+        }
+
+        logger.info('User credits cache invalidated after payment', { userId });
+      } catch (error) {
+        logger.warn('Failed to invalidate credits cache', { error, userId });
       }
     });
 

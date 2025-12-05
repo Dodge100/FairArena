@@ -14,6 +14,7 @@ import {
   createLog,
   createOrganizationRoles,
   createReport,
+  createUserSettingsFunction,
   deleteAllReadNotifications,
   deleteNotifications,
   deleteOrganization,
@@ -35,6 +36,7 @@ import {
   sendWeeklyFeedbackEmail,
   starProfile,
   subscribeToNewsletter,
+  supportRequestCreated,
   syncUser,
   unstarProfile,
   unsubscribeFromNewsletter,
@@ -42,7 +44,6 @@ import {
   updateProfileFunction,
   updateSettingsFunction,
   updateUser,
-  createUserSettingsFunction,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
@@ -65,6 +66,7 @@ import paymentsRouter from './routes/v1/payments.js';
 import plansRouter from './routes/v1/plans.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
+import supportRouter from './routes/v1/support.js';
 import logger from './utils/logger.js';
 
 const app = express();
@@ -226,6 +228,9 @@ app.use('/api/v1/settings', settingsRouter);
 // Feedback routes
 app.use('/api/v1/feedback', feedbackRouter);
 
+// Support router
+app.use('/api/v1/support', supportRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -264,6 +269,7 @@ app.use(
       resetSettingsFunction,
       createUserSettingsFunction,
       processFeedbackSubmission,
+      supportRequestCreated,
     ],
   }),
 );

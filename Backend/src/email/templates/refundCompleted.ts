@@ -11,7 +11,6 @@ export const refundCompletedEmailTemplate = (params: {
   completedDate: string;
   paymentMethod: string;
 }): string => {
-  const dashboardUrl = ENV.FRONTEND_URL + '/dashboard';
   const pricingUrl = ENV.FRONTEND_URL + '/pricing';
   const supportUrl = ENV.FRONTEND_URL + '/support';
   const currentYear = new Date().getFullYear();

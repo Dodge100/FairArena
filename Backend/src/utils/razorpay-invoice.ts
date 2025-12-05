@@ -13,8 +13,22 @@ interface RazorpayInvoice {
     email: string;
     contact: string;
     gstin: string | null;
-    billing_address: any;
-    shipping_address: any;
+    billing_address: {
+      street?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      country?: string;
+      [key: string]: unknown;
+    } | null | undefined;
+    shipping_address: {
+      street?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      country?: string;
+      [key: string]: unknown;
+    } | null | undefined;
   };
   order_id: string;
   line_items: Array<{
@@ -36,7 +50,7 @@ interface RazorpayInvoice {
     tax_rate: number;
     unit: string | null;
     quantity: number;
-    taxes: any[];
+    taxes: unknown[];
   }>;
   payment_id: string | null;
   status: string;
@@ -59,7 +73,7 @@ interface RazorpayInvoice {
   currency: string;
   currency_symbol: string;
   description: string | null;
-  notes: any;
+  notes: unknown;
   comment: string | null;
   short_url: string;
   view_less: boolean;
@@ -108,8 +122,9 @@ export async function createRazorpayInvoice(params: {
           order_id: params.orderId,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       // If customer already exists, fetch by email
+      // @ts-ignore
       if (error.error?.code === 'BAD_REQUEST_ERROR') {
         logger.info('Customer may already exist, proceeding with invoice creation');
       } else {
@@ -152,7 +167,7 @@ export async function createRazorpayInvoice(params: {
       orderId: params.orderId,
     });
 
-    return invoice as RazorpayInvoice;
+    return invoice as unknown as RazorpayInvoice;
   } catch (error) {
     logger.error('Failed to create Razorpay invoice', {
       error: error instanceof Error ? error.message : String(error),

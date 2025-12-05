@@ -35,13 +35,13 @@ export async function verifyRecaptcha(req: Request, res: Response, next: NextFun
       'error-codes'?: string[];
     };
 
-    if (!data.success) {
+    if (!data.success || (data.score !== undefined && data.score < 0.6) || (data.action && data.action !== 'submit') || (data.hostname && data.hostname !== ENV.FRONTEND_URL.replace(/^https?:\/\//, ''))) {
       logger.warn('CAPTCHA verification failed', { errors: data['error-codes'] });
       return res.status(400).json({ success: false, message: 'CAPTCHA verification failed' });
     }
 
     // Attach verification result to request for downstream usage
-    (req as any).recaptchaVerified = true;
+    (req as Request & { recaptchaVerified?: boolean }).recaptchaVerified = true;
     next();
   } catch (error) {
     logger.error('CAPTCHA verification error', {

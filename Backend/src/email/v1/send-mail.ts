@@ -14,6 +14,7 @@ import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { refundCompletedEmailTemplate } from '../templates/refundCompleted.js';
 import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
 import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
+import { supportConfirmationEmailTemplate } from '../templates/support-confirmation.js';
 import { weeklyFeedbackEmailTemplate } from '../templates/weekly-feedback.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
@@ -101,6 +102,11 @@ type RefundFailedEmailParams = {
   failureReason: string;
   failureDate: string;
 };
+type SupportConfirmationEmailParams = {
+  userName: string;
+  subject: string;
+  requestId: string;
+};
 
 // Collect all templates with correct types
 export const emailTemplates = {
@@ -130,6 +136,9 @@ export const emailTemplates = {
   ) => string,
   'refund-failed': refundFailedEmailTemplate as (params: RefundFailedEmailParams) => string,
   'weekly-feedback': weeklyFeedbackEmailTemplate as (params: WeeklyFeedbackEmailParams) => string,
+  'support-confirmation': supportConfirmationEmailTemplate as (
+    params: SupportConfirmationEmailParams,
+  ) => string,
 };
 
 // Function overloads for sendEmail
@@ -245,6 +254,14 @@ export function sendEmail(
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'support-confirmation',
+  params: SupportConfirmationEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
 export async function sendEmail(
   to: string,
   subject: string,
@@ -263,7 +280,8 @@ export async function sendEmail(
     | 'refund-initiated'
     | 'refund-completed'
     | 'refund-failed'
-    | 'weekly-feedback',
+    | 'weekly-feedback'
+    | 'support-confirmation',
   params:
     | WelcomeEmailParams
     | OtpEmailParams
@@ -278,7 +296,8 @@ export async function sendEmail(
     | RefundInitiatedEmailParams
     | RefundCompletedEmailParams
     | RefundFailedEmailParams
-    | WeeklyFeedbackEmailParams,
+    | WeeklyFeedbackEmailParams
+    | SupportConfirmationEmailParams,
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown> {
@@ -313,6 +332,8 @@ export async function sendEmail(
     html = emailTemplates['refund-failed'](params as RefundFailedEmailParams);
   } else if (templateName === 'weekly-feedback') {
     html = emailTemplates['weekly-feedback'](params as WeeklyFeedbackEmailParams);
+  } else if (templateName === 'support-confirmation') {
+    html = emailTemplates['support-confirmation'](params as SupportConfirmationEmailParams);
   } else {
     throw new Error(`Unknown template name: ${templateName}`);
   }

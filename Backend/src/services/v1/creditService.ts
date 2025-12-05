@@ -1,9 +1,7 @@
 import { prisma } from '../../config/database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import logger from '../../utils/logger.js';
 
-/**
- * Get user's current credit balance by calculating from all transactions
- */
 export async function getUserCreditBalance(userId: string): Promise<number> {
   try {
     const lastTransaction = await prisma.creditTransaction.findFirst({
@@ -36,7 +34,8 @@ export async function getUserCreditHistory(
   try {
     const { limit = 50, offset = 0, type } = options;
 
-    const where: any = { userId };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where = { userId } as any;
     if (type) {
       where.type = type;
     }
@@ -109,7 +108,7 @@ export async function deductUserCredits(
   userId: string,
   amount: number,
   description: string,
-  metadata?: any,
+  metadata?: Record<string, unknown>,
 ): Promise<{ success: boolean; newBalance: number; transactionId: string }> {
   try {
     return await prisma.$transaction(async (tx) => {
@@ -135,7 +134,7 @@ export async function deductUserCredits(
           balance: newBalance,
           type: 'DEDUCTION',
           description,
-          metadata,
+          metadata: metadata ? JSON.stringify(metadata) : undefined,
         },
       });
 
@@ -145,6 +144,25 @@ export async function deductUserCredits(
         newBalance,
         transactionId: transaction.id,
       });
+
+      // Invalidate user credits cache
+      try {
+        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`;
+        const historyCachePattern = `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`;
+
+        // Delete specific cache keys
+        await redis.del(creditsCacheKey);
+
+        // Delete all credit history cache keys for this user
+        const historyKeys = await redis.keys(historyCachePattern);
+        if (historyKeys.length > 0) {
+          await redis.del(...historyKeys);
+        }
+
+        logger.info('User credits cache invalidated after deduction', { userId });
+      } catch (error) {
+        logger.warn('Failed to invalidate credits cache after deduction', { error, userId });
+      }
 
       return {
         success: true,

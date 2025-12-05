@@ -16,7 +16,7 @@ export const sendNotification = inngest.createFunction(
   },
   { event: 'notification/send' },
   async ({ event, step }) => {
-    const { userId, type, title, message, description, actionUrl, actionLabel, metadata } =
+    const { userId, title, message, description, actionUrl, actionLabel, metadata } =
       event.data;
 
     return await step.run('send-notification', async () => {

@@ -28,6 +28,7 @@ import Profile from './pages/Profile';
 import ProfileStars from './pages/ProfileStars';
 import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
+import RefundPage from './pages/RefundPage';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Support from './pages/Support';
@@ -92,6 +93,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/refund" element={<RefundPage />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         </Route>
         <Route path="/dashboard" element={<ProtectedLayout />}>

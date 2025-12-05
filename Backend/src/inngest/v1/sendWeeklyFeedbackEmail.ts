@@ -148,7 +148,7 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
                 },
               });
 
-              const notificationUrl = `${process.env.FRONTEND_URL || 'https://app.fairarena.com'}/feedback/${feedbackCode}`;
+              const notificationUrl = `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`;
 
               await notificationService.createNotification({
                 userId: user.userId,

@@ -56,7 +56,20 @@ export const getNotifications = async (req: Request, res: Response) => {
 
     const filters = {
       read: read === 'true' ? true : read === 'false' ? false : undefined,
-      type: type as any,
+      type: type as
+        | 'SYSTEM'
+        | 'MENTION'
+        | 'INVITATION'
+        | 'ACHIEVEMENT'
+        | 'UPDATE'
+        | 'REMINDER'
+        | 'ALERT'
+        | 'MESSAGE'
+        | 'FOLLOW'
+        | 'STAR'
+        | 'COMMENT'
+        | 'ANNOUNCEMENT'
+        | undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
     };

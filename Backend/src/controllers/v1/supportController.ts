@@ -1,0 +1,144 @@
+import { clerkClient } from '@clerk/express';
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import { redis } from '../../config/redis';
+import { inngest } from '../../inngest/v1/client';
+import logger from '../../utils/logger.js';
+
+const createSupportRequestSchema = z.object({
+  subject: z
+    .string()
+    .min(5, 'Subject must be at least 5 characters')
+    .max(200, 'Subject must be less than 200 characters'),
+  message: z
+    .string()
+    .min(10, 'Message must be at least 10 characters')
+    .max(5000, 'Message must be less than 5000 characters'),
+  email: z.string().email('Valid email address is required for non-authenticated users').optional(),
+});
+
+export class SupportController {
+  private static readonly RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
+  private static readonly RATE_LIMIT_MAX_REQUESTS = 1; // 1 request per hour
+  private static readonly RATE_LIMIT_MAX_REQUESTS_AUTHENTICATED = 3; // 3 requests per hour for authenticated users
+
+  private static async checkRateLimit(req: Request, res: Response, next: Function) {
+    try {
+      const auth = req.auth();
+      const identifier = auth?.userId || req.ip || 'anonymous';
+      const key = `support_rate_limit:${identifier}`;
+
+      const currentRequests = await redis.get(key);
+      const requestCount = typeof currentRequests === 'string'
+        ? parseInt(currentRequests, 10)
+        : typeof currentRequests === 'number'
+        ? currentRequests
+        : 0;
+
+      const maxRequests = auth?.userId
+        ? SupportController.RATE_LIMIT_MAX_REQUESTS_AUTHENTICATED
+        : SupportController.RATE_LIMIT_MAX_REQUESTS;
+
+      if (requestCount >= maxRequests) {
+        return res.status(429).json({
+          success: false,
+          message: `Rate limit exceeded. Maximum ${maxRequests} support requests per hour allowed.`,
+          retryAfter: SupportController.RATE_LIMIT_WINDOW / 1000,
+        });
+      }
+      await redis.incr(key);
+
+      // Set expiry if this is the first request
+      if (requestCount === 0) {
+        await redis.expire(key, SupportController.RATE_LIMIT_WINDOW / 1000);
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Rate limiting error:', {error});
+      // Allow request to proceed if Redis fails
+      next();
+    }
+  }
+
+  /**
+   * Create a new support request
+   */
+  static async createSupportRequest(req: Request, res: Response) {
+    try {
+      // Validate request body with zod
+      const validationResult = createSupportRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: validationResult.error.issues.map((err) => ({
+            field: err.path.join('.'),
+            message: err.message,
+          })),
+        });
+      }
+
+      const { subject, message, email } = validationResult.data;
+      const auth = await req.auth();
+      const userId = auth?.userId;
+      let userEmail: string | undefined;
+      let emailId: string | undefined;
+
+      if (userId) {
+        // Authenticated user - get email from user object
+        const user = await clerkClient.users.getUser(userId);
+        userEmail = user.emailAddresses[0]?.emailAddress;
+        emailId = userEmail; // Store email for authenticated users too
+      } else {
+        // Non-authenticated user - require email in request
+        if (!email) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email is required for non-authenticated users',
+          });
+        }
+        emailId = email;
+      }
+
+      // Generate a temporary ID for immediate response
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Send Inngest event for async processing
+      await inngest.send({
+        name: 'support/request-created',
+        data: {
+          tempId,
+          userId,
+          emailId,
+          subject,
+          message,
+          userEmail,
+          userName: null, // Will be resolved in Inngest
+        },
+      });
+
+      // Return immediate success response
+      res.status(201).json({
+        success: true,
+        message:
+          'Support request submitted successfully. You will receive a confirmation email shortly.',
+        data: {
+          id: tempId,
+          status: 'PENDING',
+          createdAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error('Error submitting support request:', {error});
+      res.status(500).json({
+        success: false,
+        message: 'Failed to submit support request',
+      });
+    }
+  }
+
+  static getRateLimitMiddleware() {
+    return this.checkRateLimit;
+  }
+}
