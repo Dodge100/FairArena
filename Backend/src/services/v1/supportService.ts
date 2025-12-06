@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { ReportState } from '../../generated/enums';
+import { ReportState } from '../../generated/enums.js';
 import logger from '../../utils/logger.js';
 
 export interface CreateSupportRequestData {
@@ -40,7 +40,7 @@ export class SupportService {
 
       return supportRequest;
     } catch (error) {
-      logger.error('Error creating support request:', {error});
+      logger.error('Error creating support request:', { error });
       throw new Error('Failed to create support request');
     }
   }

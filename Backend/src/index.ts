@@ -92,7 +92,7 @@ app.set('trust proxy', 1);
 
 // CORS middleware (enhanced for production multi-origin + preflight)
 const allowedOrigins = [
-  ENV.FRONTEND_URL,
+  ...ENV.FRONTEND_URLS.split(',').map((origin) => origin.trim()),
   ENV.NODE_ENV === 'development' && 'http://localhost:5173',
 ].filter(Boolean);
 

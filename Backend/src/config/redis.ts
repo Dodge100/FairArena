@@ -1,9 +1,11 @@
 import { Redis } from '@upstash/redis';
-import { ENV } from './env.js';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export const redis = new Redis({
-  url: ENV.UPSTASH_REDIS_REST_URL,
-  token: ENV.UPSTASH_REDIS_REST_TOKEN,
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
 // Rate limiting configuration

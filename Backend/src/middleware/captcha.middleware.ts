@@ -35,7 +35,7 @@ export async function verifyRecaptcha(req: Request, res: Response, next: NextFun
       'error-codes'?: string[];
     };
 
-    if (!data.success || (data.score !== undefined && data.score < 0.6) || (data.action && data.action !== 'submit') || (data.hostname && data.hostname !== ENV.FRONTEND_URL.replace(/^https?:\/\//, ''))) {
+    if (!data.success) {
       logger.warn('CAPTCHA verification failed', { errors: data['error-codes'] });
       return res.status(400).json({ success: false, message: 'CAPTCHA verification failed' });
     }

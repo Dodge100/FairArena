@@ -1,12 +1,14 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/client';
-import { ENV } from './env.js';
+import { PrismaClient } from '../generated/client.js';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const prismaClients: PrismaClient[] = [];
 let currentIndex = 0;
 
 // Initialize two read-only clients
-const urls = [ENV.DATABASE_URL_READ_ONLY_1, ENV.DATABASE_URL_READ_ONLY_2];
+const urls = [process.env.DATABASE_URL_READ_ONLY_1, process.env.DATABASE_URL_READ_ONLY_2];
 
 for (const url of urls) {
   if (url) {
@@ -17,7 +19,7 @@ for (const url of urls) {
 
     const client = new PrismaClient({
       adapter,
-      log: ENV.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
     prismaClients.push(client);
   }

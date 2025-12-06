@@ -29,8 +29,8 @@ const Feedback = () => {
             if (!feedbackCode) return;
 
             try {
-                const response = await api.get(`/api/v1/feedback/${feedbackCode}`);
-                setFeedback(response.data);
+                const response = await api.get<FeedbackData>(`/api/v1/feedback/${feedbackCode}`);
+                setFeedback(response);
             } catch (error: unknown) {
                 const err = error as { response?: { status: number } };
                 if (err.response?.status === 404) {
@@ -153,7 +153,7 @@ const Feedback = () => {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <span
                                             key={star}
-                                            className={`text-2xl ${star <= feedback.rating! ? getRatingColor(feedback.rating) : 'text-gray-300'}`}
+                                            className={`text-2xl ${star <= feedback.rating! ? getRatingColor(feedback.rating!) : 'text-gray-300'}`}
                                         >
                                             ★
                                         </span>
@@ -222,8 +222,8 @@ const Feedback = () => {
                                                 onMouseEnter={() => setHoveredRating(star)}
                                                 onMouseLeave={() => setHoveredRating(null)}
                                                 className={`text-5xl transition-all duration-300 transform hover:scale-125 ${star <= (hoveredRating || rating || 0)
-                                                        ? getRatingColor(hoveredRating || rating || 0)
-                                                        : 'text-gray-300 hover:text-gray-400'
+                                                    ? getRatingColor(hoveredRating || rating || 0)
+                                                    : 'text-gray-300 hover:text-gray-400'
                                                     } drop-shadow-lg`}
                                             >
                                                 ★

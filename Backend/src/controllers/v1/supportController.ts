@@ -1,8 +1,8 @@
 import { clerkClient } from '@clerk/express';
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { redis } from '../../config/redis';
-import { inngest } from '../../inngest/v1/client';
+import { redis } from '../../config/redis.js';
+import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 const createSupportRequestSchema = z.object({

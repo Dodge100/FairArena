@@ -8,11 +8,11 @@
   "scripts": {
     "dev": "nodemon --exec tsx src/index.ts",
     "dev:inngest": "npx inngest-cli dev",
-    "build": "prisma generate && tsc --noEmitOnError false",
+    "build": "rimraf src/generated && prisma generate && tsc --noEmitOnError false",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "postinstall": "prisma generate",
+    "postinstall": "rimraf src/generated && prisma generate",
     "script:clear-redis": "tsx src/scripts/clear-redis.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
