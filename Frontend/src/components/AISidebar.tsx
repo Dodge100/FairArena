@@ -24,12 +24,15 @@ import {
 import { marked } from 'marked';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAIButton } from '../contexts/AIButtonContext';
 import { useChat } from '../contexts/ChatContext';
 import { useTheme } from '../hooks/useTheme';
 
 interface AISidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  aiButtonHidden: boolean;
+  setAiButtonHidden: (hidden: boolean) => void;
 }
 
 // Configure marked for better markdown rendering
@@ -54,7 +57,7 @@ marked.setOptions({
   renderer,
 });
 
-export function AISidebar({ isOpen, onClose }: AISidebarProps) {
+export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }: AISidebarProps) {
   const {
     currentSession,
     isLoading,
@@ -65,6 +68,7 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
     createNewSession,
     regenerateLastMessage,
   } = useChat();
+  const { position: aiButtonPosition, setPosition: setAIButtonPosition } = useAIButton();
   const { theme, toggleTheme } = useTheme();
 
   const [input, setInput] = useState('');
@@ -596,9 +600,8 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                             setAutoScroll(newValue);
                             localStorage.setItem('ai-auto-scroll', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${
-                            autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
-                          }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
+                            }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -619,9 +622,8 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                             setSoundNotifications(newValue);
                             localStorage.setItem('ai-sound-notifications', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${
-                            soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
-                          }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
+                            }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -630,6 +632,50 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                           />
                         </motion.button>
                       </div>
+                    </div>
+
+                    {/* AI Button Position */}
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-foreground">Button Position</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: 'top-left', label: 'Top Left' },
+                          { value: 'top-right', label: 'Top Right' },
+                          { value: 'bottom-left', label: 'Bottom Left' },
+                          { value: 'bottom-right', label: 'Bottom Right' },
+                        ].map((option) => (
+                          <motion.button
+                            key={option.value}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setAIButtonPosition(option.value as AIButtonPosition)}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${aiButtonPosition === option.value
+                                ? 'bg-[#DDEF00] text-black'
+                                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                              }`}
+                          >
+                            {option.label}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hide for Session */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">Hide for this session</span>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setAiButtonHidden(!aiButtonHidden)}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${aiButtonHidden ? 'bg-red-500' : 'bg-muted'
+                          }`}
+                      >
+                        <motion.div
+                          className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
+                          animate={{ left: aiButtonHidden ? '20px' : '4px' }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        />
+                      </motion.button>
                     </div>
                   </div>
                 </div>
@@ -956,11 +1002,10 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                                         speakMessage(message.content);
                                       }
                                     }}
-                                    className={`p-1.5 rounded-lg transition-colors ${
-                                      aiSpeaking
+                                    className={`p-1.5 rounded-lg transition-colors ${aiSpeaking
                                         ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
                                         : 'hover:bg-muted'
-                                    }`}
+                                      }`}
                                     title={aiSpeaking ? 'Stop speaking' : 'Read aloud'}
                                   >
                                     <svg
@@ -1044,11 +1089,10 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleVoiceInput}
-                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${
-                          isListening
+                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${isListening
                             ? 'bg-red-500 hover:bg-red-600 text-white'
                             : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                        }`}
+                          }`}
                         title={isListening ? 'Stop recording' : 'Voice input'}
                       >
                         <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />

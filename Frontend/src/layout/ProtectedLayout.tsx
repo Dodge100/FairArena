@@ -10,6 +10,7 @@ import { ChatProvider } from '../contexts/ChatContext';
 export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useUser();
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
+  const [aiButtonHidden, setAiButtonHidden] = useState(false);
 
   if (!isLoaded) {
     return (
@@ -36,8 +37,13 @@ export default function ProtectedLayout() {
               <Outlet />
             </div>
           </main>
-          <AIButton onClick={() => setIsAISidebarOpen(true)} />
-          <AISidebar isOpen={isAISidebarOpen} onClose={() => setIsAISidebarOpen(false)} />
+          <AIButton onClick={() => setIsAISidebarOpen(true)} hidden={aiButtonHidden} />
+          <AISidebar
+            isOpen={isAISidebarOpen}
+            onClose={() => setIsAISidebarOpen(false)}
+            aiButtonHidden={aiButtonHidden}
+            setAiButtonHidden={setAiButtonHidden}
+          />
         </div>
       </SidebarProvider>
     </ChatProvider>

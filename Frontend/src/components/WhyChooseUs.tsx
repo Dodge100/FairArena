@@ -1,14 +1,12 @@
 import { BarChart3, Lightbulb, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
 import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
 import { DataSaverImage } from './ui/DataSaverImage';
 
 function WhyChooseUs() {
   const { theme } = useTheme();
-  const { cn } = useDataSaverUtils();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {

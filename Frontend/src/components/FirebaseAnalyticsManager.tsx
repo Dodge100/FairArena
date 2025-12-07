@@ -33,7 +33,6 @@ export function FirebaseAnalyticsManager() {
                 const analytics = initializeFirebaseAnalytics();
                 if (analytics) {
                     isInitializedRef.current = true;
-                    console.log('Firebase Analytics initialized with user consent');
                 }
             } catch (error) {
                 console.warn('Failed to initialize Firebase Analytics:', error);

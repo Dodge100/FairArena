@@ -41,7 +41,6 @@ export function ClarityManager() {
                 Clarity.init(projectId);
                 Clarity.consent(true);
                 isInitializedRef.current = true;
-                console.log('Clarity monitoring initialized with user consent');
             } catch (error) {
                 console.warn('Failed to initialize Clarity:', error);
             }

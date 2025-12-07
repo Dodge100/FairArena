@@ -1,5 +1,6 @@
 import { ItemListModal } from '@/components/ItemListModal';
 import { OTPVerification } from '@/components/OTPVerification';
+import { SidebarCustomizationModal } from '@/components/SidebarCustomizationModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,13 +14,14 @@ import {
   saveFCMToken,
 } from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
-import { Cookie, Download, Loader2 } from 'lucide-react';
+import { Cookie, Download, Loader2, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CookieConsentModal } from '../components/CookieConsentModal';
 import { useCookieConsent } from '../contexts/CookieConsentContext';
 import { useDataSaver } from '../contexts/DataSaverContext';
+import { useSidebarCustomization } from '../contexts/SidebarCustomizationContext';
 
 interface Report {
   id: string;
@@ -50,6 +52,7 @@ export default function AccountSettings() {
   const { getToken } = useAuth();
   const { dataSaverSettings, updateDataSaverSetting } = useDataSaver();
   const { consentSettings, acceptAll, rejectAll, updateConsent } = useCookieConsent();
+  const { customization, resetToDefault } = useSidebarCustomization();
   const [showCookieModal, setShowCookieModal] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
@@ -580,6 +583,73 @@ export default function AccountSettings() {
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Sidebar Customization</span>
+              </CardTitle>
+              <CardDescription>
+                Customize your navigation sidebar by reordering and hiding menu items
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                {/* Quick Stats */}
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <h4 className="text-sm font-medium mb-2">Current Configuration</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Visible Main Items:</span>
+                      <span className="ml-2 font-medium">
+                        {customization.mainItems.filter(item => item.visible).length}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Visible Tools:</span>
+                      <span className="ml-2 font-medium">
+                        {customization.secondaryItems.filter(item => item.visible).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customize Button */}
+                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium">
+                      Customize Sidebar Layout
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Reorder menu items, hide unwanted sections, and personalize your navigation experience
+                    </p>
+                  </div>
+                  <SidebarCustomizationModal>
+                    <Button variant="outline" className="shrink-0">
+                      Customize Sidebar
+                    </Button>
+                  </SidebarCustomizationModal>
+                </div>
+
+                {/* Reset Option */}
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      resetToDefault();
+                      toast.success('Sidebar customization reset to default');
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Reset to Default Layout
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isVerified && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
                 <Download className="h-5 w-5" />
                 <span>Data Saver Mode</span>
               </CardTitle>
@@ -772,7 +842,7 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
         )}
-         {isVerified && (
+        {isVerified && (
           < Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

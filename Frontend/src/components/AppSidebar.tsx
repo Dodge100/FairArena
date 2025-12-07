@@ -17,6 +17,7 @@ import {
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useDataSaver } from '@/contexts/DataSaverContext';
+import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useTheme } from '@/hooks/useTheme';
 import { removeFCMToken } from '@/services/notificationService';
 import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
@@ -40,29 +41,6 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '/fairArenaLogotop.png';
 
-const secondaryItems = [
-  {
-    title: 'Search',
-    url: '/dashboard/search',
-    icon: Search,
-  },
-  {
-    title: 'Calendar',
-    url: '/dashboard/calendar',
-    icon: Calendar,
-  },
-  {
-    title: 'Settings',
-    url: '/dashboard/account-settings',
-    icon: Settings,
-  },
-  {
-    title: 'Help & Support',
-    url: '/support',
-    icon: HelpCircle,
-  },
-];
-
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,6 +49,7 @@ export function AppSidebar() {
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
+  const { customization } = useSidebarCustomization();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -108,59 +87,47 @@ export function AppSidebar() {
     }
   }, [getToken, dataSaverSettings]);
 
-  // Menu items - defined inside component to access unreadCount
-  const menuItems = [
-    {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: Home,
-    },
-    {
-      title: 'Projects',
-      url: '/dashboard/projects',
-      icon: FileText,
-      items: [
-        {
-          title: 'All Projects',
-          url: '/dashboard/projects/all',
-        },
-        {
-          title: 'Active',
-          url: '/dashboard/projects/active',
-        },
-        {
-          title: 'Completed',
-          url: '/dashboard/projects/completed',
-        },
-      ],
-    },
-    {
-      title: 'Hackathons',
-      url: '/dashboard/hackathons',
-      icon: Trophy,
-    },
-    {
-      title: 'Analytics',
-      url: '/dashboard/analytics',
-      icon: BarChart3,
-    },
-    {
-      title: 'Team',
-      url: '/dashboard/team',
-      icon: Users,
-    },
-    {
-      title: 'Credits',
-      url: '/dashboard/credits',
-      icon: CreditCard,
-    },
-    {
-      title: 'Inbox',
-      url: '/dashboard/inbox',
-      icon: Inbox,
-      badge: !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) && unreadCount > 0 ? unreadCount.toString() : undefined,
-    },
-  ];
+  // Menu items - defined inside component to access unreadCount and customization
+  const menuItems = customization.mainItems
+    .filter(item => item.visible)
+    .sort((a, b) => a.order - b.order)
+    .map(item => {
+      // Map icon strings to actual icon components
+      const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+        Home,
+        FileText,
+        Trophy,
+        BarChart3,
+        Users,
+        CreditCard,
+        Inbox,
+      };
+
+      return {
+        ...item,
+        icon: iconMap[item.icon] || Home,
+        badge: item.id === 'inbox' && !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) && unreadCount > 0
+          ? unreadCount.toString()
+          : undefined,
+      };
+    });
+
+  const secondaryMenuItems = customization.secondaryItems
+    .filter(item => item.visible)
+    .sort((a, b) => a.order - b.order)
+    .map(item => {
+      const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+        Search,
+        Calendar,
+        Settings,
+        HelpCircle,
+      };
+
+      return {
+        ...item,
+        icon: iconMap[item.icon] || Settings,
+      };
+    });
 
   const handleSignOut = async () => {
     try {
@@ -254,7 +221,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {secondaryItems.map((item) => (
+              {secondaryMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     onClick={() => navigate(item.url)}

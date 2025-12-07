@@ -1,15 +1,37 @@
 import { Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useAIButton } from '../contexts/AIButtonContext';
 
 interface AIButtonProps {
   onClick: () => void;
+  hidden?: boolean;
 }
 
-export function AIButton({ onClick }: AIButtonProps) {
+export function AIButton({ onClick, hidden = false }: AIButtonProps) {
+  const { position } = useAIButton();
+
+  if (position === 'hidden' || hidden) {
+    return null;
+  }
+
+  const getPositionClasses = () => {
+    switch (position) {
+      case 'top-left':
+        return 'top-6 left-6';
+      case 'top-right':
+        return 'top-6 right-6';
+      case 'bottom-left':
+        return 'bottom-6 left-6';
+      case 'bottom-right':
+      default:
+        return 'bottom-6 right-6';
+    }
+  };
+
   return (
     <motion.button
       onClick={onClick}
-      className="fixed top-6 right-6 z-30 group"
+      className={`fixed ${getPositionClasses()} z-30 group`}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       initial={{ opacity: 0, scale: 0 }}

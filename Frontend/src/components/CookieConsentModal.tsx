@@ -129,7 +129,7 @@ export function CookieConsentModal({
                                 </div>
                                 <UICheckbox
                                     checked={settings.analytics}
-                                    onCheckedChange={(checked) => updateSetting('analytics', checked as boolean)}
+                                    onCheckedChange={(checked: boolean | 'indeterminate') => updateSetting('analytics', checked === true)}
                                 />
                             </div>
                         </CardHeader>
@@ -189,7 +189,7 @@ export function CookieConsentModal({
                                 </div>
                                 <UICheckbox
                                     checked={settings.marketing}
-                                    onCheckedChange={(checked) => updateSetting('marketing', checked as boolean)}
+                                    onCheckedChange={(checked: boolean | 'indeterminate') => updateSetting('marketing', checked === true)}
                                 />
                             </div>
                         </CardHeader>

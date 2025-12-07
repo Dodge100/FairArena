@@ -9,8 +9,10 @@ import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { FirebaseAnalyticsManager } from './components/FirebaseAnalyticsManager.tsx';
 import { CookieConsentProvider } from './contexts/CookieConsentContext.tsx';
 import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
+import { SidebarCustomizationProvider } from './contexts/SidebarCustomizationContext.tsx';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
+import { AIButtonProvider } from './contexts/AIButtonContext.tsx';
 
 // Initialize Sentry before rendering React
 // Sentry.init({
@@ -43,15 +45,19 @@ createRoot(document.getElementById('root')!).render(
     >
       <CookieConsentProvider>
         <DataSaverProvider>
-          <ClarityManager />
-          <FirebaseAnalyticsManager />
-          <ThemeProvider>
-            <BrowserRouter>
-              <ErrorBoundary>
-                <App />
-              </ErrorBoundary>
-            </BrowserRouter>
-          </ThemeProvider>
+          <SidebarCustomizationProvider>
+            <AIButtonProvider>
+              <ClarityManager />
+              <FirebaseAnalyticsManager />
+              <ThemeProvider>
+                <BrowserRouter>
+                  <ErrorBoundary>
+                    <App />
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </ThemeProvider>
+            </AIButtonProvider>
+          </SidebarCustomizationProvider>
         </DataSaverProvider>
       </CookieConsentProvider>
     </ClerkProvider>
