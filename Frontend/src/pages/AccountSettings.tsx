@@ -1,5 +1,5 @@
+import { ItemListModal } from '@/components/ItemListModal';
 import { OTPVerification } from '@/components/OTPVerification';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,15 @@ interface Report {
   updatedAt?: string;
 }
 
+interface SupportTicket {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface UserSettings {
   wantToGetFeedbackMail?: boolean;
   wantFeedbackNotifications?: boolean;
@@ -29,8 +38,6 @@ export default function AccountSettings() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
-  const [reports, setReports] = useState<Report[]>([]);
-  const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
   const [confirmationText, setConfirmationText] = useState('');
@@ -99,8 +106,7 @@ export default function AccountSettings() {
     }
   };
 
-  const fetchReports = useCallback(async () => {
-    setIsLoadingReports(true);
+  const fetchReports = useCallback(async (): Promise<Report[]> => {
     try {
       const token = await getToken();
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`, {
@@ -111,14 +117,36 @@ export default function AccountSettings() {
       });
       const data = await res.json();
       if (data.success) {
-        setReports(data.reports || []);
+        return data.reports || [];
       } else {
         console.error('Failed to fetch reports:', data.message);
+        return [];
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-    } finally {
-      setIsLoadingReports(false);
+      return [];
+    }
+  }, [getToken]);
+
+  const fetchSupportTickets = useCallback(async (): Promise<SupportTicket[]> => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        return data.supportTickets || [];
+      } else {
+        console.error('Failed to fetch support tickets:', data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching support tickets:', error);
+      return [];
     }
   }, [getToken]);
 
@@ -160,13 +188,12 @@ export default function AccountSettings() {
     }
   }, [getToken, confirmationText]);
 
-  // Fetch reports and settings when verified
+  // Fetch settings when verified
   useEffect(() => {
     if (isVerified) {
-      fetchReports();
       fetchSettings();
     }
-  }, [isVerified, fetchReports, fetchSettings]);
+  }, [isVerified, fetchSettings]);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -199,56 +226,51 @@ export default function AccountSettings() {
               <CardDescription>View the status of reports you've submitted.</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingReports ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span>Loading reports...</span>
-                </div>
-              ) : reports.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No reports found.</p>
-              ) : (
-                <div className="space-y-4">
-                  {reports.map((report: Report) => (
-                    <div key={report.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{report.title || 'Report'}</h4>
-                        <Badge
-                          variant={
-                            report.status === 'resolved'
-                              ? 'default'
-                              : report.status === 'dismissed'
-                                ? 'secondary'
-                                : report.status === 'escalated'
-                                  ? 'destructive'
-                                  : report.status === 'in_review'
-                                    ? 'outline'
-                                    : 'secondary'
-                          }
-                        >
-                          {report.status === 'queued'
-                            ? 'Queued'
-                            : report.status === 'in_review'
-                              ? 'In Review'
-                              : report.status === 'resolved'
-                                ? 'Resolved'
-                                : report.status === 'dismissed'
-                                  ? 'Dismissed'
-                                  : report.status === 'escalated'
-                                    ? 'Escalated'
-                                    : report.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
-                      <div className="text-xs text-muted-foreground">
-                        Submitted: {new Date(report.createdAt).toLocaleDateString()}
-                        {report.updatedAt && report.updatedAt !== report.createdAt && (
-                          <span> • Updated: {new Date(report.updatedAt).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ItemListModal
+                title="Your Reports"
+                description="View the status of reports you've submitted."
+                fetchItems={fetchReports}
+                triggerText="View Reports"
+                statusVariants={{
+                  resolved: 'default',
+                  dismissed: 'secondary',
+                  escalated: 'destructive',
+                  in_review: 'outline',
+                }}
+                statusLabels={{
+                  queued: 'Queued',
+                  in_review: 'In Review',
+                  resolved: 'Resolved',
+                  dismissed: 'Dismissed',
+                  escalated: 'Escalated',
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}        {isVerified && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Your Support Tickets</CardTitle>
+              <CardDescription>View the status of support requests you've submitted.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ItemListModal
+                title="Your Support Tickets"
+                description="View the status of support requests you've submitted."
+                fetchItems={fetchSupportTickets}
+                triggerText="View Support Tickets"
+                statusVariants={{
+                  resolved: 'default',
+                  closed: 'secondary',
+                  in_progress: 'outline',
+                }}
+                statusLabels={{
+                  queued: 'Queued',
+                  in_progress: 'In Progress',
+                  resolved: 'Resolved',
+                  closed: 'Closed',
+                }}
+              />
             </CardContent>
           </Card>
         )}
@@ -378,8 +400,8 @@ export default function AccountSettings() {
               {exportMessage && (
                 <div
                   className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
-                      ? 'text-green-600 bg-green-50 border border-green-200'
-                      : 'text-red-600 bg-red-50 border border-red-200'
+                    ? 'text-green-600 bg-green-50 border border-green-200'
+                    : 'text-red-600 bg-red-50 border border-red-200'
                     }`}
                 >
                   {exportMessage}

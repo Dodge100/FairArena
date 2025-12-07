@@ -38,6 +38,8 @@ export const REDIS_KEYS = {
   SETTINGS_CACHE: 'settings:cache:',
   FEEDBACK_RATE_LIMIT: 'feedback:ratelimit:',
   USER_REPORTS_CACHE: 'user:reports:',
+  USER_SUPPORT_CACHE: 'user:support:',
+  USER_LOGS_CACHE: 'user:logs:',
   USER_CREDITS_CACHE: 'user:credits:',
   USER_CREDIT_HISTORY_CACHE: 'user:credit:history:',
 } as const;

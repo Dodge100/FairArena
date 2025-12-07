@@ -4,8 +4,7 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
-import { ENV } from '../../config/env.js';
-import jwt from 'jsonwebtoken';
+import { Verifier } from '../../utils/settings-token-verfier.js';
 
 const readOnlyPrisma = getReadOnlyPrisma();
 // Cache TTL: 24 hours
@@ -23,19 +22,7 @@ export const getSettings = async (req: Request, res: Response) => {
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-      userId: string;
-      purpose: string;
-    };
-
-    if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-      logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    Verifier(req, res, auth);
 
     const cacheKey = `${REDIS_KEYS.SETTINGS_CACHE}${auth.userId}`;
 
@@ -109,19 +96,7 @@ export const updateSettings = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-      userId: string;
-      purpose: string;
-    };
-
-    if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-      logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    Verifier(req, res, auth);
 
     // Validate request body
     const validation = updateSettingsSchema.safeParse(req.body);
@@ -163,19 +138,7 @@ export const resetSettings = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-      userId: string;
-      purpose: string;
-    };
-
-    if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-      logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    Verifier(req, res, auth);
 
     // Trigger async settings reset via Inngest
     await inngest.send({

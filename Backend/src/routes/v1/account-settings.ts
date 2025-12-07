@@ -7,7 +7,7 @@ import {
   verifyOtp,
 } from '../../controllers/v1/accountSettingsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
-import { verifyRecaptcha } from '../../middleware/captcha.middleware.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 

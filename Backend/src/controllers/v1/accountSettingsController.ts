@@ -7,6 +7,7 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { Verifier } from '../../utils/settings-token-verfier.js';
 
 // Constants for OTP verification
 const TOKEN_EXPIRY_MINUTES = ENV.NODE_ENV === 'production' ? 10 : 120;
@@ -388,30 +389,9 @@ export const checkStatus = async (req: Request, res: Response) => {
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
-      return res.json({ success: false, verified: false });
-    }
 
-    try {
-      const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-        userId: string;
-        purpose: string;
-      };
-
-      // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-        logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-        return res.json({ success: false, verified: false });
-      }
-
-      res.json({ success: true, verified: true });
-    } catch (jwtError) {
-      logger.warn('Invalid or expired token', {
-        error: jwtError instanceof Error ? jwtError.message : String(jwtError),
-      });
-      res.json({ success: false, verified: false });
-    }
+    Verifier(req, res, auth);
+    res.json({ success: true, verified: true });
   } catch (error) {
     logger.error('Status check error', {
       error: error instanceof Error ? error.message : String(error),
@@ -423,59 +403,75 @@ export const checkStatus = async (req: Request, res: Response) => {
 export const getLogs = async (req: Request, res: Response) => {
   try {
     const auth = await req.auth();
+    const userId = auth?.userId;
 
-    if (!auth?.userId) {
+    if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    Verifier(req, res, auth);
+
+    const cacheKey = `${REDIS_KEYS.USER_LOGS_CACHE}${userId}`;
 
     try {
-      const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-        userId: string;
-        purpose: string;
-      };
-
-      // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-        logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      // Try cache first
+      const cached = await redis.get(cacheKey);
+      logger.info(`Logs cache check for user ${userId}: ${cached ? 'HIT' : 'MISS'}`, {
+        cacheKey,
+        cachedType: typeof cached,
+      });
+      if (cached !== null && cached !== undefined) {
+        try {
+          logger.info('Returning cached logs data', { userId });
+          const parsedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
+          return res.json(parsedData);
+        } catch (parseError) {
+          logger.warn('Failed to parse cached logs data, falling back to database', {
+            error: parseError,
+            userId,
+          });
+          // Continue to database query
+        }
       }
-
-      inngest.send({
-        name: 'log.create',
-        data: {
-          userId: decoded.userId,
-          action: 'logs-accessed',
-          level: 'CRITICAL',
-        },
-      });
-
-      const logs = await getReadOnlyPrisma().logs.findMany({
-        where: {
-          userId: decoded.userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        select: {
-          id: true,
-          action: true,
-          level: true,
-          metadata: true,
-          createdAt: true,
-        },
-      });
-
-      res.json({ success: true, logs });
-    } catch (jwtError) {
-      logger.warn('Invalid or expired token', {
-        error: jwtError instanceof Error ? jwtError.message : String(jwtError),
-      });
-      res.status(401).json({ success: false, message: 'Unauthorized' });
+    } catch (error) {
+      logger.warn('Redis cache read failed for user logs', { error, userId });
     }
+
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId,
+        action: 'logs-accessed',
+        level: 'CRITICAL',
+      },
+    });
+
+    const logs = await getReadOnlyPrisma().logs.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        action: true,
+        level: true,
+        metadata: true,
+        createdAt: true,
+      },
+    });
+
+    const responseData = { success: true, logs };
+
+    // Cache the result for 1 hour
+    try {
+      await redis.setex(cacheKey, 3600, JSON.stringify(responseData));
+      logger.info('Logs cache set successfully', { userId, cacheKey });
+    } catch (error) {
+      logger.warn('Redis cache write failed for user logs', { error, userId });
+    }
+
+    res.json(responseData);
   } catch (error) {
     logger.error('Get logs error', {
       error: error instanceof Error ? error.message : String(error),
@@ -487,96 +483,74 @@ export const getLogs = async (req: Request, res: Response) => {
 export const exportUserData = async (req: Request, res: Response) => {
   try {
     const auth = await req.auth();
-    if (!auth?.userId) {
-            return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const token = req.cookies['account-settings-token'];
-    if (!token) {
+    const userId = auth?.userId;
+    if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
+    Verifier(req, res, auth);
 
+    logger.info('User data export requested', { userId });
+
+    // Check rate limiting for data export (once per 24 hours)
+    const exportKey = `${REDIS_KEYS.DATA_EXPORT}${userId}:last-export`;
     try {
-      const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
-        userId: string;
-        purpose: string;
-      };
-
-      // Verify the token is for account settings
-      if (decoded.purpose !== 'account-settings' || decoded.userId !== auth.userId) {
-        logger.warn('Invalid token purpose', { purpose: decoded.purpose });
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
-      }
-
-      logger.info('User data export requested', { userId: decoded.userId });
-
-      // Check rate limiting for data export (once per 24 hours)
-      const exportKey = `${REDIS_KEYS.DATA_EXPORT}${decoded.userId}:last-export`;
-      try {
-        const lastExport = await redis.get(exportKey);
-        if (lastExport) {
-          const lastExportTime = new Date(typeof lastExport === 'string' ? lastExport : '');
-          const now = new Date();
-          const hoursSinceLastExport =
-            (now.getTime() - lastExportTime.getTime()) / (1000 * 60 * 60);
-          if (hoursSinceLastExport < 24) {
-            const remainingHours = Math.ceil(24 - hoursSinceLastExport);
-            logger.warn('Data export request blocked by rate limit', {
-              userId: decoded.userId,
-              lastExport: lastExportTime,
-              remainingHours,
-            });
-            return res.status(429).json({
-              success: false,
-              message: `You can request a data export once every 24 hours. Please try again in ${remainingHours} hours.`,
-            });
-          }
+      const lastExport = await redis.get(exportKey);
+      if (lastExport) {
+        const lastExportTime = new Date(typeof lastExport === 'string' ? lastExport : '');
+        const now = new Date();
+        const hoursSinceLastExport = (now.getTime() - lastExportTime.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastExport < 24) {
+          const remainingHours = Math.ceil(24 - hoursSinceLastExport);
+          logger.warn('Data export request blocked by rate limit', {
+            userId,
+            lastExport: lastExportTime,
+            remainingHours,
+          });
+          return res.status(429).json({
+            success: false,
+            message: `You can request a data export once every 24 hours. Please try again in ${remainingHours} hours.`,
+          });
         }
-      } catch (redisError) {
-        logger.error('Redis error checking data export rate limit', {
-          userId: decoded.userId,
-          error: redisError instanceof Error ? redisError.message : String(redisError),
-        });
-        // Continue without rate limiting if Redis is down
       }
-
-      // Trigger the Inngest function for data export
-      await inngest.send({
-        name: 'user/export-data',
-        data: { userId: decoded.userId },
+    } catch (redisError) {
+      logger.error('Redis error checking data export rate limit', {
+        userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
       });
-
-      // Set the last export time
-      try {
-        await redis.setex(exportKey, 24 * 60 * 60, new Date().toISOString()); // 24 hours
-      } catch (redisError) {
-        logger.error('Redis error setting data export timestamp', {
-          userId: decoded.userId,
-          error: redisError instanceof Error ? redisError.message : String(redisError),
-        });
-        // Continue - export will still proceed
-      }
-
-      // Log the export request
-      inngest.send({
-        name: 'log.create',
-        data: {
-          userId: decoded.userId,
-          action: 'data-export-requested',
-          level: 'INFO',
-        },
-      });
-
-      res.json({
-        success: true,
-        message:
-          'Data export has been initiated. You will receive an email with your data shortly.',
-      });
-    } catch (jwtError) {
-      logger.warn('Invalid or expired token', {
-        error: jwtError instanceof Error ? jwtError.message : String(jwtError),
-      });
-      res.status(401).json({ success: false, message: 'Unauthorized' });
+      // Continue without rate limiting if Redis is down
     }
+
+    // Trigger the Inngest function for data export
+    await inngest.send({
+      name: 'user/export-data',
+      data: { userId },
+    });
+
+    // Set the last export time
+    try {
+      await redis.setex(exportKey, 24 * 60 * 60, new Date().toISOString()); // 24 hours
+    } catch (redisError) {
+      logger.error('Redis error setting data export timestamp', {
+        userId,
+        error: redisError instanceof Error ? redisError.message : String(redisError),
+      });
+      // Continue - export will still proceed
+    }
+
+    // Log the export request
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId,
+        action: 'data-export-requested',
+        level: 'INFO',
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Data export has been initiated. You will receive an email with your data shortly.',
+    });
   } catch (error) {
     logger.error('Export user data error', {
       error: error instanceof Error ? error.message : String(error),

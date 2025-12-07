@@ -1,7 +1,53 @@
 import { Router } from 'express';
 import { SupportController } from '../../controllers/v1/supportController.js';
+import { protectRoute } from '../../middleware/auth.middleware.js';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/v1/support:
+ *   get:
+ *     summary: Get user's support tickets
+ *     description: Retrieve all support tickets submitted by the authenticated user
+ *     tags: [Support]
+ *     security:
+ *       - ClerkAuth: []
+ *     responses:
+ *       200:
+ *         description: Support tickets retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 supportTickets:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+router.get('/', protectRoute, SupportController.getUserSupportTickets);
 
 /**
  * @swagger

@@ -105,6 +105,9 @@ export default function AccountLogs() {
                 <span>Recent Activity</span>
               </CardTitle>
               <CardDescription>Your recent account activity and security events.</CardDescription>
+              <p className="text-sm text-muted-foreground mt-2">
+                Logs are cached and update every hour. They are not real-time.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -121,7 +124,7 @@ export default function AccountLogs() {
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Filter by level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border-border dark:bg-black/80 dark:border-white/20">
                     <SelectItem value="ALL">All Levels</SelectItem>
                     <SelectItem value="INFO">Info</SelectItem>
                     <SelectItem value="WARN">Warning</SelectItem>

@@ -44,7 +44,7 @@
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "@paralleldrive/cuid2": "^3.0.4",
     "@prisma/adapter-pg": "^7.0.1",
-    "@prisma/client": "^7.0.1",
+    "@prisma/client": "^7.1.0",
     "@sentry/node": "^10.27.0",
     "@sentry/profiling-node": "^10.27.0",
     "@types/cookie-parser": "^1.4.10",
@@ -93,7 +93,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
     "nodemon": "^3.1.9",
-    "prisma": "^7.0.1",
+    "prisma": "^7.1.0",
     "rimraf": "^5.0.1",
     "tsx": "^4.19.2"
   }

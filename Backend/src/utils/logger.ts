@@ -109,7 +109,9 @@ const logger = createLogger({
             ? ` [trace:${(trace_id as string).slice(0, 8)}${span_id ? `-${(span_id as string).slice(0, 8)}` : ''}]`
             : '';
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-          return `${timestamp} ${level}: ${message}${traceInfo}${metaStr}`;
+          const logLine = `${timestamp} ${level}: ${message}${traceInfo}${metaStr}`;
+          // Make debug logs fully yellow for visibility
+          return info.level === 'debug' ? `\x1b[33m${logLine}\x1b[0m` : logLine;
         }),
       ),
     }),
@@ -199,10 +201,20 @@ const safeLogger = {
   },
   debug: (message: string, meta?: Record<string, unknown>) => {
     try {
-      logger.debug(message, meta);
+      const level = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+      logger.log(level, message, meta);
     } catch (error) {
       console.log('Logger error:', error);
       console.debug(message, meta);
+    }
+  },
+  verbose: (message: string, meta?: Record<string, unknown>) => {
+    try {
+      const level = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+      logger.log(level, message, meta);
+    } catch (error) {
+      console.log('Logger error:', error);
+      console.log(message, meta);
     }
   },
 };
