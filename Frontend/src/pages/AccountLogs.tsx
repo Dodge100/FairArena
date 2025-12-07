@@ -86,15 +86,7 @@ export default function AccountLogs() {
         </h1>
 
         {!isVerified && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Verification Required</CardTitle>
-              <CardDescription>Verify your account to view sensitive logs.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OTPVerification onVerified={() => setIsVerified(true)} />
-            </CardContent>
-          </Card>
+          <OTPVerification onVerified={() => setIsVerified(true)} />
         )}
 
         {isVerified && (

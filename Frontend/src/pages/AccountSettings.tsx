@@ -5,6 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  getNotificationPermissionStatus,
+  isNotificationSupported,
+  removeFCMToken,
+  requestNotificationPermission,
+  saveFCMToken,
+} from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
 import { Download, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -75,6 +82,109 @@ export default function AccountSettings() {
     if (!settings) return;
 
     const originalSettings = settings;
+
+    // Special handling for push notifications
+    if (key === 'pushNotificationsEnabled') {
+      if (value) {
+        // Enabling push notifications - request permission
+        if (!isNotificationSupported()) {
+          toast.error('Push notifications are not supported in your browser');
+          return;
+        }
+
+        const currentPermission = getNotificationPermissionStatus();
+
+        if (currentPermission === 'denied') {
+          toast.error(
+            'Notification permission was denied. Please enable it in your browser settings.',
+          );
+          return;
+        }
+
+        setIsSavingSettings(true);
+        try {
+          // Request permission and get FCM token
+          const result = await requestNotificationPermission();
+
+          if (result.granted && result.token) {
+            // Save FCM token to backend
+            const token = await getToken();
+            const saved = await saveFCMToken(result.token, token!);
+
+            if (saved) {
+              // Update the setting in database
+              const updatedSettings = { ...settings, [key]: value };
+              setSettings(updatedSettings);
+
+              const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+                method: 'PUT',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ [key]: value }),
+              });
+              const data = await res.json();
+              if (data.success) {
+                toast.success('Push notifications enabled successfully');
+              } else {
+                toast.error(data.message || 'Failed to update settings');
+                setSettings(originalSettings);
+              }
+            } else {
+              toast.error('Failed to save notification token');
+            }
+          } else {
+            toast.error(result.error || 'Failed to enable push notifications');
+          }
+        } catch (error) {
+          console.error('Error enabling push notifications:', error);
+          toast.error('Failed to enable push notifications');
+        } finally {
+          setIsSavingSettings(false);
+        }
+      } else {
+        // Disabling push notifications - remove FCM token
+        setIsSavingSettings(true);
+        try {
+          const token = await getToken();
+
+          // Remove FCM token from backend
+          await removeFCMToken(token!);
+
+          // Update the setting in database
+          const updatedSettings = { ...settings, [key]: value };
+          setSettings(updatedSettings);
+
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ [key]: value }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            toast.success('Push notifications disabled successfully');
+          } else {
+            toast.error(data.message || 'Failed to update settings');
+            setSettings(originalSettings);
+          }
+        } catch (error) {
+          console.error('Error disabling push notifications:', error);
+          toast.error('Failed to disable push notifications');
+          setSettings(originalSettings);
+        } finally {
+          setIsSavingSettings(false);
+        }
+      }
+      return;
+    }
+
+    // Regular setting update for non-push notification settings
     const updatedSettings = { ...settings, [key]: value };
     setSettings(updatedSettings);
 

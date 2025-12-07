@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
 import { sendMulticastPushNotification } from '../../services/v1/fcmService.js';
+import { updateUserPresence } from '../../services/v1/presenceService.js';
+import { extractDeviceInfo } from '../../utils/device-fingerprint.js';
 import logger from '../../utils/logger.js';
 
 export const saveFCMToken = async (req: Request, res: Response) => {
@@ -14,6 +16,7 @@ export const saveFCMToken = async (req: Request, res: Response) => {
     }
 
     token = req.body.token;
+    const clientDeviceId = req.body.deviceId; // Optional device ID from client
 
     if (!token) {
       return res.status(400).json({ success: false, message: 'FCM token is required' });
@@ -30,21 +33,58 @@ export const saveFCMToken = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Save FCM token to the new table
-    await prisma.fCMToken.upsert({
-      where: { token },
+    // Extract device information from request
+    const deviceInfo = extractDeviceInfo(req, clientDeviceId);
+
+    // Save or update FCM token with device information
+    const savedToken = await prisma.fCMToken.upsert({
+      where: {
+        userId_deviceId: {
+          userId: auth.userId,
+          deviceId: deviceInfo.deviceId,
+        },
+      },
       update: {
-        updatedAt: new Date(),
+        token,
+        deviceName: deviceInfo.deviceName,
+        deviceType: deviceInfo.deviceType,
+        platform: deviceInfo.platform,
+        osVersion: deviceInfo.osVersion,
+        browserName: deviceInfo.browserName,
+        browserVersion: deviceInfo.browserVersion,
+        isActive: true,
+        lastUsedAt: new Date(),
+        failureCount: 0,
+        lastFailureAt: null,
+        lastFailureReason: null,
       },
       create: {
         userId: auth.userId,
         token,
+        deviceId: deviceInfo.deviceId,
+        deviceName: deviceInfo.deviceName,
+        deviceType: deviceInfo.deviceType,
+        platform: deviceInfo.platform,
+        osVersion: deviceInfo.osVersion,
+        browserName: deviceInfo.browserName,
+        browserVersion: deviceInfo.browserVersion,
       },
     });
 
-    logger.info('FCM token saved', { userId: auth.userId });
+    // Update user presence - mark device as active
+    await updateUserPresence(auth.userId, deviceInfo.deviceId, true);
 
-    return res.json({ success: true, message: 'FCM token saved successfully' });
+    logger.info('FCM token saved with device info', {
+      userId: auth.userId,
+      deviceId: deviceInfo.deviceId,
+      deviceType: deviceInfo.deviceType,
+    });
+
+    return res.json({
+      success: true,
+      message: 'FCM token saved successfully',
+      deviceId: deviceInfo.deviceId,
+    });
   } catch (error) {
     logger.error('Error saving FCM token', {
       error: error instanceof Error ? error.message : String(error),
@@ -62,26 +102,66 @@ export const removeFCMToken = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const { token } = req.body;
+    const { token, deviceId } = req.body;
+
+    let deletedCount = 0;
+    let removedDeviceId: string | null = null;
 
     if (token) {
+      // Get device ID before deletion for presence update
+      const tokenRecord = await prisma.fCMToken.findFirst({
+        where: {
+          userId: auth.userId,
+          token,
+        },
+        select: { deviceId: true },
+      });
+
+      removedDeviceId = tokenRecord?.deviceId || null;
+
       // Remove specific token
-      await prisma.fCMToken.deleteMany({
+      const result = await prisma.fCMToken.deleteMany({
         where: {
           userId: auth.userId,
           token,
         },
       });
+      deletedCount = result.count;
+    } else if (deviceId) {
+      // Remove token by device ID
+      const result = await prisma.fCMToken.deleteMany({
+        where: {
+          userId: auth.userId,
+          deviceId,
+        },
+      });
+      deletedCount = result.count;
+      removedDeviceId = deviceId;
     } else {
       // Remove all tokens for the user (for backward compatibility)
-      await prisma.fCMToken.deleteMany({
+      const result = await prisma.fCMToken.deleteMany({
         where: { userId: auth.userId },
       });
+      deletedCount = result.count;
     }
 
-    logger.info('FCM token(s) removed', { userId: auth.userId, token: token || 'all' });
+    // Update user presence - mark device as offline
+    if (removedDeviceId) {
+      await updateUserPresence(auth.userId, removedDeviceId, false);
+    }
 
-    return res.json({ success: true, message: 'FCM token removed successfully' });
+    logger.info('FCM token(s) removed', {
+      userId: auth.userId,
+      token: token || 'none',
+      deviceId: deviceId || 'none',
+      count: deletedCount,
+    });
+
+    return res.json({
+      success: true,
+      message: 'FCM token removed successfully',
+      count: deletedCount,
+    });
   } catch (error) {
     logger.error('Error removing FCM token', { error });
     return res.status(500).json({ success: false, message: 'Failed to remove FCM token' });
@@ -95,9 +175,12 @@ export const testPushNotification = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    // Get all FCM tokens for the user
+    // Get all active FCM tokens for the user
     const fcmTokens = await prisma.fCMToken.findMany({
-      where: { userId: auth.userId },
+      where: {
+        userId: auth.userId,
+        isActive: true,
+      },
       select: { token: true },
     });
 

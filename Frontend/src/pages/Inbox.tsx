@@ -20,11 +20,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import {
+  getCurrentDeviceFCMToken,
   getNotificationPermissionStatus,
   isNotificationSupported,
   requestNotificationPermission,
   saveFCMToken,
   setupForegroundMessageListener,
+  startPresenceHeartbeat,
+  updatePresence,
 } from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
 import DOMPurify from 'dompurify';
@@ -137,6 +140,7 @@ export default function InboxPage() {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [notificationPermissionRequested, setNotificationPermissionRequested] = useState(false);
   const fcmUnsubscribeRef = useRef<(() => void) | null>(null);
+  const heartbeatCleanupRef = useRef<(() => void) | null>(null);
 
   // Request notification permission and setup FCM
   const setupNotifications = async () => {
@@ -176,7 +180,7 @@ export default function InboxPage() {
         const result = await requestNotificationPermission();
 
         if (result.granted && result.token) {
-          // Save FCM token to backend
+          // Save FCM token to backend (will also store in localStorage)
           const saved = await saveFCMToken(result.token, token!);
 
           if (saved) {
@@ -202,11 +206,11 @@ export default function InboxPage() {
           toast.error(result.error || 'Failed to enable push notifications');
         }
       } else if (currentPermission === 'granted') {
-        // Permission already granted, just setup listener
-        const result = await requestNotificationPermission();
-        if (result.granted && result.token) {
-          await saveFCMToken(result.token, token!);
+        // Permission already granted, check if we have token stored
+        const existingToken = getCurrentDeviceFCMToken();
 
+        if (existingToken) {
+          // Token already exists for this device, just setup listener
           const unsubscribe = setupForegroundMessageListener((payload) => {
             if (!document.hidden) {
               toast.info(payload.notification?.title || 'New notification', {
@@ -218,8 +222,27 @@ export default function InboxPage() {
           });
 
           fcmUnsubscribeRef.current = unsubscribe;
+          setNotificationPermissionRequested(true);
+        } else {
+          // No token stored, get new one and save it
+          const result = await requestNotificationPermission();
+          if (result.granted && result.token) {
+            await saveFCMToken(result.token, token!);
+
+            const unsubscribe = setupForegroundMessageListener((payload) => {
+              if (!document.hidden) {
+                toast.info(payload.notification?.title || 'New notification', {
+                  description: payload.notification?.body,
+                });
+                fetchNotifications();
+                fetchUnreadCount();
+              }
+            });
+
+            fcmUnsubscribeRef.current = unsubscribe;
+          }
+          setNotificationPermissionRequested(true);
         }
-        setNotificationPermissionRequested(true);
       }
     } catch (error) {
       console.error('Error setting up notifications:', error);
@@ -230,11 +253,39 @@ export default function InboxPage() {
   useEffect(() => {
     setupNotifications();
 
+    // Start presence heartbeat
+    const startHeartbeat = async () => {
+      const token = await getToken();
+      if (token) {
+        const cleanup = startPresenceHeartbeat(token);
+        heartbeatCleanupRef.current = cleanup;
+
+        // Mark user as online
+        await updatePresence(token, true);
+      }
+    };
+
+    startHeartbeat();
+
     return () => {
       // Cleanup FCM listener
       if (fcmUnsubscribeRef.current) {
         fcmUnsubscribeRef.current();
       }
+
+      // Cleanup heartbeat
+      if (heartbeatCleanupRef.current) {
+        heartbeatCleanupRef.current();
+      }
+
+      // Mark user as offline
+      const markOffline = async () => {
+        const token = await getToken();
+        if (token) {
+          await updatePresence(token, false);
+        }
+      };
+      markOffline();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

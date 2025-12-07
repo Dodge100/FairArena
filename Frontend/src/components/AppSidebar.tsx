@@ -17,6 +17,7 @@ import {
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useTheme } from '@/hooks/useTheme';
+import { removeFCMToken } from '@/services/notificationService';
 import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import {
   BarChart3,
@@ -157,6 +158,16 @@ export function AppSidebar() {
   ];
 
   const handleSignOut = async () => {
+    try {
+      // Remove FCM token for this device before signing out
+      const token = await getToken();
+      if (token) {
+        await removeFCMToken(token);
+      }
+    } catch (error) {
+      console.error('Error removing FCM token on logout:', error);
+    }
+
     await signOut();
     navigate('/');
   };
@@ -192,7 +203,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="bg-sidebar scrollbar-hide">
+      <SidebarContent className="bg-sidebar scrollbar-hide group-data-[collapsible=icon]:scrollbar-default group-data-[collapsible=icon]:overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>

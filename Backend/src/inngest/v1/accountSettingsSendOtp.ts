@@ -10,20 +10,28 @@ const SALT_ROUNDS = 12;
 const OTP_EXPIRY_SECONDS = 600; // 10 minutes
 
 function generateOtp(): string {
-  const length = crypto.randomInt(6, 13); // 6-12 characters
   const digits = '0123456789';
-  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
-  let otp = '';
-  for (let i = 0; i < length; i++) {
-    // 70% digits, 30% letters for better readability
-    if (crypto.randomInt(0, 10) < 7) {
+  if (crypto.randomInt(0, 10) < 6) {
+    let otp = '';
+    for (let i = 0; i < 6; i++) {
       otp += digits.charAt(crypto.randomInt(0, digits.length));
-    } else {
-      otp += alpha.charAt(crypto.randomInt(0, alpha.length));
     }
+    return otp;
   }
-  return otp;
+  else {
+    const length = crypto.randomInt(6, 13);
+    let otp = '';
+    for (let i = 0; i < length; i++) {
+      if (crypto.randomInt(0, 10) < 7) {
+        otp += digits.charAt(crypto.randomInt(0, digits.length));
+      } else {
+        otp += alpha.charAt(crypto.randomInt(0, alpha.length));
+      }
+    }
+    return otp;
+  }
 }
 
 export const sendOtpForAccountSettings = inngest.createFunction(

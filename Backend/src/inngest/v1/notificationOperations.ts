@@ -332,8 +332,8 @@ export const sendPushNotification = inngest.createFunction(
 
       // Send push notification to all devices
       const result = await step.run('send-fcm-push', async () => {
-        const { sendMulticastPushNotification } = await import('../../services/v1/fcmService.js');
-        return await sendMulticastPushNotification(fcmTokens, {
+        const { sendSmartNotification } = await import('../../services/v1/fcmService.js');
+        return await sendSmartNotification(userId, {
           title,
           body,
           data: data || {},

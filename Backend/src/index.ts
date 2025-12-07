@@ -33,6 +33,7 @@ import {
   sendEmailHandler,
   sendNotification,
   sendOtpForAccountSettings,
+  sendPushNotification,
   sendWeeklyFeedbackEmail,
   starProfile,
   subscribeToNewsletter,
@@ -44,7 +45,6 @@ import {
   updateProfileFunction,
   updateSettingsFunction,
   updateUser,
-  sendPushNotification,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
@@ -65,6 +65,7 @@ import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import paymentsRouter from './routes/v1/payments.js';
 import plansRouter from './routes/v1/plans.js';
+import presenceRouter from './routes/v1/presence.routes.js';
 import reportsRouter from './routes/v1/reports.js';
 import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
@@ -207,6 +208,9 @@ app.use('/api/v1/stars', starsRouter);
 
 // Notification routes
 app.use('/api/v1/notifications', notificationRouter);
+
+// Presence routes
+app.use('/api/v1/presence', presenceRouter);
 
 // AI Assistant routes
 app.use('/api/v1/ai', aiRouter);
