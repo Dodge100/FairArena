@@ -16,6 +16,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useTheme } from '@/hooks/useTheme';
 import { removeFCMToken } from '@/services/notificationService';
 import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
@@ -69,11 +70,14 @@ export function AppSidebar() {
   const { getToken } = useAuth();
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
+  const { dataSaverSettings } = useDataSaver();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch unread notification count
   useEffect(() => {
+    if (dataSaverSettings.enabled && dataSaverSettings.disableNotifications) return; // Skip fetching in data saver mode
+
     const fetchUnreadCount = async () => {
       try {
         const token = await getToken();
@@ -97,11 +101,12 @@ export function AppSidebar() {
 
     fetchUnreadCount();
 
-    // Poll every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-
-    return () => clearInterval(interval);
-  }, [getToken]);
+    // Poll every 30 seconds, but only if not in data saver mode
+    if (!(dataSaverSettings.enabled && dataSaverSettings.disableAutoRefresh)) {
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [getToken, dataSaverSettings]);
 
   // Menu items - defined inside component to access unreadCount
   const menuItems = [
@@ -153,7 +158,7 @@ export function AppSidebar() {
       title: 'Inbox',
       url: '/dashboard/inbox',
       icon: Inbox,
-      badge: unreadCount > 0 ? unreadCount.toString() : undefined,
+      badge: !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) && unreadCount > 0 ? unreadCount.toString() : undefined,
     },
   ];
 

@@ -1,3 +1,5 @@
+import { DataSaverImage } from '@/components/ui/DataSaverImage';
+import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -5,6 +7,7 @@ function Unsubscribe() {
   const { email } = useParams<{ email: string }>();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const { cn, shouldLoadImage } = useDataSaverUtils();
 
   useEffect(() => {
     if (!email) {
@@ -47,7 +50,7 @@ function Unsubscribe() {
       <header className="w-full py-6 px-4 border-b border-gray-200 dark:border-transparent bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="flex items-center space-x-3">
-            <img
+            <DataSaverImage
               src="/fairArenaLogo.png"
               alt="FairArena Logo"
               className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg object-contain bg-white dark:bg-gray-900 p-2"
@@ -55,6 +58,11 @@ function Unsubscribe() {
               height={80}
               loading="eager"
               draggable={false}
+              fallback={
+                <div className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg bg-white dark:bg-gray-900 p-2 flex items-center justify-center">
+                  <span className="text-sm font-bold text-gray-600 dark:text-gray-400">FA</span>
+                </div>
+              }
             />
             <span className="sr-only">FairArena</span>
           </div>
@@ -74,7 +82,7 @@ function Unsubscribe() {
           <div className="text-center min-h-[120px] flex flex-col items-center justify-center">
             {status === 'loading' && (
               <div className="flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                <div className={cn("rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent", shouldLoadImage ? "animate-spin" : "")}></div>
                 <p className="text-gray-600 dark:text-gray-400 font-medium">
                   Processing your request...
                 </p>
@@ -137,8 +145,19 @@ function Unsubscribe() {
           <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700/30 flex justify-center">
             <a
               href="/"
-              className="inline-flex items-center px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className={cn(
+                "inline-flex items-center px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              )}
             >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Return to Home
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"

@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
 
@@ -41,13 +42,15 @@ createRoot(document.getElementById('root')!).render(
       signUpUrl="/signup"
       signInUrl="/signin"
     >
-      <ThemeProvider>
-        <BrowserRouter>
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-        </BrowserRouter>
-      </ThemeProvider>
+      <DataSaverProvider>
+        <ThemeProvider>
+          <BrowserRouter>
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+          </BrowserRouter>
+        </ThemeProvider>
+      </DataSaverProvider>
     </ClerkProvider>
   </StrictMode>,
 );

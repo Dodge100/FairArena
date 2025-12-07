@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import {
@@ -73,6 +74,7 @@ export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const { cn } = useDataSaverUtils();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,13 +237,13 @@ export default function PublicProfile() {
     setProfile((prev) =>
       prev
         ? {
-            ...prev,
-            stars: {
-              count: newStarCount,
-              hasStarred: !wasStarred,
-              starredAt: wasStarred ? null : new Date().toISOString(),
-            },
-          }
+          ...prev,
+          stars: {
+            count: newStarCount,
+            hasStarred: !wasStarred,
+            starredAt: wasStarred ? null : new Date().toISOString(),
+          },
+        }
         : null,
     );
 
@@ -276,13 +278,13 @@ export default function PublicProfile() {
       setProfile((prev) =>
         prev
           ? {
-              ...prev,
-              stars: {
-                count: profile.stars.count,
-                hasStarred: wasStarred,
-                starredAt: profile.stars.starredAt,
-              },
-            }
+            ...prev,
+            stars: {
+              count: profile.stars.count,
+              hasStarred: wasStarred,
+              starredAt: profile.stars.starredAt,
+            },
+          }
           : null,
       );
     } finally {
@@ -394,7 +396,7 @@ export default function PublicProfile() {
             <div className="flex items-center justify-between h-16">
               {/* FairArena Logo */}
               <Link
-                to= "/"
+                to="/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -468,8 +470,8 @@ export default function PublicProfile() {
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
               {/* Avatar */}
               <div className="shrink-0 relative">
-                <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/60 rounded-full blur-lg opacity-30 animate-pulse" />
-                <Avatar className="relative h-36 w-36 lg:h-52 lg:w-52 border-4 border-background shadow-2xl ring-4 ring-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-primary/25">
+                <div className={cn("absolute -inset-1 bg-linear-to-r from-primary to-primary/60 rounded-full blur-lg opacity-30 animate-pulse")} />
+                <Avatar className={cn("relative h-36 w-36 lg:h-52 lg:w-52 border-4 border-background shadow-2xl ring-4 ring-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-primary/25")}>
                   <AvatarImage
                     src={
                       profile.avatarUrl ||
@@ -543,7 +545,7 @@ export default function PublicProfile() {
                         variant="default"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/edit')}
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-linear-to-r from-primary to-primary/90"
+                        className={cn("shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-linear-to-r from-primary to-primary/90")}
                       >
                         <Edit className="h-5 w-5 mr-2" />
                         Edit Profile
@@ -552,7 +554,7 @@ export default function PublicProfile() {
                         variant="outline"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/views')}
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40"
+                        className={cn("shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40")}
                       >
                         <FileText className="h-5 w-5 mr-2" />
                         View Analytics
@@ -833,86 +835,86 @@ export default function PublicProfile() {
                 profile.linkedInProfile ||
                 profile.portfolioUrl ||
                 profile.resumeUrl) && (
-                <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
-                      Connect
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {profile.email && (
-                        <a
-                          href={`mailto:${profile.email}`}
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <div className="flex-1">
-                            <span className="font-medium block">Email</span>
-                            <span className="text-sm text-muted-foreground">{profile.email}</span>
-                          </div>
-                        </a>
-                      )}
-                      {profile.githubUsername && (
-                        <a
-                          href={`https://github.com/${profile.githubUsername}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">GitHub</span>
-                        </a>
-                      )}
-                      {profile.twitterHandle && (
-                        <a
-                          href={`https://twitter.com/${profile.twitterHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Twitter</span>
-                        </a>
-                      )}
-                      {profile.linkedInProfile && (
-                        <a
-                          href={profile.linkedInProfile}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">LinkedIn</span>
-                        </a>
-                      )}
-                      {profile.portfolioUrl && (
-                        <a
-                          href={profile.portfolioUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Portfolio</span>
-                        </a>
-                      )}
-                      {profile.resumeUrl && (
-                        <a
-                          href={profile.resumeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
-                        >
-                          <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
-                          <span className="font-medium">Resume</span>
-                        </a>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full group-hover:scale-125 transition-transform" />
+                        Connect
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        {profile.email && (
+                          <a
+                            href={`mailto:${profile.email}`}
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Mail className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <div className="flex-1">
+                              <span className="font-medium block">Email</span>
+                              <span className="text-sm text-muted-foreground">{profile.email}</span>
+                            </div>
+                          </a>
+                        )}
+                        {profile.githubUsername && (
+                          <a
+                            href={`https://github.com/${profile.githubUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Github className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">GitHub</span>
+                          </a>
+                        )}
+                        {profile.twitterHandle && (
+                          <a
+                            href={`https://twitter.com/${profile.twitterHandle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Twitter className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Twitter</span>
+                          </a>
+                        )}
+                        {profile.linkedInProfile && (
+                          <a
+                            href={profile.linkedInProfile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Linkedin className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">LinkedIn</span>
+                          </a>
+                        )}
+                        {profile.portfolioUrl && (
+                          <a
+                            href={profile.portfolioUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <Globe className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Portfolio</span>
+                          </a>
+                        )}
+                        {profile.resumeUrl && (
+                          <a
+                            href={profile.resumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent hover:border-primary transition-all group/link hover:scale-[1.02] hover:shadow-md"
+                          >
+                            <FileText className="h-5 w-5 group-hover/link:scale-110 transition-transform text-primary" />
+                            <span className="font-medium">Resume</span>
+                          </a>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
               {/* Stars */}
               <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 border-0 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-sm hover:scale-[1.02] group">

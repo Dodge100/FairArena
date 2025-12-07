@@ -17,6 +17,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Spotlight } from '../components/ui/Spotlight';
+import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
 
 export default function Support() {
@@ -24,6 +25,7 @@ export default function Support() {
   const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const isDark = theme === 'dark';
+  const { cn } = useDataSaverUtils();
   const [formData, setFormData] = useState({
     name: '',
     email: user?.primaryEmailAddress?.emailAddress || '',
@@ -196,13 +198,11 @@ export default function Support() {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className={`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'
-            }`}
+          className={cn(`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'}`)}
           style={{ animationDuration: '4s' }}
         />
         <div
-          className={`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'
-            }`}
+          className={cn(`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'}`)}
           style={{ animationDuration: '6s', animationDelay: '2s' }}
         />
       </div>
@@ -259,18 +259,18 @@ export default function Support() {
           ].map((stat, index) => (
             <div
               key={index}
-              className={`
+              className={cn(`
                 p-4 rounded-xl border text-center transition-all duration-300
                 hover:scale-105 hover:shadow-lg group cursor-pointer
                 ${isDark
                   ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
                   : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
                 }
-              `}
+              `)}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <stat.icon
-                className={`w-6 h-6 mx-auto mb-2 ${stat.color} group-hover:scale-110 transition-transform`}
+                className={cn(`w-6 h-6 mx-auto mb-2 ${stat.color} group-hover:scale-110 transition-transform`)}
               />
               <div
                 className={`text-2xl font-bold mb-1 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
@@ -289,18 +289,18 @@ export default function Support() {
           {/* Email Support */}
           <button
             onClick={() => handleContactMethod('email')}
-            className={`
+            className={cn(`
               group relative p-6 rounded-2xl border transition-all duration-300
               hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
               ${isDark
                 ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
                 : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
               }
-            `}
+            `)}
           >
-            <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+            <div className={cn("absolute inset-0 bg-linear-to-br from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300")} />
             <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-blue-500 to-cyan-500 group-hover:scale-110 transition-transform duration-300">
+              <div className={cn("w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-blue-500 to-cyan-500 group-hover:scale-110 transition-transform duration-300")}>
                 <Mail className="w-7 h-7 text-white" />
               </div>
               <h3
@@ -314,10 +314,10 @@ export default function Support() {
                 fairarena.contact@gmail.com
               </p>
               <div
-                className={`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`}
+                className={cn(`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`)}
               >
                 Send Email
-                <span className="group-hover:translate-x-1 transition-transform duration-300">
+                <span className={cn("group-hover:translate-x-1 transition-transform duration-300")}>
                   →
                 </span>
               </div>

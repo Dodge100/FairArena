@@ -17,6 +17,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useDataSaver } from '../contexts/DataSaverContext';
 
 interface Report {
   id: string;
@@ -45,6 +46,7 @@ interface UserSettings {
 export default function AccountSettings() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
+  const { dataSaverSettings, updateDataSaverSetting } = useDataSaver();
   const [isVerified, setIsVerified] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
@@ -566,6 +568,129 @@ export default function AccountSettings() {
               ) : (
                 <p className="text-sm text-muted-foreground">Failed to load settings</p>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {isVerified && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Download className="h-5 w-5" />
+                <span>Data Saver Mode</span>
+              </CardTitle>
+              <CardDescription>
+                Reduce data usage, battery consumption, and improve performance by enabling data saver features
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-6">
+                {/* Enable Data Saver */}
+                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <Label htmlFor="data-saver-enabled" className="text-sm font-medium">
+                      Enable Data Saver
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Activate data saving features to reduce bandwidth and battery usage
+                    </p>
+                  </div>
+                  <Switch
+                    id="data-saver-enabled"
+                    checked={dataSaverSettings.enabled}
+                    onCheckedChange={(checked) => updateDataSaverSetting('enabled', checked)}
+                  />
+                </div>
+
+                {dataSaverSettings.enabled && (
+                  <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                    {/* Disable Notifications */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="disable-notifications" className="text-sm font-medium">
+                          Disable Notification Polling
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Stop automatic fetching of unread notification counts
+                        </p>
+                      </div>
+                      <Switch
+                        id="disable-notifications"
+                        checked={dataSaverSettings.disableNotifications}
+                        onCheckedChange={(checked) => updateDataSaverSetting('disableNotifications', checked)}
+                      />
+                    </div>
+
+                    {/* Disable Images */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="disable-images" className="text-sm font-medium">
+                          Disable Image Loading
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Prevent loading of profile pictures and other images to save bandwidth
+                        </p>
+                      </div>
+                      <Switch
+                        id="disable-images"
+                        checked={dataSaverSettings.disableImages}
+                        onCheckedChange={(checked) => updateDataSaverSetting('disableImages', checked)}
+                      />
+                    </div>
+
+                    {/* Reduce Animations */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="reduce-animations" className="text-sm font-medium">
+                          Reduce Animations
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Minimize motion and transitions for better performance
+                        </p>
+                      </div>
+                      <Switch
+                        id="reduce-animations"
+                        checked={dataSaverSettings.reduceAnimations}
+                        onCheckedChange={(checked) => updateDataSaverSetting('reduceAnimations', checked)}
+                      />
+                    </div>
+
+                    {/* Disable Auto Refresh */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="disable-auto-refresh" className="text-sm font-medium">
+                          Disable Auto Refresh
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Stop automatic refreshing of data and feeds
+                        </p>
+                      </div>
+                      <Switch
+                        id="disable-auto-refresh"
+                        checked={dataSaverSettings.disableAutoRefresh}
+                        onCheckedChange={(checked) => updateDataSaverSetting('disableAutoRefresh', checked)}
+                      />
+                    </div>
+
+                    {/* Force Dark Theme */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="force-dark-theme" className="text-sm font-medium">
+                          Force Dark Theme
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Switch to dark theme to save battery on OLED displays
+                        </p>
+                      </div>
+                      <Switch
+                        id="force-dark-theme"
+                        checked={dataSaverSettings.forceDarkTheme}
+                        onCheckedChange={(checked) => updateDataSaverSetting('forceDarkTheme', checked)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

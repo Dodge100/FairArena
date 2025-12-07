@@ -2,10 +2,12 @@ import { Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import { useDataSaverUtils } from '../../hooks/useDataSaverUtils';
 import { useTheme } from '../../hooks/useTheme';
 
 function DemoVideo() {
   const { theme } = useTheme();
+  const { shouldLoadImage, cn } = useDataSaverUtils();
   const [isDark, setIsDark] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -71,30 +73,42 @@ function DemoVideo() {
     >
       <div
         className={`
-          w-full h-full relative  overflow-hidden rounded-2xl
+          w-full h-full relative overflow-hidden rounded-2xl
           ${isDark ? 'bg-neutral-900' : 'bg-white'}
         `}
       >
-        <video
-          ref={videoRef}
-          poster="/dashboardDemo.jpg"
-          className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
-        >
-          <source
-            src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570"
-            type="video/mp4"
-          />
-        </video>
-
-        {/* Play Button Overlay when paused */}
-        {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button
-              onClick={togglePlay}
-              className="bg-[#DDFF00] text-black rounded-full p-4 hover:bg-[#c4e600] transition-colors"
+        {shouldLoadImage ? (
+          <>
+            <video
+              ref={videoRef}
+              poster="/dashboardDemo.jpg"
+              className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
             >
-              <Play size={48} fill="currentColor" />
-            </button>
+              <source
+                src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570"
+                type="video/mp4"
+              />
+            </video>
+
+            {/* Play Button Overlay when paused */}
+            {!isPlaying && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={togglePlay}
+                  className={cn("bg-[#DDFF00] text-black rounded-full p-4 hover:bg-[#c4e600] transition-colors")}
+                >
+                  <Play size={48} fill="currentColor" />
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-64 md:h-96 flex items-center justify-center bg-linear-to-br from-primary/20 to-primary/10 rounded-2xl">
+            <div className="text-center">
+              <Play size={64} className="mx-auto mb-4 text-primary/60" />
+              <p className="text-lg font-semibold text-muted-foreground">Demo Video</p>
+              <p className="text-sm text-muted-foreground">Video loading disabled in data saver mode</p>
+            </div>
           </div>
         )}
       </div>
