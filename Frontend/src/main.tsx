@@ -1,11 +1,13 @@
 import { ClerkProvider } from '@clerk/clerk-react';
-import Clarity from '@microsoft/clarity';
 // import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
+import { ClarityManager } from './components/ClarityManager.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { FirebaseAnalyticsManager } from './components/FirebaseAnalyticsManager.tsx';
+import { CookieConsentProvider } from './contexts/CookieConsentContext.tsx';
 import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
@@ -29,10 +31,7 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key');
 }
 
-const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
 
-Clarity.init(projectId);
-Clarity.consent(true);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -42,15 +41,19 @@ createRoot(document.getElementById('root')!).render(
       signUpUrl="/signup"
       signInUrl="/signin"
     >
-      <DataSaverProvider>
-        <ThemeProvider>
-          <BrowserRouter>
-            <ErrorBoundary>
-              <App />
-            </ErrorBoundary>
-          </BrowserRouter>
-        </ThemeProvider>
-      </DataSaverProvider>
+      <CookieConsentProvider>
+        <DataSaverProvider>
+          <ClarityManager />
+          <FirebaseAnalyticsManager />
+          <ThemeProvider>
+            <BrowserRouter>
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
+            </BrowserRouter>
+          </ThemeProvider>
+        </DataSaverProvider>
+      </CookieConsentProvider>
     </ClerkProvider>
   </StrictMode>,
 );

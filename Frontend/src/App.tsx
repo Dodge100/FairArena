@@ -2,14 +2,17 @@ import { GoogleOneTap } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
+import { CookieConsentModal } from './components/CookieConsentModal';
 import NotFound from './components/NotFound';
 import PricingModal from './components/PricingModal';
 import WaitList from './components/WaitList';
+import { useCookieConsent } from './contexts/CookieConsentContext';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
 import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
+import CookiePolicy from './pages/CookiePolicy';
 import CreateOrganization from './pages/CreateOrganization';
 import CreditsPage from './pages/CreditsPage';
 import Dashboard from './pages/Dashboard';
@@ -40,6 +43,7 @@ function App() {
   const location = useLocation();
   const [showPricingModal, setShowPricingModal] = useState(false);
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+  const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
 
   // Handle hash routing for pricing modal
   useEffect(() => {
@@ -84,6 +88,12 @@ function App() {
           window.location.hash = '';
         }}
       />
+      <CookieConsentModal
+        isOpen={showModal}
+        onClose={updateConsent}
+        onAcceptAll={acceptAll}
+        onRejectAll={rejectAll}
+      />
       <Routes>
         <Route path="/maintenance" element={<Maintenance />} />
         <Route element={<PublicLayout />}>
@@ -93,6 +103,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/refund" element={<RefundPage />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         </Route>

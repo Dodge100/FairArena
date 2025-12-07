@@ -45,10 +45,9 @@ export default function Signup() {
 
       // ---------- INPUT ----------
       formFieldInput: `
-        ${
-          isDark
-            ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
-            : 'bg-white text-neutral-900 border-[#e6e6e6]'
+        ${isDark
+          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
+          : 'bg-white text-neutral-900 border-[#e6e6e6]'
         }
         rounded-lg placeholder:text-neutral-400
         focus:border-[#DDEF00]
@@ -202,10 +201,9 @@ export default function Signup() {
         <div
           className={`
             hidden md:flex w-1/2 items-center justify-center p-6
-            ${
-              isDark
-                ? 'bg-[#0f0f0f] border-l border-neutral-800'
-                : 'bg-[#EEF0FF] border-l border-neutral-200'
+            ${isDark
+              ? 'bg-[#0f0f0f] border-l border-neutral-800'
+              : 'bg-[#EEF0FF] border-l border-neutral-200'
             }
           `}
         >

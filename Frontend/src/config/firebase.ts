@@ -1,3 +1,5 @@
+import { type Analytics, getAnalytics } from 'firebase/analytics';
+import { type Messaging } from 'firebase/messaging';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
@@ -8,13 +10,13 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Cloud Messaging
-let messaging: any = null;
+let messaging: Messaging | null = null;
 
 try {
   if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -24,5 +26,23 @@ try {
   console.error('Firebase messaging initialization error:', error);
 }
 
-export { getToken, messaging, onMessage };
-export default app;
+let analytics: Analytics | null = null;
+
+export const initializeFirebaseAnalytics = (): Analytics | null => {
+  if (typeof window !== 'undefined' && !analytics) {
+    try {
+      analytics = getAnalytics(app);
+      return analytics;
+    } catch (error) {
+      console.warn('Failed to initialize Firebase Analytics:', error);
+      return null;
+    }
+  }
+  return analytics;
+};
+
+export const getFirebaseAnalytics = (): Analytics | null => {
+  return analytics;
+};
+
+export { analytics, getToken, messaging, onMessage };

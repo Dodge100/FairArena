@@ -158,7 +158,7 @@ function Footer() {
         </p>
 
         <div className="flex gap-6">
-          {['privacy-policy', 'terms-and-conditions'].map((item) => (
+          {['privacy-policy', 'terms-and-conditions', 'cookie-policy'].map((item) => (
             <p
               key={item}
               className={`

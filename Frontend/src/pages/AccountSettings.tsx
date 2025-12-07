@@ -13,10 +13,12 @@ import {
   saveFCMToken,
 } from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
-import { Download, Loader2 } from 'lucide-react';
+import { Cookie, Download, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { CookieConsentModal } from '../components/CookieConsentModal';
+import { useCookieConsent } from '../contexts/CookieConsentContext';
 import { useDataSaver } from '../contexts/DataSaverContext';
 
 interface Report {
@@ -47,6 +49,8 @@ export default function AccountSettings() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { dataSaverSettings, updateDataSaverSetting } = useDataSaver();
+  const { consentSettings, acceptAll, rejectAll, updateConsent } = useCookieConsent();
+  const [showCookieModal, setShowCookieModal] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
@@ -693,6 +697,7 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
+
         )}
 
         {isVerified && (
@@ -767,7 +772,107 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
         )}
+         {isVerified && (
+          < Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Cookie className="h-5 w-5" />
+                <span>Cookie Preferences</span>
+              </CardTitle>
+              <CardDescription>
+                Manage your cookie consent preferences and privacy settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                {/* Current Consent Status */}
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <h4 className="text-sm font-medium mb-2">Current Consent Status</h4>
+                  {consentSettings ? (
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Necessary Cookies:</span>
+                        <span className={`ml-2 ${consentSettings.necessary ? 'text-green-600' : 'text-red-600'}`}>
+                          {consentSettings.necessary ? '✓ Accepted' : '✗ Rejected'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Analytics Cookies:</span>
+                        <span className={`ml-2 ${consentSettings.analytics ? 'text-green-600' : 'text-red-600'}`}>
+                          {consentSettings.analytics ? '✓ Accepted' : '✗ Rejected'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Functional Cookies:</span>
+                        <span className={`ml-2 ${consentSettings.functional ? 'text-green-600' : 'text-red-600'}`}>
+                          {consentSettings.functional ? '✓ Accepted' : '✗ Rejected'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Marketing Cookies:</span>
+                        <span className={`ml-2 ${consentSettings.marketing ? 'text-green-600' : 'text-red-600'}`}>
+                          {consentSettings.marketing ? '✓ Accepted' : '✗ Rejected'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No cookie preferences set yet. Click "Manage Preferences" to configure your cookie settings.
+                    </p>
+                  )}
+                </div>
+
+                {/* Manage Preferences Button */}
+                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium">
+                      Modify Cookie Preferences
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Review and update your cookie consent choices at any time
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowCookieModal(true)}
+                    variant="outline"
+                    className="shrink-0"
+                  >
+                    Manage Preferences
+                  </Button>
+                </div>
+
+                {/* Cookie Policy Link */}
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => navigate('/cookie-policy')}
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    View Detailed Cookie Policy
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </div>
+
+      {/* Cookie Consent Modal */}
+      <CookieConsentModal
+        isOpen={showCookieModal}
+        onClose={(settings) => {
+          updateConsent(settings);
+          setShowCookieModal(false);
+        }}
+        onAcceptAll={() => {
+          acceptAll();
+          setShowCookieModal(false);
+        }}
+        onRejectAll={() => {
+          rejectAll();
+          setShowCookieModal(false);
+        }}
+      />
+    </div >
   );
 }
