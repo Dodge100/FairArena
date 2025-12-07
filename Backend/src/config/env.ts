@@ -121,4 +121,5 @@ export const ENV = {
   PAYMENTS_ENABLED: getEnv('PAYMENTS_ENABLED') === 'true' || false,
   CRON_SECRET: getEnv('CRON_SECRET'),
   FRONTEND_URLS: getEnv('FRONTEND_URLS', ''),
+  FIREBASE_SERVICE_ACCOUNT: getEnv('FIREBASE_SERVICE_ACCOUNT', ''),
 };

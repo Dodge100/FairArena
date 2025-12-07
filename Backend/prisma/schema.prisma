@@ -16,6 +16,7 @@ model User {
   updatedAt             DateTime                @updatedAt
   deletedAt             DateTime?
   isDeleted             Boolean                 @default(false)
+  fcmTokens             FCMToken[]
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
@@ -36,6 +37,19 @@ model User {
 
   @@index([userId])
   @@index([email])
+}
+
+model FCMToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
 
 model Plan {

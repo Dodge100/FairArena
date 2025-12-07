@@ -44,6 +44,7 @@ import {
   updateProfileFunction,
   updateSettingsFunction,
   updateUser,
+  sendPushNotification,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
@@ -270,6 +271,7 @@ app.use(
       createUserSettingsFunction,
       processFeedbackSubmission,
       supportRequestCreated,
+      sendPushNotification,
     ],
   }),
 );

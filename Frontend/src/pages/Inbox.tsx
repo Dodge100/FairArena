@@ -19,6 +19,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import {
+  getNotificationPermissionStatus,
+  isNotificationSupported,
+  requestNotificationPermission,
+  saveFCMToken,
+  setupForegroundMessageListener,
+} from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
 import DOMPurify from 'dompurify';
 import {
@@ -38,7 +45,7 @@ import {
   Trophy,
   Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 // Custom time formatting to avoid date-fns bundle size
@@ -128,6 +135,109 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [notificationPermissionRequested, setNotificationPermissionRequested] = useState(false);
+  const fcmUnsubscribeRef = useRef<(() => void) | null>(null);
+
+  // Request notification permission and setup FCM
+  const setupNotifications = async () => {
+    if (notificationPermissionRequested || !isNotificationSupported()) {
+      return;
+    }
+
+    try {
+      // Check if push notifications are enabled in settings
+      const token = await getToken();
+      const settingsResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!settingsResponse.ok) {
+        return;
+      }
+
+      const settingsData = await settingsResponse.json();
+      const pushNotificationsEnabled = settingsData.data?.pushNotificationsEnabled ?? true;
+
+      if (!pushNotificationsEnabled) {
+        console.log('Push notifications disabled in settings');
+        return;
+      }
+
+      const currentPermission = getNotificationPermissionStatus();
+
+      if (currentPermission === 'default') {
+        // Request permission
+        const result = await requestNotificationPermission();
+
+        if (result.granted && result.token) {
+          // Save FCM token to backend
+          const saved = await saveFCMToken(result.token, token!);
+
+          if (saved) {
+            toast.success('Push notifications enabled!');
+            setNotificationPermissionRequested(true);
+
+            // Setup foreground message listener
+            const unsubscribe = setupForegroundMessageListener((payload) => {
+              // Only show notification if page is not visible
+              if (!document.hidden) {
+                toast.info(payload.notification?.title || 'New notification', {
+                  description: payload.notification?.body,
+                });
+                // Refresh notifications
+                fetchNotifications();
+                fetchUnreadCount();
+              }
+            });
+
+            fcmUnsubscribeRef.current = unsubscribe;
+          }
+        } else {
+          toast.error(result.error || 'Failed to enable push notifications');
+        }
+      } else if (currentPermission === 'granted') {
+        // Permission already granted, just setup listener
+        const result = await requestNotificationPermission();
+        if (result.granted && result.token) {
+          await saveFCMToken(result.token, token!);
+
+          const unsubscribe = setupForegroundMessageListener((payload) => {
+            if (!document.hidden) {
+              toast.info(payload.notification?.title || 'New notification', {
+                description: payload.notification?.body,
+              });
+              fetchNotifications();
+              fetchUnreadCount();
+            }
+          });
+
+          fcmUnsubscribeRef.current = unsubscribe;
+        }
+        setNotificationPermissionRequested(true);
+      }
+    } catch (error) {
+      console.error('Error setting up notifications:', error);
+    }
+  };
+
+  // Setup notifications when component mounts
+  useEffect(() => {
+    setupNotifications();
+
+    return () => {
+      // Cleanup FCM listener
+      if (fcmUnsubscribeRef.current) {
+        fcmUnsubscribeRef.current();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchNotifications = useCallback(
     async (filter?: 'read' | 'unread') => {

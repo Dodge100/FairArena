@@ -32,6 +32,7 @@ interface SupportTicket {
 interface UserSettings {
   wantToGetFeedbackMail?: boolean;
   wantFeedbackNotifications?: boolean;
+  pushNotificationsEnabled?: boolean;
 }
 
 export default function AccountSettings() {
@@ -44,6 +45,7 @@ export default function AccountSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
@@ -101,6 +103,59 @@ export default function AccountSettings() {
       toast.error('Failed to update settings');
       // Revert on failure
       setSettings(originalSettings);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const sendTestNotification = async () => {
+    setIsSendingTest(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/test-push`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Test notification sent successfully');
+      } else {
+        toast.error(data.message || 'Failed to send test notification');
+      }
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      toast.error('Failed to send test notification');
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
+  const resetSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Settings reset to default successfully');
+        // Refetch settings to get the latest data
+        await fetchSettings();
+      } else {
+        toast.error(data.message || 'Failed to reset settings');
+      }
+    } catch (error) {
+      console.error('Error resetting settings:', error);
+      toast.error('Failed to reset settings');
     } finally {
       setIsSavingSettings(false);
     }
@@ -328,6 +383,73 @@ export default function AccountSettings() {
                         }
                         disabled={isSavingSettings}
                       />
+                    </div>
+
+                    {/* Push Notifications */}
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex-1">
+                        <Label htmlFor="push-notifications" className="text-sm font-medium">
+                          Push Notifications
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Receive push notifications when you're away from the inbox
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {(settings.pushNotificationsEnabled ?? true) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={sendTestNotification}
+                            disabled={isSendingTest}
+                          >
+                            {isSendingTest ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              'Test'
+                            )}
+                          </Button>
+                        )}
+                        <Switch
+                          id="push-notifications"
+                          checked={settings.pushNotificationsEnabled ?? true}
+                          onCheckedChange={(checked) =>
+                            updateSettingsValue('pushNotificationsEnabled', checked)
+                          }
+                          disabled={isSavingSettings}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Reset Settings Button */}
+                    <div className="flex items-center justify-between space-x-4 pt-4 border-t">
+                      <div className="flex-1">
+                        <Label className="text-sm font-medium text-destructive">
+                          Reset All Settings
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Reset all your preferences back to the default values
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetSettings}
+                        disabled={isSavingSettings}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        {isSavingSettings ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Resetting...
+                          </>
+                        ) : (
+                          'Reset Settings'
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

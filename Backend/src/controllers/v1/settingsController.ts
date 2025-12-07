@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { DEFAULT_USER_SETTINGS } from '../../inngest/v1/settingsOperations.js';
 import logger from '../../utils/logger.js';
 import { Verifier } from '../../utils/settings-token-verfier.js';
 
@@ -14,6 +15,7 @@ const SETTINGS_CACHE_TTL = 86400;
 const updateSettingsSchema = z.object({
   wantToGetFeedbackMail: z.boolean().optional(),
   wantFeedbackNotifications: z.boolean().optional(),
+  pushNotificationsEnabled: z.boolean().optional(),
 });
 
 export const getSettings = async (req: Request, res: Response) => {
@@ -62,9 +64,15 @@ export const getSettings = async (req: Request, res: Response) => {
       });
     }
 
+    // Merge with defaults to ensure all fields are present
+    const mergedSettings = {
+      ...DEFAULT_USER_SETTINGS,
+      ...(typeof settings.settings === 'object' && settings.settings !== null ? settings.settings : {}),
+    };
+
     // Cache the settings
     try {
-      await redis.setex(cacheKey, SETTINGS_CACHE_TTL, settings.settings);
+      await redis.setex(cacheKey, SETTINGS_CACHE_TTL, mergedSettings);
     } catch (cacheError) {
       logger.warn('Redis cache write error', {
         userId: auth.userId,
@@ -74,7 +82,7 @@ export const getSettings = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: settings.settings,
+      data: mergedSettings,
     });
   } catch (error) {
     logger.error('Get settings error', {
@@ -85,10 +93,6 @@ export const getSettings = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update user settings
- * PUT /api/v1/settings
- */
 export const updateSettings = async (req: Request, res: Response) => {
   try {
     const auth = await req.auth();

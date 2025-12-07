@@ -350,10 +350,23 @@ export const verifyOtp = async (req: Request, res: Response) => {
       // Continue - verification was successful
     }
 
-    // Generate JWT token for account settings access
-    const token = jwt.sign({ userId: auth.userId, purpose: 'account-settings' }, ENV.JWT_SECRET, {
-      expiresIn: `${TOKEN_EXPIRY_MINUTES}m`,
-    });
+    // Generate JWT token for account settings access with device binding
+    const deviceFingerprint = {
+      userAgent: req.headers['user-agent'] || 'unknown',
+      ip: req.ip || req.connection.remoteAddress || 'unknown',
+    };
+
+    const token = jwt.sign(
+      {
+        userId: auth.userId,
+        purpose: 'account-settings',
+        device: deviceFingerprint,
+      },
+      ENV.JWT_SECRET,
+      {
+        expiresIn: `${TOKEN_EXPIRY_MINUTES}m`,
+      },
+    );
 
     // Set secure cookie
     res.cookie('account-settings-token', token, {

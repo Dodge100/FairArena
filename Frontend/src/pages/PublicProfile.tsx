@@ -32,7 +32,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -393,8 +393,8 @@ export default function PublicProfile() {
           <div className="max-w-screen-2xl mx-auto">
             <div className="flex items-center justify-between h-16">
               {/* FairArena Logo */}
-              <a
-                href={import.meta.env.VITE_FRONTEND_URL || ""}
+              <Link
+                to= "/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -403,7 +403,7 @@ export default function PublicProfile() {
                   <Zap className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <span className="font-bold text-lg text-foreground">FairArena</span>
-              </a>
+              </Link>
 
               {/* Theme Toggle */}
               <Button

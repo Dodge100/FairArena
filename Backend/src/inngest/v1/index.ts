@@ -13,6 +13,7 @@ export {
   markNotificationsAsRead,
   markNotificationsAsUnread,
   sendNotification,
+  sendPushNotification,
 } from './notificationOperations.js';
 export { paymentOrderCreated } from './payment-order-created.js';
 export { paymentVerified } from './payment-verified.js';
@@ -23,10 +24,14 @@ export { updateProfileFunction } from './profileUpdate.js';
 export { recordProfileView } from './recordProfileView.js';
 export { sendEmailHandler } from './sendEmail.js';
 export { sendWeeklyFeedbackEmail } from './sendWeeklyFeedbackEmail.js';
-export { createUserSettingsFunction, resetSettingsFunction, updateSettingsFunction } from './settingsOperations.js';
+export {
+  createUserSettingsFunction,
+  resetSettingsFunction,
+  updateSettingsFunction,
+} from './settingsOperations.js';
+export { supportRequestCreated } from './supportRequest.js';
 export { updateOrganization } from './updateOrganization.js';
 export { deleteUser } from './userDelete.js';
 export { upsertUser } from './userOperations.js';
 export { syncUser } from './userSync.js';
 export { updateUser } from './userUpdate.js';
-export { supportRequestCreated } from './supportRequest.js';
