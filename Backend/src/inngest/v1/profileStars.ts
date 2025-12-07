@@ -4,7 +4,13 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const starProfile = inngest.createFunction(
-  { id: 'profile.star', retries: 3 },
+  {
+    id: 'profile.star',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'profile.star' },
   async ({ event }) => {
     const { profileId, userId } = event.data;
@@ -115,7 +121,7 @@ export const starProfile = inngest.createFunction(
         },
       };
     } catch (error) {
-      logger.error('Error processing star:', {error});
+      logger.error('Error processing star:', { error });
 
       // Handle specific transaction errors
       if (error instanceof Error && error.message === 'Profile already starred') {
@@ -128,7 +134,13 @@ export const starProfile = inngest.createFunction(
 );
 
 export const unstarProfile = inngest.createFunction(
-  { id: 'profile.unstar', retries: 3 },
+  {
+    id: 'profile.unstar',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'profile.unstar' },
   async ({ event }) => {
     const { profileId, userId } = event.data;
@@ -197,7 +209,7 @@ export const unstarProfile = inngest.createFunction(
         data: { starCount },
       };
     } catch (error) {
-      logger.error('Error processing unstar:', {error});
+      logger.error('Error processing unstar:', { error });
 
       // Handle specific transaction errors
       if (error instanceof Error && error.message === 'Star not found') {

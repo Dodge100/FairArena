@@ -3,7 +3,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const createOrganizationRoles = inngest.createFunction(
-  { id: 'create-organization-roles' },
+  {
+    id: 'create-organization-roles',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'organization.created' },
   async ({ event, step }) => {
     const { organizationId, creatorId } = event.data;

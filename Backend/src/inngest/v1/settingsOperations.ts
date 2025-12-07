@@ -23,7 +23,13 @@ interface SettingsUpdateData {
  * Create default settings for a new user
  */
 export const createUserSettingsFunction = inngest.createFunction(
-  { id: 'user-settings-create', retries: 3 },
+  {
+    id: 'user-settings-create',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'user.settings.create' },
   async ({ event }) => {
     const { userId } = event.data as { userId: string };
@@ -70,7 +76,13 @@ export const createUserSettingsFunction = inngest.createFunction(
  * Update user settings
  */
 export const updateSettingsFunction = inngest.createFunction(
-  { id: 'settings-update', retries: 3 },
+  {
+    id: 'settings-update',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'settings/update' },
   async ({ event }) => {
     const { userId, updates } = event.data as { userId: string; updates: SettingsUpdateData };
@@ -134,7 +146,13 @@ export const updateSettingsFunction = inngest.createFunction(
  * Reset user settings to default
  */
 export const resetSettingsFunction = inngest.createFunction(
-  { id: 'settings-reset', retries: 3 },
+  {
+    id: 'settings-reset',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'settings/reset' },
   async ({ event }) => {
     const { userId } = event.data as { userId: string };

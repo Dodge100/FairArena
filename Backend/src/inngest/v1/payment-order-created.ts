@@ -7,6 +7,9 @@ export const paymentOrderCreated = inngest.createFunction(
   {
     id: 'payment/order-created',
     name: 'Process Payment Order Creation',
+    concurrency: {
+      limit: 5,
+    },
     retries: 3,
   },
   { event: 'payment/order.created' },

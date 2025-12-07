@@ -37,6 +37,9 @@ export const updateProfileFunction = inngest.createFunction(
   {
     id: 'update-profile',
     name: 'Update User Profile',
+    concurrency: {
+      limit: 5,
+    },
     retries: 3,
   },
   { event: 'profile/update' },
@@ -169,7 +172,7 @@ export const updateProfileFunction = inngest.createFunction(
         await redis.del(cacheKey);
         logger.info(`Invalidated cache for userId: ${userId}`);
       } catch (error) {
-        logger.error('Cache invalidation error:', {error});
+        logger.error('Cache invalidation error:', { error });
         // Don't fail the update if cache invalidation fails
       }
     });

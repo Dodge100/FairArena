@@ -1,7 +1,7 @@
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 interface FeedbackData {
   feedbackCode: string;
@@ -13,7 +13,13 @@ interface FeedbackData {
  * Process feedback submission
  */
 export const processFeedbackSubmission = inngest.createFunction(
-  { id: 'feedback-submit', retries: 3 },
+  {
+    id: 'feedback-submit',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
   { event: 'feedback/submit' },
   async ({ event }) => {
     const { feedbackCode, message, rating } = event.data as FeedbackData;

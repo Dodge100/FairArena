@@ -14,6 +14,9 @@ export const paymentWebhookReceived = inngest.createFunction(
   {
     id: 'payment/webhook-received',
     name: 'Process Razorpay Webhook Event',
+    concurrency: {
+      limit: 5,
+    },
     retries: 5,
   },
   { event: 'payment/webhook.received' },

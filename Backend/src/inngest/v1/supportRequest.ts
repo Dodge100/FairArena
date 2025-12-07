@@ -4,7 +4,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const supportRequestCreated = inngest.createFunction(
-  { id: 'support-request-created' },
+  {
+    id: 'support-request-created',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'support/request-created' },
   async ({ event, step }) => {
     const { tempId, userId, emailId, subject, message, userEmail, userName } = event.data;

@@ -11,6 +11,9 @@ export const paymentVerified = inngest.createFunction(
   {
     id: 'payment/verified',
     name: 'Process Payment Verification and Credit Award',
+    concurrency: {
+      limit: 5,
+    },
     retries: 3,
   },
   { event: 'payment/verified' },

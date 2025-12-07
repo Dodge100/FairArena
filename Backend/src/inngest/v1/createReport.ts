@@ -1,10 +1,15 @@
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 export const createReport = inngest.createFunction(
-  { id: 'report.create' },
+  {
+    id: 'report.create',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'report.create' },
   async ({ event }) => {
     const { reporterId, reportedEntityId, entityType, reason, details } = event.data;
@@ -59,7 +64,7 @@ export const createReport = inngest.createFunction(
         message: 'Report processed successfully',
       };
     } catch (error) {
-      logger.error('Error processing report:', {error});
+      logger.error('Error processing report:', { error });
       return { success: false, error: 'Failed to process report' };
     }
   },

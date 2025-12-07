@@ -1,6 +1,6 @@
+import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
-import { Request, Response } from 'express';
 import logger from './logger.js';
 
 interface AuthPayload {
@@ -27,7 +27,7 @@ export const Verifier = (req: Request, res: Response, auth: AuthPayload) => {
       logger.warn('Invalid token purpose or user mismatch', {
         purpose: decoded.purpose,
         tokenUserId: decoded.userId,
-        authUserId: auth.userId
+        authUserId: auth.userId,
       });
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -40,7 +40,7 @@ export const Verifier = (req: Request, res: Response, auth: AuthPayload) => {
       logger.warn('Device mismatch detected', {
         userId: auth.userId,
         tokenDevice: decoded.device,
-        currentDevice: { userAgent: currentUserAgent, ip: currentIp }
+        currentDevice: { userAgent: currentUserAgent, ip: currentIp },
       });
       return res.status(401).json({ success: false, message: 'Device verification failed' });
     }

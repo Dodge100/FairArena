@@ -17,7 +17,12 @@ interface UserSettings {
 }
 
 export const sendWeeklyFeedbackEmail = inngest.createFunction(
-  { id: 'send-weekly-feedback-email' },
+  {
+    id: 'send-weekly-feedback-email',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { cron: '0 0 * * 0' }, // Every Sunday at midnight
   async () => {
     logger.info('Starting weekly feedback email job');

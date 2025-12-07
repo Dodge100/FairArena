@@ -3,7 +3,12 @@ import { inngest } from './client.js';
 import { upsertUser } from './userOperations.js';
 
 export const updateUser = inngest.createFunction(
-  { id: 'update-user' },
+  {
+    id: 'update-user',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'user.updated' },
   async ({ event, step }) => {
     const { userId, email } = event.data;

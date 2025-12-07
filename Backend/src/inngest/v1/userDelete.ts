@@ -3,7 +3,12 @@ import { inngest } from './client.js';
 import { deleteUser as deleteUserFromDB } from './userOperations.js';
 
 export const deleteUser = inngest.createFunction(
-  { id: 'delete-user' },
+  {
+    id: 'delete-user',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'user.deleted' },
   async ({ event, step }) => {
     const { userId } = event.data;

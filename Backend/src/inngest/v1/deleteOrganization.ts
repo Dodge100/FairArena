@@ -1,10 +1,15 @@
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 export const deleteOrganization = inngest.createFunction(
-  { id: 'delete-organization' },
+  {
+    id: 'delete-organization',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'organization.delete' },
   async ({ event, step }) => {
     const { organizationId, userId, organizationName } = event.data;
@@ -79,7 +84,7 @@ export const deleteOrganization = inngest.createFunction(
         logger.info('Organization deletion log created', { organizationId, userId });
       });
     } catch (error) {
-      logger.error('Error deleting organization:', {error});
+      logger.error('Error deleting organization:', { error });
       throw error;
     }
   },

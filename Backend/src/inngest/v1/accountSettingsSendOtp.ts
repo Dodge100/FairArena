@@ -29,6 +29,9 @@ function generateOtp(): string {
 export const sendOtpForAccountSettings = inngest.createFunction(
   {
     id: 'send-otp-account-settings',
+    concurrency: {
+      limit: 5,
+    },
     retries: 3,
   },
   { event: 'account-settings/send-otp' },

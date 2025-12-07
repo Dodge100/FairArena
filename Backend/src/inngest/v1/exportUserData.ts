@@ -4,7 +4,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const exportUserDataHandler = inngest.createFunction(
-  { id: 'export-user-data' },
+  {
+    id: 'export-user-data',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'user/export-data' },
   async ({ event }) => {
     const { userId } = event.data;

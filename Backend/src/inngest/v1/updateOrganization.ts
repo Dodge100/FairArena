@@ -3,7 +3,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const updateOrganization = inngest.createFunction(
-  { id: 'update-organization' },
+  {
+    id: 'update-organization',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'organization.update' },
   async ({ event, step }) => {
     const { organizationId, userId, updateData } = event.data;
@@ -52,7 +57,7 @@ export const updateOrganization = inngest.createFunction(
         logger.info('Organization update log created', { organizationId, userId });
       });
     } catch (error) {
-      logger.error('Error updating organization:', {error});
+      logger.error('Error updating organization:', { error });
       throw error;
     }
   },
