@@ -13,7 +13,6 @@ export {
   markNotificationsAsRead,
   markNotificationsAsUnread,
   sendNotification,
-  sendPushNotification,
 } from './notificationOperations.js';
 export { paymentOrderCreated } from './payment-order-created.js';
 export { paymentVerified } from './payment-verified.js';

@@ -6,13 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  getNotificationPermissionStatus,
-  isNotificationSupported,
-  removeFCMToken,
-  requestNotificationPermission,
-  saveFCMToken,
-} from '@/services/notificationService';
 import { useAuth } from '@clerk/clerk-react';
 import { Cookie, Download, Loader2, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -44,7 +37,6 @@ interface SupportTicket {
 interface UserSettings {
   wantToGetFeedbackMail?: boolean;
   wantFeedbackNotifications?: boolean;
-  pushNotificationsEnabled?: boolean;
 }
 
 export default function AccountSettings() {
@@ -61,7 +53,6 @@ export default function AccountSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
@@ -91,109 +82,6 @@ export default function AccountSettings() {
     if (!settings) return;
 
     const originalSettings = settings;
-
-    // Special handling for push notifications
-    if (key === 'pushNotificationsEnabled') {
-      if (value) {
-        // Enabling push notifications - request permission
-        if (!isNotificationSupported()) {
-          toast.error('Push notifications are not supported in your browser');
-          return;
-        }
-
-        const currentPermission = getNotificationPermissionStatus();
-
-        if (currentPermission === 'denied') {
-          toast.error(
-            'Notification permission was denied. Please enable it in your browser settings.',
-          );
-          return;
-        }
-
-        setIsSavingSettings(true);
-        try {
-          // Request permission and get FCM token
-          const result = await requestNotificationPermission();
-
-          if (result.granted && result.token) {
-            // Save FCM token to backend
-            const token = await getToken();
-            const saved = await saveFCMToken(result.token, token!);
-
-            if (saved) {
-              // Update the setting in database
-              const updatedSettings = { ...settings, [key]: value };
-              setSettings(updatedSettings);
-
-              const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
-                method: 'PUT',
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ [key]: value }),
-              });
-              const data = await res.json();
-              if (data.success) {
-                toast.success('Push notifications enabled successfully');
-              } else {
-                toast.error(data.message || 'Failed to update settings');
-                setSettings(originalSettings);
-              }
-            } else {
-              toast.error('Failed to save notification token');
-            }
-          } else {
-            toast.error(result.error || 'Failed to enable push notifications');
-          }
-        } catch (error) {
-          console.error('Error enabling push notifications:', error);
-          toast.error('Failed to enable push notifications');
-        } finally {
-          setIsSavingSettings(false);
-        }
-      } else {
-        // Disabling push notifications - remove FCM token
-        setIsSavingSettings(true);
-        try {
-          const token = await getToken();
-
-          // Remove FCM token from backend
-          await removeFCMToken(token!);
-
-          // Update the setting in database
-          const updatedSettings = { ...settings, [key]: value };
-          setSettings(updatedSettings);
-
-          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ [key]: value }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            toast.success('Push notifications disabled successfully');
-          } else {
-            toast.error(data.message || 'Failed to update settings');
-            setSettings(originalSettings);
-          }
-        } catch (error) {
-          console.error('Error disabling push notifications:', error);
-          toast.error('Failed to disable push notifications');
-          setSettings(originalSettings);
-        } finally {
-          setIsSavingSettings(false);
-        }
-      }
-      return;
-    }
-
-    // Regular setting update for non-push notification settings
     const updatedSettings = { ...settings, [key]: value };
     setSettings(updatedSettings);
 
@@ -224,32 +112,6 @@ export default function AccountSettings() {
       setSettings(originalSettings);
     } finally {
       setIsSavingSettings(false);
-    }
-  };
-
-  const sendTestNotification = async () => {
-    setIsSendingTest(true);
-    try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/test-push`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Test notification sent successfully');
-      } else {
-        toast.error(data.message || 'Failed to send test notification');
-      }
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      toast.error('Failed to send test notification');
-    } finally {
-      setIsSendingTest(false);
     }
   };
 
@@ -502,45 +364,6 @@ export default function AccountSettings() {
                         }
                         disabled={isSavingSettings}
                       />
-                    </div>
-
-                    {/* Push Notifications */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="push-notifications" className="text-sm font-medium">
-                          Push Notifications
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Receive push notifications when you're away from the inbox
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {(settings.pushNotificationsEnabled ?? true) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={sendTestNotification}
-                            disabled={isSendingTest}
-                          >
-                            {isSendingTest ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              'Test'
-                            )}
-                          </Button>
-                        )}
-                        <Switch
-                          id="push-notifications"
-                          checked={settings.pushNotificationsEnabled ?? true}
-                          onCheckedChange={(checked) =>
-                            updateSettingsValue('pushNotificationsEnabled', checked)
-                          }
-                          disabled={isSavingSettings}
-                        />
-                      </div>
                     </div>
 
                     {/* Reset Settings Button */}

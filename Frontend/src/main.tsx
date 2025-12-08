@@ -7,12 +7,12 @@ import App from './App.tsx';
 import { ClarityManager } from './components/ClarityManager.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { FirebaseAnalyticsManager } from './components/FirebaseAnalyticsManager.tsx';
+import { AIButtonProvider } from './contexts/AIButtonContext.tsx';
 import { CookieConsentProvider } from './contexts/CookieConsentContext.tsx';
 import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import { SidebarCustomizationProvider } from './contexts/SidebarCustomizationContext.tsx';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
-import { AIButtonProvider } from './contexts/AIButtonContext.tsx';
 
 // Initialize Sentry before rendering React
 // Sentry.init({

@@ -47,22 +47,6 @@ export const sendNotification = inngest.createFunction(
           title,
         });
 
-        // Send push notification asynchronously
-        await inngest.send({
-          name: 'notification/send-push',
-          data: {
-            userId,
-            title,
-            body: description || message,
-            data: {
-              notificationId: notification.id,
-              type: 'SYSTEM',
-              ...(actionUrl && { actionUrl }),
-            },
-            notificationId: notification.id,
-          },
-        });
-
         return {
           success: true,
           notificationId: notification.id,
@@ -280,94 +264,5 @@ export const deleteAllReadNotifications = inngest.createFunction(
         throw error;
       }
     });
-  },
-);
-
-/**
- * Send push notification asynchronously - checks user presence and preferences
- */
-export const sendPushNotification = inngest.createFunction(
-  {
-    id: 'notification/send-push',
-    name: 'Send Push Notification',
-    concurrency: {
-      limit: 5,
-    },
-    retries: 3,
-  },
-  { event: 'notification/send-push' },
-  async ({ event, step }) => {
-    const { userId, title, body, data, notificationId } = event.data;
-
-    try {
-      // Check if push notifications are enabled in settings
-      const pushEnabled = await step.run('check-push-preferences', async () => {
-        const { prisma } = await import('../../config/database.js');
-        const settings = await prisma.settings.findUnique({
-          where: { userId },
-          select: { settings: true },
-        });
-        return (settings?.settings as any)?.pushNotificationsEnabled ?? true;
-      });
-
-      if (!pushEnabled) {
-        logger.info('Push notifications disabled in settings', { userId, notificationId });
-        return { success: true, skipped: true, reason: 'push_disabled' };
-      }
-
-      // Get all FCM tokens for the user (multiple devices)
-      const fcmTokens = await step.run('get-fcm-tokens', async () => {
-        const { prisma } = await import('../../config/database.js');
-        const tokens = await prisma.fCMToken.findMany({
-          where: { userId },
-          select: { token: true },
-        });
-        return tokens.map((t) => t.token);
-      });
-
-      if (!fcmTokens || fcmTokens.length === 0) {
-        logger.info('No FCM tokens found', { userId, notificationId });
-        return { success: true, skipped: true, reason: 'no_fcm_token' };
-      }
-
-      // Send push notification to all devices
-      const result = await step.run('send-fcm-push', async () => {
-        const { sendSmartNotification } = await import('../../services/v1/fcmService.js');
-        return await sendSmartNotification(userId, {
-          title,
-          body,
-          data: data || {},
-        });
-      });
-
-      if (result.successCount > 0) {
-        logger.info('Push notifications sent successfully', {
-          userId,
-          notificationId,
-          successCount: result.successCount,
-          failureCount: result.failureCount,
-        });
-        return {
-          success: true,
-          sent: true,
-          successCount: result.successCount,
-          failureCount: result.failureCount,
-        };
-      } else {
-        logger.warn('Failed to send push notifications to any device', {
-          userId,
-          notificationId,
-          failureCount: result.failureCount,
-        });
-        return {
-          success: false,
-          error: 'Failed to send to any device',
-          failureCount: result.failureCount,
-        };
-      }
-    } catch (error) {
-      logger.error('Error in sendPushNotification', { error, userId, notificationId });
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
   },
 );

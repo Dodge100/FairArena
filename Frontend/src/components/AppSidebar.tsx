@@ -19,7 +19,6 @@ import {
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useTheme } from '@/hooks/useTheme';
-import { removeFCMToken } from '@/services/notificationService';
 import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import {
   BarChart3,
@@ -130,16 +129,6 @@ export function AppSidebar() {
     });
 
   const handleSignOut = async () => {
-    try {
-      // Remove FCM token for this device before signing out
-      const token = await getToken();
-      if (token) {
-        await removeFCMToken(token);
-      }
-    } catch (error) {
-      console.error('Error removing FCM token on logout:', error);
-    }
-
     await signOut();
     navigate('/');
   };

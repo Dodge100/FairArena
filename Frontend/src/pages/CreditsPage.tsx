@@ -373,14 +373,6 @@ const CreditsPage = () => {
                   <History className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                   <CardTitle className="text-xl">Recent Transactions</CardTitle>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fetchCreditHistory()}
-                  disabled={historyLoading}
-                >
-                  <RefreshCw className={`h-4 w-4 ${historyLoading ? 'animate-spin' : ''}`} />
-                </Button>
               </div>
               <CardDescription>Your credit transaction activity</CardDescription>
             </CardHeader>

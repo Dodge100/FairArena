@@ -1,7 +1,6 @@
 import { type Analytics, getAnalytics } from 'firebase/analytics';
-import { type Messaging } from 'firebase/messaging';
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getToken } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,16 +14,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-let messaging: Messaging | null = null;
-
-try {
-  if ('serviceWorker' in navigator && 'PushManager' in window) {
-    messaging = getMessaging(app);
-  }
-} catch (error) {
-  console.error('Firebase messaging initialization error:', error);
-}
 
 let analytics: Analytics | null = null;
 
@@ -45,4 +34,4 @@ export const getFirebaseAnalytics = (): Analytics | null => {
   return analytics;
 };
 
-export { analytics, getToken, messaging, onMessage };
+export { analytics, getToken };

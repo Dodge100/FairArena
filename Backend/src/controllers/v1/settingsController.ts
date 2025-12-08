@@ -15,7 +15,6 @@ const SETTINGS_CACHE_TTL = 86400;
 const updateSettingsSchema = z.object({
   wantToGetFeedbackMail: z.boolean().optional(),
   wantFeedbackNotifications: z.boolean().optional(),
-  pushNotificationsEnabled: z.boolean().optional(),
 });
 
 export const getSettings = async (req: Request, res: Response) => {

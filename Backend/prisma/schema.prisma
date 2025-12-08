@@ -16,11 +16,9 @@ model User {
   updatedAt             DateTime                @updatedAt
   deletedAt             DateTime?
   isDeleted             Boolean                 @default(false)
-  fcmTokens             FCMToken[]
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
-  userPresence          UserPresence?
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
@@ -38,37 +36,6 @@ model User {
 
   @@index([userId])
   @@index([email])
-}
-
-model FCMToken {
-  id                  String                  @id @default(cuid())
-  userId              String
-  token               String                  @unique
-  deviceId            String
-  deviceName          String?
-  deviceType          String?
-  platform            String?
-  osVersion           String?
-  appVersion          String?
-  browserName         String?
-  browserVersion      String?
-  isActive            Boolean                 @default(true)
-  lastUsedAt          DateTime                @default(now())
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
-  expiresAt           DateTime?
-  failureCount        Int                     @default(0)
-  lastFailureAt       DateTime?
-  lastFailureReason   String?
-  user                User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@unique([userId, deviceId])
-  @@index([userId])
-  @@index([token])
-  @@index([deviceId])
-  @@index([userId, isActive])
-  @@index([lastUsedAt])
-  @@index([expiresAt])
 }
 
 model Plan {
@@ -245,7 +212,7 @@ model ProfileView {
   viewerEmail  String
   viewerName   String?
   createdAt    DateTime @default(now())
-  profile      Profile  @relation(fields: [profileId], references: [id])
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, viewerUserId])
   @@index([profileId])
@@ -712,15 +679,7 @@ model Notification {
   createdAt             DateTime                @default(now())
   readAt                DateTime?
   description           String
-  priority              Int                     @default(5)
-  expiresAt             DateTime?
-  sentAt                DateTime?
-  deliveryStatus        String                  @default("PENDING")
-  category              String?
-  sound                 String?
-  badge                 Int?
-  imageUrl              String?
-  groupKey              String?
+
   user                  User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
@@ -729,10 +688,6 @@ model Notification {
   @@index([createdAt])
   @@index([userId, read])
   @@index([userId, createdAt])
-  @@index([priority])
-  @@index([expiresAt])
-  @@index([deliveryStatus])
-  @@index([groupKey])
 }
 
 model Feedback {
@@ -842,16 +797,4 @@ model EnvironmentVariable {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
-}
-
-model UserPresence {
-  userId          String   @id
-  isOnline        Boolean  @default(false)
-  lastSeenAt      DateTime @default(now())
-  activeDeviceIds String[]
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([isOnline])
-  @@index([lastSeenAt])
 }

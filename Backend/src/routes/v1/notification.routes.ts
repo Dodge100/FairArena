@@ -1,10 +1,5 @@
 import { Router } from 'express';
 import {
-  removeFCMToken,
-  saveFCMToken,
-  testPushNotification,
-} from '../../controllers/v1/fcmController.js';
-import {
   deleteAllRead,
   deleteNotification,
   getNotifications,
@@ -238,10 +233,5 @@ router.delete('/:id', protectRoute, deleteNotification);
  *         $ref: '#/components/responses/ServerError'
  */
 router.delete('/read/all', protectRoute, deleteAllRead);
-
-// FCM and Push Notification Routes
-router.post('/fcm-token', protectRoute, saveFCMToken);
-router.delete('/fcm-token', protectRoute, removeFCMToken);
-router.post('/test-push', protectRoute, testPushNotification);
 
 export default router;

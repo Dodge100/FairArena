@@ -7,13 +7,11 @@ import {
   Loader2,
   MessageSquare,
   Mic,
-  Moon,
   RotateCcw,
   Search,
   Send,
   Settings,
   Sparkles,
-  Sun,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -574,22 +572,6 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                     </div>
 
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">Theme</span>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={toggleTheme}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
-                        >
-                          {theme === 'light' ? (
-                            <Moon className="w-4 h-4" />
-                          ) : (
-                            <Sun className="w-4 h-4" />
-                          )}
-                          <span className="text-sm capitalize">{theme}</span>
-                        </motion.button>
-                      </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">Auto-scroll</span>
                         <motion.button

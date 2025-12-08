@@ -7,7 +7,6 @@ import { inngest } from './client.js';
 export const DEFAULT_USER_SETTINGS = {
   wantToGetFeedbackMail: true,
   wantFeedbackNotifications: true,
-  pushNotificationsEnabled: false,
 };
 
 // Settings cache TTL: 24 hours
@@ -16,7 +15,6 @@ const SETTINGS_CACHE_TTL = 86400;
 interface SettingsUpdateData {
   wantToGetFeedbackMail?: boolean;
   wantFeedbackNotifications?: boolean;
-  pushNotificationsEnabled?: boolean;
 }
 
 /**

@@ -43,5 +43,4 @@ export const REDIS_KEYS = {
   USER_CREDITS_CACHE: 'user:credits:',
   USER_CREDIT_HISTORY_CACHE: 'user:credit:history:',
   RATE_LIMIT: 'ratelimit:',
-  ANALYTICS: 'analytics:',
 } as const;
