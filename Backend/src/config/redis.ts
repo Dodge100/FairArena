@@ -42,5 +42,10 @@ export const REDIS_KEYS = {
   USER_LOGS_CACHE: 'user:logs:',
   USER_CREDITS_CACHE: 'user:credits:',
   USER_CREDIT_HISTORY_CACHE: 'user:credit:history:',
+  USER_UNREAD_NOTIFICATIONS: 'user:unread:notifications:',
+  USER_ORGANIZATION_DETAILS: 'user:organization:details:',
+  USER_ORGANIZATION_AUDIT_LOGS: 'user:organization:audit:logs:',
+  USER_ORGANIZATION_PERMISSIONS: 'user:organization:permissions:',
   RATE_LIMIT: 'ratelimit:',
+  USER_ORGANIZATIONS: 'user:organizations:',
 } as const;

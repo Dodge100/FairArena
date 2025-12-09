@@ -1,3 +1,4 @@
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import notificationService from '../../services/v1/notification.service.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
@@ -47,6 +48,13 @@ export const sendNotification = inngest.createFunction(
           title,
         });
 
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
+
         return {
           success: true,
           notificationId: notification.id,
@@ -89,6 +97,13 @@ export const markNotificationsAsRead = inngest.createFunction(
           count: notificationIds.length,
         });
 
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
+
         return {
           success: true,
           count: notificationIds.length,
@@ -129,6 +144,13 @@ export const markNotificationsAsUnread = inngest.createFunction(
           userId,
           count: notificationIds.length,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,
@@ -171,6 +193,13 @@ export const markAllNotificationsAsRead = inngest.createFunction(
           count: result.count,
         });
 
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
+
         return {
           success: true,
           count: result.count,
@@ -210,6 +239,13 @@ export const deleteNotifications = inngest.createFunction(
           userId,
           count: notificationIds.length,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,

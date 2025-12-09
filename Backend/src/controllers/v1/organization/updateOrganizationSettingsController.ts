@@ -3,6 +3,47 @@ import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
 import { inngest } from '../../../inngest/v1/client.js';
 import logger from '../../../utils/logger.js';
 
+interface OrganizationPermissions {
+  organization: {
+    view: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+    manageBilling: boolean;
+    manageSecurity: boolean;
+  };
+  teams: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageMembers: boolean;
+  };
+  members: {
+    view: boolean;
+    invite: boolean;
+    remove: boolean;
+    manageRoles: boolean;
+  };
+  projects: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+  };
+  roles: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    assign: boolean;
+  };
+  audit: {
+    view: boolean;
+  };
+}
+
 interface UpdateOrganizationSettingsRequest {
   name?: string;
   isPublic?: boolean;
@@ -24,41 +65,10 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'Organization slug is required' });
     }
 
-    const readOnlyPrisma = getReadOnlyPrisma();
-
-    // Check if user has permission to edit the organization
-    const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
-      where: {
-        userId,
-        organization: { slug },
-      },
-      include: {
-        role: true,
-        organization: {
-          include: {
-            _count: {
-              select: {
-                userOrganizations: true,
-                teams: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!userOrganization) {
-      return res.status(404).json({ error: 'Organization not found or access denied' });
-    }
-
-    // Check if user has edit permissions
-    const permissions = userOrganization.role.permissions as Record<string, boolean>;
-    const canEdit = permissions?.canEditSettings;
-
-    if (!canEdit) {
-      return res
-        .status(403)
-        .json({ error: 'Insufficient permissions to edit organization settings' });
+    // Permission check is now handled by middleware
+    const organizationContext = (req as any).organizationContext;
+    if (!organizationContext) {
+      return res.status(500).json({ error: 'Organization context not loaded' });
     }
 
     // Validate input
@@ -79,10 +89,11 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
 
     // Check if name is already taken (if being updated)
     if (name !== undefined) {
+      const readOnlyPrisma = getReadOnlyPrisma();
       const existingOrg = await readOnlyPrisma.organization.findFirst({
         where: {
           name: name.trim(),
-          id: { not: userOrganization.organizationId },
+          id: { not: organizationContext.organizationId },
         },
       });
 
@@ -101,28 +112,18 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
     await inngest.send({
       name: 'organization.update',
       data: {
-        organizationId: userOrganization.organizationId,
+        organizationId: organizationContext.organizationId,
         userId,
         updateData,
       },
     });
 
-    logger.info(`Organization update queued: ${userOrganization.organizationId} by user ${userId}`);
+    logger.info(`Organization update queued: ${organizationContext.organizationId} by user ${userId}`);
 
-    // Return immediate response with current organization data
+    // Return immediate response
     res.status(202).json({
       message: 'Organization settings update has been queued and will be processed shortly',
-      organization: {
-        id: userOrganization.organization.id,
-        name: userOrganization.organization.name,
-        slug: userOrganization.organization.slug,
-        joinEnabled: userOrganization.organization.joinEnabled,
-        isPublic: userOrganization.organization.isPublic,
-        timezone: userOrganization.organization.timezone,
-        createdAt: userOrganization.organization.createdAt,
-        memberCount: userOrganization.organization._count?.userOrganizations || 0,
-        teamCount: userOrganization.organization._count?.teams || 0,
-      },
+      organizationId: organizationContext.organizationId,
     });
   } catch (error) {
     logger.error('Error queuing organization settings update:', { error });

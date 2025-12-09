@@ -1,6 +1,5 @@
 export { sendOtpForAccountSettings } from './accountSettingsSendOtp.js';
 export { createLog } from './createLog.js';
-export { createOrganizationRoles } from './createOrganizationRoles.js';
 export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { exportUserDataHandler } from './exportUserData.js';
@@ -34,3 +33,4 @@ export { deleteUser } from './userDelete.js';
 export { upsertUser } from './userOperations.js';
 export { syncUser } from './userSync.js';
 export { updateUser } from './userUpdate.js';
+export { createOrganizationAuditLog } from './createOrganizationAuditLog.js';

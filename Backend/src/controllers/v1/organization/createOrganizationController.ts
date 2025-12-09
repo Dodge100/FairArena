@@ -1,8 +1,196 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../../config/database.js';
+import { redis, REDIS_KEYS } from '../../../config/redis.js';
 import { inngest } from '../../../inngest/v1/client.js';
 import logger from '../../../utils/logger.js';
+
+const PERMISSIONS = {
+  OWNER: {
+    // Organization management
+    organization: {
+      view: true,
+      edit: true,
+      delete: true,
+      manageSettings: true,
+      manageBilling: true,
+      manageSecurity: true,
+    },
+    // Team management
+    teams: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+      manageMembers: true,
+    },
+    // Member management
+    members: {
+      view: true,
+      invite: true,
+      remove: true,
+      manageRoles: true,
+    },
+    // Project/Repository management
+    projects: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+      manageSettings: true,
+    },
+    // Role management
+    roles: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+      assign: true,
+    },
+    // Audit/Logs
+    audit: {
+      view: true,
+    },
+  },
+  CO_OWNER: {
+    // Organization management
+    organization: {
+      view: true,
+      edit: true,
+      delete: false,
+      manageSettings: true,
+      manageBilling: false,
+      manageSecurity: false,
+    },
+    // Team management
+    teams: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+      manageMembers: true,
+    },
+    // Member management
+    members: {
+      view: true,
+      invite: true,
+      remove: true,
+      manageRoles: true,
+    },
+    // Project/Repository management
+    projects: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+      manageSettings: true,
+    },
+    // Role management
+    roles: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+      assign: true,
+    },
+    // Audit/Logs
+    audit: {
+      view: true,
+    },
+  },
+  MAINTAINER: {
+    // Organization management
+    organization: {
+      view: true,
+      edit: false,
+      delete: false,
+      manageSettings: false,
+      manageBilling: false,
+      manageSecurity: false,
+    },
+    // Team management
+    teams: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+      manageMembers: true,
+    },
+    // Member management
+    members: {
+      view: true,
+      invite: true,
+      remove: false,
+      manageRoles: false,
+    },
+    // Project/Repository management
+    projects: {
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+      manageSettings: false,
+    },
+    // Role management
+    roles: {
+      view: true,
+      create: false,
+      edit: false,
+      delete: false,
+      assign: false,
+    },
+    // Audit/Logs
+    audit: {
+      view: false,
+    },
+  },
+  MEMBER: {
+    // Organization management
+    organization: {
+      view: true,
+      edit: false,
+      delete: false,
+      manageSettings: false,
+      manageBilling: false,
+      manageSecurity: false,
+    },
+    // Team management
+    teams: {
+      view: true,
+      create: false,
+      edit: false,
+      delete: false,
+      manageMembers: false,
+    },
+    // Member management
+    members: {
+      view: true,
+      invite: false,
+      remove: false,
+      manageRoles: false,
+    },
+    // Project/Repository management
+    projects: {
+      view: true,
+      create: false,
+      edit: false,
+      delete: false,
+      manageSettings: false,
+    },
+    // Role management
+    roles: {
+      view: false,
+      create: false,
+      edit: false,
+      delete: false,
+      assign: false,
+    },
+    // Audit/Logs
+    audit: {
+      view: false,
+    },
+  },
+} as const;
 
 // Zod schema for organization creation
 const createOrganizationSchema = z.object({
@@ -87,30 +275,82 @@ export const CreateOrganization = async (req: Request, res: Response) => {
         },
       });
 
+      // Create default roles synchronously
+      const rolesData = [
+        {
+          roleName: 'Owner',
+          permissions: PERMISSIONS.OWNER,
+        },
+        {
+          roleName: 'Co-Owner',
+          permissions: PERMISSIONS.CO_OWNER,
+        },
+        {
+          roleName: 'Maintainer',
+          permissions: PERMISSIONS.MAINTAINER,
+        },
+        {
+          roleName: 'Member',
+          permissions: PERMISSIONS.MEMBER,
+        },
+      ];
+
+      const roles = await Promise.all(
+        rolesData.map((roleData) =>
+          tx.organizationRole.create({
+            data: {
+              organizationId: org.id,
+              ...roleData,
+            },
+          }),
+        ),
+      );
+
+      // Assign owner role to creator
+      const ownerRole = roles.find((r) => r.roleName === 'Owner');
+      if (ownerRole) {
+        await tx.organizationUserRole.create({
+          data: {
+            userId,
+            organizationId: org.id,
+            roleId: ownerRole.id,
+          },
+        });
+      }
+
       return org;
+    });
+
+    inngest.send({
+      name: 'organization.audit.create',
+      data: {
+        organizationId: organization.id,
+        action: 'ORGANIZATION_CREATED',
+        level: 'INFO',
+        userId,
+      },
     });
 
     inngest
       .send({
-        name: 'organization.created',
+        name: 'log.create',
         data: {
-          organizationId: organization.id,
-          creatorId: userId,
+          userId: auth.userId,
+          action: 'organization_created',
+          level: 'INFO',
         },
+        metadata: { organizationName: organization.name },
       })
-      .catch((err) => logger.error('Failed to send Inngest event', err));
-
-    inngest.send({
-      name: 'log.create',
-      data: {
-        userId: auth.userId,
-        action: 'organization_created',
-        level: 'INFO',
-      },
-      metadata: { organizationName: organization.name },
-    });
+      .catch((err) => logger.error('Failed to send log event', err));
 
     logger.info('Organization created successfully', { organizationId: organization.id, userId });
+
+    // Invalidate cache for user's organizations
+    try {
+      await redis.del(`${REDIS_KEYS.USER_ORGANIZATIONS}${userId}`);
+    } catch (cacheError) {
+      logger.warn('Failed to invalidate cache after organization creation', { cacheError });
+    }
 
     res.status(201).json({
       message: 'Organization created successfully',

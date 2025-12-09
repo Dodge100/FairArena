@@ -1,12 +1,18 @@
 import { Router } from 'express';
 import { CreateOrganization } from '../../controllers/v1/organization/createOrganizationController.js';
 import { DeleteOrganization } from '../../controllers/v1/organization/deleteOrganizationController.js';
+import { GetOrganizationAuditLogs } from '../../controllers/v1/organization/getOrganizationAuditLogsController.js';
 import { GetOrganizationDetails } from '../../controllers/v1/organization/getOrganizationDetailsController.js';
 import { GetOrganizationMembers } from '../../controllers/v1/organization/getOrganizationMembersController.js';
 import { GetOrganizationTeams } from '../../controllers/v1/organization/getOrganizationTeamsController.js';
 import { GetUserOrganizations } from '../../controllers/v1/organization/getUserOrganizationsController.js';
 import { UpdateOrganizationSettings } from '../../controllers/v1/organization/updateOrganizationSettingsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
+import {
+    loadOrganizationPermissions,
+    requirePermission,
+} from '../../middleware/organizationPermissions.middleware.js';
+import { rateLimiters } from '../../middleware/organizationRateLimit.middleware.js';
 
 const router = Router();
 
@@ -36,7 +42,7 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/', protectRoute, GetUserOrganizations);
+router.get('/', protectRoute, rateLimiters.readOrganization, GetUserOrganizations);
 
 /**
  * @swagger
@@ -108,7 +114,7 @@ router.get('/', protectRoute, GetUserOrganizations);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/create/new', protectRoute, CreateOrganization);
+router.post('/create/new', protectRoute, rateLimiters.createOrganization, CreateOrganization);
 
 /**
  * @swagger
@@ -168,8 +174,15 @@ router.post('/create/new', protectRoute, CreateOrganization);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/:slug', protectRoute, GetOrganizationDetails);
-router.delete('/:slug', protectRoute, DeleteOrganization);
+router.get('/:slug', protectRoute, rateLimiters.readOrganization, GetOrganizationDetails);
+router.delete(
+    '/:slug',
+    protectRoute,
+    rateLimiters.deleteOrganization,
+    loadOrganizationPermissions,
+    requirePermission('organization', 'delete'),
+    DeleteOrganization,
+);
 
 /**
  * @swagger
@@ -217,7 +230,14 @@ router.delete('/:slug', protectRoute, DeleteOrganization);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/:slug/teams', protectRoute, GetOrganizationTeams);
+router.get(
+    '/:slug/teams',
+    protectRoute,
+    rateLimiters.readOrganization,
+    loadOrganizationPermissions,
+    requirePermission('teams', 'view'),
+    GetOrganizationTeams,
+);
 
 /**
  * @swagger
@@ -267,7 +287,14 @@ router.get('/:slug/teams', protectRoute, GetOrganizationTeams);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/:slug/members', protectRoute, GetOrganizationMembers);
+router.get(
+    '/:slug/members',
+    protectRoute,
+    rateLimiters.readOrganization,
+    loadOrganizationPermissions,
+    requirePermission('members', 'view'),
+    GetOrganizationMembers,
+);
 
 /**
  * @swagger
@@ -329,6 +356,95 @@ router.get('/:slug/members', protectRoute, GetOrganizationMembers);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.put('/:slug/settings', protectRoute, UpdateOrganizationSettings);
+router.put(
+    '/:slug/settings',
+    protectRoute,
+    rateLimiters.updateOrganization,
+    loadOrganizationPermissions,
+    requirePermission('organization', 'edit'),
+    UpdateOrganizationSettings,
+);
+
+/**
+ * @swagger
+ * /api/v1/organization/{slug}/audit-logs:
+ *   get:
+ *     summary: Get organization audit logs
+ *     description: Retrieve audit logs for an organization (requires audit.view permission)
+ *     tags: [Organization]
+ *     security:
+ *       - ClerkAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Organization slug
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of logs per page
+ *     responses:
+ *       200:
+ *         description: Audit logs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 auditLogs:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       action:
+ *                         type: string
+ *                       level:
+ *                         type: string
+ *                       details:
+ *                         type: object
+ *                       createdAt:
+ *                         type: string
+ *                       user:
+ *                         type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+router.get(
+    '/:slug/audit-logs',
+    protectRoute,
+    rateLimiters.auditLogs,
+    loadOrganizationPermissions,
+    requirePermission('audit', 'view'),
+    GetOrganizationAuditLogs,
+);
 
 export default router;

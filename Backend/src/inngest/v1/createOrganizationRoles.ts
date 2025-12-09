@@ -141,5 +141,19 @@ export const createOrganizationRoles = inngest.createFunction(
         throw error;
       }
     });
+
+    // Create audit log for organization creation
+    await step.run('create-organization-audit-logs', async () => {
+      await prisma.organizationAuditLog.create({
+        data: {
+          organizationId,
+          action: 'ORGANIZATION_CREATED',
+          level: 'INFO',
+          userId: creatorId,
+        },
+      });
+
+      logger.info('Organization audit log created for role creation', { organizationId });
+    });
   },
 );

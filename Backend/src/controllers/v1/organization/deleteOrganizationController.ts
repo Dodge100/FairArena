@@ -1,14 +1,53 @@
 import { Request, Response } from 'express';
-import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
 import { inngest } from '../../../inngest/v1/client.js';
 import logger from '../../../utils/logger.js';
+
+interface OrganizationPermissions {
+  organization: {
+    view: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+    manageBilling: boolean;
+    manageSecurity: boolean;
+  };
+  teams: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageMembers: boolean;
+  };
+  members: {
+    view: boolean;
+    invite: boolean;
+    remove: boolean;
+    manageRoles: boolean;
+  };
+  projects: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+  };
+  roles: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    assign: boolean;
+  };
+  audit: {
+    view: boolean;
+  };
+}
 
 export const DeleteOrganization = async (req: Request, res: Response) => {
   try {
     const auth = req.auth();
     const userId = auth.userId;
     const { slug } = req.params;
-    const readOnlyPrisma = getReadOnlyPrisma();
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -18,29 +57,15 @@ export const DeleteOrganization = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Organization slug is required' });
     }
 
-    // Check if user is the owner of the organization
-    const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
-      where: {
-        userId,
-        organization: { slug },
-      },
-      include: {
-        role: true,
-        organization: true,
-      },
-    });
-
-    if (!userOrganization) {
-      return res.status(404).json({ error: 'Organization not found or access denied' });
+    // Permission check is now handled by middleware
+    // Get organization context from middleware
+    const organizationContext = (req as any).organizationContext;
+    if (!organizationContext) {
+      return res.status(500).json({ error: 'Organization context not loaded' });
     }
 
-    // Only owners can delete organizations
-    if (userOrganization.role.roleName.toLowerCase() !== 'owner') {
-      return res.status(403).json({ error: 'Only organization owners can delete organizations' });
-    }
-
-    const organizationId = userOrganization.organizationId;
-    const organizationName = userOrganization.organization.name;
+    const organizationId = organizationContext.organizationId;
+    const organizationName = organizationContext.organizationSlug;
 
     // Send to Inngest for async processing
     await inngest.send({

@@ -5,7 +5,9 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { AIButton } from '../components/AIButton';
 import { AISidebar } from '../components/AISidebar';
 import { AppSidebar } from '../components/AppSidebar';
+import { OrganizationSwitcher } from '../components/OrganizationSwitcher';
 import { ChatProvider } from '../contexts/ChatContext';
+import { OrganizationProvider } from '../contexts/OrganizationContext';
 
 export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useUser();
@@ -25,27 +27,33 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <ChatProvider>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-screen overflow-hidden">
-          <AppSidebar />
-          <main className="flex-1 overflow-auto bg-background">
-            <div className="p-6 min-h-screen">
-              <div className="mb-4">
-                <SidebarTrigger />
+    <OrganizationProvider>
+      <ChatProvider>
+        <SidebarProvider>
+          <div className="flex min-h-screen w-screen overflow-hidden">
+            <AppSidebar />
+            <main className="flex-1 overflow-auto bg-background">
+              <div className="p-6 min-h-screen">
+                <div className="mb-4 flex items-center justify-between">
+                  <SidebarTrigger />
+                  <div className="flex-1 flex justify-center">
+                    <OrganizationSwitcher />
+                  </div>
+                  <div className="w-10" />
+                </div>
+                <Outlet />
               </div>
-              <Outlet />
-            </div>
-          </main>
-          <AIButton onClick={() => setIsAISidebarOpen(true)} hidden={aiButtonHidden} />
-          <AISidebar
-            isOpen={isAISidebarOpen}
-            onClose={() => setIsAISidebarOpen(false)}
-            aiButtonHidden={aiButtonHidden}
-            setAiButtonHidden={setAiButtonHidden}
-          />
-        </div>
-      </SidebarProvider>
-    </ChatProvider>
+            </main>
+            <AIButton onClick={() => setIsAISidebarOpen(true)} hidden={aiButtonHidden} />
+            <AISidebar
+              isOpen={isAISidebarOpen}
+              onClose={() => setIsAISidebarOpen(false)}
+              aiButtonHidden={aiButtonHidden}
+              setAiButtonHidden={setAiButtonHidden}
+            />
+          </div>
+        </SidebarProvider>
+      </ChatProvider>
+    </OrganizationProvider>
   );
 }

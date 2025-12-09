@@ -12,7 +12,6 @@ import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
   createLog,
-  createOrganizationRoles,
   createReport,
   createUserSettingsFunction,
   deleteAllReadNotifications,
@@ -44,6 +43,7 @@ import {
   updateProfileFunction,
   updateSettingsFunction,
   updateUser,
+  createOrganizationAuditLog,
 } from './inngest/v1/index.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
@@ -247,7 +247,6 @@ app.use(
       subscribeToNewsletter,
       unsubscribeFromNewsletter,
       inviteToPlatform,
-      createOrganizationRoles,
       deleteOrganization,
       updateOrganization,
       createReport,
@@ -270,6 +269,7 @@ app.use(
       createUserSettingsFunction,
       processFeedbackSubmission,
       supportRequestCreated,
+      createOrganizationAuditLog,
     ],
   }),
 );

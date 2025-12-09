@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../../config/redis.js';
 import logger from '../../../utils/logger.js';
 
 export const GetOrganizationDetails = async (req: Request, res: Response) => {
@@ -14,6 +15,24 @@ export const GetOrganizationDetails = async (req: Request, res: Response) => {
 
     if (!slug) {
       return res.status(400).json({ error: 'Organization slug is required' });
+    }
+
+    const cacheKey = `${REDIS_KEYS.USER_ORGANIZATION_DETAILS}${userId}:${slug}`;
+
+    // Try to get from cache
+    try {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData !== null) {
+        const data = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
+        logger.info('Serving organization details from cache', { userId, slug });
+        return res.json(data);
+      }
+    } catch (cacheError) {
+      logger.warn('Redis cache read failed, proceeding with database query', {
+        error: (cacheError as Error).message,
+        userId,
+        slug,
+      });
     }
 
     const readOnlyPrisma = getReadOnlyPrisma();
@@ -60,7 +79,21 @@ export const GetOrganizationDetails = async (req: Request, res: Response) => {
       },
     };
 
-    res.json({ organization });
+    const responseData = { organization };
+
+    // Cache the response
+    try {
+      await redis.setex(cacheKey, 600, JSON.stringify(responseData)); // 10 minutes TTL
+      logger.info('Cached organization details', { userId, slug, cacheKey });
+    } catch (cacheError) {
+      logger.warn('Redis cache write failed', {
+        error: (cacheError as Error).message,
+        userId,
+        slug,
+      });
+    }
+
+    res.json(responseData);
   } catch (error) {
     logger.error('Error fetching organization details:', { error });
     res.status(500).json({ error: 'Internal server error' });

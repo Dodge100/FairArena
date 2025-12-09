@@ -13,7 +13,6 @@ import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
 import CookiePolicy from './pages/CookiePolicy';
-import CreateOrganization from './pages/CreateOrganization';
 import CreditsPage from './pages/CreditsPage';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
@@ -22,9 +21,6 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
-import OrganizationDetails from './pages/OrganizationDetails';
-import Organizations from './pages/Organizations';
-import OrganizationSettings from './pages/OrganizationSettings';
 import PricingPage from './pages/PricingPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
@@ -117,10 +113,6 @@ function App() {
           <Route path="/dashboard/public-profile" element={<MyProfile />} />
           <Route path="/dashboard/account-settings" element={<AccountSettings />} />
           <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
-          <Route path="/dashboard/organization" element={<Organizations />} />
-          <Route path="/dashboard/organization/create" element={<CreateOrganization />} />
-          <Route path="/dashboard/organization/:slug" element={<OrganizationDetails />} />
-          <Route path="/dashboard/organization/:slug/settings" element={<OrganizationSettings />} />
         </Route>
         <Route path="/feedback/:feedbackCode" element={<Feedback />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
