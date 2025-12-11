@@ -2,7 +2,17 @@ import { prisma } from '../../config/database.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
-export async function upsertUser(userId: string, email: string) {
+export async function upsertUser(
+  userId: string,
+  email: string,
+  profileData?: {
+    firstName?: string;
+    lastName?: string;
+    imageUrl?: string;
+    profileImageUrl?: string;
+    username?: string;
+  },
+) {
   if (!userId || !email) {
     throw new Error('userId and email are required');
   }
@@ -27,6 +37,11 @@ export async function upsertUser(userId: string, email: string) {
           userId,
           isDeleted: false,
           deletedAt: null,
+          firstName: profileData?.firstName,
+          lastName: profileData?.lastName,
+          imageUrl: profileData?.imageUrl,
+          profileImageUrl: profileData?.profileImageUrl,
+          username: profileData?.username,
         },
       });
 
@@ -66,7 +81,14 @@ export async function upsertUser(userId: string, email: string) {
     } else if (existingUser) {
       await prisma.user.update({
         where: { email },
-        data: { userId },
+        data: {
+          userId,
+          firstName: profileData?.firstName,
+          lastName: profileData?.lastName,
+          imageUrl: profileData?.imageUrl,
+          profileImageUrl: profileData?.profileImageUrl,
+          username: profileData?.username,
+        },
       });
 
       logger.info('User updated', { userId, email });
@@ -85,6 +107,19 @@ export async function upsertUser(userId: string, email: string) {
         data: {
           userId,
           email,
+          firstName: profileData?.firstName,
+          lastName: profileData?.lastName,
+          imageUrl: profileData?.imageUrl,
+          profileImageUrl: profileData?.profileImageUrl,
+          username: profileData?.username,
+        },
+      });
+
+      // Create profile
+      await prisma.profile.create({
+        data: {
+          userId,
+          bio: '',
         },
       });
 

@@ -8,10 +8,21 @@ const clerkWebhookSchema = z.object({
   type: z.enum(['user.created', 'user.updated', 'user.deleted']),
   data: z.object({
     id: z.string(),
+    first_name: z.string().nullish(),
+    last_name: z.string().nullish(),
+    profile_image_url: z.string().nullish(),
+    username: z.string().nullish(),
     email_addresses: z
       .array(
         z.object({
           email_address: z.string().email(),
+        }),
+      )
+      .optional(),
+    external_accounts: z
+      .array(
+        z.object({
+          picture: z.string(),
         }),
       )
       .optional(),
@@ -40,6 +51,10 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
           data: {
             userId: data.id,
             email: data.email_addresses?.[0]?.email_address,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            profileImageUrl: data.external_accounts?.[0]?.picture,
+            username: data.username,
           },
         });
         break;
@@ -49,6 +64,10 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
           data: {
             userId: data.id,
             email: data.email_addresses?.[0]?.email_address,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            profileImageUrl: data.external_accounts?.[0]?.picture,
+            username: data.username,
           },
         });
         break;

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
+import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../../config/redis.js';
 import logger from '../../../utils/logger.js';
-import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
 
 interface OrganizationPermissions {
   organization: {
@@ -82,7 +82,7 @@ export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
           organizationId: organizationContext.organizationId,
           userId,
           page: pageNum,
-          limit: limitNum
+          limit: limitNum,
         });
         return res.json(data);
       }
@@ -128,15 +128,24 @@ export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
       select: {
         userId: true,
         email: true,
+        firstName: true,
+        lastName: true,
+        profileImageUrl: true,
       },
     });
 
     // Create a map of userId to user data
     const userMap = new Map(
-      users.map((user: any) => [user.userId, {
-        id: user.userId,
-        email: user.email,
-      }])
+      users.map((user) => [
+        user.userId,
+        {
+          id: user.userId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+        },
+      ]),
     );
 
     const responseData = {
@@ -148,7 +157,10 @@ export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
         createdAt: log.createdAt,
         user: userMap.get(log.userId) || {
           id: log.userId,
-          email: 'Unknown'
+          email: 'Unknown',
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
         },
       })),
       pagination: {
@@ -166,7 +178,7 @@ export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
         organizationId: organizationContext.organizationId,
         userId,
         cacheKey,
-        count: auditLogs.length
+        count: auditLogs.length,
       });
     } catch (cacheError) {
       logger.warn('Redis cache write failed', {

@@ -11,7 +11,7 @@ export const updateUser = inngest.createFunction(
   },
   { event: 'user.updated' },
   async ({ event, step }) => {
-    const { userId, email } = event.data;
+    const { userId, email, firstName, lastName, profileImageUrl, username } = event.data;
 
     if (!userId) {
       logger.error('Missing required field userId in user.updated event', { userId, email });
@@ -22,7 +22,12 @@ export const updateUser = inngest.createFunction(
 
     await step.run('update-user-in-db', async () => {
       try {
-        await upsertUser(userId, email);
+        await upsertUser(userId, email, {
+          firstName,
+          lastName,
+          profileImageUrl,
+          username,
+        });
         logger.info('User updated in database', { userId });
       } catch (error) {
         logger.error('Error updating user in database', {
