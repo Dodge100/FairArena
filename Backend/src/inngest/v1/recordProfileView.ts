@@ -5,6 +5,9 @@ export const recordProfileView = inngest.createFunction(
   {
     id: 'record-profile-view',
     name: 'Record Profile View',
+    concurrency: {
+      limit: 5,
+    },
   },
   { event: 'profile/view.record' },
   async ({ event, step }) => {

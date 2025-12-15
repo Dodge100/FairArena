@@ -46,7 +46,7 @@ export const starProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (rateLimitError) {
-      logger.warn('Rate limit check failed:', rateLimitError);
+      logger.warn('Rate limit check failed:', {error: rateLimitError});
       // Continue without rate limiting rather than failing the request
     }
 
@@ -118,7 +118,7 @@ export const starProfile = async (req: Request, res: Response) => {
         JSON.stringify({ hasStarred: true, starredAt: new Date().toISOString() }),
       );
     } catch (cacheError) {
-      logger.warn('Failed to update cache optimistically:', cacheError);
+      logger.warn('Failed to update cache optimistically:', { error: cacheError });
       // Continue even if cache update fails
     }
 
@@ -142,7 +142,7 @@ export const starProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error queuing star request:', error);
+    logger.error('Error queuing star request:', {error});
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -180,7 +180,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (rateLimitError) {
-      logger.warn('Rate limit check failed:', rateLimitError);
+      logger.warn('Rate limit check failed:', {error: rateLimitError});
       // Continue without rate limiting rather than failing the request
     }
 
@@ -240,7 +240,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (cacheError) {
-      logger.warn('Failed to update profile cache on unstar:', cacheError);
+      logger.warn('Failed to update profile cache on unstar:', {error: cacheError});
       // Continue even if cache update fails
     }
 
@@ -258,7 +258,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         },
       );
     } catch (cacheError) {
-      logger.warn('Failed to cache unstar status:', cacheError);
+      logger.warn('Failed to cache unstar status:', {error: cacheError});
       // Continue even if cache update fails
     }
 
@@ -283,7 +283,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error queuing unstar request:', error);
+    logger.error('Error queuing unstar request:', {error});
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -365,7 +365,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
         await redis.setex(cacheKey, 300, totalCount.toString());
       }
     } catch (cacheError) {
-      logger.warn('Cache error, falling back to database:', cacheError);
+      logger.warn('Cache error, falling back to database:', {error: cacheError});
       totalCount = await prisma.profileStars.count({
         where: { profileId: profile.id },
       });
@@ -397,7 +397,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
           );
         }
       } catch (clerkError) {
-        logger.warn('Failed to batch fetch Clerk users (circuit may be open):', clerkError);
+        logger.warn('Failed to batch fetch Clerk users (circuit may be open):', { error: clerkError });
         // Continue with null avatars instead of failing the request
       }
     }
@@ -436,7 +436,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error getting profile stars:', error);
+    logger.error('Error getting profile stars:', {error});
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -488,7 +488,7 @@ export const checkStarStatus = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error checking star status:', error);
+    logger.error('Error checking star status:', {error});
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

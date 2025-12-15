@@ -16,6 +16,8 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { useDataSaver } from '@/contexts/DataSaverContext';
+import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import {
@@ -23,6 +25,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  CreditCard,
   FileText,
   HelpCircle,
   Home,
@@ -35,30 +38,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logo from "/fairArenaLogotop.png";
-
-const secondaryItems = [
-  {
-    title: 'Search',
-    url: '/dashboard/search',
-    icon: Search,
-  },
-  {
-    title: 'Calendar',
-    url: '/dashboard/calendar',
-    icon: Calendar,
-  },
-  {
-    title: 'Settings',
-    url: '/dashboard/account-settings',
-    icon: Settings,
-  },
-  {
-    title: 'Help & Support',
-    url: '/support',
-    icon: HelpCircle,
-  },
-];
+import logo from '/fairArenaLogotop.png';
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -67,11 +47,15 @@ export function AppSidebar() {
   const { getToken } = useAuth();
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
+  const { dataSaverSettings } = useDataSaver();
+  const { customization } = useSidebarCustomization();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch unread notification count
   useEffect(() => {
+    if (dataSaverSettings.enabled && dataSaverSettings.disableNotifications) return; // Skip fetching in data saver mode
+
     const fetchUnreadCount = async () => {
       try {
         const token = await getToken();
@@ -95,60 +79,54 @@ export function AppSidebar() {
 
     fetchUnreadCount();
 
-    // Poll every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // Poll every 30 seconds, but only if not in data saver mode
+    if (!(dataSaverSettings.enabled && dataSaverSettings.disableAutoRefresh)) {
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [getToken, dataSaverSettings]);
 
-    return () => clearInterval(interval);
-  }, [getToken]);
+  // Menu items - defined inside component to access unreadCount and customization
+  const menuItems = customization.mainItems
+    .filter(item => item.visible)
+    .sort((a, b) => a.order - b.order)
+    .map(item => {
+      // Map icon strings to actual icon components
+      const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+        Home,
+        FileText,
+        Trophy,
+        BarChart3,
+        Users,
+        CreditCard,
+        Inbox,
+      };
 
-  // Menu items - defined inside component to access unreadCount
-  const menuItems = [
-    {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: Home,
-    },
-    {
-      title: 'Projects',
-      url: '/dashboard/projects',
-      icon: FileText,
-      items: [
-        {
-          title: 'All Projects',
-          url: '/dashboard/projects/all',
-        },
-        {
-          title: 'Active',
-          url: '/dashboard/projects/active',
-        },
-        {
-          title: 'Completed',
-          url: '/dashboard/projects/completed',
-        },
-      ],
-    },
-    {
-      title: 'Hackathons',
-      url: '/dashboard/hackathons',
-      icon: Trophy,
-    },
-    {
-      title: 'Analytics',
-      url: '/dashboard/analytics',
-      icon: BarChart3,
-    },
-    {
-      title: 'Team',
-      url: '/dashboard/team',
-      icon: Users,
-    },
-    {
-      title: 'Inbox',
-      url: '/dashboard/inbox',
-      icon: Inbox,
-      badge: unreadCount > 0 ? unreadCount.toString() : undefined,
-    },
-  ];
+      return {
+        ...item,
+        icon: iconMap[item.icon] || Home,
+        badge: item.id === 'inbox' && !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) && unreadCount > 0
+          ? unreadCount.toString()
+          : undefined,
+      };
+    });
+
+  const secondaryMenuItems = customization.secondaryItems
+    .filter(item => item.visible)
+    .sort((a, b) => a.order - b.order)
+    .map(item => {
+      const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+        Search,
+        Calendar,
+        Settings,
+        HelpCircle,
+      };
+
+      return {
+        ...item,
+        icon: iconMap[item.icon] || Settings,
+      };
+    });
 
   const handleSignOut = async () => {
     await signOut();
@@ -169,7 +147,12 @@ export function AppSidebar() {
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
             {/* Show logo and text when expanded */}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <img src={logo} className='w-30 -my-8' alt="" />
+              <img
+                src={logo}
+                className="w-30 -my-8"
+                alt="FairArena Logo"
+                style={{ filter: theme === 'light' ? 'invert(1)' : 'none' }}
+              />
               {/* <span className="text-sm font-semibold">FairArena</span> */}
               <span className="text-xs text-muted-foreground">Hackathon Platform</span>
             </div>
@@ -181,7 +164,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="bg-sidebar scrollbar-hide">
+      <SidebarContent className="bg-sidebar scrollbar-hide group-data-[collapsible=icon]:scrollbar-default group-data-[collapsible=icon]:overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -227,7 +210,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {secondaryItems.map((item) => (
+              {secondaryMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     onClick={() => navigate(item.url)}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
+import { DataSaverImage } from './ui/DataSaverImage';
 
 function WhyChooseUs() {
   const { theme } = useTheme();
@@ -44,10 +45,15 @@ function WhyChooseUs() {
         `}
       >
         Why Choose
-        <img
+        <DataSaverImage
           src="/fairArenaLogotop.png"
           alt="FairArena Logo"
           className="md:w-20 w-20 h-auto object-contain ml-2"
+          fallback={
+            <div className="md:w-20 w-20 h-8 bg-primary/10 rounded flex items-center justify-center ml-2">
+              <span className="text-sm font-bold text-primary">FA</span>
+            </div>
+          }
         />
       </h2>
 

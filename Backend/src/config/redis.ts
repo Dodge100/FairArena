@@ -1,9 +1,11 @@
 import { Redis } from '@upstash/redis';
-import { ENV } from './env.js';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export const redis = new Redis({
-  url: ENV.UPSTASH_REDIS_REST_URL,
-  token: ENV.UPSTASH_REDIS_REST_TOKEN,
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
 // Rate limiting configuration
@@ -32,4 +34,18 @@ export const REDIS_KEYS = {
   OTP_STORE: 'otp:store:',
   STAR_RATE_LIMIT: 'star:ratelimit:',
   STAR_COUNT_CACHE: 'star:count:',
+  DATA_EXPORT: 'data:export:',
+  SETTINGS_CACHE: 'settings:cache:',
+  FEEDBACK_RATE_LIMIT: 'feedback:ratelimit:',
+  USER_REPORTS_CACHE: 'user:reports:',
+  USER_SUPPORT_CACHE: 'user:support:',
+  USER_LOGS_CACHE: 'user:logs:',
+  USER_CREDITS_CACHE: 'user:credits:',
+  USER_CREDIT_HISTORY_CACHE: 'user:credit:history:',
+  USER_UNREAD_NOTIFICATIONS: 'user:unread:notifications:',
+  USER_ORGANIZATION_DETAILS: 'user:organization:details:',
+  USER_ORGANIZATION_AUDIT_LOGS: 'user:organization:audit:logs:',
+  USER_ORGANIZATION_PERMISSIONS: 'user:organization:permissions:',
+  RATE_LIMIT: 'ratelimit:',
+  USER_ORGANIZATIONS: 'user:organizations:',
 } as const;

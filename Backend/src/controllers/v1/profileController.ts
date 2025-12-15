@@ -107,7 +107,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
             });
             hasConsent = !!existingView;
           } catch (viewError) {
-            logger.warn('Error checking view consent:', viewError);
+            logger.warn('Error checking view consent:', { error: viewError });
           }
         }
 
@@ -138,11 +138,11 @@ export const getPublicProfile = async (req: Request, res: Response) => {
               await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
             }
           } catch (starError) {
-            logger.warn('Error fetching star data from cache:', starError);
+            logger.warn('Error fetching star data from cache:', { error: starError });
           }
         }
 
-        logger.info('Serving public profile from cache for user:', userId);
+        logger.info('Serving public profile from cache for user:', { userId });
         const responseData = {
           data: {
             ...profileData,
@@ -161,7 +161,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         return res.status(200).json(responseData);
       }
     } catch (cacheError) {
-      logger.warn('Cache read error:', cacheError);
+      logger.warn('Cache read error:', { error: cacheError });
       // Continue without cache
     }
 
@@ -183,7 +183,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       avatarUrl = clerkUser.imageUrl || null;
       email = clerkUser.primaryEmailAddress?.emailAddress || null;
     } catch (error) {
-      logger.error('Error fetching Clerk user:', error);
+      logger.error('Error fetching Clerk user:', { error });
     }
 
     // Get star count (cache this as it's expensive)
@@ -193,7 +193,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         where: { profileId: profile.id },
       });
     } catch (starError) {
-      logger.warn('Error fetching star count:', starError);
+      logger.warn('Error fetching star count:', { error: starError });
     }
 
     const profileWithExtras = {
@@ -206,9 +206,9 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     // Cache the complete profile data for 1 hour (3600 seconds) - including private profiles
     try {
       await redis.setex(cacheKey, 3600, JSON.stringify(profileWithExtras));
-      logger.info('Profile cached successfully for user:', userId);
+      logger.info('Profile cached successfully for user:', { userId });
     } catch (cacheError) {
-      logger.warn('Cache write error:', cacheError);
+      logger.warn('Cache write error:', { error: cacheError });
     }
 
     // Now apply access control checks AFTER caching
@@ -248,7 +248,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         });
         hasConsent = !!existingView;
       } catch (viewError) {
-        logger.warn('Error checking view consent:', viewError);
+        logger.warn('Error checking view consent:', { error: viewError });
       }
     }
 
@@ -278,7 +278,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
         }
       } catch (starError) {
-        logger.warn('Error fetching viewer star data:', starError);
+        logger.warn('Error fetching viewer star data:', {error: starError});
       }
     }
 
@@ -299,7 +299,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
     return res.status(200).json(responseData);
   } catch (error) {
-    logger.error('Error fetching public profile:', error);
+    logger.error('Error fetching public profile:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -331,13 +331,13 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     try {
       const cachedProfile = await redis.get(cacheKey);
       if (cachedProfile) {
-        logger.info('Serving own profile from cache for user:', userId);
+        logger.info('Serving own profile from cache for user:', { userId });
         const profileData =
           typeof cachedProfile === 'string' ? JSON.parse(cachedProfile) : cachedProfile;
         return res.status(200).json({ data: profileData });
       }
     } catch (cacheError) {
-      logger.warn('Cache read error:', cacheError);
+      logger.warn('Cache read error:', { error: cacheError });
     }
 
     const readOnlyPrisma = getReadOnlyPrisma();
@@ -353,7 +353,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
         const clerkUser = await clerkClient.users.getUser(userId);
         email = clerkUser.primaryEmailAddress?.emailAddress || '';
       } catch (error) {
-        logger.error('Error fetching Clerk user for profile creation:', error);
+        logger.error('Error fetching Clerk user for profile creation:', {error});
       }
 
       try {
@@ -390,14 +390,14 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     // Cache the profile data for 1 hour (3600 seconds)
     try {
       await redis.setex(cacheKey, 3600, JSON.stringify(profile));
-      logger.info('Own profile cached successfully for user:', userId);
+      logger.info('Own profile cached successfully for user:', {userId});
     } catch (cacheError) {
-      logger.warn('Cache write error:', cacheError);
+      logger.warn('Cache write error:', {cacheError});
     }
 
     return res.status(200).json({ data: profile });
   } catch (error) {
-    logger.error('Error fetching own profile:', error);
+    logger.error('Error fetching own profile:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -445,7 +445,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       status: 'processing',
     });
   } catch (error) {
-    logger.error('Error queuing profile update:', error);
+    logger.error('Error queuing profile update:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

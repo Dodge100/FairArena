@@ -32,7 +32,13 @@ function getGoogleSheetsClient() {
 }
 
 export const subscribeToNewsletter = inngest.createFunction(
-  { id: 'newsletter-subscribe', retries: 1 },
+  {
+    id: 'newsletter-subscribe',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 1,
+  },
   { event: 'newsletter.subscribe' },
   async ({ event, step }) => {
     const { email } = event.data;
@@ -183,7 +189,13 @@ export const subscribeToNewsletter = inngest.createFunction(
 );
 
 export const unsubscribeFromNewsletter = inngest.createFunction(
-  { id: 'newsletter-unsubscribe', retries: 1 },
+  {
+    id: 'newsletter-unsubscribe',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 1,
+  },
   { event: 'newsletter.unsubscribe' },
   async ({ event, step }) => {
     const { email } = event.data;

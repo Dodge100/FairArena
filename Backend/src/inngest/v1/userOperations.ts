@@ -30,6 +30,18 @@ export async function upsertUser(userId: string, email: string) {
         },
       });
 
+      await inngest.send({
+        name: 'notification/send',
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: 'Welcome Back, Partner!',
+          description: 'Your account has been successfully recovered.',
+          message:
+            "Great to see you back just in time! Your account was on the verge of permanent deletion, but you've saved it. Let's continue building together on FairArena.",
+        },
+      });
+
       logger.info('User account recovered', { userId, email });
 
       inngest.send({
@@ -73,6 +85,24 @@ export async function upsertUser(userId: string, email: string) {
         data: {
           userId,
           email,
+        },
+      });
+
+      // Create default settings for the new user
+      await inngest.send({
+        name: 'user.settings.create',
+        data: { userId },
+      });
+
+      await inngest.send({
+        name: 'notification/send',
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: 'Welcome to FairArena',
+          description: 'We’re excited to have you on board, partner.',
+          message:
+            'We’re grateful to have you on board, partner. We hope you have a great journey with us!',
         },
       });
 
@@ -132,6 +162,18 @@ export async function deleteUser(userId: string) {
       data: {
         deletedAt: new Date(),
         isDeleted: true,
+      },
+    });
+
+    await inngest.send({
+      name: 'notification/send',
+      data: {
+        userId,
+        type: 'ALERT',
+        title: 'Account Deletion Initiated',
+        description: 'You have requested to delete your account.',
+        message:
+          "We're processing your account deletion request. If this was a mistake, you can still recover your account within the next 90 days. Thank you for being part of FairArena.",
       },
     });
 

@@ -16,6 +16,9 @@ interface LogEventData {
 export const createLog = inngest.createFunction(
   {
     id: 'create-log',
+    concurrency: {
+      limit: 5,
+    },
     retries: 3, // Retry up to 3 times on failure
   },
   { event: 'log.create' },

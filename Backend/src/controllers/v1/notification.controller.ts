@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import notificationService from '../../services/v1/notification.service.js';
 import logger from '../../utils/logger.js';
@@ -56,7 +57,20 @@ export const getNotifications = async (req: Request, res: Response) => {
 
     const filters = {
       read: read === 'true' ? true : read === 'false' ? false : undefined,
-      type: type as any,
+      type: type as
+        | 'SYSTEM'
+        | 'MENTION'
+        | 'INVITATION'
+        | 'ACHIEVEMENT'
+        | 'UPDATE'
+        | 'REMINDER'
+        | 'ALERT'
+        | 'MESSAGE'
+        | 'FOLLOW'
+        | 'STAR'
+        | 'COMMENT'
+        | 'ANNOUNCEMENT'
+        | undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
     };
@@ -88,14 +102,47 @@ export const getUnreadCount = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const cacheKey = `${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`;
+
+    // Try to get from cache
+    try {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData !== null) {
+        const data = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
+        logger.info('Serving unread count from cache', { userId });
+        return res.json({
+          success: true,
+          data,
+        });
+      }
+    } catch (cacheError) {
+      logger.warn('Redis cache read failed, proceeding with database query', {
+        error: (cacheError as Error).message,
+        userId,
+      });
+    }
+
     const count = await notificationService.getUnreadCount(userId);
+
+    const responseData = { count };
+
+    // Cache the response
+    try {
+      await redis.setex(cacheKey, 60, JSON.stringify(responseData)); // 1 minute TTL
+      logger.info('Cached unread count', { userId, cacheKey });
+    } catch (cacheError) {
+      logger.warn('Redis cache write failed', {
+        error: (cacheError as Error).message,
+        userId,
+      });
+    }
 
     // Add cache headers for frequent polling
     res.setHeader('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
 
     res.json({
       success: true,
-      data: { count },
+      data: responseData,
     });
   } catch (error) {
     logger.error('Error fetching unread count', { error, userId: req.auth()?.userId });

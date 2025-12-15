@@ -3,7 +3,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const sendEmailHandler = inngest.createFunction(
-  { id: 'send-email' },
+  {
+    id: 'send-email',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'email.send' },
   async ({ event }) => {
     const { to, subject, template, templateData } = event.data;

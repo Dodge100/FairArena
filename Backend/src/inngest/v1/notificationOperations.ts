@@ -1,6 +1,75 @@
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import notificationService from '../../services/v1/notification.service.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
+
+/**
+ * Send a notification to a user
+ */
+export const sendNotification = inngest.createFunction(
+  {
+    id: 'notification/send',
+    name: 'Send Notification',
+    concurrency: {
+      limit: 5,
+    },
+    retries: 3,
+  },
+  { event: 'notification/send' },
+  async ({ event, step }) => {
+    const { userId, title, message, description, actionUrl, actionLabel, metadata } = event.data;
+
+    // Validate required fields and provide defaults
+    if (!userId) {
+      throw new Error('userId is required for notification/send event');
+    }
+    const notificationTitle = title || 'Notification';
+    const notificationMessage = message || 'You have a new notification';
+    const notificationDescription = description || '';
+
+    return await step.run('send-notification', async () => {
+      try {
+        // All notifications are system notifications
+        const notification = await notificationService.createNotification({
+          userId,
+          type: 'SYSTEM',
+          title: notificationTitle,
+          message: notificationMessage,
+          description: notificationDescription,
+          actionUrl,
+          actionLabel,
+          metadata,
+        });
+
+        logger.info('Notification created', {
+          userId,
+          notificationId: notification.id,
+          type: 'SYSTEM',
+          title,
+        });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
+
+        return {
+          success: true,
+          notificationId: notification.id,
+        };
+      } catch (error) {
+        logger.error('Failed to send notification', {
+          error,
+          userId,
+          title,
+        });
+        throw error;
+      }
+    });
+  },
+);
 
 /**
  * Mark multiple notifications as read asynchronously
@@ -11,7 +80,7 @@ export const markNotificationsAsRead = inngest.createFunction(
     id: 'mark-notifications-as-read',
     name: 'Mark Notifications as Read',
     concurrency: {
-      limit: 50,
+      limit: 5,
     },
     retries: 3,
   },
@@ -27,6 +96,13 @@ export const markNotificationsAsRead = inngest.createFunction(
           userId,
           count: notificationIds.length,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,
@@ -52,7 +128,7 @@ export const markNotificationsAsUnread = inngest.createFunction(
     id: 'mark-notifications-as-unread',
     name: 'Mark Notifications as Unread',
     concurrency: {
-      limit: 50,
+      limit: 5,
     },
     retries: 3,
   },
@@ -68,6 +144,13 @@ export const markNotificationsAsUnread = inngest.createFunction(
           userId,
           count: notificationIds.length,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,
@@ -93,7 +176,7 @@ export const markAllNotificationsAsRead = inngest.createFunction(
     id: 'mark-all-notifications-as-read',
     name: 'Mark All Notifications as Read',
     concurrency: {
-      limit: 50,
+      limit: 5,
     },
     retries: 3,
   },
@@ -109,6 +192,13 @@ export const markAllNotificationsAsRead = inngest.createFunction(
           userId,
           count: result.count,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,
@@ -133,7 +223,7 @@ export const deleteNotifications = inngest.createFunction(
     id: 'delete-notifications',
     name: 'Delete Notifications',
     concurrency: {
-      limit: 50,
+      limit: 5,
     },
     retries: 3,
   },
@@ -149,6 +239,13 @@ export const deleteNotifications = inngest.createFunction(
           userId,
           count: notificationIds.length,
         });
+
+        // Invalidate unread count cache
+        try {
+          await redis.del(`${REDIS_KEYS.USER_UNREAD_NOTIFICATIONS}${userId}`);
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate unread count cache', { cacheError, userId });
+        }
 
         return {
           success: true,
@@ -174,7 +271,7 @@ export const deleteAllReadNotifications = inngest.createFunction(
     id: 'delete-all-read-notifications',
     name: 'Delete All Read Notifications',
     concurrency: {
-      limit: 50,
+      limit: 5,
     },
     retries: 3,
   },
@@ -200,46 +297,6 @@ export const deleteAllReadNotifications = inngest.createFunction(
           error,
           userId,
         });
-        throw error;
-      }
-    });
-  },
-);
-
-/**
- * Scheduled cleanup of old read notifications
- * Runs daily to delete notifications older than 30 days that have been read
- */
-export const cleanupOldNotifications = inngest.createFunction(
-  {
-    id: 'cleanup-old-notifications',
-    name: 'Cleanup Old Notifications',
-    concurrency: {
-      limit: 1,
-    },
-    retries: 2,
-  },
-  { cron: '0 2 * * *' }, // Run at 2 AM daily
-  async ({ step }) => {
-    return await step.run('cleanup-old-notifications', async () => {
-      try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const result = await notificationService.deleteOldReadNotifications(thirtyDaysAgo);
-
-        logger.info('Old notifications cleaned up', {
-          count: result.count,
-          olderThan: thirtyDaysAgo.toISOString(),
-        });
-
-        return {
-          success: true,
-          count: result.count,
-          olderThan: thirtyDaysAgo.toISOString(),
-        };
-      } catch (error) {
-        logger.error('Failed to cleanup old notifications', { error });
         throw error;
       }
     });

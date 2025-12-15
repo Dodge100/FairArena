@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { Check } from 'lucide-react';
-
-/* ======================================================================================
-   PRICING CARD COMPONENT (Your Style, Fully Responsive)
-====================================================================================== */
+import { useEffect, useState } from 'react';
 
 function PricingCard({ plan, billing, isDark }: any) {
   const price = plan.price[billing];
@@ -105,10 +101,6 @@ function PricingCard({ plan, billing, isDark }: any) {
     </div>
   );
 }
-
-/* ======================================================================================
-   PRICING DATA
-====================================================================================== */
 
 const PLANS = [
   {

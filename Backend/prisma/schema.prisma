@@ -1,12 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextIndex", "fullTextSearch"]
-  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client"
+  output        = "../src/generated"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -15,17 +14,21 @@ model User {
   email                 String                  @unique
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
+  deletedAt             DateTime?
+  isDeleted             Boolean                 @default(false)
+  creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
+  payments              Payment[]
   profile               Profile?
-  isDeleted             Boolean                 @default(false)
-  deletedAt             DateTime?
   profileStars          ProfileStars[]
   projectUserRoles      ProjectUserRole[]
   reports               Report[]
+  settings              Settings?
+  supportRequests       Support[]
   teamUserRoles         TeamUserRole[]
   userOrganizations     UserOrganization[]
   projectMemberships    UserProject[]
@@ -33,6 +36,116 @@ model User {
 
   @@index([userId])
   @@index([email])
+}
+
+model Plan {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  planId      String    @unique
+  amount      Int
+  currency    String    @default("INR")
+  credits     Int
+  description String?
+  features    String[]
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+
+  @@index([planId])
+  @@index([isActive])
+  @@index([name])
+}
+
+model Payment {
+  id                 String                @id @default(cuid())
+  userId             String
+  razorpayOrderId    String                @unique
+  razorpayPaymentId  String?               @unique
+  razorpaySignature  String?
+  planId             String
+  planName           String
+  amount             Int
+  currency           String                @default("INR")
+  credits            Int
+  status             PaymentStatus         @default(PENDING)
+  paymentMethod      String?
+  paymentContact     String?
+  receipt            String?
+  notes              Json?
+  ipAddress          String?
+  userAgent          String?
+  idempotencyKey     String?               @unique
+  webhookProcessed   Boolean               @default(false)
+  webhookProcessedAt DateTime?
+  failureReason      String?
+  refundId           String?               @unique
+  refundAmount       Int?
+  refundReason       String?
+  refundedAt         DateTime?
+  createdAt          DateTime              @default(now())
+  completedAt        DateTime?
+  invoiceUrl         String?
+  razorpayInvoiceId  String?               @unique
+  creditTransactions CreditTransaction[]
+  plan               Plan                  @relation(fields: [planId], references: [planId], onDelete: SetNull)
+  user               User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  webhookEvents      PaymentWebhookEvent[]
+
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([razorpayInvoiceId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([idempotencyKey])
+  @@index([webhookProcessed])
+  @@index([refundId])
+  @@index([planId])
+}
+
+model CreditTransaction {
+  id          String                @id @default(cuid())
+  userId      String
+  paymentId   String?
+  amount      Int
+  balance     Int
+  type        CreditTransactionType
+  description String
+  metadata    Json?
+  createdAt   DateTime              @default(now())
+  payment     Payment?              @relation(fields: [paymentId], references: [id])
+  user        User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([paymentId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model PaymentWebhookEvent {
+  id              String    @id @default(cuid())
+  paymentId       String?
+  razorpayEventId String?   @unique
+  eventType       String
+  payload         Json
+  signature       String?
+  processed       Boolean   @default(false)
+  processedAt     DateTime?
+  errorMessage    String?
+  retryCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  payment         Payment?  @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([razorpayEventId])
+  @@index([eventType])
+  @@index([processed])
+  @@index([createdAt])
+  @@index([eventType, processed])
 }
 
 model Profile {
@@ -82,7 +195,7 @@ model Logs {
   level     level
   metadata  Json?
   createdAt DateTime @default(now())
-  user      User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([action])
@@ -99,7 +212,7 @@ model ProfileView {
   viewerEmail  String
   viewerName   String?
   createdAt    DateTime @default(now())
-  profile      Profile  @relation(fields: [profileId], references: [id])
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, viewerUserId])
   @@index([profileId])
@@ -143,7 +256,7 @@ model OrganizationUserRole {
   assignedAt     DateTime         @default(now())
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, organizationId, roleId])
   @@index([userId])
@@ -157,7 +270,7 @@ model UserOrganization {
   organizationId String
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, organizationId])
   @@index([organizationId])
@@ -324,7 +437,7 @@ model TeamUserRole {
   assignedAt DateTime @default(now())
   role       TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
   team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, teamId, roleId])
   @@index([userId])
@@ -338,7 +451,7 @@ model UserTeam {
   teamId    String
   createdAt DateTime @default(now())
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, teamId])
   @@index([teamId])
@@ -353,7 +466,7 @@ model ProjectUserRole {
   assignedAt DateTime    @default(now())
   project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   role       ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, projectId, roleId])
   @@index([userId])
@@ -367,7 +480,7 @@ model UserProject {
   projectId String
   createdAt DateTime @default(now())
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@id([userId, projectId])
   @@index([projectId])
@@ -554,19 +667,20 @@ model OrganizationStars {
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  userId      String
-  type        NotificationType
-  title       String
-  message     String           @db.Text
-  read        Boolean          @default(false)
-  actionUrl   String?
-  actionLabel String?
-  metadata    Json?
-  description String           @db.Text
-  createdAt   DateTime         @default(now())
-  readAt      DateTime?
-  user        User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  id                    String                  @id @default(cuid())
+  userId                String
+  type                  NotificationType
+  title                 String
+  message               String
+  read                  Boolean                 @default(false)
+  actionUrl             String?
+  actionLabel           String?
+  metadata              Json?
+  createdAt             DateTime                @default(now())
+  readAt                DateTime?
+  description           String
+
+  user                  User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([read])
@@ -574,6 +688,67 @@ model Notification {
   @@index([createdAt])
   @@index([userId, read])
   @@index([userId, createdAt])
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  feedbackCode String   @unique
+  message      String?
+  rating       Int?
+  isUsed       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([isUsed])
+  @@index([feedbackCode, isUsed])
+}
+
+model Support {
+  id        String      @id @default(cuid())
+  userId    String?
+  emailId   String?
+  subject   String
+  message   String
+  status    ReportState @default(QUEUED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User?       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId, status])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  settings  Json
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  REFUND
+  BONUS
+  DEDUCTION
+  ADJUSTMENT
+  EXPIRY
+  TRANSFER_IN
+  TRANSFER_OUT
 }
 
 enum Visibility {
@@ -616,4 +791,10 @@ enum NotificationType {
   STAR
   COMMENT
   ANNOUNCEMENT
+}
+
+model EnvironmentVariable {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

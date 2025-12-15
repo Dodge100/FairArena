@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import {
@@ -32,7 +33,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -73,6 +74,7 @@ export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const { cn } = useDataSaverUtils();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -232,14 +234,18 @@ export default function PublicProfile() {
     const newStarCount = wasStarred ? profile.stars.count - 1 : profile.stars.count + 1;
 
     // Optimistically update UI
-    setProfile(prev => prev ? {
-      ...prev,
-      stars: {
-        count: newStarCount,
-        hasStarred: !wasStarred,
-        starredAt: wasStarred ? null : new Date().toISOString(),
-      },
-    } : null);
+    setProfile((prev) =>
+      prev
+        ? {
+          ...prev,
+          stars: {
+            count: newStarCount,
+            hasStarred: !wasStarred,
+            starredAt: wasStarred ? null : new Date().toISOString(),
+          },
+        }
+        : null,
+    );
 
     setIsStarring(true);
     try {
@@ -269,14 +275,18 @@ export default function PublicProfile() {
       toast.error('Failed to update star. Please try again.');
 
       // Revert optimistic update on error
-      setProfile(prev => prev ? {
-        ...prev,
-        stars: {
-          count: profile.stars.count,
-          hasStarred: wasStarred,
-          starredAt: profile.stars.starredAt,
-        },
-      } : null);
+      setProfile((prev) =>
+        prev
+          ? {
+            ...prev,
+            stars: {
+              count: profile.stars.count,
+              hasStarred: wasStarred,
+              starredAt: profile.stars.starredAt,
+            },
+          }
+          : null,
+      );
     } finally {
       setIsStarring(false);
     }
@@ -385,8 +395,8 @@ export default function PublicProfile() {
           <div className="max-w-screen-2xl mx-auto">
             <div className="flex items-center justify-between h-16">
               {/* FairArena Logo */}
-              <a
-                href="https://fairarena.vercel.app"
+              <Link
+                to="/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -395,7 +405,7 @@ export default function PublicProfile() {
                   <Zap className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <span className="font-bold text-lg text-foreground">FairArena</span>
-              </a>
+              </Link>
 
               {/* Theme Toggle */}
               <Button
@@ -460,8 +470,8 @@ export default function PublicProfile() {
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
               {/* Avatar */}
               <div className="shrink-0 relative">
-                <div className="absolute -inset-1 bg-linear-to-r from-primary to-primary/60 rounded-full blur-lg opacity-30 animate-pulse" />
-                <Avatar className="relative h-36 w-36 lg:h-52 lg:w-52 border-4 border-background shadow-2xl ring-4 ring-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-primary/25">
+                <div className={cn("absolute -inset-1 bg-linear-to-r from-primary to-primary/60 rounded-full blur-lg opacity-30 animate-pulse")} />
+                <Avatar className={cn("relative h-36 w-36 lg:h-52 lg:w-52 border-4 border-background shadow-2xl ring-4 ring-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-primary/25")}>
                   <AvatarImage
                     src={
                       profile.avatarUrl ||
@@ -535,7 +545,7 @@ export default function PublicProfile() {
                         variant="default"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/edit')}
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-linear-to-r from-primary to-primary/90"
+                        className={cn("shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-linear-to-r from-primary to-primary/90")}
                       >
                         <Edit className="h-5 w-5 mr-2" />
                         Edit Profile
@@ -544,7 +554,7 @@ export default function PublicProfile() {
                         variant="outline"
                         size="lg"
                         onClick={() => navigate('/dashboard/profile/views')}
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40"
+                        className={cn("shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-primary/20 hover:border-primary/40")}
                       >
                         <FileText className="h-5 w-5 mr-2" />
                         View Analytics
@@ -568,8 +578,11 @@ export default function PublicProfile() {
                       disabled={isStarring}
                       className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
                     >
-                      <Star className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`} />
-                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} ({profile.stars.count})
+                      <Star
+                        className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`}
+                      />
+                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} (
+                      {profile.stars.count})
                     </Button>
                   )}
                   {!isOwner && user && (
@@ -1017,9 +1030,7 @@ export default function PublicProfile() {
                 className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-20 resize-none"
                 maxLength={500}
               />
-              <p className="text-xs text-muted-foreground">
-                {reportDetails.length}/500 characters
-              </p>
+              <p className="text-xs text-muted-foreground">{reportDetails.length}/500 characters</p>
             </div>
           </div>
           <DialogFooter>

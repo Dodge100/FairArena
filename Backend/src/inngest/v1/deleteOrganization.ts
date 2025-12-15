@@ -1,14 +1,20 @@
 import { prisma } from '../../config/database.js';
+import { getReadOnlyPrisma } from '../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 
 export const deleteOrganization = inngest.createFunction(
-  { id: 'delete-organization' },
+  {
+    id: 'delete-organization',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'organization.delete' },
   async ({ event, step }) => {
     const { organizationId, userId, organizationName } = event.data;
-    const readOnlyPrisma = getReadOnlyPrisma()
+    const readOnlyPrisma = getReadOnlyPrisma();
 
     if (!organizationId || !userId) {
       logger.error('Missing required fields in organization.delete event', {
@@ -45,6 +51,16 @@ export const deleteOrganization = inngest.createFunction(
         return org;
       });
 
+      // Get organization members before deletion for cache invalidation
+      const members = await step.run('get-organization-members', async () => {
+        const memberList = await readOnlyPrisma.organizationUserRole.findMany({
+          where: { organizationId },
+          select: { userId: true },
+        });
+
+        return memberList;
+      });
+
       // Delete the organization (cascade will handle related records)
       await step.run('delete-organization', async () => {
         await prisma.organization.delete({
@@ -57,6 +73,39 @@ export const deleteOrganization = inngest.createFunction(
           memberCount: organization._count.userOrganizations,
           teamCount: organization._count.teams,
         });
+      });
+
+      // Invalidate caches for all former members
+      await step.run('invalidate-caches', async () => {
+        try {
+          // Invalidate organization details cache
+          const detailsCacheKeys = members.map(
+            (member) =>
+              `${REDIS_KEYS.USER_ORGANIZATION_DETAILS}${member.userId}:${organization.slug}`,
+          );
+
+          // Invalidate user organizations list cache
+          const organizationsCacheKeys = members.map(
+            (member) => `${REDIS_KEYS.USER_ORGANIZATIONS}${member.userId}`,
+          );
+
+          const allCacheKeys = [...detailsCacheKeys, ...organizationsCacheKeys];
+
+          if (allCacheKeys.length > 0) {
+            await redis.del(...allCacheKeys);
+            logger.info('Invalidated organization caches after deletion', {
+              organizationId,
+              memberCount: members.length,
+              slug: organization.slug,
+              cacheKeysInvalidated: allCacheKeys.length,
+            });
+          }
+        } catch (cacheError) {
+          logger.warn('Failed to invalidate organization caches after deletion', {
+            cacheError,
+            organizationId,
+          });
+        }
       });
 
       // Create log entry
@@ -78,8 +127,22 @@ export const deleteOrganization = inngest.createFunction(
 
         logger.info('Organization deletion log created', { organizationId, userId });
       });
+
+      // Create organization audit log (before deletion since organization will be gone)
+      await step.run('create-audit-log', async () => {
+        await prisma.organizationAuditLog.create({
+          data: {
+            organizationId,
+            action: 'ORGANIZATION_DELETED',
+            level: 'WARN',
+            userId,
+          },
+        });
+
+        logger.info('Organization audit log created for deletion', { organizationId, userId });
+      });
     } catch (error) {
-      logger.error('Error deleting organization:', error);
+      logger.error('Error deleting organization:', { error });
       throw error;
     }
   },

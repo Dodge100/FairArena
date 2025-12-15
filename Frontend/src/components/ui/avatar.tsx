@@ -1,6 +1,7 @@
-import * as React from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import * as React from 'react';
 
+import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { cn } from '@/lib/utils';
 
 function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
@@ -14,6 +15,13 @@ function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimi
 }
 
 function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+  const { shouldLoadImage } = useDataSaverUtils();
+
+  // Don't render the image if data saver is enabled and images are disabled
+  if (!shouldLoadImage) {
+    return null;
+  }
+
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -36,4 +44,5 @@ function AvatarFallback({
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback };
+export { Avatar, AvatarFallback, AvatarImage };
+

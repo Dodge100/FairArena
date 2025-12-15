@@ -2,7 +2,13 @@ import { OTPVerification } from '@/components/OTPVerification';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@clerk/clerk-react';
 import { AlertCircle, AlertTriangle, Clock, Filter, Info, Loader2, Shield } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -80,15 +86,7 @@ export default function AccountLogs() {
         </h1>
 
         {!isVerified && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Verification Required</CardTitle>
-              <CardDescription>Verify your account to view sensitive logs.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OTPVerification onVerified={() => setIsVerified(true)} />
-            </CardContent>
-          </Card>
+          <OTPVerification onVerified={() => setIsVerified(true)} />
         )}
 
         {isVerified && (
@@ -99,6 +97,9 @@ export default function AccountLogs() {
                 <span>Recent Activity</span>
               </CardTitle>
               <CardDescription>Your recent account activity and security events.</CardDescription>
+              <p className="text-sm text-muted-foreground mt-2">
+                Logs are cached and update every hour. They are not real-time.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -115,7 +116,7 @@ export default function AccountLogs() {
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Filter by level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border-border dark:bg-black/80 dark:border-white/20">
                     <SelectItem value="ALL">All Levels</SelectItem>
                     <SelectItem value="INFO">Info</SelectItem>
                     <SelectItem value="WARN">Warning</SelectItem>

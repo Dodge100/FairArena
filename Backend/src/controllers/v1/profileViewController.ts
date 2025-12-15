@@ -51,7 +51,7 @@ export const recordView = async (req: Request, res: Response) => {
       status: 'success',
     });
   } catch (error) {
-    logger.error('Error recording profile view:', error);
+    logger.error('Error recording profile view:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -130,7 +130,7 @@ export const getProfileViews = async (req: Request, res: Response) => {
       data: viewsWithAvatars,
     });
   } catch (error) {
-    logger.error('Error fetching profile views:', error);
+    logger.error('Error fetching profile views:', {error});
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

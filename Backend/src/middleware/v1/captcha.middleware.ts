@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import fetch from 'node-fetch';
-import { ENV } from '../config/env.js';
-import logger from '../utils/logger.js';
+import { ENV } from '../../config/env.js';
+import logger from '../../utils/logger.js';
 
 // Middleware to verify Google reCAPTCHA v2 token
 export async function verifyRecaptcha(req: Request, res: Response, next: NextFunction) {
@@ -41,7 +41,7 @@ export async function verifyRecaptcha(req: Request, res: Response, next: NextFun
     }
 
     // Attach verification result to request for downstream usage
-    (req as any).recaptchaVerified = true;
+    (req as Request & { recaptchaVerified?: boolean }).recaptchaVerified = true;
     next();
   } catch (error) {
     logger.error('CAPTCHA verification error', {

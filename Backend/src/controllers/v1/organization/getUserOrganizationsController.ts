@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { getReadOnlyPrisma } from '../../../config/read-only.database.js';
+import { redis, REDIS_KEYS } from '../../../config/redis.js';
 import logger from '../../../utils/logger.js';
+
+const CACHE_TTL = 3600;
 
 export const GetUserOrganizations = async (req: Request, res: Response) => {
   try {
@@ -10,6 +13,26 @@ export const GetUserOrganizations = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const cacheKey = `${REDIS_KEYS.USER_ORGANIZATIONS}${userId}`;
+
+    // Try to get from cache
+    try {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData !== null) {
+        const data = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
+        logger.info('Serving user organizations from cache', { userId });
+        return res.json(data);
+      } else {
+        logger.info('Cache miss for user organizations', { userId, cacheKey });
+      }
+    } catch (cacheError) {
+      logger.warn('Redis cache read failed, proceeding with database query', {
+        error: (cacheError as Error).message,
+        userId,
+      });
+    }
+
     const readOnlyPrisma = getReadOnlyPrisma();
 
     const userOrganizations = await readOnlyPrisma.organizationUserRole.findMany({
@@ -46,7 +69,20 @@ export const GetUserOrganizations = async (req: Request, res: Response) => {
       },
     }));
 
-    res.json({ organizations });
+    const responseData = { organizations };
+
+    // Cache the response
+    try {
+      await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(responseData));
+      logger.info('Cached user organizations', { userId, cacheKey });
+    } catch (cacheError) {
+      logger.warn('Redis cache write failed', {
+        error: (cacheError as Error).message,
+        userId,
+      });
+    }
+
+    res.json(responseData);
   } catch (error) {
     const err = error as Error;
     logger.error('Error fetching user organizations', {

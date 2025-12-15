@@ -1,7 +1,8 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis } from '../../config/redis.js';
+import { NotificationType } from '../../generated/enums.js';
+import * as Prisma from '../../generated/internal/prismaNamespace.js';
 import logger from '../../utils/logger.js';
 
 // Cache configuration
@@ -34,8 +35,13 @@ class NotificationService {
     try {
       // Try cache first
       const cached = await redis.get(cacheKey);
-      if (cached) {
-        return cached as any;
+      if (cached !== null) {
+        // @ts-ignore
+        return JSON.parse(cached) as {
+          notifications: unknown[];
+          total: number;
+          hasMore: boolean;
+        };
       }
     } catch (error) {
       logger.warn('Redis cache read failed for notifications list', { error, userId });
@@ -293,16 +299,35 @@ class NotificationService {
   }
 
   /**
-   * Get a single notification by ID
+   * Create a new notification
    */
-  async getNotificationById(notificationId: string, userId: string) {
-    const readOnlyPrisma = await getReadOnlyPrisma();
-    return await readOnlyPrisma.notification.findFirst({
-      where: {
-        id: notificationId,
-        userId,
+  async createNotification(data: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    description?: string;
+    actionUrl?: string;
+    actionLabel?: string;
+    metadata?: Record<string, unknown>;
+  }) {
+    const notification = await prisma.notification.create({
+      data: {
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        description: data.description || '',
+        actionUrl: data.actionUrl,
+        actionLabel: data.actionLabel,
+        metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
       },
     });
+
+    // Invalidate cache
+    await this.invalidateUserCache(data.userId);
+
+    return notification;
   }
 
   /**

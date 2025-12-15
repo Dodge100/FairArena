@@ -1,0 +1,217 @@
+import { Clock, Shield, User } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Skeleton } from '../components/ui/skeleton';
+import { useAuth } from '@clerk/clerk-react';
+
+interface AuditLog {
+  id: string;
+  action: string;
+  level: string;
+  details?: Record<string, unknown>;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+  };
+}
+
+interface OrganizationAuditLogsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  organizationSlug: string;
+}
+
+export const OrganizationAuditLogsModal = ({
+  open,
+  onOpenChange,
+  organizationSlug,
+}: OrganizationAuditLogsModalProps) => {
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const { getToken } = useAuth();
+
+  const fetchAuditLogs = useCallback(
+    async (pageNum = 1, append = false) => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageNum}&limit=20`,
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (append) {
+            setAuditLogs(prev => [...prev, ...data.auditLogs]);
+          } else {
+            setAuditLogs(data.auditLogs);
+          }
+          setHasMore(pageNum < data.pagination.totalPages);
+        }
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [organizationSlug, getToken]
+  );
+
+  useEffect(() => {
+    if (open && organizationSlug) {
+      fetchAuditLogs(1, false);
+      setPage(1);
+    }
+  }, [open, organizationSlug, fetchAuditLogs]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchAuditLogs(nextPage, true);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getActionIcon = (action: string) => {
+    if (action.includes('CREATED')) return '🎉';
+    if (action.includes('UPDATED') || action.includes('SETTINGS')) return '⚙️';
+    if (action.includes('DELETED')) return '🗑️';
+    if (action.includes('MEMBER') || action.includes('USER')) return '👤';
+    if (action.includes('ROLE')) return '🛡️';
+    if (action.includes('TEAM')) return '👥';
+    return '📝';
+  };
+
+  const getLevelBadgeVariant = (level: string) => {
+    switch (level.toUpperCase()) {
+      case 'ERROR':
+        return 'destructive';
+      case 'WARN':
+        return 'secondary';
+      case 'INFO':
+      default:
+        return 'default';
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Organization Audit Logs
+          </DialogTitle>
+          <DialogDescription>
+            View all activities and changes in this organization
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+          <div className="space-y-4 py-4">
+            {loading && auditLogs.length === 0 ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No audit logs found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="text-2xl">{getActionIcon(log.action)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{log.action.replace(/_/g, ' ')}</span>
+                        <Badge variant={getLevelBadgeVariant(log.level)} className="text-xs">
+                          {log.level}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {log.user.firstName && log.user.lastName
+                            ? `${log.user.firstName} ${log.user.lastName}`
+                            : log.user.username || 'Unknown User'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(log.createdAt)}
+                        </div>
+                      </div>
+                      {log.details && Object.keys(log.details).length > 0 && (
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                            View details
+                          </summary>
+                          <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
+                            {JSON.stringify(log.details, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {hasMore && (
+              <div className="text-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loading}
+                  size="sm"
+                >
+                  {loading ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

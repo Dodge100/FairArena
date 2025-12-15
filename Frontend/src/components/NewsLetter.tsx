@@ -111,9 +111,10 @@ function Newsletter() {
             px-5 py-3 rounded-full text-sm md:text-base outline-none
             transition-opacity
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-            ${isDark
-              ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
-              : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
+            ${
+              isDark
+                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
+                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
             }
           `}
         />

@@ -3,7 +3,12 @@ import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
 export const createOrganizationRoles = inngest.createFunction(
-  { id: 'create-organization-roles' },
+  {
+    id: 'create-organization-roles',
+    concurrency: {
+      limit: 5,
+    },
+  },
   { event: 'organization.created' },
   async ({ event, step }) => {
     const { organizationId, creatorId } = event.data;
@@ -76,52 +81,57 @@ export const createOrganizationRoles = inngest.createFunction(
           },
         ];
 
-        await prisma.$transaction(async (tx) => {
-          const roles = await Promise.all(
-            rolesData.map((roleData) =>
-              tx.organizationRole.upsert({
-                where: {
-                  organizationId_roleName: {
+        await prisma.$transaction(
+          async (tx) => {
+            const roles = await Promise.all(
+              rolesData.map((roleData) =>
+                tx.organizationRole.upsert({
+                  where: {
+                    organizationId_roleName: {
+                      organizationId,
+                      roleName: roleData.roleName,
+                    },
+                  },
+                  update: {}, // No update needed for existing roles
+                  create: {
                     organizationId,
-                    roleName: roleData.roleName,
+                    ...roleData,
+                  },
+                }),
+              ),
+            );
+
+            logger.info('Roles ensured', { roleIds: roles.map((r) => r.id) });
+
+            // Assign owner role to creator using upsert
+            const ownerRole = roles.find((r) => r.roleName === 'Owner');
+            if (ownerRole) {
+              await tx.organizationUserRole.upsert({
+                where: {
+                  userId_organizationId_roleId: {
+                    userId: creatorId,
+                    organizationId,
+                    roleId: ownerRole.id,
                   },
                 },
-                update: {}, // No update needed for existing roles
+                update: {}, // No update needed
                 create: {
-                  organizationId,
-                  ...roleData,
-                },
-              }),
-            ),
-          );
-
-          logger.info('Roles ensured', { roleIds: roles.map((r) => r.id) });
-
-          // Assign owner role to creator using upsert
-          const ownerRole = roles.find((r) => r.roleName === 'Owner');
-          if (ownerRole) {
-            await tx.organizationUserRole.upsert({
-              where: {
-                userId_organizationId_roleId: {
                   userId: creatorId,
                   organizationId,
                   roleId: ownerRole.id,
                 },
-              },
-              update: {}, // No update needed
-              create: {
-                userId: creatorId,
-                organizationId,
-                roleId: ownerRole.id,
-              },
-            });
+              });
 
-            logger.info('Owner role assigned to creator', {
-              userId: creatorId,
-              roleId: ownerRole.id,
-            });
-          }
-        });
+              logger.info('Owner role assigned to creator', {
+                userId: creatorId,
+                roleId: ownerRole.id,
+              });
+            }
+          },
+          {
+            timeout: 15000,
+          },
+        );
       } catch (error) {
         logger.error('Error creating roles or assigning owner', {
           organizationId,
@@ -130,6 +140,20 @@ export const createOrganizationRoles = inngest.createFunction(
         });
         throw error;
       }
+    });
+
+    // Create audit log for organization creation
+    await step.run('create-organization-audit-logs', async () => {
+      await prisma.organizationAuditLog.create({
+        data: {
+          organizationId,
+          action: 'ORGANIZATION_CREATED',
+          level: 'INFO',
+          userId: creatorId,
+        },
+      });
+
+      logger.info('Organization audit log created for role creation', { organizationId });
     });
   },
 );
