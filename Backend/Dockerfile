@@ -1,22 +1,26 @@
-FROM node:18-bullseye-slim
+FROM node:20-bullseye-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Set Node memory limit
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Copy dependency files
 COPY package.json pnpm-lock.yaml ./
-
-# Copy prisma schema for postinstall
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
-# Install pnpm globally
+# Install pnpm
 RUN npm install -g pnpm
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies WITHOUT running scripts (to avoid postinstall error)
+RUN pnpm install --ignore-scripts
 
 # Copy source code
 COPY . .
+
+# Generate Prisma client manually
+RUN npx prisma generate
 
 # Build the application
 RUN pnpm run build
@@ -24,5 +28,5 @@ RUN pnpm run build
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["pnpm", "start"]
+# Start the app
+CMD ["node", "dist/index.js"]

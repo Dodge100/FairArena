@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logo from '/fairArenaLogotop.png';
+
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -148,7 +148,7 @@ export function AppSidebar() {
             {/* Show logo and text when expanded */}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <img
-                src={logo}
+                src="/fairArenaLogotop.png"
                 className="w-30 -my-8"
                 alt="FairArena Logo"
                 style={{ filter: theme === 'light' ? 'invert(1)' : 'none' }}

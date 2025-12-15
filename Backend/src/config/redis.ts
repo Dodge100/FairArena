@@ -46,6 +46,9 @@ export const REDIS_KEYS = {
   USER_ORGANIZATION_DETAILS: 'user:organization:details:',
   USER_ORGANIZATION_AUDIT_LOGS: 'user:organization:audit:logs:',
   USER_ORGANIZATION_PERMISSIONS: 'user:organization:permissions:',
+  USER_TEAM_CONTEXT: 'user:team:context:',
+  USER_ORGANIZATION_CONTEXT: 'user:organization:context:',
+  USER_TEAMS: 'user:teams:',
   RATE_LIMIT: 'ratelimit:',
   USER_ORGANIZATIONS: 'user:organizations:',
 } as const;

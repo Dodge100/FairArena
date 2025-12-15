@@ -1,6 +1,8 @@
+import { useAuth } from '@clerk/clerk-react';
 import { Clock, Shield, User } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '../components/ui/badge';
+import { useCallback, useEffect, useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Button } from '../components/ui/button';
 import {
   Dialog,
@@ -10,7 +12,6 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { useAuth } from '@clerk/clerk-react';
 
 interface AuditLog {
   id: string;
@@ -20,9 +21,10 @@ interface AuditLog {
   createdAt: string;
   user: {
     id: string;
-    firstName: string;
-    lastName: string;
-    username: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
   };
 }
 
@@ -97,16 +99,6 @@ export const OrganizationAuditLogsModal = ({
     });
   };
 
-  const getActionIcon = (action: string) => {
-    if (action.includes('CREATED')) return '🎉';
-    if (action.includes('UPDATED') || action.includes('SETTINGS')) return '⚙️';
-    if (action.includes('DELETED')) return '🗑️';
-    if (action.includes('MEMBER') || action.includes('USER')) return '👤';
-    if (action.includes('ROLE')) return '🛡️';
-    if (action.includes('TEAM')) return '👥';
-    return '📝';
-  };
-
   const getLevelBadgeVariant = (level: string) => {
     switch (level.toUpperCase()) {
       case 'ERROR':
@@ -155,7 +147,14 @@ export const OrganizationAuditLogsModal = ({
               <div className="space-y-3">
                 {auditLogs.map((log) => (
                   <div key={log.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="text-2xl">{getActionIcon(log.action)}</div>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={log.user.profileImageUrl || undefined} alt="User avatar" />
+                      <AvatarFallback>
+                        {log.user.firstName && log.user.lastName
+                          ? `${log.user.firstName[0]}${log.user.lastName[0]}`
+                          : log.user.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm">{log.action.replace(/_/g, ' ')}</span>
@@ -168,7 +167,7 @@ export const OrganizationAuditLogsModal = ({
                           <User className="h-3 w-3" />
                           {log.user.firstName && log.user.lastName
                             ? `${log.user.firstName} ${log.user.lastName}`
-                            : log.user.username || 'Unknown User'}
+                            : log.user.email}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />

@@ -1,5 +1,6 @@
 export { sendOtpForAccountSettings } from './accountSettingsSendOtp.js';
 export { createLog } from './createLog.js';
+export { createOrganizationAuditLog } from './createOrganizationAuditLog.js';
 export { createReport } from './createReport.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { exportUserDataHandler } from './exportUserData.js';
@@ -28,9 +29,15 @@ export {
   updateSettingsFunction,
 } from './settingsOperations.js';
 export { supportRequestCreated } from './supportRequest.js';
+export { createTeamAuditLog, sendTeamInviteEmail } from './teamInvite.js';
+export {
+  processBulkTeamInvites,
+  processSingleTeamInvite,
+  processTeamInviteAcceptance,
+} from './teamInviteProcessing.js';
+export { createTeamFunction, deleteTeamFunction, updateTeamFunction } from './teamManagement.js';
 export { updateOrganization } from './updateOrganization.js';
 export { deleteUser } from './userDelete.js';
 export { upsertUser } from './userOperations.js';
 export { syncUser } from './userSync.js';
 export { updateUser } from './userUpdate.js';
-export { createOrganizationAuditLog } from './createOrganizationAuditLog.js';

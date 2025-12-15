@@ -22,5 +22,6 @@
       "pnpm --filter fairarena run lint"
     ]
   },
+  "author": "Saksham-Goel1107",
   "packageManager": "pnpm@10.9.0"
 }

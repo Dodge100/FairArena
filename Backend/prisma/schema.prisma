@@ -12,6 +12,10 @@ model User {
   id                    String                  @id @default(cuid())
   userId                String                  @unique
   email                 String                  @unique
+  firstName             String?
+  lastName              String?
+  profileImageUrl       String?
+  username              String?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   deletedAt             DateTime?

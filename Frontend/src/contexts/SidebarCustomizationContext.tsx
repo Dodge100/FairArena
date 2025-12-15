@@ -42,7 +42,7 @@ const defaultMainItems: SidebarItem[] = [
     },
     { id: 'hackathons', title: 'Hackathons', url: '/dashboard/hackathons', icon: 'Trophy', visible: true, order: 2 },
     { id: 'analytics', title: 'Analytics', url: '/dashboard/analytics', icon: 'BarChart3', visible: true, order: 3 },
-    { id: 'team', title: 'Team', url: '/dashboard/team', icon: 'Users', visible: true, order: 4 },
+    { id: 'teams', title: 'Teams', url: '/dashboard/teams', icon: 'Users', visible: true, order: 4 },
     { id: 'credits', title: 'Credits', url: '/dashboard/credits', icon: 'CreditCard', visible: true, order: 5 },
     { id: 'inbox', title: 'Inbox', url: '/dashboard/inbox', icon: 'Inbox', visible: true, order: 6 },
 ];

@@ -11,7 +11,7 @@ export const syncUser = inngest.createFunction(
   },
   { event: 'user.created' },
   async ({ event, step }) => {
-    const { userId, email } = event.data;
+    const { userId, email, firstName, lastName, profileImageUrl, username } = event.data;
 
     if (!userId || !email) {
       logger.error('Missing required fields in user.created event', { userId, email });
@@ -22,7 +22,12 @@ export const syncUser = inngest.createFunction(
 
     await step.run('sync-user-to-db', async () => {
       try {
-        await upsertUser(userId, email);
+        await upsertUser(userId, email, {
+          firstName,
+          lastName,
+          profileImageUrl,
+          username,
+        });
         logger.info('User synced to database', { userId });
       } catch (error) {
         logger.error('Error syncing user to database', {

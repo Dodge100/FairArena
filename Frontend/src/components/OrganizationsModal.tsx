@@ -26,6 +26,47 @@ import { useOrganization } from '../contexts/OrganizationContext';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
 import { OrganizationDetailsModal } from './OrganizationDetailsModal';
 
+interface OrganizationPermissions {
+  organization: {
+    view: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+    manageBilling: boolean;
+    manageSecurity: boolean;
+  };
+  teams: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageMembers: boolean;
+  };
+  members: {
+    view: boolean;
+    invite: boolean;
+    remove: boolean;
+    manageRoles: boolean;
+  };
+  projects: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    manageSettings: boolean;
+  };
+  roles: {
+    view: boolean;
+    create: boolean;
+    edit: boolean;
+    delete: boolean;
+    assign: boolean;
+  };
+  audit: {
+    view: boolean;
+  };
+}
+
 type Organization = {
   id: string;
   name: string;
@@ -33,7 +74,11 @@ type Organization = {
   isPublic: boolean;
   memberCount: number;
   teamCount: number;
-  userRole: { name: string };
+  userRole: {
+    id: string;
+    name: string;
+    permissions: OrganizationPermissions;
+  };
   timezone?: string;
   createdAt: string;
   joinEnabled: boolean;
@@ -51,13 +96,33 @@ export const OrganizationsModal = ({ open, onOpenChange }: OrganizationsModalPro
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const { organizations, loading, refreshOrganizations } = useOrganization();
 
+  // Define the raw organization type as returned from the context/provider
+  type RawOrganization = Omit<Organization, 'userRole'> & {
+    userRole: {
+      id: string;
+      name: string;
+      permissions: Record<string, unknown>;
+    };
+  };
+
+  // Map organizations to match the local Organization type
+  const mappedOrganizations = useMemo<Organization[]>(() => {
+    return (organizations as RawOrganization[]).map((org) => ({
+      ...org,
+      userRole: {
+        ...org.userRole,
+        permissions: org.userRole.permissions as unknown as OrganizationPermissions,
+      },
+    }));
+  }, [organizations]);
+
   const filteredOrganizations = useMemo(() => {
-    return organizations.filter(
+    return mappedOrganizations.filter(
       (org) =>
         org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         org.slug.toLowerCase().includes(searchQuery.toLowerCase()),
     );
-  }, [organizations, searchQuery]);
+  }, [mappedOrganizations, searchQuery]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

@@ -1,8 +1,7 @@
-version: "3"
-
 services:
   backend:
     build: .
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
@@ -12,6 +11,7 @@ services:
 
   prom-server:
     image: prom/prometheus
+    restart: unless-stopped
     ports:
       - 9090:9090
     volumes:
