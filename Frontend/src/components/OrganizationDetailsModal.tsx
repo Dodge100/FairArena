@@ -1,4 +1,4 @@
-import { Building2, Globe, Lock, Settings, Shield, UserCheck, Users } from 'lucide-react';
+import { Building2, Globe, Lock, Mail, Settings, Shield, UserCheck, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -12,6 +12,8 @@ import {
 import { Separator } from '../components/ui/separator';
 import { OrganizationAuditLogsModal } from './OrganizationAuditLogsModal';
 import { OrganizationSettingsModal } from './OrganizationSettingsModal';
+import { TeamInviteModal } from './TeamInviteModal';
+import { TeamManagementModal } from './TeamManagementModal';
 
 interface OrganizationPermissions {
     organization: {
@@ -86,6 +88,8 @@ export const OrganizationDetailsModal = ({
 }: OrganizationDetailsModalProps) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [auditLogsOpen, setAuditLogsOpen] = useState(false);
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [teamManagementOpen, setTeamManagementOpen] = useState(false);
 
     if (!organization) return null;
 
@@ -284,6 +288,30 @@ export const OrganizationDetailsModal = ({
 
                     <div className="flex justify-between items-center pt-2">
                         <div className="flex gap-2">
+                            {organization.userRole.permissions.teams?.create && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setTeamManagementOpen(true);
+                                    }}
+                                    className="gap-2"
+                                >
+                                    <Users className="h-4 w-4" />
+                                    Manage Teams
+                                </Button>
+                            )}
+                            {organization.userRole.permissions.teams?.manageMembers && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setInviteOpen(true);
+                                    }}
+                                    className="gap-2"
+                                >
+                                    <Mail className="h-4 w-4" />
+                                    Invite to Team
+                                </Button>
+                            )}
                             {organization.userRole.permissions.organization?.edit && (
                                 <Button
                                     variant="outline"
@@ -311,7 +339,7 @@ export const OrganizationDetailsModal = ({
                         </div>
                         <Button
                             onClick={() => onOpenChange(false)}
-                            className={!(organization.userRole.permissions.organization?.edit || organization.userRole.permissions.audit?.view) ? 'ml-auto' : ''}
+                            className={!(organization.userRole.permissions.organization?.edit || organization.userRole.permissions.audit?.view || organization.userRole.permissions.teams?.manageMembers) ? 'ml-auto' : ''}
                         >
                             Close
                         </Button>
@@ -332,6 +360,22 @@ export const OrganizationDetailsModal = ({
                 <OrganizationAuditLogsModal
                     open={auditLogsOpen}
                     onOpenChange={setAuditLogsOpen}
+                    organizationSlug={organization.slug}
+                />
+            )}
+
+            {organization.userRole.permissions.teams?.manageMembers && (
+                <TeamInviteModal
+                    open={inviteOpen}
+                    onOpenChange={setInviteOpen}
+                    organizationSlug={organization.slug}
+                />
+            )}
+
+            {organization.userRole.permissions.teams?.create && (
+                <TeamManagementModal
+                    open={teamManagementOpen}
+                    onOpenChange={setTeamManagementOpen}
                     organizationSlug={organization.slug}
                 />
             )}

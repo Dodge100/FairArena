@@ -31,6 +31,8 @@ import RefundPage from './pages/RefundPage';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Support from './pages/Support';
+import TeamInviteAcceptPage from './pages/TeamInviteAcceptPage';
+import TeamsPage from './pages/TeamsPage';
 import TermsAndConditions from './pages/TermsAndConditions';
 import Unsubscribe from './pages/Unsubscribe';
 import HowItWorks from './pages/WhyChooseUsPage';
@@ -107,6 +109,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="/dashboard/credits" element={<CreditsPage />} />
           <Route path="/dashboard/inbox" element={<Inbox />} />
+          <Route path="/dashboard/teams" element={<TeamsPage />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/profile/edit" element={<EditProfile />} />
           <Route path="/dashboard/profile/views" element={<ProfileViews />} />
@@ -115,6 +118,7 @@ function App() {
           <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
         </Route>
         <Route path="/feedback/:feedbackCode" element={<Feedback />} />
+        <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/profile/:userId/stars" element={<ProfileStars />} />
         <Route path="/support" element={<Support />} />

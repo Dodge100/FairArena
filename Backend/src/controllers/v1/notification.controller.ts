@@ -128,7 +128,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 
     // Cache the response
     try {
-      await redis.setex(cacheKey, 60, JSON.stringify(responseData)); // 1 minute TTL
+      await redis.setex(cacheKey, 300, JSON.stringify(responseData)); // 5 minute TTL
       logger.info('Cached unread count', { userId, cacheKey });
     } catch (cacheError) {
       logger.warn('Redis cache write failed', {

@@ -1,4 +1,5 @@
 import { clerkMiddleware } from '@clerk/express';
+import * as Sentry from '@sentry/node';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -12,11 +13,15 @@ import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
   createLog,
+  createOrganizationAuditLog,
   createReport,
+  createTeamAuditLog,
+  createTeamFunction,
   createUserSettingsFunction,
   deleteAllReadNotifications,
   deleteNotifications,
   deleteOrganization,
+  deleteTeamFunction,
   deleteUser,
   exportUserDataHandler,
   inviteToPlatform,
@@ -26,12 +31,16 @@ import {
   paymentOrderCreated,
   paymentVerified,
   paymentWebhookReceived,
+  processBulkTeamInvites,
   processFeedbackSubmission,
+  processSingleTeamInvite,
+  processTeamInviteAcceptance,
   recordProfileView,
   resetSettingsFunction,
   sendEmailHandler,
   sendNotification,
   sendOtpForAccountSettings,
+  sendTeamInviteEmail,
   sendWeeklyFeedbackEmail,
   starProfile,
   subscribeToNewsletter,
@@ -42,31 +51,30 @@ import {
   updateOrganization,
   updateProfileFunction,
   updateSettingsFunction,
+  updateTeamFunction,
   updateUser,
-  createOrganizationAuditLog,
 } from './inngest/v1/index.js';
+import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
-import feedbackRouter from './routes/v1/feedback.js';
-import newsletterRouter from './routes/v1/newsletter.js';
-import platformInviteRouter from './routes/v1/platformInvite.js';
-import profileRouter from './routes/v1/profile.js';
-import settingsRouter from './routes/v1/settings.js';
-import webhookRouter from './routes/v1/webhook.js';
-// import teamRouter from './routes/v1/team.js';
-import * as Sentry from '@sentry/node';
-import './instrument.js';
 import cleanupRouter from './routes/v1/cleanup.js';
 import creditsRouter from './routes/v1/credits.js';
+import feedbackRouter from './routes/v1/feedback.js';
+import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import paymentsRouter from './routes/v1/payments.js';
 import plansRouter from './routes/v1/plans.js';
+import platformInviteRouter from './routes/v1/platformInvite.js';
+import profileRouter from './routes/v1/profile.js';
 import reportsRouter from './routes/v1/reports.js';
+import settingsRouter from './routes/v1/settings.js';
 import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
+import teamRouter from './routes/v1/team.js';
+import webhookRouter from './routes/v1/webhook.js';
 import logger from './utils/logger.js';
 
 const app = express();
@@ -231,6 +239,9 @@ app.use('/api/v1/feedback', feedbackRouter);
 // Support router
 app.use('/api/v1/support', supportRouter);
 
+// Team routes
+app.use('/api/v1/team', teamRouter);
+
 // Inngest serve
 app.use(
   '/api/inngest',
@@ -270,6 +281,14 @@ app.use(
       processFeedbackSubmission,
       supportRequestCreated,
       createOrganizationAuditLog,
+      sendTeamInviteEmail,
+      createTeamAuditLog,
+      processSingleTeamInvite,
+      processBulkTeamInvites,
+      processTeamInviteAcceptance,
+      createTeamFunction,
+      updateTeamFunction,
+      deleteTeamFunction,
     ],
   }),
 );

@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/clerk-react';
 import { Clock, Shield, User } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Button } from '../components/ui/button';
@@ -96,16 +97,6 @@ export const OrganizationAuditLogsModal = ({
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getActionIcon = (action: string) => {
-    if (action.includes('CREATED')) return '🎉';
-    if (action.includes('UPDATED') || action.includes('SETTINGS')) return '⚙️';
-    if (action.includes('DELETED')) return '🗑️';
-    if (action.includes('MEMBER') || action.includes('USER')) return '👤';
-    if (action.includes('ROLE')) return '🛡️';
-    if (action.includes('TEAM')) return '👥';
-    return '📝';
   };
 
   const getLevelBadgeVariant = (level: string) => {
