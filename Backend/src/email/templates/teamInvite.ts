@@ -1,33 +1,33 @@
-import { ENV } from '../../config/env';
+import { ENV } from '../../config/env.js';
 
 export const teamInviteEmailTemplate = (params: {
-  recipientEmail: string;
-  inviterName: string;
-  teamName: string;
-  organizationName: string;
-  roleName: string;
-  inviteLink: string;
-  expiresAt: string;
+    recipientEmail: string;
+    inviterName: string;
+    teamName: string;
+    organizationName: string;
+    roleName: string;
+    inviteLink: string;
+    expiresAt: string;
 }) => {
-  const {
-    recipientEmail,
-    inviterName,
-    teamName,
-    organizationName,
-    roleName,
-    inviteLink,
-    expiresAt,
-  } = params;
+    const {
+        recipientEmail,
+        inviterName,
+        teamName,
+        organizationName,
+        roleName,
+        inviteLink,
+        expiresAt,
+    } = params;
 
-  const expiryDate = new Date(expiresAt).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+    const expiryDate = new Date(expiresAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

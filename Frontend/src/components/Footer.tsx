@@ -59,7 +59,7 @@ function Footer() {
               { label: 'About', path: 'about' },
               { label: 'Why Choose Us', path: 'why-choose-us' },
               { label: 'Pricing', path: 'pricing' },
-              { label: 'Status', path: 'https://z956gqbw.status.cron-job.org', external: true },
+              { label: 'Status', path: 'https://fairarena.betteruptime.com', external: true },
             ].map((item) => (
               <li
                 key={item.path}

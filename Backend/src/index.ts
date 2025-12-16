@@ -300,10 +300,33 @@ app.get('/metrics', async (_, res) => {
   res.send(metrics);
 });
 
-// Health check endpoint
+// Health check endpoint with Basic HTTP auth
 app.get('/healthz', (req, res) => {
-  logger.info('Health check ping received', { ip: req.ip });
-  res.status(200).send('Server is healthy...');
+  const headerName = ENV.HEALTHZ_HEADER_NAME;
+  const headerValue = ENV.HEALTHZ_HEADER_VALUE;
+
+  if (headerName && headerValue) {
+    const provided = req.header(headerName);
+    if (!provided) {
+      logger.warn('Health check header missing', { headerName, ip: req.ip });
+      res.status(401).send('Unauthorized');
+      return;
+    }
+
+    if (provided !== headerValue) {
+      logger.warn('Invalid health check header value', { headerName, ip: req.ip });
+      res.status(401).send('Unauthorized');
+      return;
+    }
+
+    logger.info('Health check ping received (header auth)', { ip: req.ip });
+    res.status(200).send('Server is healthy...');
+    return;
+  }
+
+  // Fallback: if header auth not configured, deny access
+  logger.warn('Health check header auth not configured; denying access', { ip: req.ip });
+  res.status(503).send('Health check credentials not configured');
 });
 
 // Serve Swagger UI in development mode
@@ -323,8 +346,6 @@ app.use((_, res) => {
 export default app;
 
 // Start the server
-if (ENV.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  logger.info(`Server is running on port ${PORT}`);
+});

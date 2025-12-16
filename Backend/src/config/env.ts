@@ -121,4 +121,6 @@ export const ENV = {
   PAYMENTS_ENABLED: getEnv('PAYMENTS_ENABLED') === 'true' || false,
   CRON_SECRET: getEnv('CRON_SECRET'),
   FRONTEND_URLS: getEnv('FRONTEND_URLS', ''),
+  HEALTHZ_HEADER_NAME: getEnv('HEALTHZ_HEADER_NAME', ''),
+  HEALTHZ_HEADER_VALUE: getEnv('HEALTHZ_HEADER_VALUE', ''),
 };
