@@ -294,8 +294,15 @@ app.use(
 );
 
 // Metrics endpoint
-app.get('/metrics', async (_, res) => {
+app.get('/metrics', async (req, res) => {
   res.setHeader('Content-Type', client.register.contentType);
+  const allowedIp = '52.175.121.25';
+
+  const ip = req.socket.remoteAddress || req.connection.remoteAddress;
+
+  if (!ip || !ip.includes(allowedIp)) {
+    return res.status(403).send('Forbidden');
+  }
   const metrics = await client.register.metrics();
   res.send(metrics);
 });
