@@ -25,6 +25,8 @@
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
     "@arcjet/node": "1.0.0-beta.15",
+    "@azure/identity": "^4.13.0",
+    "@azure/keyvault-secrets": "^4.10.0",
     "@clerk/express": "^1.7.49",
     "@langchain/core": "^1.1.0",
     "@langchain/google-genai": "^2.0.0",

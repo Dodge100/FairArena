@@ -1,8 +1,79 @@
-import { getReadOnlyPrisma } from '../config/read-only.database.js';
+import { DefaultAzureCredential } from '@azure/identity';
+import { SecretClient } from '@azure/keyvault-secrets';
 import logger from '../utils/logger.js';
 import { redis } from './redis.js';
 
+const requiredEnvVars = [
+  'CLERK_WEBHOOK_SECRET',
+  'DATABASE_URL',
+  'INNGEST_SIGNING_KEY',
+  'INNGEST_EVENT_KEY',
+  'RESEND_API_KEY',
+  'FROM_EMAIL_ADDRESS',
+  'JWT_SECRET',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
+  'DATABASE_URL_READ_ONLY_1',
+  'DATABASE_URL_READ_ONLY_2',
+  'GOOGLE_GEMINI_API_KEY',
+  'RAZORPAY_KEY_ID',
+  'RAZORPAY_KEY_SECRET',
+  'CRON_SECRET',
+];
+
+const productionRequiredEnvVars = [...requiredEnvVars];
+
 async function loadEnvs(): Promise<Record<string, string>> {
+  const useAzureKeyVault = process.env.NODE_ENV === 'production';
+
+  if (useAzureKeyVault) {
+    try {
+      return await loadEnvsFromKeyVault();
+    } catch (error) {
+      logger.warn('Failed to load envs from Azure Key Vault, falling back to DB and Redis', {
+        error,
+      });
+      return await loadEnvsFromDbAndRedis();
+    }
+  } else {
+    return await loadEnvsFromDbAndRedis();
+  }
+}
+
+async function loadEnvsFromKeyVault(): Promise<Record<string, string>> {
+  const keyVaultUrl = process.env.AZURE_KEY_VAULT_URL;
+  if (!keyVaultUrl) {
+    throw new Error('AZURE_KEY_VAULT_URL is required in production');
+  }
+
+  const credential = new DefaultAzureCredential();
+  const client = new SecretClient(keyVaultUrl, credential);
+
+  const envs: Record<string, string> = {};
+
+  // List all secrets in the Key Vault
+  const secretProperties = client.listPropertiesOfSecrets();
+  for await (const secretProperty of secretProperties) {
+    const key = secretProperty.name;
+    // Convert back from hyphens to underscores for internal use
+    const internalKey = key.replace(/-/g, '_');
+    try {
+      const secret = await client.getSecret(key);
+      if (secret.value) {
+        envs[internalKey] = secret.value;
+        logger.info(`Loaded secret ${internalKey} from Azure Key Vault`);
+      }
+    } catch (error) {
+      logger.error(`Failed to load secret ${internalKey} from Azure Key Vault`, { error });
+      // Don't throw, as some secrets might be optional
+    }
+  }
+
+  return envs;
+}
+
+async function loadEnvsFromDbAndRedis(): Promise<Record<string, string>> {
+  const { getReadOnlyPrisma } = await import('../config/read-only.database.js');
   const cacheKey = 'env:cache';
   const readOnlyPrisma = getReadOnlyPrisma();
   let envs: Record<string, string> = {};
@@ -52,32 +123,26 @@ async function loadEnvs(): Promise<Record<string, string>> {
 
 const dbEnvs = await loadEnvs();
 
-const requiredEnvVars = [
-  'CLERK_WEBHOOK_SECRET',
-  'DATABASE_URL',
-  'INNGEST_SIGNING_KEY',
-  'INNGEST_EVENT_KEY',
-  'RESEND_API_KEY',
-  'FROM_EMAIL_ADDRESS',
-  'JWT_SECRET',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
-  'DATABASE_URL_READ_ONLY_1',
-  'DATABASE_URL_READ_ONLY_2',
-  'GOOGLE_GEMINI_API_KEY',
-  'RAZORPAY_KEY_ID',
-  'RAZORPAY_KEY_SECRET',
-  'CRON_SECRET',
-];
+const useAzureKeyVault = process.env.NODE_ENV === 'production';
 
 function getEnv(key: string, fallback?: string): string {
   return dbEnvs[key] || process.env[key] || fallback || '';
 }
 
-for (const envVar of requiredEnvVars) {
+const envVarsToCheck = useAzureKeyVault ? productionRequiredEnvVars : requiredEnvVars;
+
+for (const envVar of envVarsToCheck) {
   if (!getEnv(envVar) || getEnv(envVar).length === 0) {
     throw new Error(`Missing required environment variable: ${envVar}`);
   }
+}
+
+// AZURE_KEY_VAULT_URL must be set directly in env vars for Key Vault access
+if (
+  useAzureKeyVault &&
+  (!process.env.AZURE_KEY_VAULT_URL || process.env.AZURE_KEY_VAULT_URL.length === 0)
+) {
+  throw new Error('Missing required environment variable: AZURE_KEY_VAULT_URL');
 }
 
 export const ENV = {
@@ -88,17 +153,17 @@ export const ENV = {
   CLERK_SECRET_KEY: getEnv('CLERK_SECRET_KEY'),
   CLERK_WEBHOOK_SECRET: getEnv('CLERK_WEBHOOK_SECRET'),
   ARCJET_KEY: getEnv('ARCJET_KEY'),
-  DATABASE_URL: process.env.DATABASE_URL,
-  DATABASE_URL_READ_ONLY_1: process.env.DATABASE_URL_READ_ONLY_1,
-  DATABASE_URL_READ_ONLY_2: process.env.DATABASE_URL_READ_ONLY_2,
+  DATABASE_URL: getEnv('DATABASE_URL'),
+  DATABASE_URL_READ_ONLY_1: getEnv('DATABASE_URL_READ_ONLY_1'),
+  DATABASE_URL_READ_ONLY_2: getEnv('DATABASE_URL_READ_ONLY_2'),
   INNGEST_SIGNING_KEY: getEnv('INNGEST_SIGNING_KEY'),
   INNGEST_EVENT_KEY: getEnv('INNGEST_EVENT_KEY'),
   RESEND_API_KEY: getEnv('RESEND_API_KEY'),
   FROM_EMAIL_ADDRESS: getEnv('FROM_EMAIL_ADDRESS'),
   JWT_SECRET: getEnv('JWT_SECRET'),
   BASE_URL: getEnv('BASE_URL', ''),
-  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  UPSTASH_REDIS_REST_URL: getEnv('UPSTASH_REDIS_REST_URL'),
+  UPSTASH_REDIS_REST_TOKEN: getEnv('UPSTASH_REDIS_REST_TOKEN'),
   GOOGLE_SHEETS_PRIVATE_KEY: getEnv('GOOGLE_SHEETS_PRIVATE_KEY'),
   GOOGLE_RECAPTCHA_SITE_KEY: getEnv('GOOGLE_RECAPTCHA_SITE_KEY', ''),
   GOOGLE_RECAPTCHA_SECRET: getEnv('GOOGLE_RECAPTCHA_SECRET', ''),

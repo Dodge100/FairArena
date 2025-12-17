@@ -36,7 +36,8 @@ EOF
 echo "$GIT_ASKPASS_HELPER" > /tmp/git-askpass-helper.sh
 chmod +x /tmp/git-askpass-helper.sh
 
-GIT_ASKPASS=/tmp/git-askpass-helper.sh git pull origin ${GIT_BRANCH}
+GIT_ASKPASS=/tmp/git-askpass-helper.sh git fetch origin
+GIT_ASKPASS=/tmp/git-askpass-helper.sh git reset --hard origin/${GIT_BRANCH}
 
 # Build and update containers
 echo -e "${GREEN}[3/3] Building and updating containers...${NC}"
