@@ -56,6 +56,7 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
         headers: {
           Authorization: `Bearer ${await getToken()}`,
         },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();

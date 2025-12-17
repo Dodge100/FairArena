@@ -50,6 +50,7 @@ export default function ProfileStars() {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${await getToken()}`,
             },
+            credentials: 'include',
           },
         );
 

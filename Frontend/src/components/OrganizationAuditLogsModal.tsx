@@ -55,6 +55,7 @@ export const OrganizationAuditLogsModal = ({
             headers: {
               Authorization: `Bearer ${await getToken()}`,
             },
+            credentials: 'include',
           },
         );
 

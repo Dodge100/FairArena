@@ -19,8 +19,7 @@ export const otpEmailTemplate = (params: {
 
     mapHtml = `
       <div style="margin: 20px 0;">
-        <p>This request was made from the location shown on the map below:</p>
-        <img src="https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=13&size=400x300&markers=${latitude},${longitude},red" alt="Request location map" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;" />
+        <p>The approximate location from where the request was made:</p>
         <p><a href="https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}&zoom=13" style="color: #667eea; text-decoration: none;">View on OpenStreetMap</a></p>
       </div>
     `;

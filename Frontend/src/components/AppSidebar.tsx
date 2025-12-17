@@ -65,6 +65,7 @@ export function AppSidebar() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            credentials: 'include',
           },
         );
 

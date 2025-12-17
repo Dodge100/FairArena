@@ -30,6 +30,7 @@ function InviteFriend() {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${apiUrl}/api/v1/platform/invite`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${(await getToken()) || ''}`,

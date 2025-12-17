@@ -59,6 +59,7 @@ export default function MyProfile() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         });
 
         if (response.ok) {

@@ -38,7 +38,11 @@ const TeamInviteAcceptPage = () => {
     const fetchInvitationDetails = async () => {
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`,
+                {
+                    method: 'GET',
+                    credentials: 'include'
+                }
             );
 
             if (response.ok) {
@@ -87,6 +91,7 @@ const TeamInviteAcceptPage = () => {
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 
@@ -126,6 +131,7 @@ const TeamInviteAcceptPage = () => {
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 

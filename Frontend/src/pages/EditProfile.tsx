@@ -148,6 +148,7 @@ export default function EditProfile() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         });
 
         if (response.ok) {
@@ -233,6 +234,7 @@ export default function EditProfile() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

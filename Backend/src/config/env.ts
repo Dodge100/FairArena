@@ -18,7 +18,6 @@ const requiredEnvVars = [
   'GOOGLE_GEMINI_API_KEY',
   'RAZORPAY_KEY_ID',
   'RAZORPAY_KEY_SECRET',
-  'CRON_SECRET',
 ];
 
 const productionRequiredEnvVars = [...requiredEnvVars];
@@ -184,7 +183,6 @@ export const ENV = {
   RAZORPAY_KEY_SECRET: getEnv('RAZORPAY_KEY_SECRET'),
   RAZORPAY_WEBHOOK_SECRET: getEnv('RAZORPAY_WEBHOOK_SECRET', ''),
   PAYMENTS_ENABLED: getEnv('PAYMENTS_ENABLED') === 'true' || false,
-  CRON_SECRET: getEnv('CRON_SECRET'),
   FRONTEND_URLS: getEnv('FRONTEND_URLS', ''),
   HEALTHZ_HEADER_NAME: getEnv('HEALTHZ_HEADER_NAME', ''),
   HEALTHZ_HEADER_VALUE: getEnv('HEALTHZ_HEADER_VALUE', ''),

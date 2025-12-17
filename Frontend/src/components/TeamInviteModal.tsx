@@ -101,6 +101,7 @@ export const TeamInviteModal = ({
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 
@@ -130,6 +131,7 @@ export const TeamInviteModal = ({
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 
@@ -171,6 +173,7 @@ export const TeamInviteModal = ({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify(singleInvite),
                 }
             );
@@ -214,6 +217,7 @@ export const TeamInviteModal = ({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ invites: validInvites }),
                 }
             );
@@ -256,6 +260,7 @@ export const TeamInviteModal = ({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ csvContent }),
                 }
             );
@@ -322,6 +327,7 @@ export const TeamInviteModal = ({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ jsonContent }),
                 }
             );
@@ -365,6 +371,7 @@ export const TeamInviteModal = ({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ invites: jsonValidation.validInvites }),
                 }
             );

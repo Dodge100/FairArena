@@ -52,6 +52,7 @@ export default function TeamsPage() {
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 
@@ -72,6 +73,7 @@ export default function TeamsPage() {
                             headers: {
                                 Authorization: `Bearer ${await getToken()}`,
                             },
+                            credentials: 'include',
                         }
                     );
 

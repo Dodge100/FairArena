@@ -53,6 +53,7 @@ export function TeamManagementModal({
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 
@@ -93,6 +94,7 @@ export function TeamManagementModal({
                     headers: {
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                 }
             );
 

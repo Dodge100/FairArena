@@ -127,6 +127,7 @@ export const OrganizationSettingsModal = ({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${await getToken()}`,
           },
+          credentials: 'include',
           body: JSON.stringify(formData),
         },
       );
@@ -157,6 +158,7 @@ export const OrganizationSettingsModal = ({
           headers: {
             Authorization: `Bearer ${await getToken()}`,
           },
+          credentials: 'include',
         },
       );
 

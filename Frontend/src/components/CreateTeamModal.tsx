@@ -87,6 +87,7 @@ export function CreateTeamModal({
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${await getToken()}`,
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         name: formData.name,
                         slug: formData.slug,

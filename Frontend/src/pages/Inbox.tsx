@@ -148,6 +148,7 @@ export default function InboxPage() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            credentials: 'include',
           },
         );
 
@@ -174,6 +175,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 
@@ -217,6 +219,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 
@@ -257,6 +260,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 
@@ -298,6 +302,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 
@@ -337,6 +342,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 
@@ -376,6 +382,7 @@ export default function InboxPage() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
         },
       );
 

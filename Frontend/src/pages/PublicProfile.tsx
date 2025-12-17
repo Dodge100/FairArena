@@ -101,6 +101,7 @@ export default function PublicProfile() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${await getToken()}`,
           },
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -173,6 +174,7 @@ export default function PublicProfile() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${await getToken()}`,
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -203,6 +205,7 @@ export default function PublicProfile() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${await getToken()}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           reportedEntityId: profile.id,
           entityType: 'profile',
@@ -257,6 +260,7 @@ export default function PublicProfile() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${await getToken()}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           profileId: profile.id,
         }),

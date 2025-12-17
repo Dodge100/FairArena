@@ -85,6 +85,7 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
             joinEnabled,
             isPublic,
           }),
+          credentials: 'include',
         },
       );
 
