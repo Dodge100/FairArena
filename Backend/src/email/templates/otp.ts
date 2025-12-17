@@ -1,5 +1,33 @@
-export const otpEmailTemplate = (params: { otp: string }): string => {
+export const otpEmailTemplate = (params: {
+  otp: string;
+  location?: {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  } | null;
+}): string => {
   const currentYear = new Date().getFullYear();
+
+  let locationInfo = '';
+  let mapHtml = '';
+
+  if (params.location && params.location.latitude && params.location.longitude) {
+    const { city, region, country, latitude, longitude } = params.location;
+    locationInfo = `<p><strong>Location:</strong> ${city || 'Unknown'}, ${region || 'Unknown'}, ${country || 'Unknown'}</p>`;
+
+    mapHtml = `
+      <div style="margin: 20px 0;">
+        <p>This request was made from the location shown on the map below:</p>
+        <img src="https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=13&size=400x300&markers=${latitude},${longitude},red" alt="Request location map" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;" />
+        <p><a href="https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}&zoom=13" style="color: #667eea; text-decoration: none;">View on OpenStreetMap</a></p>
+      </div>
+    `;
+  } else if (params.location) {
+    const { city, region, country } = params.location;
+    locationInfo = `<p><strong>Location:</strong> ${city || 'Unknown'}, ${region || 'Unknown'}, ${country || 'Unknown'}</p>`;
+  }
 
   return `
 <!DOCTYPE html>
@@ -27,6 +55,8 @@ export const otpEmailTemplate = (params: { otp: string }): string => {
       <p>To access your account settings, please use the following One-Time Password (OTP):</p>
       <div class="otp">${params.otp}</div>
       <p>This OTP will expire in 10 minutes. Please do not share this code with anyone.</p>
+      ${locationInfo}
+      ${mapHtml}
       <p>If you didn't request this verification, please ignore this email.</p>
     </div>
     <div class="footer">

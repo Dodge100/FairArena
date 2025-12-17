@@ -115,7 +115,7 @@ export const sendOtp = async (req: Request, res: Response) => {
 
     await inngest.send({
       name: 'account-settings/send-otp',
-      data: { userId: auth.userId },
+      data: { userId: auth.userId, ip: req.ip },
     });
 
     inngest.send({

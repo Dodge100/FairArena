@@ -34,7 +34,16 @@ const transporter = nodemailer.createTransport({
 
 // Define parameter types for each template
 type WelcomeEmailParams = { userName: string };
-type OtpEmailParams = { otp: string };
+type OtpEmailParams = {
+  otp: string;
+  location?: {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  } | null;
+};
 type PlatformInviteEmailParams = { inviterName: string };
 type AccountDeletionWarningEmailParams = { recoveryInstructions: string; deadline: string };
 type AccountRecoveryEmailParams = { userName?: string };
@@ -428,8 +437,18 @@ export const sendWelcomeEmail = async (to: string, userName: string): Promise<un
   return sendEmail(to, 'Welcome to FairArena', 'welcome', { userName });
 };
 
-export const sendOtpEmail = async (to: string, otp: string): Promise<unknown> => {
-  return sendEmail(to, 'Account Verification - FairArena', 'otp', { otp });
+export const sendOtpEmail = async (
+  to: string,
+  otp: string,
+  location?: {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  } | null,
+): Promise<unknown> => {
+  return sendEmail(to, 'Account Verification - FairArena', 'otp', { otp, location });
 };
 
 export const sendPlatformInviteEmail = async (

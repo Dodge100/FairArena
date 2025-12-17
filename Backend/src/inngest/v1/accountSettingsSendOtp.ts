@@ -19,8 +19,7 @@ function generateOtp(): string {
       otp += digits.charAt(crypto.randomInt(0, digits.length));
     }
     return otp;
-  }
-  else {
+  } else {
     const length = crypto.randomInt(6, 13);
     let otp = '';
     for (let i = 0; i < length; i++) {
@@ -44,7 +43,7 @@ export const sendOtpForAccountSettings = inngest.createFunction(
   },
   { event: 'account-settings/send-otp' },
   async ({ event, step }) => {
-    const { userId } = event.data;
+    const { userId, ip } = event.data;
 
     if (!userId) {
       logger.error('Missing userId in send-otp event');
@@ -65,6 +64,39 @@ export const sendOtpForAccountSettings = inngest.createFunction(
       }
 
       return foundUser;
+    });
+
+    const location = await step.run('fetch-location', async () => {
+      if (!ip) {
+        logger.warn('No IP provided for location fetch', { userId });
+        return null;
+      }
+
+      try {
+        const response = await fetch(`https://ipinfo.io/${ip}/json`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        const [latitude, longitude] = data.loc ? data.loc.split(',').map(Number) : [null, null];
+        return {
+          city: data.city,
+          region: data.region,
+          country: data.country,
+          latitude,
+          longitude,
+        };
+      } catch (error) {
+        logger.error('Failed to fetch location', {
+          userId,
+          ip,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+      }
     });
 
     const otp = await step.run('generate-and-store-otp', async () => {
@@ -117,7 +149,7 @@ export const sendOtpForAccountSettings = inngest.createFunction(
 
     await step.run('send-otp-email', async () => {
       try {
-        await sendOtpEmail(user.email, otp);
+        await sendOtpEmail(user.email, otp, location);
         logger.info('OTP email sent successfully', { email: user.email });
       } catch (error) {
         logger.error('Failed to send OTP email', {

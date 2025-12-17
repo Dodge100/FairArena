@@ -9,6 +9,8 @@ import { serve } from 'inngest/express';
 import * as client from 'prom-client';
 import swaggerUi from 'swagger-ui-express';
 import { ENV } from './config/env.js';
+import { getReadOnlyPrisma } from './config/read-only.database.js';
+import { redis } from './config/redis.js';
 import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
@@ -18,6 +20,7 @@ import {
   createTeamAuditLog,
   createTeamFunction,
   createUserSettingsFunction,
+  dailyCleanup,
   deleteAllReadNotifications,
   deleteNotifications,
   deleteOrganization,
@@ -59,7 +62,6 @@ import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
-import cleanupRouter from './routes/v1/cleanup.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
 import newsletterRouter from './routes/v1/newsletter.js';
@@ -218,9 +220,6 @@ app.use('/api/v1/notifications', notificationRouter);
 // AI Assistant routes
 app.use('/api/v1/ai', aiRouter);
 
-// Cleanup routes
-app.use('/api/v1', cleanupRouter);
-
 // Payments routes
 app.use('/api/v1/payments', paymentsRouter);
 
@@ -261,6 +260,7 @@ app.use(
       deleteOrganization,
       updateOrganization,
       createReport,
+      dailyCleanup,
       starProfile,
       unstarProfile,
       sendEmailHandler,
@@ -308,7 +308,7 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Health check endpoint with Basic HTTP auth
-app.get('/healthz', (req, res) => {
+app.get('/healthz', async (req, res) => {
   const headerName = ENV.HEALTHZ_HEADER_NAME;
   const headerValue = ENV.HEALTHZ_HEADER_VALUE;
 
@@ -327,7 +327,21 @@ app.get('/healthz', (req, res) => {
     }
 
     logger.info('Health check ping received (header auth)', { ip: req.ip });
-    res.status(200).send('Server is healthy...');
+
+    // Perform actual health checks
+    try {
+      // Check database connection
+      await getReadOnlyPrisma().$queryRaw`SELECT 1`;
+
+      // Check Redis connection
+      await redis.ping();
+
+      res.status(200).send('Server is healthy');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Health check failed', { error: errorMessage });
+      res.status(503).send(`Server is unhealthy: ${errorMessage}`);
+    }
     return;
   }
 
@@ -349,8 +363,6 @@ app.use((_, res) => {
   logger.info('404 Not Found', { path: _.originalUrl });
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
-
-export default app;
 
 // Start the server
 app.listen(PORT, () => {

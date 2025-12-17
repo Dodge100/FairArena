@@ -1,19 +1,12 @@
-import type { Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
-import { ENV } from '../../config/env.js';
 import { razorpay } from '../../config/razorpay.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
-export const cleanupExpiredData = async (req: Request, res: Response) => {
+export const performCleanup = async () => {
   const readOnlyPrisma = await getReadOnlyPrisma();
   try {
-    const auth = req.headers.authorization;
-    if (auth !== `Bearer ${ENV.CRON_SECRET}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     // Calculate dates
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
@@ -257,7 +250,7 @@ export const cleanupExpiredData = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({
+    return {
       message: 'Cleanup completed',
       deletedLogs: deletedLogs.count,
       deletedUsers: deletedUsers.count,
@@ -266,9 +259,9 @@ export const cleanupExpiredData = async (req: Request, res: Response) => {
       recheckedPayments,
       cancelledPayments,
       deletedCancelledPayments: deletedCancelledPayments.count,
-    });
+    };
   } catch (error: unknown) {
     logger.error('Error during cleanup:', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    throw error; // Re-throw for Inngest to handle
   }
 };

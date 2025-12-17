@@ -2,6 +2,7 @@ export { sendOtpForAccountSettings } from './accountSettingsSendOtp.js';
 export { createLog } from './createLog.js';
 export { createOrganizationAuditLog } from './createOrganizationAuditLog.js';
 export { createReport } from './createReport.js';
+export { dailyCleanup } from './dailyCleanup.js';
 export { deleteOrganization } from './deleteOrganization.js';
 export { exportUserDataHandler } from './exportUserData.js';
 export { processFeedbackSubmission } from './feedbackSubmit.js';
