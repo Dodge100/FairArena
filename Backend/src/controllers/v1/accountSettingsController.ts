@@ -403,8 +403,12 @@ export const checkStatus = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    Verifier(req, res, auth);
-    res.json({ success: true, verified: true });
+    try {
+      Verifier(req, res, auth);
+      res.json({ success: true, verified: true });
+    } catch (error) {
+      res.status(401).json({ success: false, message: (error as Error).message });
+    }
   } catch (error) {
     logger.error('Status check error', {
       error: error instanceof Error ? error.message : String(error),
@@ -421,7 +425,11 @@ export const getLogs = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    Verifier(req, res, auth);
+    try {
+      Verifier(req, res, auth);
+    } catch (error) {
+      return res.status(401).json({ success: false, message: (error as Error).message });
+    }
 
     const cacheKey = `${REDIS_KEYS.USER_LOGS_CACHE}${userId}`;
 
@@ -500,7 +508,11 @@ export const exportUserData = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    Verifier(req, res, auth);
+    try {
+      Verifier(req, res, auth);
+    } catch (error) {
+      return res.status(401).json({ success: false, message: (error as Error).message });
+    }
 
     logger.info('User data export requested', { userId });
 

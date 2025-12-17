@@ -81,7 +81,7 @@ export const createTeamAuditLog = inngest.createFunction(
   {
     id: 'team-audit-log-create',
     concurrency: {
-      limit: 20,
+      limit: 5,
     },
   },
   { event: 'team/audit-log.create' },

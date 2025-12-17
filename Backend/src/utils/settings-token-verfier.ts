@@ -12,7 +12,7 @@ export const Verifier = (req: Request, res: Response, auth: AuthPayload) => {
   try {
     const token = req.cookies['account-settings-token'];
     if (!token) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+      throw new Error('Unauthorized');
     }
     const decoded = jwt.verify(token, ENV.JWT_SECRET) as {
       userId: string;
@@ -29,7 +29,7 @@ export const Verifier = (req: Request, res: Response, auth: AuthPayload) => {
         tokenUserId: decoded.userId,
         authUserId: auth.userId,
       });
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+      throw new Error('Unauthorized');
     }
 
     // Verify device binding
@@ -42,12 +42,22 @@ export const Verifier = (req: Request, res: Response, auth: AuthPayload) => {
         tokenDevice: decoded.device,
         currentDevice: { userAgent: currentUserAgent, ip: currentIp },
       });
-      return res.status(401).json({ success: false, message: 'Device verification failed' });
+      throw new Error('Device verification failed');
     }
   } catch (error) {
-    logger.error('Token verification error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+      throw new Error('Unauthorized');
+    }
+    if (
+      error instanceof Error &&
+      error.message !== 'Unauthorized' &&
+      error.message !== 'Device verification failed'
+    ) {
+      logger.error('Token verification error', {
+        error: error.message,
+      });
+      throw new Error('Unauthorized');
+    }
+    throw error;
   }
 };
