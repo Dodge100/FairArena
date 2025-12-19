@@ -16,10 +16,9 @@ function Footer() {
     <footer
       className={`
         w-full pt-16 pb-8 px-6 md:px-12 lg:px-20 border-t
-        ${
-          isDark
-            ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
-            : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
+        ${isDark
+          ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
+          : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
         }
       `}
     >
@@ -27,11 +26,12 @@ function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
         {/* Brand + Social */}
         <div>
-          <img src="/fairArenaLogotop.png" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
+          <Link to="/">
+            <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
+          </Link>
           <p
-            className={`mt-4 text-sm leading-relaxed ${
-              isDark ? 'text-neutral-400' : 'text-neutral-600'
-            }`}
+            className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
+              }`}
           >
             Follow us and never miss an update on the latest tech, productivity, and digital growth
             insights.
@@ -154,7 +154,7 @@ function Footer() {
       {/* Bottom Section */}
       <div className="flex flex-col md:flex-row justify-between items-center mt-6 text-sm gap-4 md:gap-0">
         <p className={`${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-          © 2025 FairArena. All rights reserved.
+          © {new Date().getFullYear()} FairArena. All rights reserved.
         </p>
 
         <div className="flex gap-6">

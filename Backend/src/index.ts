@@ -100,11 +100,10 @@ app.use(
 app.use(hpp());
 app.set('trust proxy', 1);
 
-// CORS middleware (enhanced for production multi-origin + preflight)
-const allowedOrigins = [
-  ...ENV.FRONTEND_URLS.split(',').map((origin) => origin.trim()),
-  ENV.NODE_ENV === 'development' && 'http://localhost:5173',
-].filter(Boolean);
+const originRegex = new RegExp(
+  `^https://(${ENV.FRONTEND_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.FRONTEND_URL.replace('.', '\\.')})$`,
+  'i',
+);
 
 app.use(
   cors({
@@ -112,7 +111,9 @@ app.use(
       // Allow requests with no origin (like mobile apps, Postman, or same-origin requests)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (originRegex.test(origin) || ENV.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
 
       logger.warn('CORS blocked origin', { origin });
       return callback(new Error('Not allowed by CORS'));
@@ -172,7 +173,7 @@ app.use(
       .swagger-ui .btn.authorize svg { fill: white }
     `,
     customSiteTitle: 'FairArena API Documentation',
-    customfavIcon: 'https://fairarena.vercel.app/fairArenaLogotop.png',
+    customfavIcon: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
     explorer: true,
     swaggerOptions: {
       persistAuthorization: true,

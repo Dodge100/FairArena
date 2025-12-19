@@ -24,6 +24,7 @@ function Unsubscribe() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
+
         });
         const data = await response.json();
         if (response.ok && data.success) {
@@ -51,7 +52,7 @@ function Unsubscribe() {
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="flex items-center space-x-3">
             <DataSaverImage
-              src="/fairArenaLogo.png"
+              src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
               alt="FairArena Logo"
               className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg object-contain bg-white dark:bg-gray-900 p-2"
               width={128}
@@ -158,15 +159,6 @@ function Unsubscribe() {
                 />
               </svg>
               Return to Home
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-              Return to Home
             </a>
           </footer>
         </section>
@@ -176,7 +168,7 @@ function Unsubscribe() {
       <footer className="w-full py-4 px-4 border-t border-gray-200 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2025 FairArena. All rights reserved.
+            © {new Date().getFullYear()} FairArena. All rights reserved.
           </p>
         </div>
       </footer>

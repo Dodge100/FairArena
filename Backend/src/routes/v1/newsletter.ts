@@ -3,6 +3,7 @@ import {
   subscribeToNewsletter,
   unsubscribeFromNewsletter,
 } from '../../controllers/v1/newsletterController.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/subscribe', subscribeToNewsletter);
+router.post('/subscribe', verifyRecaptcha, subscribeToNewsletter);
 
 /**
  * @swagger

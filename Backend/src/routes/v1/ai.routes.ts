@@ -1,11 +1,8 @@
-import { requireAuth } from '@clerk/express';
 import { Router } from 'express';
 import { aiController } from '../../controllers/v1/ai.controller.js';
+import { protectRoute } from '../../middleware/auth.middleware.js';
 
 const router = Router();
-
-// All routes require authentication for security
-router.use(requireAuth());
 
 /**
  * @swagger
@@ -89,7 +86,7 @@ router.use(requireAuth());
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/stream', (req, res) => aiController.streamChat(req, res));
+router.post('/stream', protectRoute, (req, res) => aiController.streamChat(req, res));
 
 /**
  * @swagger
@@ -153,7 +150,7 @@ router.post('/stream', (req, res) => aiController.streamChat(req, res));
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/chat', (req, res) => aiController.chat(req, res));
+router.post('/chat', protectRoute, (req, res) => aiController.chat(req, res));
 
 /**
  * @swagger
@@ -190,6 +187,8 @@ router.post('/chat', (req, res) => aiController.chat(req, res));
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.delete('/session/:sessionId', (req, res) => aiController.clearSession(req, res));
+router.delete('/session/:sessionId', protectRoute, (req, res) =>
+  aiController.clearSession(req, res),
+);
 
 export default router;

@@ -80,9 +80,8 @@ export function AppSidebar() {
 
     fetchUnreadCount();
 
-    // Poll every 30 seconds, but only if not in data saver mode
     if (!(dataSaverSettings.enabled && dataSaverSettings.disableAutoRefresh)) {
-      const interval = setInterval(fetchUnreadCount, 30000);
+      const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
   }, [getToken, dataSaverSettings]);
@@ -149,7 +148,7 @@ export function AppSidebar() {
             {/* Show logo and text when expanded */}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <img
-                src="/fairArenaLogotop.png"
+                src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
                 className="w-30 -my-8"
                 alt="FairArena Logo"
                 style={{ filter: theme === 'light' ? 'invert(1)' : 'none' }}

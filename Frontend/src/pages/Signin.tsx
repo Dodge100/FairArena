@@ -45,10 +45,9 @@ export default function Signin() {
 
       // ---------- INPUT ----------
       formFieldInput: `
-        ${
-          isDark
-            ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
-            : 'bg-white text-neutral-900 border-[#e6e6e6]'
+        ${isDark
+          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
+          : 'bg-white text-neutral-900 border-[#e6e6e6]'
         }
         rounded-lg placeholder:text-neutral-400
         focus:border-[#DDEF00]
@@ -174,7 +173,7 @@ export default function Signin() {
             ${isDark ? 'bg-neutral-900' : 'bg-white'}
           `}
         >
-          <img src="/fairArenaLogotop.png" className="w-30" alt="Fair Arena Logo" />
+          <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-30" alt="Fair Arena Logo" />
           <h1
             className={`
               text-3xl font-bold mb-1
@@ -202,10 +201,9 @@ export default function Signin() {
         <div
           className={`
             hidden md:flex w-1/2 items-center justify-center p-6
-            ${
-              isDark
-                ? 'bg-[#0f0f0f] border-l border-neutral-800'
-                : 'bg-[#EEF0FF] border-l border-neutral-200'
+            ${isDark
+              ? 'bg-[#0f0f0f] border-l border-neutral-800'
+              : 'bg-[#EEF0FF] border-l border-neutral-200'
             }
           `}
         >
@@ -228,7 +226,7 @@ export default function Signin() {
             </p>
 
             <img
-              src="/dashboardDemo.jpg"
+              src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
               alt="Dashboard Preview"
               className="rounded-xl shadow-lg border"
             />

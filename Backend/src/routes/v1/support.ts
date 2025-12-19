@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { SupportController } from '../../controllers/v1/supportController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
@@ -116,6 +117,7 @@ router.get('/', protectRoute, SupportController.getUserSupportTickets);
  */
 router.post(
   '/',
+  verifyRecaptcha,
   SupportController.getRateLimitMiddleware(),
   SupportController.createSupportRequest,
 );

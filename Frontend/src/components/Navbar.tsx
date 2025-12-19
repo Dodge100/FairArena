@@ -1,9 +1,9 @@
+import { useTheme } from '@/hooks/useTheme';
 import { useUser } from '@clerk/clerk-react';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '@/hooks/useTheme';
 import ThemeToggleButton from './ui/ThemeChange';
 export default function Navbar() {
   const { theme } = useTheme();
@@ -38,20 +38,18 @@ export default function Navbar() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className={`font-semibold ml-4 text-lg transition-colors ${
-              isDark ? 'text-white' : 'text-black'
-            }`}
+            className={`font-semibold ml-4 text-lg transition-colors ${isDark ? 'text-white' : 'text-black'
+              }`}
           >
             <Link to="/home">
-              <img width="100" src="/fairArenaLogotop.png" alt="FairArena Logo" />
+              <img width="100" src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" />
             </Link>
           </motion.div>
 
           {/* Desktop Nav */}
           <div
-            className={`hidden md:flex items-center gap-10 text-sm transition-colors ${
-              isDark ? 'text-white/80' : 'text-black/70'
-            }`}
+            className={`hidden md:flex items-center gap-10 text-sm transition-colors ${isDark ? 'text-white/80' : 'text-black/70'
+              }`}
           >
             {['why-choose-us', 'pricing', 'about'].map((item, i) => (
               <motion.button
@@ -59,9 +57,8 @@ export default function Navbar() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 + i * 0.1, duration: 0.4 }}
-                className={`${
-                  isDark ? 'hover:text-white' : 'hover:text-black'
-                } transition cursor-pointer capitalize`}
+                className={`${isDark ? 'hover:text-white' : 'hover:text-black'
+                  } transition cursor-pointer capitalize`}
               >
                 <Link to={item}>{item}</Link>
               </motion.button>
@@ -74,11 +71,10 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.45, duration: 0.4 }}
                   className={`ml-6 sm:flex hidden font-semibold px-6 py-2 rounded-full transition-all duration-300 cursor-pointer
-              ${
-                isDark
-                  ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
-                  : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
-              }`}
+              ${isDark
+                      ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+                      : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+                    }`}
                 >
                   Join Waitlist
                 </motion.button>
@@ -90,11 +86,10 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.45, duration: 0.4 }}
                   className={`ml-6 sm:flex hidden font-semibold px-6 py-2 rounded-full transition-all duration-300 cursor-pointer
-              ${
-                isDark
-                  ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
-                  : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
-              }`}
+              ${isDark
+                      ? 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+                      : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
+                    }`}
                 >
                   Go to Dashboard
                 </motion.button>
@@ -107,9 +102,8 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
-            className={`md:hidden p-2 rounded-lg transition ${
-              isDark ? 'text-white' : 'text-black'
-            }`}
+            className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-white' : 'text-black'
+              }`}
             onClick={() => setOpen(true)}
           >
             <Menu size={28} />
@@ -153,10 +147,9 @@ export default function Navbar() {
               style={{ willChange: 'transform, opacity' }}
               className={`fixed top-0 right-0 h-full w-[80%] max-w-[330px] z-60 shadow-xl p-6
                 border-l
-                ${
-                  isDark
-                    ? 'bg-[#0a0a0a] border-[#222] text-white'
-                    : 'bg-white border-[#b4b4b4] text-black'
+                ${isDark
+                  ? 'bg-[#0a0a0a] border-[#222] text-white'
+                  : 'bg-white border-[#b4b4b4] text-black'
                 }
               `}
             >
@@ -202,9 +195,8 @@ export default function Navbar() {
                         },
                       },
                     }}
-                    className={`${
-                      isDark ? 'hover:text-white' : 'hover:text-black'
-                    } transition capitalize cursor-pointer`}
+                    className={`${isDark ? 'hover:text-white' : 'hover:text-black'
+                      } transition capitalize cursor-pointer`}
                     onClick={() => setOpen(false)}
                   >
                     <Link to={item}>{item}</Link>

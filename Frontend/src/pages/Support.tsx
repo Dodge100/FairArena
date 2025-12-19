@@ -12,7 +12,8 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -36,8 +37,10 @@ export default function Support() {
   const [submitMessage, setSubmitMessage] = useState('');
   const [showFAQ, setShowFAQ] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const faqRef = useRef<HTMLDivElement>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const quickHelpTopics = [
     {
@@ -100,6 +103,19 @@ export default function Support() {
     },
   ];
 
+  const onCaptchaChange = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const onCaptchaExpired = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
+
+  const onCaptchaError = useCallback(() => {
+    setCaptchaToken(null);
+    setSubmitMessage('CAPTCHA verification failed. Please try again.');
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -110,6 +126,12 @@ export default function Support() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!captchaToken) {
+      setSubmitMessage('Please complete the CAPTCHA verification.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitMessage('');
 
@@ -120,6 +142,7 @@ export default function Support() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'X-Recaptcha-Token': captchaToken,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -139,12 +162,18 @@ export default function Support() {
           subject: '',
           message: '',
         });
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
       } else {
         setSubmitMessage(data.message || 'Failed to submit support request. Please try again.');
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
       }
     } catch (error) {
       console.error('Error submitting support request:', error);
       setSubmitMessage('An error occurred. Please try again later.');
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
     } finally {
       setIsSubmitting(false);
     }
@@ -580,6 +609,18 @@ export default function Support() {
                     />
                   </div>
 
+                  {/* reCAPTCHA Verification */}
+                  <div className="flex justify-center">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
+                      onChange={onCaptchaChange}
+                      onExpired={onCaptchaExpired}
+                      onError={onCaptchaError}
+                      theme={isDark ? 'dark' : 'light'}
+                    />
+                  </div>
+
                   {/* Submit Message */}
                   {submitMessage && (
                     <div className={`p-4 rounded-lg border ${submitMessage.includes('successfully')
@@ -593,7 +634,7 @@ export default function Support() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
                     className={`
                       w-full h-11 bg-[#DDEF00] text-black font-semibold rounded-lg
                       hover:bg-[#c9d900] active:scale-95 transition-all duration-200
@@ -605,6 +646,13 @@ export default function Support() {
                       <>
                         <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
                         Sending...
+                      </>
+                    ) : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ? (
+                      'CAPTCHA not configured'
+                    ) : !captchaToken ? (
+                      <>
+                        <Shield className="w-4 h-4" />
+                        Complete CAPTCHA
                       </>
                     ) : (
                       <>

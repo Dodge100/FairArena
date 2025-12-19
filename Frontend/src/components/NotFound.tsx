@@ -27,7 +27,7 @@ function NotFound() {
 
       {/* Main Content */}
       <div className="relative flex flex-col items-center justify-center px-4">
-        <img src="/fairArenaLogotop.png" className="w-40 -my-5" alt="" />
+        <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-40 -my-5" alt="" />
 
         {/* Heading */}
         <h2

@@ -1,5 +1,8 @@
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
-import { useState } from 'react';
+import { Shield, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { toast } from 'sonner';
 
 function Newsletter() {
@@ -8,6 +11,23 @@ function Newsletter() {
 
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCaptchaModal, setShowCaptchaModal] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+  const onCaptchaChange = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+  }, []);
+
+  const onCaptchaExpired = useCallback(() => {
+    setCaptchaToken(null);
+    toast.error('CAPTCHA expired. Please try again.');
+  }, []);
+
+  const onCaptchaError = useCallback(() => {
+    setCaptchaToken(null);
+    toast.error('CAPTCHA verification failed. Please try again.');
+  }, []);
 
   const handleSubscribe = async () => {
     if (isLoading) return;
@@ -24,6 +44,16 @@ function Newsletter() {
       return;
     }
 
+    // Open captcha modal instead of submitting directly
+    setShowCaptchaModal(true);
+  };
+
+  const handleCaptchaSubmit = async () => {
+    if (!captchaToken) {
+      toast.error('Please complete the CAPTCHA verification.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -32,6 +62,7 @@ function Newsletter() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Recaptcha-Token': captchaToken,
         },
         credentials: 'include',
         body: JSON.stringify({ email }),
@@ -42,15 +73,28 @@ function Newsletter() {
       if (response.ok && data.success) {
         toast.success('Newsletter subscription request received!');
         setEmail('');
+        setShowCaptchaModal(false);
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
       } else {
         toast.error(data.message || 'Failed to subscribe. Please try again.');
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
       }
     } catch (error) {
       console.error('Newsletter subscription error:', error);
       toast.error('Something went wrong. Please try again later.');
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowCaptchaModal(false);
+    setCaptchaToken(null);
+    recaptchaRef.current?.reset();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,10 +156,9 @@ function Newsletter() {
             px-5 py-3 rounded-full text-sm md:text-base outline-none
             transition-opacity
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-            ${
-              isDark
-                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
-                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
+            ${isDark
+              ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
+              : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
             }
           `}
         />
@@ -134,6 +177,89 @@ function Newsletter() {
           {isLoading ? 'Subscribing...' : 'Subscribe'}
         </button>
       </div>
+
+      {/* CAPTCHA Modal */}
+      <Dialog open={showCaptchaModal} onOpenChange={setShowCaptchaModal}>
+        <DialogContent
+          className={`
+            sm:max-w-md
+            ${isDark ? 'bg-[rgba(15,15,15,0.95)] border-neutral-800' : 'bg-white border-neutral-200'}
+          `}
+        >
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}>
+              <Shield className="w-5 h-5 text-[#ddef00]" />
+              Verify You're Human
+            </DialogTitle>
+            <DialogDescription className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
+              Complete the CAPTCHA verification to subscribe to our newsletter.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* reCAPTCHA */}
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
+                onChange={onCaptchaChange}
+                onExpired={onCaptchaExpired}
+                onError={onCaptchaError}
+                theme={isDark ? 'dark' : 'light'}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleCloseModal}
+                disabled={isLoading}
+                className={`
+                  flex-1 px-4 py-2.5 rounded-lg font-medium transition-all
+                  ${isDark
+                    ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
+                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
+                  }
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                <X className="w-4 h-4 inline mr-2" />
+                Cancel
+              </button>
+              <button
+                onClick={handleCaptchaSubmit}
+                disabled={isLoading || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+                className="
+                  flex-1 px-4 py-2.5 rounded-lg font-semibold
+                  bg-[#ddef00] text-black
+                  hover:bg-[#ddef00]/80 transition-all
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  flex items-center justify-center gap-2
+                "
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    Subscribing...
+                  </>
+                ) : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ? (
+                  'CAPTCHA not configured'
+                ) : !captchaToken ? (
+                  <>
+                    <Shield className="w-4 h-4" />
+                    Complete CAPTCHA
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4" />
+                    Subscribe
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

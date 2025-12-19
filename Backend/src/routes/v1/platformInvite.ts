@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { inviteToPlatform } from '../../controllers/v1/platformInviteController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
@@ -55,6 +56,6 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/invite', protectRoute, inviteToPlatform);
+router.post('/invite', verifyRecaptcha, protectRoute, inviteToPlatform);
 
 export default router;

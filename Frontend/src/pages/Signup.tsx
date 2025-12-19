@@ -173,7 +173,7 @@ export default function Signup() {
             ${isDark ? 'bg-neutral-900' : 'bg-white'}
           `}
         >
-          <img src="/fairArenaLogotop.png" className="w-30" alt="Fair Arena Logo" />
+          <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-30" alt="Fair Arena Logo" />
           <h1
             className={`
               text-3xl font-bold mb-1
@@ -226,7 +226,7 @@ export default function Signup() {
             </p>
 
             <img
-              src="/dashboardDemo.jpg"
+              src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
               alt="Dashboard Preview"
               className="rounded-xl shadow-lg border"
             />

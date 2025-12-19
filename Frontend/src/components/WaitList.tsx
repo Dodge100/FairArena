@@ -35,7 +35,7 @@ function WaitList() {
       {/* Content */}
       <div className="max-w-9xl flex flex-col items-center relative z-20 gap-6">
         {/* Logo */}
-        <img src="/fairArenaLogotop.png" className="w-40" alt="Fair Arena Logo" />
+        <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-40" alt="Fair Arena Logo" />
 
         {/* Heading */}
         <h2
@@ -73,10 +73,9 @@ function WaitList() {
                   `,
 
                   card: `
-                    ${
-                      isDark
-                        ? '!bg-[rgba(15,15,15,0.65)] !border-neutral-800'
-                        : '!bg-white !border-neutral-300'
+                    ${isDark
+                      ? '!bg-[rgba(15,15,15,0.65)] !border-neutral-800'
+                      : '!bg-white !border-neutral-300'
                     }
                     !backdrop-blur-xl !border !shadow-none !rounded-2xl
                   `,
@@ -95,10 +94,9 @@ function WaitList() {
                   formFieldErrorText: 'text-red-500 text-sm',
 
                   formFieldInput: `
-                    ${
-                      isDark
-                        ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
-                        : 'bg-white text-neutral-900 border-neutral-300'
+                    ${isDark
+                      ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B]'
+                      : 'bg-white text-neutral-900 border-neutral-300'
                     }
                     placeholder:text-[#777]
                     focus:border-[#DDEF00] focus:ring-0 rounded-xl

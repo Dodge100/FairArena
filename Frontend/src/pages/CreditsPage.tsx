@@ -21,7 +21,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface CreditBalance {
@@ -406,13 +406,14 @@ const CreditsPage = () => {
                   <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
                     Your credit transaction history will appear here once you make purchases or use credits.
                   </p>
-                  <Button
-                    onClick={() => navigate('/dashboard#pricing')}
-                    className="bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Get Started with Credits
-                  </Button>
+                  <a href='/dashboard/credits#pricing'>
+                    <Button
+                      className="bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Get Started with Credits
+                    </Button>
+                  </a>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -612,18 +613,18 @@ const CreditsPage = () => {
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
           <div className="text-center text-sm text-slate-600 dark:text-slate-400">
             <div className="flex flex-wrap justify-center gap-6 mb-4">
-              <a href="/terms-and-conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              <Link to="/terms-and-conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">
                 Terms of Service
-              </a>
-              <a href="/privacy-policy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              </Link>
+              <Link to="/privacy-policy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
                 Privacy Policy
-              </a>
-              <a href="/refund" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              </Link>
+              <Link to="/refund" className="hover:text-slate-900 dark:hover:text-white transition-colors">
                 Refund Policy
-              </a>
-              <a href="/contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+              </Link>
+              <Link to="/contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">
                 Contact Us
-              </a>
+              </Link>
             </div>
             <div className="flex items-center justify-center gap-2 mb-2">
               <Shield className="h-4 w-4" />

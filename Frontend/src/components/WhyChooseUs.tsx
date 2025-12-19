@@ -46,7 +46,7 @@ function WhyChooseUs() {
       >
         Why Choose
         <DataSaverImage
-          src="/fairArenaLogotop.png"
+          src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
           alt="FairArena Logo"
           className="md:w-20 w-20 h-auto object-contain ml-2"
           fallback={

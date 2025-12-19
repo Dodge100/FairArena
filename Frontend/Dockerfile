@@ -21,7 +21,7 @@ COPY . .
 RUN pnpm run build
 
 # Expose port
-EXPOSE 80
+EXPOSE 4173
 
 # Start the app
-CMD ["pnpm", "start"]
+CMD ["node", "dist/server.js"]

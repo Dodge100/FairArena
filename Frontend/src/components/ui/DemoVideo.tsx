@@ -28,7 +28,7 @@ function DemoVideo() {
           muted: true,
           fluid: true,
           responsive: true,
-          poster: '/dashboardDemo.jpg',
+          poster: 'https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview',
         });
 
         const player = playerRef.current;
@@ -81,7 +81,7 @@ function DemoVideo() {
           <>
             <video
               ref={videoRef}
-              poster="/dashboardDemo.jpg"
+              poster="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
               className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
             >
               <source
