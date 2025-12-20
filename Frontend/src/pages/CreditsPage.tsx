@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@clerk/clerk-react';
 import {
   AlertCircle,
   CheckCircle,
@@ -23,6 +22,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuthState } from '../lib/auth';
 
 interface CreditBalance {
   balance: number;
@@ -68,7 +68,7 @@ interface PaymentDetails {
 }
 
 const CreditsPage = () => {
-  const { userId, isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthState();
   const navigate = useNavigate();
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [history, setHistory] = useState<CreditHistory | null>(null);
@@ -77,7 +77,7 @@ const CreditsPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentDetails | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const { getToken } = useAuth();
+  const { getToken } = useAuthState();
 
   const fetchCreditHistory = useCallback(
     async (loadMore = false) => {
@@ -190,7 +190,7 @@ const CreditsPage = () => {
     fetchCreditBalance();
     fetchCreditHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, userId, navigate]);
+  }, [isSignedIn, navigate]);
 
   const getTransactionIcon = (type: string, amount: number) => {
     switch (type) {

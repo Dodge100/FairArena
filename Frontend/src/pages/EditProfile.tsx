@@ -13,11 +13,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth, useUser } from '@clerk/clerk-react';
 import { ArrowLeft, Plus, Save, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuthState } from '../lib/auth';
 
 interface ProfileData {
   firstName: string;
@@ -48,8 +48,7 @@ interface ProfileData {
 }
 
 export default function EditProfile() {
-  const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { user, getToken, isLoaded } = useAuthState();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -193,7 +192,8 @@ export default function EditProfile() {
     };
 
     fetchProfile();
-  }, [isLoaded, user, getToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, getToken, isLoaded]);
 
   const handleSave = async () => {
     if (!user) return;

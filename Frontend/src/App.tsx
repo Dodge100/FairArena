@@ -9,6 +9,8 @@ import WaitList from './components/WaitList';
 import { useCookieConsent } from './contexts/CookieConsentContext';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
+import { registerAuth } from './lib/apiClient';
+import { useToken } from './lib/auth';
 import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
@@ -42,6 +44,11 @@ function App() {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
+  const token = useToken();
+
+  useEffect(() => {
+    registerAuth(token);
+  }, [token]);
 
   // Handle hash routing for pricing modal
   useEffect(() => {

@@ -48,7 +48,7 @@ export class AIController {
       }
 
       const { message, sessionId, metadata } = validation.data;
-      const userId = req.auth()?.userId; // From Clerk middleware
+      const userId = req.auth()?.userId;
 
       if (!userId) {
         res.status(401).json({

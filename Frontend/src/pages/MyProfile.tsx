@@ -1,11 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { apiFetch } from '@/lib/apiClient';
 import { Edit, Eye, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuthState } from '../lib/auth';
 
 interface ProfileData {
   firstName: string;
@@ -36,8 +37,7 @@ interface ProfileData {
 }
 
 export default function MyProfile() {
-  const { user } = useUser();
-  const { getToken } = useAuth();
+  const { user, isLoaded } = useAuthState();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,16 +51,12 @@ export default function MyProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!isLoaded || !user) return;
+
       try {
         setLoading(true);
-        const token = await getToken();
         const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/v1/profile/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        });
+        const response = await apiFetch(`${apiUrl}/api/v1/profile/me`);
 
         if (response.ok) {
           const data = await response.json();
@@ -76,10 +72,8 @@ export default function MyProfile() {
       }
     };
 
-    if (user) {
-      fetchProfile();
-    }
-  }, [user, getToken]);
+    fetchProfile();
+  }, [user?.id, isLoaded]);
 
   const calculateProfileCompletion = () => {
     if (!profile) return { percentage: 0, completed: 0, total: 0 };
@@ -203,7 +197,7 @@ export default function MyProfile() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user?.imageUrl} alt={user?.fullName || 'User'} />
+              <AvatarImage src={user?.profileImageUrl ?? undefined} alt={user?.firstName || 'User'} />
               <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
             </Avatar>
           </div>
@@ -288,11 +282,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profileCompletion.percentage === 100
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profileCompletion.percentage === 100
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                          }`}
                       >
                         {profileCompletion.percentage === 100 ? 'Complete' : 'Incomplete'}
                       </div>
@@ -302,7 +295,7 @@ export default function MyProfile() {
                       <div>
                         <div className="font-medium">Email Status</div>
                         <div className="text-sm text-muted-foreground">
-                          {user?.primaryEmailAddress?.emailAddress || 'Not set'}
+                          {user?.email || 'Not set'}
                         </div>
                       </div>
                       <div className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -318,11 +311,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profile?.isPublic
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.isPublic
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}
                       >
                         {profile?.isPublic ? 'Public' : 'Private'}
                       </div>
@@ -336,11 +328,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profile?.trackViews
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.trackViews
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}
                       >
                         {profile?.trackViews ? 'Enabled' : 'Disabled'}
                       </div>

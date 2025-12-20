@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth } from '@clerk/clerk-react';
 import { Mail, Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { toast } from 'sonner';
+import { apiFetch } from '../lib/apiClient';
+import { useAuthState } from '../lib/auth';
 
 function InviteFriend() {
   const { theme } = useTheme();
@@ -14,7 +15,7 @@ function InviteFriend() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn } = useAuthState();
 
   const onCaptchaChange = useCallback((token: string | null) => {
     setCaptchaToken(token);
@@ -59,13 +60,10 @@ function InviteFriend() {
     setIsLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/v1/platform/invite`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/platform/invite`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await getToken()) || ''}`,
           'X-Recaptcha-Token': captchaToken,
         },
         body: JSON.stringify({ email }),

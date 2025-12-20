@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { clerkBatchUserBreaker } from '../../config/circuit-breaker.js';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
@@ -46,7 +45,7 @@ export const starProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (rateLimitError) {
-      logger.warn('Rate limit check failed:', {error: rateLimitError});
+      logger.warn('Rate limit check failed:', { error: rateLimitError });
       // Continue without rate limiting rather than failing the request
     }
 
@@ -142,7 +141,7 @@ export const starProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error queuing star request:', {error});
+    logger.error('Error queuing star request:', { error });
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -180,7 +179,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (rateLimitError) {
-      logger.warn('Rate limit check failed:', {error: rateLimitError});
+      logger.warn('Rate limit check failed:', { error: rateLimitError });
       // Continue without rate limiting rather than failing the request
     }
 
@@ -240,7 +239,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         });
       }
     } catch (cacheError) {
-      logger.warn('Failed to update profile cache on unstar:', {error: cacheError});
+      logger.warn('Failed to update profile cache on unstar:', { error: cacheError });
       // Continue even if cache update fails
     }
 
@@ -258,7 +257,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
         },
       );
     } catch (cacheError) {
-      logger.warn('Failed to cache unstar status:', {error: cacheError});
+      logger.warn('Failed to cache unstar status:', { error: cacheError });
       // Continue even if cache update fails
     }
 
@@ -283,7 +282,7 @@ export const unstarProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error queuing unstar request:', {error});
+    logger.error('Error queuing unstar request:', { error });
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -328,6 +327,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
         user: {
           select: {
             userId: true,
+            profileImageUrl: true,
             profile: {
               select: {
                 firstName: true,
@@ -365,50 +365,17 @@ export const getProfileStars = async (req: Request, res: Response) => {
         await redis.setex(cacheKey, 300, totalCount.toString());
       }
     } catch (cacheError) {
-      logger.warn('Cache error, falling back to database:', {error: cacheError});
+      logger.warn('Cache error, falling back to database:', { error: cacheError });
       totalCount = await prisma.profileStars.count({
         where: { profileId: profile.id },
       });
     }
 
-    // Batch fetch all user data from Clerk to avoid N+1 queries
-    const userIds = stars.map((star) => star.userId);
-    let clerkUsersMap = new Map<
-      string,
-      { imageUrl: string | null; firstName: string | null; lastName: string | null }
-    >();
-
-    if (userIds.length > 0) {
-      try {
-        // Batch fetch users from Clerk with circuit breaker protection
-        const clerkUsersResponse = await clerkBatchUserBreaker.fire(userIds);
-
-        // Create a map for O(1) lookup
-        if (clerkUsersResponse && clerkUsersResponse.data) {
-          clerkUsersMap = new Map(
-            clerkUsersResponse.data.map(
-              (u: {
-                id: string;
-                imageUrl: string;
-                firstName: string | null;
-                lastName: string | null;
-              }) => [u.id, { imageUrl: u.imageUrl, firstName: u.firstName, lastName: u.lastName }],
-            ),
-          );
-        }
-      } catch (clerkError) {
-        logger.warn('Failed to batch fetch Clerk users (circuit may be open):', { error: clerkError });
-        // Continue with null avatars instead of failing the request
-      }
-    }
-
-    // Format stars with cached/fetched data
+    // Format stars with database data
     const formattedStars = stars.map((star) => {
-      const clerkUser = clerkUsersMap.get(star.userId);
-
-      // Prioritize profile data, fallback to Clerk data, then Anonymous
-      const firstName = star.user.profile?.firstName || clerkUser?.firstName;
-      const lastName = star.user.profile?.lastName || clerkUser?.lastName;
+      // Use profile data from database
+      const firstName = star.user.profile?.firstName;
+      const lastName = star.user.profile?.lastName;
       const name = [firstName, lastName].filter(Boolean).join(' ') || 'Anonymous';
 
       return {
@@ -418,7 +385,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
         starrer: {
           userId: star.user.userId,
           name,
-          avatarUrl: clerkUser?.imageUrl || null,
+          avatarUrl: star.user.profileImageUrl,
         },
       };
     });
@@ -436,7 +403,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error getting profile stars:', {error});
+    logger.error('Error getting profile stars:', { error });
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -488,7 +455,7 @@ export const checkStarStatus = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error checking star status:', {error});
+    logger.error('Error checking star status:', { error });
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

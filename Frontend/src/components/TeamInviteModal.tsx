@@ -1,7 +1,7 @@
-import { useAuth } from '@clerk/clerk-react';
 import { Upload, UserPlus, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { apiFetch } from '../lib/apiClient';
 import { Button } from './ui/button';
 import {
     Dialog,
@@ -62,7 +62,6 @@ export const TeamInviteModal = ({
     const [selectedTeamSlug, setSelectedTeamSlug] = useState<string | undefined>();
     const [roles, setRoles] = useState<TeamRole[]>([]);
     const [loadingTeams, setLoadingTeams] = useState(false);
-    const { getToken } = useAuth();
 
     // Single invite state
     const [singleInvite, setSingleInvite] = useState<InviteEntry>({
@@ -95,14 +94,8 @@ export const TeamInviteModal = ({
     const fetchTeams = useCallback(async () => {
         setLoadingTeams(true);
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/teams`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
-                }
+            const response = await apiFetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/teams`
             );
 
             if (response.ok) {
@@ -114,7 +107,7 @@ export const TeamInviteModal = ({
         } finally {
             setLoadingTeams(false);
         }
-    }, [organizationSlug, getToken]);
+    }, [organizationSlug]);
 
     useEffect(() => {
         if (open) {
@@ -125,14 +118,8 @@ export const TeamInviteModal = ({
     // Fetch roles when team is selected
     const fetchRoles = useCallback(async (teamSlug: string) => {
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${teamSlug}/roles`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
-                }
+            const response = await apiFetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${teamSlug}/roles`
             );
 
             if (response.ok) {
@@ -142,7 +129,7 @@ export const TeamInviteModal = ({
         } catch (error) {
             console.error('Failed to fetch roles:', error);
         }
-    }, [organizationSlug, getToken]);
+    }, [organizationSlug]);
 
     useEffect(() => {
         if (selectedTeamSlug) {
@@ -165,15 +152,13 @@ export const TeamInviteModal = ({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify(singleInvite),
                 }
             );
@@ -209,15 +194,13 @@ export const TeamInviteModal = ({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ invites: validInvites }),
                 }
             );
@@ -252,15 +235,13 @@ export const TeamInviteModal = ({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/csv`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ csvContent }),
                 }
             );
@@ -319,15 +300,13 @@ export const TeamInviteModal = ({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/json`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ jsonContent }),
                 }
             );
@@ -363,15 +342,13 @@ export const TeamInviteModal = ({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ invites: jsonValidation.validInvites }),
                 }
             );

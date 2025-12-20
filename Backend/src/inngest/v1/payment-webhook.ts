@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/express';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import {
@@ -8,6 +7,7 @@ import {
   sendRefundInitiatedEmail,
 } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 import { inngest } from './client.js';
 
 export const paymentWebhookReceived = inngest.createFunction(
@@ -268,9 +268,11 @@ export const paymentWebhookReceived = inngest.createFunction(
 
               // Send failure email
               try {
-                const user = await clerkClient.users.getUser(payment.userId);
-                const userName = user.firstName || user.username || 'User';
-                const userEmail = user.emailAddresses[0]?.emailAddress;
+                const userInfo = await getCachedUserInfo(payment.userId);
+                const userName = userInfo
+                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+                  : 'User';
+                const userEmail = userInfo?.email;
 
                 if (userEmail) {
                   await sendPaymentFailedEmail(
@@ -373,9 +375,11 @@ export const paymentWebhookReceived = inngest.createFunction(
 
               // Send refund email
               try {
-                const user = await clerkClient.users.getUser(payment.userId);
-                const userName = user.firstName || user.username || 'User';
-                const userEmail = user.emailAddresses[0]?.emailAddress;
+                const userInfo = await getCachedUserInfo(payment.userId);
+                const userName = userInfo
+                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+                  : 'User';
+                const userEmail = userInfo?.email;
 
                 if (userEmail) {
                   const refundCredits = Math.floor(
@@ -462,9 +466,11 @@ export const paymentWebhookReceived = inngest.createFunction(
 
               // Send refund completed email
               try {
-                const user = await clerkClient.users.getUser(payment.userId);
-                const userName = user.firstName || user.username || 'User';
-                const userEmail = user.emailAddresses[0]?.emailAddress;
+                const userInfo = await getCachedUserInfo(payment.userId);
+                const userName = userInfo
+                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+                  : 'User';
+                const userEmail = userInfo?.email;
 
                 if (userEmail) {
                   await sendRefundCompletedEmail(
@@ -530,9 +536,11 @@ export const paymentWebhookReceived = inngest.createFunction(
 
               // Send refund failed email
               try {
-                const user = await clerkClient.users.getUser(payment.userId);
-                const userName = user.firstName || user.username || 'User';
-                const userEmail = user.emailAddresses[0]?.emailAddress;
+                const userInfo = await getCachedUserInfo(payment.userId);
+                const userName = userInfo
+                  ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+                  : 'User';
+                const userEmail = userInfo?.email;
 
                 if (userEmail) {
                   await sendRefundFailedEmail(

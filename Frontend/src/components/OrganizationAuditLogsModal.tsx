@@ -1,8 +1,7 @@
-import { useAuth } from '@clerk/clerk-react';
 import { Clock, Shield, User } from 'lucide-react';
-import { Badge } from '../components/ui/badge';
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
+import { apiFetch } from '../lib/apiClient';
 
 interface AuditLog {
   id: string;
@@ -43,20 +43,13 @@ export const OrganizationAuditLogsModal = ({
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const { getToken } = useAuth();
 
   const fetchAuditLogs = useCallback(
     async (pageNum = 1, append = false) => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageNum}&limit=20`,
-          {
-            headers: {
-              Authorization: `Bearer ${await getToken()}`,
-            },
-            credentials: 'include',
-          },
+        const response = await apiFetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageNum}&limit=20`
         );
 
         if (response.ok) {
@@ -74,7 +67,7 @@ export const OrganizationAuditLogsModal = ({
         setLoading(false);
       }
     },
-    [organizationSlug, getToken]
+    [organizationSlug]
   );
 
   useEffect(() => {

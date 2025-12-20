@@ -1,4 +1,3 @@
-import { useAuth, useUser } from '@clerk/clerk-react';
 import {
   ChevronDown,
   ChevronUp,
@@ -20,16 +19,17 @@ import { Input } from '../components/ui/input';
 import { Spotlight } from '../components/ui/Spotlight';
 import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
+import { apiFetch } from '../lib/apiClient';
+import { useAuthState } from '../lib/auth';
 
 export default function Support() {
   const { theme } = useTheme();
-  const { user, isSignedIn } = useUser();
-  const { getToken } = useAuth();
+  const { isSignedIn, user } = useAuthState();
   const isDark = theme === 'dark';
   const { cn } = useDataSaverUtils();
   const [formData, setFormData] = useState({
     name: '',
-    email: user?.primaryEmailAddress?.emailAddress || '',
+    email: user?.email || '',
     subject: '',
     message: '',
   });
@@ -136,15 +136,12 @@ export default function Support() {
     setSubmitMessage('');
 
     try {
-      const token = await getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           'X-Recaptcha-Token': captchaToken,
         },
-        credentials: 'include',
         body: JSON.stringify({
           subject: formData.subject,
           message: formData.message,
@@ -158,7 +155,7 @@ export default function Support() {
         setSubmitMessage('Support request submitted successfully! You will receive a confirmation email shortly.');
         setFormData({
           name: '',
-          email: user?.primaryEmailAddress?.emailAddress || '',
+          email: user?.email || '',
           subject: '',
           message: '',
         });
@@ -546,7 +543,7 @@ export default function Support() {
                   {isSignedIn && (
                     <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Authenticated as:</strong> {user?.primaryEmailAddress?.emailAddress}
+                        <strong>Authenticated as:</strong> {user?.email}
                       </p>
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                         Your support request will be linked to your account.

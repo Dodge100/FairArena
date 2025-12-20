@@ -1,14 +1,15 @@
-import { useUser, Waitlist } from '@clerk/clerk-react';
+import { Waitlist } from '@clerk/clerk-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
+import { useAuthState } from '../lib/auth';
 import { Spotlight } from './ui/Spotlight';
 
 function WaitList() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAuthState();
 
   useEffect(() => {
     if (isSignedIn) {

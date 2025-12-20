@@ -1,7 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@clerk/clerk-react';
 import {
   Activity,
   ArrowUpRight,
@@ -14,9 +13,10 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { useAuthState } from '../lib/auth';
 
 function Dashboard() {
-  const { user } = useUser();
+  const { user } = useAuthState();
   const stats = [
     {
       title: 'Active Projects',

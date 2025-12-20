@@ -19,7 +19,7 @@ import {
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
+import { useAuthState } from '@/lib/auth';
 import {
   BarChart3,
   Calendar,
@@ -43,9 +43,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useUser();
-  const { getToken } = useAuth();
-  const { signOut } = useClerk();
+  const { user, getToken, signOut, isLoaded } = useAuthState();
   const { theme, toggleTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
   const { customization } = useSidebarCustomization();
@@ -54,7 +52,7 @@ export function AppSidebar() {
 
   // Fetch unread notification count
   useEffect(() => {
-    if (dataSaverSettings.enabled && dataSaverSettings.disableNotifications) return; // Skip fetching in data saver mode
+    if (!isLoaded || (dataSaverSettings.enabled && dataSaverSettings.disableNotifications)) return; // Skip fetching in data saver mode or when not loaded
 
     const fetchUnreadCount = async () => {
       try {
@@ -84,7 +82,7 @@ export function AppSidebar() {
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
-  }, [getToken, dataSaverSettings]);
+  }, [getToken, dataSaverSettings, isLoaded]);
 
   // Menu items - defined inside component to access unreadCount and customization
   const menuItems = customization.mainItems
@@ -238,7 +236,7 @@ export function AppSidebar() {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 shrink-0">
-                    <AvatarImage src={user?.imageUrl} alt={user?.fullName || 'User'} />
+                    <AvatarImage src={user?.profileImageUrl ?? undefined} alt={user?.fullName || 'User'} />
                     <AvatarFallback
                       className={`bg-primary text-primary-foreground ${theme === 'dark' ? 'bg-primary/20 text-primary-foreground' : ''}`}
                     >
@@ -250,7 +248,7 @@ export function AppSidebar() {
                       {user?.firstName} {user?.lastName}
                     </span>
                     <span className="text-xs text-muted-foreground truncate w-full">
-                      {user?.primaryEmailAddress?.emailAddress}
+                      {user?.email}
                     </span>
                   </div>
                 </div>

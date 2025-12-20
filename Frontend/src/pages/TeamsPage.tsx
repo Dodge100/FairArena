@@ -3,7 +3,7 @@ import { TeamManagementModal } from '@/components/TeamManagementModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@clerk/clerk-react';
+import { apiFetch } from '@/lib/apiClient';
 import { Loader2, Plus, Search, Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +33,6 @@ interface Organization {
 }
 
 export default function TeamsPage() {
-    const { getToken } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -46,14 +45,8 @@ export default function TeamsPage() {
         setLoading(true);
         try {
             // Fetch user's organizations first
-            const orgsResponse = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
-                }
+            const orgsResponse = await apiFetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`
             );
 
             if (!orgsResponse.ok) {
@@ -67,14 +60,8 @@ export default function TeamsPage() {
             // Fetch teams for each organization
             const teamsPromises = organizations.map(async (org: Organization) => {
                 try {
-                    const teamsResponse = await fetch(
-                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${org.slug}/teams`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${await getToken()}`,
-                            },
-                            credentials: 'include',
-                        }
+                    const teamsResponse = await apiFetch(
+                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${org.slug}/teams`
                     );
 
                     if (teamsResponse.ok) {
@@ -108,7 +95,7 @@ export default function TeamsPage() {
         } finally {
             setLoading(false);
         }
-    }, [getToken]);
+    }, []);
 
     useEffect(() => {
         fetchAllTeams();

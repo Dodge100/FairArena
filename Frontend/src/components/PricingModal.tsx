@@ -1,10 +1,10 @@
-import { useAuth } from '@clerk/clerk-react';
 import { Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { useAuthState } from '../lib/auth';
 import type { PaymentPlan } from '../services/paymentService';
 import { paymentService } from '../services/paymentService';
 import PaymentFailureModal from './PaymentFailureModal';
@@ -58,7 +58,7 @@ interface RazorpayOptions {
 }
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const { getToken } = useAuth();
+  const { getToken } = useAuthState();
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -293,9 +293,8 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               plans.map((plan) => (
                 <Card
                   key={plan.id}
-                  className={`relative transition-all duration-200 hover:shadow-lg ${
-                    plan.planId === 'business_plan' ? 'border-[#d9ff00] border-2' : ''
-                  }`}
+                  className={`relative transition-all duration-200 hover:shadow-lg ${plan.planId === 'business_plan' ? 'border-[#d9ff00] border-2' : ''
+                    }`}
                 >
                   {plan.planId === 'business_plan' && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -333,11 +332,10 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     <Button
                       onClick={() => handlePayment(plan)}
                       disabled={!paymentsEnabled || loadingPlan === plan.id}
-                      className={`w-full ${
-                        plan.planId === 'business_plan'
+                      className={`w-full ${plan.planId === 'business_plan'
                           ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
                           : ''
-                      }`}
+                        }`}
                       variant={plan.planId === 'business_plan' ? 'default' : 'outline'}
                     >
                       {loadingPlan === plan.id ? (

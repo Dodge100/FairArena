@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/express';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
@@ -179,10 +178,7 @@ export class SupportController {
       let emailId: string | undefined;
 
       if (userId) {
-        // Authenticated user - get email from user object
-        const user = await clerkClient.users.getUser(userId);
-        userEmail = user.emailAddresses[0]?.emailAddress;
-        emailId = userEmail; // Store email for authenticated users too
+        emailId = req.auth()?.user?.primaryEmailAddress?.emailAddress;
       } else {
         // Non-authenticated user - require email in request
         if (!email) {

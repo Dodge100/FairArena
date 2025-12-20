@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@clerk/clerk-react';
+import { apiFetch } from '@/lib/apiClient';
 import { ArrowLeft, Eye, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +18,6 @@ interface ProfileView {
 }
 
 export default function ProfileViews() {
-  const { getToken } = useAuth();
   const navigate = useNavigate();
   const [views, setViews] = useState<ProfileView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,14 +28,8 @@ export default function ProfileViews() {
     const fetchProfileViews = async () => {
       try {
         setLoading(true);
-        const token = await getToken();
         const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/v1/profile/views`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        });
+        const response = await apiFetch(`${apiUrl}/api/v1/profile/views`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -70,7 +63,7 @@ export default function ProfileViews() {
     };
 
     fetchProfileViews();
-  }, [getToken]);
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

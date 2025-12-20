@@ -1,6 +1,6 @@
-import { clerkClient } from '@clerk/express';
 import { SupportService } from '../../services/v1/supportService.js';
 import logger from '../../utils/logger.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 import { inngest } from './client.js';
 
 export const supportRequestCreated = inngest.createFunction(
@@ -111,12 +111,9 @@ export const supportRequestCreated = inngest.createFunction(
     if (userId && !finalUserName) {
       await step.run('get-user-name', async () => {
         try {
-          const user = await clerkClient.users.getUser(userId);
-          const profile = user.publicMetadata?.profile as
-            | { firstName?: string; lastName?: string }
-            | undefined;
-          if (profile?.firstName || profile?.lastName) {
-            finalUserName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+          const userInfo = await getCachedUserInfo(userId);
+          if (userInfo) {
+            finalUserName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim();
           }
         } catch (error) {
           console.warn('Failed to get user profile for support request:', error);

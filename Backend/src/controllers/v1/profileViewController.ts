@@ -1,9 +1,9 @@
-import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 
 // Validation schemas
 const profileIdSchema = z.string().min(1).max(255);
@@ -21,13 +21,12 @@ export const recordView = async (req: Request, res: Response) => {
       });
     }
 
-    // Fetch user data from Clerk
-    const clerkUser = await clerkClient.users.getUser(viewerUserId);
-    const viewerEmail = clerkUser.primaryEmailAddress?.emailAddress;
+    const userInfo = await getCachedUserInfo(viewerUserId);
+    const viewerEmail = req.auth()?.user?.primaryEmailAddress?.emailAddress || null;
     const viewerName =
-      clerkUser.firstName && clerkUser.lastName
-        ? `${clerkUser.firstName} ${clerkUser.lastName}`
-        : clerkUser.firstName || null;
+      userInfo?.firstName && userInfo?.lastName
+        ? `${userInfo.firstName} ${userInfo.lastName}`
+        : userInfo?.firstName || null;
 
     if (!viewerEmail) {
       return res.status(400).json({
@@ -51,7 +50,7 @@ export const recordView = async (req: Request, res: Response) => {
       status: 'success',
     });
   } catch (error) {
-    logger.error('Error recording profile view:', {error});
+    logger.error('Error recording profile view:', { error });
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -105,18 +104,18 @@ export const getProfileViews = async (req: Request, res: Response) => {
       },
     });
 
-    // Fetch Clerk user data for avatars
+    // Fetch user data for avatars using cached user info
     const viewsWithAvatars = await Promise.all(
       views.map(async (view) => {
         try {
-          const clerkUser = await clerkClient.users.getUser(view.viewerUserId);
+          const userInfo = await getCachedUserInfo(view.viewerUserId);
           return {
             ...view,
-            avatarUrl: clerkUser.imageUrl || null,
+            avatarUrl: userInfo?.profileImageUrl || null,
             viewedAt: view.createdAt.toISOString(),
           };
         } catch {
-          // If user not found in Clerk, return without avatar
+          // If user not found, return without avatar
           return {
             ...view,
             avatarUrl: null,
@@ -130,7 +129,7 @@ export const getProfileViews = async (req: Request, res: Response) => {
       data: viewsWithAvatars,
     });
   } catch (error) {
-    logger.error('Error fetching profile views:', {error});
+    logger.error('Error fetching profile views:', { error });
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

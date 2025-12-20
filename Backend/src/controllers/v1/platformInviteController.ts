@@ -1,9 +1,9 @@
-import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { RATE_LIMIT_CONFIG, REDIS_KEYS, redis } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { getCachedUserInfo, getUserDisplayName } from '../../utils/userCache.js';
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -78,12 +78,16 @@ export async function inviteToPlatform(req: Request, res: Response) {
       });
     }
 
-    // Fetch inviter data from Clerk
-    const clerkUser = await clerkClient.users.getUser(inviterId);
-    const inviterName =
-      clerkUser.firstName && clerkUser.lastName
-        ? `${clerkUser.firstName} ${clerkUser.lastName}`
-        : clerkUser.firstName || clerkUser.fullName || 'A user';
+    // Fetch inviter data from database with caching
+    const userInfo = await getCachedUserInfo(inviterId);
+    if (!userInfo) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const inviterName = getUserDisplayName(userInfo);
 
     logger.info('Platform Invite request received', { email, inviterName });
 

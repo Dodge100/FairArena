@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/express';
 import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -39,6 +38,7 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const auth = req.auth();
     const userId = auth.userId;
+    const userEmail = auth.user?.primaryEmailAddress?.emailAddress;
 
     if (ENV.PAYMENTS_ENABLED === false) {
       return res
@@ -109,9 +109,6 @@ export const createOrder = async (req: Request, res: Response) => {
       credits: plan.credits,
     };
 
-    // Get user email from auth
-    const clerkUser = await clerkClient.users.getUser(userId);
-    const userEmail = clerkUser.primaryEmailAddress?.emailAddress;
 
     // Additional security: Log payment attempt for fraud monitoring
     logger.info('Payment order creation attempt', {

@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/clerk-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -16,6 +15,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { apiFetch } from '../lib/apiClient';
 
 // Zod schema for form fields
 const createOrganizationFormSchema = z.object({
@@ -54,7 +54,6 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
   } = useForm<CreateOrganizationFormData>({
     resolver: zodResolver(createOrganizationFormSchema),
   });
-  const { getToken } = useAuth();
   const { refreshOrganizations } = useOrganization();
   const watchedName = useWatch({ control, name: 'name' });
 
@@ -72,24 +71,24 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
 
   const onSubmit = async (data: CreateOrganizationFormData) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${await getToken()}`,
-          },
-          body: JSON.stringify({
-            ...data,
-            joinEnabled,
-            isPublic,
-          }),
-          credentials: 'include',
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          ...data,
+          joinEnabled,
+          isPublic,
+        }),
+      });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = { error: 'An unexpected error occurred' };
+      }
 
       if (response.ok) {
         toast.success('Organization created successfully!');

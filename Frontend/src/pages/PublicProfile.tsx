@@ -13,7 +13,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth, useUser } from '@clerk/clerk-react';
 import {
   Briefcase,
   Calendar,
@@ -35,6 +34,8 @@ import {
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { apiFetch, publicApiFetch } from '../lib/apiClient';
+import { useAuthState } from '../lib/auth';
 
 interface ProfileData {
   id: string;
@@ -72,7 +73,7 @@ interface ProfileData {
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const { user } = useUser();
+  const { user } = useAuthState();
   const { theme, toggleTheme } = useTheme();
   const { cn } = useDataSaverUtils();
   const navigate = useNavigate();
@@ -87,7 +88,6 @@ export default function PublicProfile() {
   const [isReporting, setIsReporting] = useState(false);
   const [isStarring, setIsStarring] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const { getToken } = useAuth();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -96,12 +96,10 @@ export default function PublicProfile() {
       try {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/v1/profile/public/${userId}`, {
+        const response = await publicApiFetch(`${apiUrl}/api/v1/profile/public/${userId}`, {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${await getToken()}`,
           },
-          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -132,7 +130,7 @@ export default function PublicProfile() {
     };
 
     fetchProfile();
-  }, [userId, getToken]);
+  }, [userId]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -168,13 +166,8 @@ export default function PublicProfile() {
       if (!profile) return;
 
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/v1/profile/${profile.id}/view`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${await getToken()}`,
-        },
-        credentials: 'include',
+      const response = await apiFetch(`${apiUrl}/api/v1/profile/${profile.id}/view`, {
+        method: 'POST'
       });
 
       if (!response.ok) {
@@ -199,13 +192,11 @@ export default function PublicProfile() {
     setIsReporting(true);
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/v1/reports`, {
+      const response = await apiFetch(`${apiUrl}/api/v1/reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${await getToken()}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           reportedEntityId: profile.id,
           entityType: 'profile',
@@ -254,13 +245,11 @@ export default function PublicProfile() {
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const endpoint = wasStarred ? '/api/v1/stars/unstar' : '/api/v1/stars/star';
-      const response = await fetch(`${apiUrl}${endpoint}`, {
+      const response = await apiFetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${await getToken()}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           profileId: profile.id,
         }),
@@ -975,11 +964,11 @@ export default function PublicProfile() {
             </p>
             <ul className="mt-2 space-y-1 text-sm">
               <li className="flex items-center gap-2">
-                <span className="font-medium">Name:</span> {user?.fullName || 'Your full name'}
+                <span className="font-medium">Name:</span> {user?.fullName || 'Your Full name'}
               </li>
               <li className="flex items-center gap-2">
                 <span className="font-medium">Email:</span>{' '}
-                {user?.primaryEmailAddress?.emailAddress || 'Your email address'}
+                {user?.email || 'Your email address'}
               </li>
             </ul>
           </div>

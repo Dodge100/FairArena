@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthState } from '../lib/auth';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -46,7 +46,7 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrganization, setCurrentOrganizationState] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn } = useAuthState();
 
   const fetchOrganizations = useCallback(async () => {
     if (!isSignedIn) return;

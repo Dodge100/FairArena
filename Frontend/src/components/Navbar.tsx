@@ -1,15 +1,15 @@
 import { useTheme } from '@/hooks/useTheme';
-import { useUser } from '@clerk/clerk-react';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuthState } from '../lib/auth';
 import ThemeToggleButton from './ui/ThemeChange';
 export default function Navbar() {
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
   const [open, setOpen] = useState(false);
-  const { user } = useUser();
+  const { isSignedIn } = useAuthState();
   useEffect(() => {
     setIsDark(theme === 'dark');
   }, [theme]);
@@ -64,7 +64,7 @@ export default function Navbar() {
               </motion.button>
             ))}
 
-            {!user ? (
+            {!isSignedIn ? (
               <Link to={'/waitlist'}>
                 <motion.button
                   initial={{ opacity: 0, y: -10 }}
@@ -205,7 +205,7 @@ export default function Navbar() {
               </motion.div>
 
               <>
-                {!user ? (
+                {!isSignedIn ? (
                   <Link to="/waitlist">
                     <motion.button
                       initial={{ opacity: 0, y: 20 }}

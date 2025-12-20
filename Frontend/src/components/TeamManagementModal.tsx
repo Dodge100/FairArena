@@ -7,10 +7,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useAuth } from '@clerk/clerk-react';
 import { Plus, Settings, Trash2, Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { apiFetch } from '../lib/apiClient';
 import { CreateTeamModal } from './CreateTeamModal';
 import { TeamInviteModal } from './TeamInviteModal';
 
@@ -37,7 +37,6 @@ export function TeamManagementModal({
     onOpenChange,
     organizationSlug,
 }: TeamManagementModalProps) {
-    const { getToken } = useAuth();
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -47,14 +46,8 @@ export function TeamManagementModal({
     const fetchTeams = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
-                }
+            const response = await apiFetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`
             );
 
             if (response.ok) {
@@ -69,7 +62,7 @@ export function TeamManagementModal({
         } finally {
             setLoading(false);
         }
-    }, [getToken, organizationSlug]);
+    }, [organizationSlug]);
 
     useEffect(() => {
         if (open) {
@@ -87,14 +80,10 @@ export function TeamManagementModal({
         }
 
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${team.slug}`,
                 {
                     method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
                 }
             );
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useAuth } from '@clerk/clerk-react';
+import { apiFetch } from '@/lib/apiClient';
 import { Cookie, Download, Loader2, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -41,7 +41,6 @@ interface UserSettings {
 
 export default function AccountSettings() {
   const navigate = useNavigate();
-  const { getToken } = useAuth();
   const { dataSaverSettings, updateDataSaverSetting } = useDataSaver();
   const { consentSettings, acceptAll, rejectAll, updateConsent } = useCookieConsent();
   const { customization, resetToDefault } = useSidebarCustomization();
@@ -57,13 +56,7 @@ export default function AccountSettings() {
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
     try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-      });
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`);
       const data = await res.json();
       if (data.success) {
         setSettings(data.data);
@@ -76,7 +69,7 @@ export default function AccountSettings() {
     } finally {
       setIsLoadingSettings(false);
     }
-  }, [getToken]);
+  }, []);
 
   const updateSettingsValue = async (key: keyof UserSettings, value: boolean) => {
     if (!settings) return;
@@ -87,14 +80,8 @@ export default function AccountSettings() {
 
     setIsSavingSettings(true);
     try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({ [key]: value }),
       });
       const data = await res.json();
@@ -118,13 +105,8 @@ export default function AccountSettings() {
   const resetSettings = async () => {
     setIsSavingSettings(true);
     try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, {
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
       });
       const data = await res.json();
       if (data.success) {
@@ -144,13 +126,7 @@ export default function AccountSettings() {
 
   const fetchReports = useCallback(async (): Promise<Report[]> => {
     try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-      });
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`);
       const data = await res.json();
       if (data.success) {
         return data.reports || [];
@@ -162,17 +138,11 @@ export default function AccountSettings() {
       console.error('Error fetching reports:', error);
       return [];
     }
-  }, [getToken]);
+  }, []);
 
   const fetchSupportTickets = useCallback(async (): Promise<SupportTicket[]> => {
     try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-      });
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`);
       const data = await res.json();
       if (data.success) {
         return data.supportTickets || [];
@@ -184,7 +154,7 @@ export default function AccountSettings() {
       console.error('Error fetching support tickets:', error);
       return [];
     }
-  }, [getToken]);
+  }, []);
 
   const exportUserData = useCallback(async () => {
     // Validate confirmation text
@@ -196,15 +166,10 @@ export default function AccountSettings() {
     setIsExportingData(true);
     setExportMessage('');
     try {
-      const token = await getToken();
-      const res = await fetch(
+      const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -222,7 +187,7 @@ export default function AccountSettings() {
     } finally {
       setIsExportingData(false);
     }
-  }, [getToken, confirmationText]);
+  }, [confirmationText]);
 
   // Fetch settings when verified
   useEffect(() => {

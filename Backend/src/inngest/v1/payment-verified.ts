@@ -1,10 +1,10 @@
-import { clerkClient } from '@clerk/express';
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendPaymentSuccessEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { createRazorpayInvoice, getInvoiceUrl } from '../../utils/razorpay-invoice.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 import { inngest } from './client.js';
 
 export const paymentVerified = inngest.createFunction(
@@ -150,10 +150,11 @@ export const paymentVerified = inngest.createFunction(
     // Step 3: Create Razorpay Invoice and send success notification and email
     await step.run('create-invoice-and-send-notification', async () => {
       try {
-        // Get user details first
-        const user = await clerkClient.users.getUser(userId);
-        const userName = user.firstName || user.username || 'User';
-        const userEmail = user.emailAddresses[0]?.emailAddress;
+        const userInfo = await getCachedUserInfo(userId);
+        const userName = userInfo
+          ? `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+          : 'User';
+        const userEmail = userInfo?.email;
 
         let invoiceId: string | undefined;
         let invoiceUrl: string | undefined;

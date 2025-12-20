@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth } from '@clerk/clerk-react';
+import { publicApiFetch } from '@/lib/apiClient';
 import { ArrowLeft, Moon, RefreshCw, Search, Star, Sun } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -34,7 +34,6 @@ export default function ProfileStars() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
-  const { getToken } = useAuth();
 
   const fetchStars = useCallback(
     async (pageNum: number = 1) => {
@@ -43,16 +42,8 @@ export default function ProfileStars() {
       try {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(
-          `${apiUrl}/api/v1/stars/profile/${userId}?page=${pageNum}&limit=20`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${await getToken()}`,
-            },
-            credentials: 'include',
-          },
-        );
+        const response = await publicApiFetch(
+          `${apiUrl}/api/v1/stars/profile/${userId}?page=${pageNum}&limit=20`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -81,7 +72,7 @@ export default function ProfileStars() {
         setLoading(false);
       }
     },
-    [userId, getToken],
+    [userId],
   );
 
   useEffect(() => {
@@ -280,8 +271,8 @@ export default function ProfileStars() {
             ))}
           </div>
         ) : stars.length === 0 ? (
-          <Card className="p-12 text-center border-dashed shadow-sm">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full mb-6">
+          <Card className="p-12 text-center border-dashed shadow-sm flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center w-20 h-20 bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full mb-6">
               <Star className="h-10 w-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">

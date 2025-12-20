@@ -1,10 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@clerk/clerk-react';
 import { CheckCircle, Clock, Loader2, Mail, Shield, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { apiFetch } from '../lib/apiClient';
 
 interface OTPVerificationProps {
   onVerified: () => void;
@@ -17,7 +17,6 @@ export function OTPVerification({
   title = 'Account Verification',
   description = 'Verify your account to access sensitive settings. Verification expires in 10 minutes.',
 }: OTPVerificationProps) {
-  const { getToken } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');
@@ -35,15 +34,8 @@ export function OTPVerification({
 
   const checkVerificationStatus = useCallback(async () => {
     try {
-      const token = await getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        },
+      const res = await apiFetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`
       );
       const data = await res.json();
       if (data.success && data.verified) {
@@ -58,7 +50,7 @@ export function OTPVerification({
     } finally {
       setIsVerifying(false);
     }
-  }, [getToken, onVerified]);
+  }, [onVerified]);
 
   useEffect(() => {
     checkVerificationStatus();
@@ -142,16 +134,13 @@ export function OTPVerification({
         setIsSendingOtp(false);
         return;
       }
-      const token = await getToken();
-      const res = await fetch(
+      const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'X-Recaptcha-Token': captcha,
           },
-          credentials: 'include',
         },
       );
       const data = await res.json();
@@ -204,14 +193,12 @@ export function OTPVerification({
         setIsVerifyingOtp(false);
         return;
       }
-      const token = await getToken();
-      const res = await fetch(
+      const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
             'X-Recaptcha-Token': captcha,
           },
           body: JSON.stringify({ otp }),
@@ -274,8 +261,8 @@ export function OTPVerification({
   }
 
   return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
-        <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
+      <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
         <CardHeader className="text-center pb-6 pt-8">
           <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
             <Shield className="h-8 w-8 text-primary" />
@@ -412,11 +399,10 @@ export function OTPVerification({
 
           {message && (
             <div
-              className={`text-sm p-4 rounded-xl border-2 ${
-                message.includes('success')
+              className={`text-sm p-4 rounded-xl border-2 ${message.includes('success')
                   ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
                   : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-2">
                 {message.includes('success') ? (

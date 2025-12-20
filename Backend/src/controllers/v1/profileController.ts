@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
@@ -6,6 +5,7 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 
 // Validation schemas
 const userIdSchema = z.string().min(1).max(255);
@@ -175,15 +175,17 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       });
     }
 
-    // Fetch Clerk user data for avatar and email
+    // Fetch user data from cache/DB
     let avatarUrl = null;
     let email = null;
     try {
-      const clerkUser = await clerkClient.users.getUser(profile.userId);
-      avatarUrl = clerkUser.imageUrl || null;
-      email = clerkUser.primaryEmailAddress?.emailAddress || null;
+      const userInfo = await getCachedUserInfo(profile.userId);
+      if (userInfo) {
+        avatarUrl = userInfo.profileImageUrl;
+        email = req.auth()?.user?.primaryEmailAddress?.emailAddress || userInfo.email;
+      }
     } catch (error) {
-      logger.error('Error fetching Clerk user:', { error });
+      logger.error('Error fetching user info:', { error });
     }
 
     // Get star count (cache this as it's expensive)
@@ -278,7 +280,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
           await redis.setex(starCacheKey, 3600, JSON.stringify({ hasStarred, starredAt }));
         }
       } catch (starError) {
-        logger.warn('Error fetching viewer star data:', {error: starError});
+        logger.warn('Error fetching viewer star data:', { error: starError });
       }
     }
 
@@ -299,7 +301,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
     return res.status(200).json(responseData);
   } catch (error) {
-    logger.error('Error fetching public profile:', {error});
+    logger.error('Error fetching public profile:', { error });
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -348,13 +350,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
 
     if (!profile) {
       // Ensure user exists in database
-      let email = '';
-      try {
-        const clerkUser = await clerkClient.users.getUser(userId);
-        email = clerkUser.primaryEmailAddress?.emailAddress || '';
-      } catch (error) {
-        logger.error('Error fetching Clerk user for profile creation:', {error});
-      }
+      const email = req.auth()?.user?.primaryEmailAddress?.emailAddress || '';
 
       try {
         await prisma.user.upsert({
@@ -390,14 +386,14 @@ export const getOwnProfile = async (req: Request, res: Response) => {
     // Cache the profile data for 1 hour (3600 seconds)
     try {
       await redis.setex(cacheKey, 3600, JSON.stringify(profile));
-      logger.info('Own profile cached successfully for user:', {userId});
+      logger.info('Own profile cached successfully for user:', { userId });
     } catch (cacheError) {
-      logger.warn('Cache write error:', {cacheError});
+      logger.warn('Cache write error:', { cacheError });
     }
 
     return res.status(200).json({ data: profile });
   } catch (error) {
-    logger.error('Error fetching own profile:', {error});
+    logger.error('Error fetching own profile:', { error });
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });
@@ -445,7 +441,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       status: 'processing',
     });
   } catch (error) {
-    logger.error('Error queuing profile update:', {error});
+    logger.error('Error queuing profile update:', { error });
     return res.status(500).json({
       error: { message: 'Internal server error', status: 500 },
     });

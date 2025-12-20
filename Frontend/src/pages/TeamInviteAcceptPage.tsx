@@ -1,4 +1,3 @@
-import { useAuth, useUser } from '@clerk/clerk-react';
 import { CheckCircle2, Loader2, Shield, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -11,6 +10,8 @@ import {
     CardHeader,
     CardTitle,
 } from '../components/ui/card';
+import { apiFetch } from '../lib/apiClient';
+import { useAuthState } from '../lib/auth';
 
 interface InvitationDetails {
     id: string;
@@ -27,8 +28,7 @@ interface InvitationDetails {
 const TeamInviteAcceptPage = () => {
     const { inviteCode } = useParams<{ inviteCode: string }>();
     const navigate = useNavigate();
-    const { getToken, isSignedIn } = useAuth();
-    const { user } = useUser();
+    const { isSignedIn, user } = useAuthState();
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
@@ -37,12 +37,8 @@ const TeamInviteAcceptPage = () => {
 
     const fetchInvitationDetails = async () => {
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`,
-                {
-                    method: 'GET',
-                    credentials: 'include'
-                }
+            const response = await apiFetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`
             );
 
             if (response.ok) {
@@ -73,9 +69,9 @@ const TeamInviteAcceptPage = () => {
         }
 
         // Check email match
-        if (invitation && user?.primaryEmailAddress?.emailAddress !== invitation.email) {
+        if (invitation && user?.email !== invitation.email) {
             setError(
-                `This invitation was sent to ${invitation.email}. You are signed in as ${user?.primaryEmailAddress?.emailAddress}. Please sign in with the correct email address.`
+                `This invitation was sent to ${invitation.email}. You are signed in as ${user?.email}. Please sign in with the correct email address.`
             );
             return;
         }
@@ -84,14 +80,10 @@ const TeamInviteAcceptPage = () => {
         setError(null);
 
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/accept`,
                 {
                     method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
                 }
             );
 
@@ -124,14 +116,10 @@ const TeamInviteAcceptPage = () => {
         setError(null);
 
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/decline`,
                 {
                     method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${await getToken()}`,
-                    },
-                    credentials: 'include',
                 }
             );
 
@@ -256,12 +244,12 @@ const TeamInviteAcceptPage = () => {
                         </div>
                     )}
 
-                    {isSignedIn && user?.primaryEmailAddress?.emailAddress !== invitation.email && (
+                    {isSignedIn && user?.email !== invitation.email && (
                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                             <p className="text-sm text-red-800 dark:text-red-200">
                                 <strong>Email Mismatch:</strong> This invitation was sent to{' '}
                                 <strong>{invitation.email}</strong>, but you're signed in as{' '}
-                                <strong>{user?.primaryEmailAddress?.emailAddress}</strong>. Please sign in with
+                                <strong>{user?.email}</strong>. Please sign in with
                                 the correct email address.
                             </p>
                         </div>
@@ -285,7 +273,7 @@ const TeamInviteAcceptPage = () => {
                     </Button>
                     <Button
                         onClick={handleAcceptInvitation}
-                        disabled={processing || (isSignedIn && user?.primaryEmailAddress?.emailAddress !== invitation.email)}
+                        disabled={processing || (isSignedIn && user?.email !== invitation.email)}
                         className="flex-1"
                     >
                         {processing ? (

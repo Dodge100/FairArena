@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthState } from '../lib/auth';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -93,7 +93,7 @@ const saveCurrentSessionId = (sessionId: string) => {
 };
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const { getToken } = useAuth();
+  const { getToken } = useAuthState();
   const [sessions, setSessions] = useState<ChatSession[]>(loadSessions);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(loadCurrentSessionId);
   const [isLoading, setIsLoading] = useState(false);

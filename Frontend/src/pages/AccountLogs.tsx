@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthState } from '../lib/auth';
 import { AlertCircle, AlertTriangle, Clock, Filter, Info, Loader2, Shield } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -27,7 +27,7 @@ export default function AccountLogs() {
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const { getToken } = useAuth();
+  const { getToken } = useAuthState();
 
   const fetchLogs = useCallback(async () => {
     setIsLoadingLogs(true);

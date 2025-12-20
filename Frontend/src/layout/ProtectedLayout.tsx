@@ -1,5 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { useUser } from '@clerk/clerk-react';
+import { useAuthState } from '@/lib/auth';
 import { useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AIButton } from '../components/AIButton';
@@ -10,7 +10,7 @@ import { ChatProvider } from '../contexts/ChatContext';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
 
 export default function ProtectedLayout() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAuthState();
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [aiButtonHidden, setAiButtonHidden] = useState(false);
 

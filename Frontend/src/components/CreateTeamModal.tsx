@@ -16,9 +16,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@clerk/clerk-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { apiFetch } from '../lib/apiClient';
 
 interface CreateTeamModalProps {
     open: boolean;
@@ -33,7 +33,6 @@ export function CreateTeamModal({
     organizationSlug,
     onTeamCreated,
 }: CreateTeamModalProps) {
-    const { getToken } = useAuth();
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -79,15 +78,13 @@ export function CreateTeamModal({
 
         setLoading(true);
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getToken()}`,
                     },
-                    credentials: 'include',
                     body: JSON.stringify({
                         name: formData.name,
                         slug: formData.slug,
@@ -169,7 +166,7 @@ export function CreateTeamModal({
                                 value={formData.slug}
                                 onChange={(e) => handleInputChange('slug', e.target.value)}
                                 maxLength={100}
-                                pattern="^[a-z0-9-]+$"
+                                pattern="[a-z0-9-]+"
                                 required
                             />
                             <p className="text-xs text-muted-foreground">

@@ -18,8 +18,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { apiFetch } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@clerk/clerk-react';
 import DOMPurify from 'dompurify';
 import {
   AlertCircle,
@@ -122,7 +122,6 @@ const getNotificationColor = (type: string) => {
 };
 
 export default function InboxPage() {
-  const { getToken } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
@@ -133,7 +132,6 @@ export default function InboxPage() {
     async (filter?: 'read' | 'unread') => {
       setLoading(true);
       try {
-        const token = await getToken();
         const params = new URLSearchParams();
 
         if (filter === 'unread') {
@@ -142,15 +140,8 @@ export default function InboxPage() {
           params.append('read', 'true');
         }
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications?${params}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
-          },
-        );
+        const response = await apiFetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications?${params}`);
 
         if (response.ok) {
           const data = await response.json();
@@ -163,21 +154,13 @@ export default function InboxPage() {
         setLoading(false);
       }
     },
-    [getToken],
+    [],
   );
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const token = await getToken();
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        },
-      );
+      const response = await apiFetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`);
 
       if (response.ok) {
         const data = await response.json();
@@ -186,7 +169,7 @@ export default function InboxPage() {
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -211,15 +194,10 @@ export default function InboxPage() {
     setUnreadCount((prev) => Math.max(0, prev - 1));
 
     try {
-      const token = await getToken();
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}/read`,
         {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
+          method: 'PATCH'
         },
       );
 
@@ -252,15 +230,10 @@ export default function InboxPage() {
     setUnreadCount((prev) => prev + 1);
 
     try {
-      const token = await getToken();
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}/unread`,
         {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
+          method: 'PATCH'
         },
       );
 
@@ -294,15 +267,10 @@ export default function InboxPage() {
     setUnreadCount(0);
 
     try {
-      const token = await getToken();
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/read/all`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
         },
       );
 
@@ -334,15 +302,10 @@ export default function InboxPage() {
     }
 
     try {
-      const token = await getToken();
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}`,
         {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
         },
       );
 
@@ -374,15 +337,10 @@ export default function InboxPage() {
     setNotifications((prev) => prev.filter((n) => !n.read));
 
     try {
-      const token = await getToken();
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/read/all`,
         {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
         },
       );
 

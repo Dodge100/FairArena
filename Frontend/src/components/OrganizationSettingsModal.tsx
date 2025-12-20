@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/clerk-react';
 import { AlertTriangle, Building2, Globe, Lock, Save, Settings, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +23,7 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
+import { apiFetch } from '../lib/apiClient';
 
 interface OrganizationPermissions {
   organization: {
@@ -102,7 +102,6 @@ export const OrganizationSettingsModal = ({
     isPublic: false,
     joinEnabled: false,
   });
-  const { getToken } = useAuth();
 
   useEffect(() => {
     if (organization) {
@@ -119,17 +118,15 @@ export const OrganizationSettingsModal = ({
 
     setSaving(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization.slug}/settings`,
+      const response = await apiFetch(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization.slug}/settings`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${await getToken()}`,
           },
-          credentials: 'include',
           body: JSON.stringify(formData),
-        },
+        }
       );
 
       if (response.ok) {
@@ -151,15 +148,11 @@ export const OrganizationSettingsModal = ({
     if (!organization) return;
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization.slug}`,
         {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${await getToken()}`,
-          },
-          credentials: 'include',
-        },
+        }
       );
 
       if (response.ok) {

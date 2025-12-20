@@ -1,17 +1,17 @@
-import { useUser } from '@clerk/clerk-react';
 import { Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
+import { useAuthState } from '../lib/auth';
 import { Spotlight } from './ui/Spotlight';
 
 function Header() {
   const { theme } = useTheme();
   const { dataSaverSettings } = useDataSaverUtils();
   const [isDark, setIsDark] = useState(false);
-  const { user } = useUser();
+  const { isSignedIn } = useAuthState();
 
   useEffect(() => {
     setIsDark(theme === 'dark');
@@ -104,7 +104,7 @@ function Header() {
         </motion.p>
       )}
 
-      {!user ? (
+      {!isSignedIn ? (
         <Link to={'/waitlist'}>
           {dataSaverSettings.enabled && dataSaverSettings.reduceAnimations ? (
             <button className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
