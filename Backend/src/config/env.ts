@@ -147,6 +147,7 @@ if (
 export const ENV = {
   PORT: parseInt(getEnv('PORT', '3000')),
   NODE_ENV: getEnv('NODE_ENV', 'development'),
+  CORS_URL: getEnv('CORS_URL', 'localhost:5173'),
   MAINTENANCE_MODE: getEnv('MAINTENANCE_MODE') === 'true',
   CLERK_PUBLISHABLE_KEY: getEnv('CLERK_PUBLISHABLE_KEY'),
   CLERK_SECRET_KEY: getEnv('CLERK_SECRET_KEY'),

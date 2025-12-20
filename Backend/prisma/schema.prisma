@@ -12,14 +12,14 @@ model User {
   id                    String                  @id @default(cuid())
   userId                String                  @unique
   email                 String                  @unique
-  firstName             String?
-  lastName              String?
-  profileImageUrl       String?
-  username              String?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   deletedAt             DateTime?
   isDeleted             Boolean                 @default(false)
+  firstName             String?
+  lastName              String?
+  profileImageUrl       String?
+  username              String?
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
@@ -155,8 +155,6 @@ model PaymentWebhookEvent {
 model Profile {
   id                String         @id @default(cuid())
   userId            String         @unique
-  firstName         String?
-  lastName          String?
   bio               String         @db.VarChar(500)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -182,6 +180,8 @@ model Profile {
   awards            String[]
   certifications    String[]
   experiences       String[]
+  firstName         String?
+  lastName          String?
   user              User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
   profileStars      ProfileStars[]
   profileViews      ProfileView[]
@@ -671,20 +671,19 @@ model OrganizationStars {
 }
 
 model Notification {
-  id                    String                  @id @default(cuid())
-  userId                String
-  type                  NotificationType
-  title                 String
-  message               String
-  read                  Boolean                 @default(false)
-  actionUrl             String?
-  actionLabel           String?
-  metadata              Json?
-  createdAt             DateTime                @default(now())
-  readAt                DateTime?
-  description           String
-
-  user                  User                    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  read        Boolean          @default(false)
+  actionUrl   String?
+  actionLabel String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  description String
+  user        User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([read])
@@ -732,6 +731,12 @@ model Settings {
   user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model EnvironmentVariable {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 enum PaymentStatus {
@@ -795,10 +800,4 @@ enum NotificationType {
   STAR
   COMMENT
   ANNOUNCEMENT
-}
-
-model EnvironmentVariable {
-  key       String   @id
-  value     String
-  updatedAt DateTime @updatedAt
 }

@@ -101,7 +101,7 @@ app.use(hpp());
 app.set('trust proxy', 1);
 
 const originRegex = new RegExp(
-  `^https://(${ENV.FRONTEND_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.FRONTEND_URL.replace('.', '\\.')})$`,
+  `^https://(${ENV.CORS_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.CORS_URL.replace('.', '\\.')})$`,
   'i',
 );
 
