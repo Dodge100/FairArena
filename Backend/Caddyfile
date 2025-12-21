@@ -17,3 +17,11 @@ prometheus.fairarena.sakshamg.me {
 
     respond "Forbidden" 403
 }
+
+fair.sakshamg.me {
+    @http {
+        protocol http
+    }
+    redir @http https://{host}{uri} permanent
+    reverse_proxy localhost:4173
+}

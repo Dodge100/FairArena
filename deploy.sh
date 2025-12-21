@@ -39,8 +39,19 @@ chmod +x /tmp/git-askpass-helper.sh
 GIT_ASKPASS=/tmp/git-askpass-helper.sh git fetch origin
 GIT_ASKPASS=/tmp/git-askpass-helper.sh git reset --hard origin/${GIT_BRANCH}
 
+# Setup environment variables
+echo -e "${GREEN}[3/5] Setting up Backend environment...${NC}"
+cd Backend
+bash envs.sh
+cd ..
+
+echo -e "${GREEN}[4/5] Setting up Frontend environment...${NC}"
+cd Frontend
+bash envs.sh
+cd ..
+
 # Build and update containers
-echo -e "${GREEN}[3/3] Building and updating containers...${NC}"
+echo -e "${GREEN}[5/5] Building and updating containers...${NC}"
 docker compose -f ${COMPOSE_FILE} up -d --build
 
 # Cleanup

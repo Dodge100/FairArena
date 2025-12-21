@@ -1,27 +1,23 @@
-FROM node:20-bullseye-slim
+FROM node:20-bullseye-slim AS builder
 
 WORKDIR /app
 
-# Set Node memory limit
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Copy dependency files
-COPY package.json pnpm-lock.yaml ./
+# Copy deps only (max caching)
+COPY package*.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && \
+    pnpm install --frozen-lockfile --prod=false
 
-# Install pnpm
-RUN npm install -g pnpm
-
-# Install dependencies WITHOUT running scripts
-RUN pnpm install --ignore-scripts
-
-# Copy source code
+# Copy source
 COPY . .
 
-# Build the application
-RUN pnpm run build
+# Skip tsc, use Vite only (faster, less memory)
+RUN pnpm vite build
 
-# Expose port
+# Nginx production
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 4173
-
-# Start the app
-CMD ["node", "dist/server.js"]
+CMD ["nginx", "-g", "daemon off;"]
