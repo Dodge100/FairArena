@@ -4,6 +4,9 @@ export type SupportConfirmationEmailParams = {
   userName: string;
   subject: string;
   requestId: string;
+  type?: string;
+  severity?: string;
+  shortDescription?: string;
 };
 
 export const supportConfirmationEmailTemplate = (
@@ -11,6 +14,44 @@ export const supportConfirmationEmailTemplate = (
 ): string => {
   const supportUrl = ENV.FRONTEND_URL + '/support';
   const currentYear = new Date().getFullYear();
+
+  // Helper function to get severity badge color
+  const getSeverityColor = (severity?: string) => {
+    switch (severity?.toUpperCase()) {
+      case 'CRITICAL':
+        return '#dc2626'; // Red
+      case 'HIGH':
+        return '#ea580c'; // Orange
+      case 'MEDIUM':
+        return '#f59e0b'; // Amber
+      case 'LOW':
+        return '#10b981'; // Green
+      default:
+        return '#6b7280'; // Gray
+    }
+  };
+
+  // Helper function to get type badge color
+  const getTypeColor = (type?: string) => {
+    switch (type?.toUpperCase()) {
+      case 'BUG':
+        return '#ef4444'; // Red
+      case 'FEATURE_REQUEST':
+        return '#8b5cf6'; // Purple
+      case 'QUERY':
+        return '#3b82f6'; // Blue
+      case 'SUGGESTION':
+        return '#14b8a6'; // Teal
+      default:
+        return '#6b7280'; // Gray
+    }
+  };
+
+  // Format type for display
+  const formatType = (type?: string) => {
+    if (!type) return 'Other';
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  };
 
   return `
 <!DOCTYPE html>
@@ -42,8 +83,13 @@ export const supportConfirmationEmailTemplate = (
     .content h2 { color: #1a1a1a; font-size: 24px; font-weight: 600; margin-bottom: 20px; }
     .content p { color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
     .request-details { background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; }
-    .request-details p { margin: 5px 0; font-size: 14px; }
+    .request-details p { margin: 8px 0; font-size: 14px; }
     .request-details strong { color: #1a1a1a; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #ffffff; margin-left: 8px; }
+    .classification-section { background-color: #f0f4ff; border-radius: 8px; padding: 16px; margin: 20px 0; border-left: 4px solid #667eea; }
+    .classification-section h3 { color: #1a1a1a; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .classification-section p { margin: 8px 0; font-size: 14px; color: #4b5563; }
+    .short-description { background-color: #ffffff; border-radius: 6px; padding: 12px; margin-top: 8px; font-style: italic; color: #374151; border-left: 3px solid #667eea; }
     .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; margin: 20px 0; }
     .footer { background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e1e5e9; }
     .footer p { color: #666666; font-size: 14px; margin: 5px 0; }
@@ -53,6 +99,7 @@ export const supportConfirmationEmailTemplate = (
       .header, .content, .footer { padding: 20px !important; }
       .header h1 { font-size: 24px !important; }
       .content h2 { font-size: 20px !important; }
+      .badge { display: block; margin: 8px 0; width: fit-content; }
     }
   </style>
 </head>
@@ -78,11 +125,24 @@ export const supportConfirmationEmailTemplate = (
                 <p><strong>Request ID:</strong> ${params.requestId}</p>
                 <p><strong>Subject:</strong> ${params.subject}</p>
                 <p><strong>Status:</strong> Received</p>
+                ${params.type ? `<p><strong>Type:</strong><span class="badge" style="background-color: ${getTypeColor(params.type)};">${formatType(params.type)}</span></p>` : ''}
+                ${params.severity ? `<p><strong>Priority:</strong><span class="badge" style="background-color: ${getSeverityColor(params.severity)};">${params.severity}</span></p>` : ''}
               </div>
+
+              ${params.shortDescription ? `
+              <div class="classification-section">
+                <h3>📋 AI Classification Summary</h3>
+                <p>Our AI has analyzed your request and generated the following summary:</p>
+                <div class="short-description">
+                  "${params.shortDescription}"
+                </div>
+                <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">This helps us route your request to the right team member for faster resolution.</p>
+              </div>
+              ` : ''}
 
               <p>You can track the status of your support request and view all your previous requests by visiting your <a href="${supportUrl}" style="color: #667eea;">support dashboard</a>.</p>
 
-              <p>Our support team typically responds within 24-48 hours. We'll send you an email notification once your request has been addressed.</p>
+              <p>Our support team typically responds within 24-48 hours${params.severity === 'CRITICAL' ? ' (prioritized due to critical severity)' : params.severity === 'HIGH' ? ' (prioritized due to high severity)' : ''}. We'll send you an email notification once your request has been addressed.</p>
 
               <p>If you have any additional information or updates regarding this request, please don't hesitate to reply to this email.</p>
 

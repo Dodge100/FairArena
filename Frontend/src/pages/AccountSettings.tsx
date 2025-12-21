@@ -29,7 +29,10 @@ interface SupportTicket {
   id: string;
   title: string;
   description: string;
+  fullMessage?: string;
   status: string;
+  type?: string;
+  severity?: string;
   createdAt: string;
   updatedAt: string;
 }
