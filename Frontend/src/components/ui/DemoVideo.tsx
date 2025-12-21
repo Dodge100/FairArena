@@ -85,7 +85,7 @@ function DemoVideo() {
               className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
             >
               <source
-                src="https://ik.imagekit.io/fhmcv0atw/sample-video.mp4?updatedAt=1746980203570"
+                src="https://fairarena.blob.core.windows.net/fairarena/Dashboard%20Preview%20Video"
                 type="video/mp4"
               />
             </video>

@@ -24,7 +24,6 @@ function Unsubscribe() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
-
         });
         const data = await response.json();
         if (response.ok && data.success) {
@@ -44,24 +43,23 @@ function Unsubscribe() {
     unsubscribe();
   }, [email]);
 
-  // Responsive + accessible styles
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col">
       {/* Header with Logo */}
-      <header className="w-full py-6 px-4 border-b border-gray-200 dark:border-transparent bg-white/80 dark:bg-gray-900/60 backdrop-blur-sm">
+      <header className="w-full py-6 px-4 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="flex items-center space-x-3">
             <DataSaverImage
               src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
               alt="FairArena Logo"
-              className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg object-contain bg-white dark:bg-gray-900 p-2"
+              className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg object-contain bg-white dark:bg-slate-900 p-2"
               width={128}
               height={80}
               loading="eager"
               draggable={false}
               fallback={
-                <div className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg bg-white dark:bg-gray-900 p-2 flex items-center justify-center">
-                  <span className="text-sm font-bold text-gray-600 dark:text-gray-400">FA</span>
+                <div className="w-28 h-16 md:w-32 md:h-20 rounded-xl shadow-lg bg-white dark:bg-slate-900 p-2 flex items-center justify-center">
+                  <span className="text-sm font-bold text-slate-600 dark:text-slate-400">FA</span>
                 </div>
               }
             />
@@ -72,19 +70,19 @@ function Unsubscribe() {
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <section className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-transparent dark:shadow-none">
+        <section className="w-full bg-white/80 dark:bg-slate-800/80 rounded-none shadow-2xl p-8 border border-slate-200 dark:border-slate-700 dark:shadow-none backdrop-blur-sm flex flex-col items-center justify-center min-h-[400px]">
           <header className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               Newsletter Unsubscribe
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">We're sorry to see you go</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">We're sorry to see you go</p>
           </header>
 
           <div className="text-center min-h-[120px] flex flex-col items-center justify-center">
             {status === 'loading' && (
               <div className="flex flex-col items-center space-y-4">
-                <div className={cn("rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent", shouldLoadImage ? "animate-spin" : "")}></div>
-                <p className="text-gray-600 dark:text-gray-400 font-medium">
+                <div className={cn("rounded-full h-12 w-12 border-4 border-slate-600 border-t-transparent", shouldLoadImage ? "animate-spin" : "")}></div>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">
                   Processing your request...
                 </p>
               </div>
@@ -108,10 +106,10 @@ function Unsubscribe() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                     Successfully Unsubscribed
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">{message}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{message}</p>
                 </div>
               </div>
             )}
@@ -134,20 +132,20 @@ function Unsubscribe() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                     Unsubscribe Failed
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">{message}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{message}</p>
                 </div>
               </div>
             )}
           </div>
 
-          <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700/30 flex justify-center">
+          <footer className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/30 flex justify-center">
             <a
               href="/"
               className={cn(
-                "inline-flex items-center px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                "inline-flex items-center px-6 py-3 bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
               )}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,9 +163,9 @@ function Unsubscribe() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-4 px-4 border-t border-gray-200 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <footer className="w-full py-4 px-4 border-t border-slate-200 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             © {new Date().getFullYear()} FairArena. All rights reserved.
           </p>
         </div>
