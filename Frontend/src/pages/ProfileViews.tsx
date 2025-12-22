@@ -28,7 +28,7 @@ export default function ProfileViews() {
     const fetchProfileViews = async () => {
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await apiFetch(`${apiUrl}/api/v1/profile/views`);
 
         if (!response.ok) {
@@ -180,10 +180,10 @@ export default function ProfileViews() {
                 {views.map((view) => {
                   const initials = view.viewerName
                     ? view.viewerName
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .toUpperCase()
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .toUpperCase()
                     : view.viewerEmail[0].toUpperCase();
 
                   return (

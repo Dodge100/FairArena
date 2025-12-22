@@ -19,7 +19,7 @@ function Unsubscribe() {
     }
     const unsubscribe = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await fetch(`${apiUrl}/api/v1/newsletter/unsubscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -70,7 +70,7 @@ function Unsubscribe() {
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <section className="w-full bg-white/80 dark:bg-slate-800/80 rounded-none shadow-2xl p-8 border border-slate-200 dark:border-slate-700 dark:shadow-none backdrop-blur-sm flex flex-col items-center justify-center min-h-[400px]">
+        <section className="w-full bg-white/80 dark:bg-slate-800/80 rounded-none shadow-2xl p-8 border border-slate-200 dark:border-slate-700 dark:shadow-none backdrop-blur-sm flex flex-col items-center justify-center min-h-100">
           <header className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               Newsletter Unsubscribe
@@ -78,7 +78,7 @@ function Unsubscribe() {
             <p className="text-slate-600 dark:text-slate-400 text-lg">We're sorry to see you go</p>
           </header>
 
-          <div className="text-center min-h-[120px] flex flex-col items-center justify-center">
+          <div className="text-center min-h-30 flex flex-col items-center justify-center">
             {status === 'loading' && (
               <div className="flex flex-col items-center space-y-4">
                 <div className={cn("rounded-full h-12 w-12 border-4 border-slate-600 border-t-transparent", shouldLoadImage ? "animate-spin" : "")}></div>

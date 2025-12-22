@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { ENV } from '../../config/env.js';
 import { razorpay } from '../../config/razorpay.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -6,6 +7,9 @@ import logger from '../../utils/logger.js';
 
 export const performCleanup = async () => {
   const readOnlyPrisma = await getReadOnlyPrisma();
+  await fetch(`https://uptime.betterstack.com/api/v1/heartbeat/${ENV.BETTER_STACK_HEARTBEAT_ID}`)
+    .then(() => logger.info('Heartbeat sent to Better Stack'))
+    .catch((error) => logger.error('Failed to send heartbeat', { error }));
   try {
     // Calculate dates
     const fiveDaysAgo = new Date();

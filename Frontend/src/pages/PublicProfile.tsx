@@ -95,7 +95,7 @@ export default function PublicProfile() {
 
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await publicApiFetch(`${apiUrl}/api/v1/profile/public/${userId}`, {
           headers: {
             'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ export default function PublicProfile() {
     try {
       if (!profile) return;
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await apiFetch(`${apiUrl}/api/v1/profile/${profile.id}/view`, {
         method: 'POST'
       });
@@ -191,7 +191,7 @@ export default function PublicProfile() {
 
     setIsReporting(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await apiFetch(`${apiUrl}/api/v1/reports`, {
         method: 'POST',
         headers: {
@@ -243,7 +243,7 @@ export default function PublicProfile() {
 
     setIsStarring(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
       const endpoint = wasStarred ? '/api/v1/stars/unstar' : '/api/v1/stars/star';
       const response = await apiFetch(`${apiUrl}${endpoint}`, {
         method: 'POST',

@@ -98,7 +98,7 @@ app.use(
   }),
 );
 app.use(hpp());
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 const originRegex = new RegExp(
   `^https://(${ENV.CORS_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.CORS_URL.replace('.', '\\.')})$`,
@@ -155,41 +155,43 @@ collectDefaultMetrics({ register: client.register });
 // Maintenance mode middleware (check before all API routes)
 app.use(maintenanceMiddleware);
 
-// Swagger API Documentation - Enhanced UI with better styling
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customCss: `
-      .swagger-ui .topbar { display: none }
-      .swagger-ui .info { margin: 30px 0 }
-      .swagger-ui .scheme-container { background: #fafafa; padding: 15px; border-radius: 4px; margin: 20px 0 }
-      .swagger-ui .info .title { font-size: 36px; color: #182837 }
-      .swagger-ui .info .description { font-size: 14px; line-height: 1.6 }
-      .swagger-ui .opblock-tag { font-size: 18px; font-weight: 600; padding: 10px 20px }
-      .swagger-ui .opblock { margin: 0 0 15px; border-radius: 4px }
-      .swagger-ui .opblock .opblock-summary { padding: 10px; border-radius: 4px }
-      .swagger-ui .btn.authorize { background: #182837; border-color: #182837 }
-      .swagger-ui .btn.authorize svg { fill: white }
-    `,
-    customSiteTitle: 'FairArena API Documentation',
-    customfavIcon: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
-    explorer: true,
-    swaggerOptions: {
-      persistAuthorization: true,
-      displayRequestDuration: true,
-      filter: true,
-      docExpansion: 'list',
-      defaultModelsExpandDepth: 3,
-      defaultModelExpandDepth: 3,
-      syntaxHighlight: {
-        activate: true,
-        theme: 'monokai',
+// Swagger API Documentation - Only enabled in non-production environments
+if (ENV.NODE_ENV !== 'production') {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .info { margin: 30px 0 }
+        .swagger-ui .scheme-container { background: #fafafa; padding: 15px; border-radius: 4px; margin: 20px 0 }
+        .swagger-ui .info .title { font-size: 36px; color: #182837 }
+        .swagger-ui .info .description { font-size: 14px; line-height: 1.6 }
+        .swagger-ui .opblock-tag { font-size: 18px; font-weight: 600; padding: 10px 20px }
+        .swagger-ui .opblock { margin: 0 0 15px; border-radius: 4px }
+        .swagger-ui .opblock .opblock-summary { padding: 10px; border-radius: 4px }
+        .swagger-ui .btn.authorize { background: #182837; border-color: #182837 }
+        .swagger-ui .btn.authorize svg { fill: white }
+      `,
+      customSiteTitle: 'FairArena API Documentation',
+      customfavIcon: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+      explorer: true,
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        docExpansion: 'list',
+        defaultModelsExpandDepth: 3,
+        defaultModelExpandDepth: 3,
+        syntaxHighlight: {
+          activate: true,
+          theme: 'monokai',
+        },
+        tryItOutEnabled: true,
       },
-      tryItOutEnabled: true,
-    },
-  }),
-);
+    }),
+  );
+}
 
 // Profile routes
 app.use('/api/v1/profile', profileRouter);

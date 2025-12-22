@@ -55,7 +55,7 @@ export default function MyProfile() {
 
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await apiFetch(`${apiUrl}/api/v1/profile/me`);
 
         if (response.ok) {

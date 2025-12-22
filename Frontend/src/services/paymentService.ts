@@ -58,7 +58,7 @@ export class PaymentService {
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
   private constructor() {
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    this.baseURL = import.meta.env.VITE_API_BASE_URL;
   }
 
   public static getInstance(): PaymentService {
