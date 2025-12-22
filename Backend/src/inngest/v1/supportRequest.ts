@@ -1,4 +1,3 @@
-import { prisma } from '../../config/database.js';
 import { SupportService } from '../../services/v1/supportService.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
@@ -107,27 +106,7 @@ export const supportRequestCreated = inngest.createFunction(
       return await SupportService.createSupportRequest(supportData);
     });
 
-    await step.run('classify-support-ticket', async () => {
-      try {
-        logger.info('Starting AI classification for support ticket', {
-          ticketId: supportRequest.id,
-        });
-
-        await SupportService.classifyAndUpdateTicket(supportRequest.id);
-
-        logger.info('AI classification completed for support ticket', {
-          ticketId: supportRequest.id,
-        });
-      } catch (error) {
-        // Log error but don't fail the entire workflow
-        logger.error('AI classification failed, continuing with default values', {
-          ticketId: supportRequest.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    });
-
-    // Step 4: Get user name if not provided (for authenticated users)
+    // Step 3: Get user name if not provided (for authenticated users)
     let finalUserName = userName;
     if (userId && !finalUserName) {
       await step.run('get-user-name', async () => {
@@ -137,47 +116,18 @@ export const supportRequestCreated = inngest.createFunction(
             finalUserName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim();
           }
         } catch (error) {
-          logger.error('Failed to get user profile for support request:', {error});
+          console.warn('Failed to get user profile for support request:', error);
         }
       });
     }
 
-    // Step 5: Send confirmation email to the user
+    // Step 4: Send confirmation email to the user
     await step.run('send-confirmation-email', async () => {
-      let recipientEmail = userEmail || emailId;
-
-      // If we have userId but no email, fetch from database
-      if (userId && !recipientEmail) {
-        try {
-          const user = await prisma.user.findUnique({
-            where: { userId },
-            select: { email: true },
-          });
-          recipientEmail = user?.email;
-        } catch (error) {
-          logger.error('Failed to fetch user email for support confirmation', {
-            userId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
+      const recipientEmail = userEmail || emailId;
       if (!recipientEmail) {
-        logger.warn('No email address found for support request', {
-          supportRequestId: supportRequest.id,
-        });
+        console.warn('No email address found for support request:', supportRequest.id);
         return;
       }
-
-      // Fetch the latest ticket data to get classification details
-      const updatedTicket = await prisma.support.findUnique({
-        where: { id: supportRequest.id },
-        select: {
-          type: true,
-          severity: true,
-          shortDescription: true,
-        },
-      });
 
       await inngest.send({
         name: 'email.send',
@@ -189,15 +139,12 @@ export const supportRequestCreated = inngest.createFunction(
             userName: finalUserName || 'Valued User',
             subject,
             requestId: supportRequest.id,
-            type: updatedTicket?.type,
-            severity: updatedTicket?.severity,
-            shortDescription: updatedTicket?.shortDescription,
           },
         },
       });
     });
 
-    // Step 6: Send in-app notification to authenticated user
+    // Step 5: Send in-app notification to authenticated user
     if (userId) {
       await step.run('send-in-app-notification', async () => {
         await inngest.send({
@@ -220,9 +167,9 @@ export const supportRequestCreated = inngest.createFunction(
       });
     }
 
-    // Step 7: Log the support request creation
+    // Step 6: Log the support request creation
     await step.run('log-support-request', async () => {
-      logger.info(`Support request created: ${supportRequest.id}`, {
+      console.log(`Support request created: ${supportRequest.id}`, {
         userId,
         emailId,
         subject,

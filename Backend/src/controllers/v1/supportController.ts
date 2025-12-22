@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -74,9 +73,6 @@ export class SupportController {
           subject: true,
           message: true,
           status: true,
-          type: true,
-          severity: true,
-          shortDescription: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -90,12 +86,9 @@ export class SupportController {
         supportTickets: supportTickets.map((ticket) => ({
           id: ticket.id,
           title: ticket.subject,
-          description: ticket.shortDescription ||
-            (ticket.message.length > 100 ? ticket.message.substring(0, 100) + '...' : ticket.message),
-          fullMessage: ticket.message,
+          description:
+            ticket.message.length > 100 ? ticket.message.substring(0, 100) + '...' : ticket.message,
           status: ticket.status.toLowerCase(),
-          type: ticket.type,
-          severity: ticket.severity,
           createdAt: ticket.createdAt.toISOString(),
           updatedAt: ticket.updatedAt.toISOString(),
         })),
@@ -185,17 +178,7 @@ export class SupportController {
       let emailId: string | undefined;
 
       if (userId) {
-        // For authenticated users, fetch email from database
-        try {
-          const user = await prisma.user.findUnique({
-            where: { userId },
-            select: { email: true },
-          });
-          emailId = user?.email;
-          userEmail = user?.email;
-        } catch (error) {
-          logger.error('Failed to fetch user email', { userId, error });
-        }
+        emailId = req.auth()?.user?.primaryEmailAddress?.emailAddress;
       } else {
         // Non-authenticated user - require email in request
         if (!email) {
@@ -205,7 +188,6 @@ export class SupportController {
           });
         }
         emailId = email;
-        userEmail = email;
       }
 
       // Generate a temporary ID for immediate response
