@@ -310,51 +310,46 @@ app.get('/metrics', async (req, res) => {
   res.send(metrics);
 });
 
-// Health check endpoint with Basic HTTP auth
+// Health check endpoint
 app.get('/healthz', async (req, res) => {
   const headerName = ENV.HEALTHZ_HEADER_NAME;
   const headerValue = ENV.HEALTHZ_HEADER_VALUE;
 
-  const isInternalHealthcheck =
-    req.ip === '127.0.0.1' || req.ip === '::1' || req.connection.remoteAddress === '172.17.0.1';
-
   if (headerName && headerValue) {
-    if (!isInternalHealthcheck) {
-      const provided = req.header(headerName);
-      if (!provided) {
-        logger.warn('Health check header missing', { headerName, ip: req.ip });
-        res.status(401).send('Unauthorized');
-        return;
-      }
-
-      if (provided !== headerValue) {
-        logger.warn('Invalid health check header value', { headerName, ip: req.ip });
-        res.status(401).send('Unauthorized');
-        return;
-      }
-      logger.info('Health check ping received (header auth)', { ip: req.ip });
+    const provided = req.header(headerName);
+    if (!provided) {
+      logger.warn('Health check header missing', { headerName, ip: req.ip });
+      res.status(401).send('Unauthorized');
+      return;
     }
 
-    // Perform actual health checks
-    try {
-      // Check database connection
-      await getReadOnlyPrisma().$queryRaw`SELECT 1`;
-
-      // Check Redis connection
-      await redis.ping();
-
-      res.status(200).send('Server is healthy');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Health check failed', { error: errorMessage });
-      res.status(503).send(`Server is unhealthy: ${errorMessage}`);
+    if (provided !== headerValue) {
+      logger.warn('Invalid health check header value', { headerName, ip: req.ip });
+      res.status(401).send('Unauthorized');
+      return;
     }
+    logger.info('Health check ping received (header auth)', { ip: req.ip });
+  } else {
+    // If headers not configured and not internal, deny
+    logger.warn('Health check header auth not configured; denying access', { ip: req.ip });
+    res.status(503).send('Health check credentials not configured');
     return;
   }
 
-  // Fallback: if header auth not configured, deny access
-  logger.warn('Health check header auth not configured; denying access', { ip: req.ip });
-  res.status(503).send('Health check credentials not configured');
+  // Perform actual health checks for internal or if headers are configured
+  try {
+    // Check database connection
+    await getReadOnlyPrisma().$queryRaw`SELECT 1`;
+
+    // Check Redis connection
+    await redis.ping();
+
+    res.status(200).send('Server is healthy');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Health check failed', { error: errorMessage });
+    res.status(503).send(`Server is unhealthy: ${errorMessage}`);
+  }
 });
 
 // Serve Swagger UI in development mode

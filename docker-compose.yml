@@ -46,7 +46,17 @@ services:
     restart: unless-stopped
     ports:
       - "8288:8288"
-    command: ["inngest", "start"]
+    command:
+      - sh
+      - -c
+      - |
+        inngest start \
+          --postgres-uri=$$DATABASE_URL \
+          --redis-uri=$$INNGEST_REDIS_URL \
+          --event-key=$$INNGEST_EVENT_KEY \
+          --signing-key=$$INNGEST_SIGNING_KEY \
+          --sdk-url=$$SERVE_URL \
+          --port=8288
     env_file:
       - ./Backend/.env.inngest
     depends_on:
@@ -75,7 +85,7 @@ services:
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f -H '$$HEALTHZ_HEADER_NAME: $$HEALTHZ_HEADER_VALUE' http://localhost:3000/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,6 +122,35 @@ services:
         [
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: "cAdvisor"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - backend-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/healthz",
         ]
       interval: 30s
       timeout: 10s

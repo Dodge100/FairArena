@@ -18,6 +18,26 @@ prometheus.fairarena.sakshamg.me {
     respond "Forbidden" 403
 }
 
+cadviser.fairarena.sakshamg.me {
+    @authorized {
+        cookie X-CADVISOR-ACCESS super-secret-cookie
+    }
+
+    handle @authorized {
+        @http {
+            protocol http
+        }
+        redir @http https://{host}{uri} permanent
+        reverse_proxy localhost:8080
+    }
+
+    handle {
+        respond "Access Denied: Set cookie first" 403 {
+            close
+        }
+    }
+}
+
 fair.sakshamg.me {
     @http {
         protocol http
