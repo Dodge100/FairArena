@@ -7,9 +7,6 @@ import logger from '../../utils/logger.js';
 
 export const performCleanup = async () => {
   const readOnlyPrisma = await getReadOnlyPrisma();
-  await fetch(`https://uptime.betterstack.com/api/v1/heartbeat/${ENV.BETTER_STACK_HEARTBEAT_ID}`)
-    .then(() => logger.info('Heartbeat sent to Better Stack'))
-    .catch((error) => logger.error('Failed to send heartbeat', { error }));
   try {
     // Calculate dates
     const fiveDaysAgo = new Date();
@@ -21,8 +18,8 @@ export const performCleanup = async () => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    const oneDay = new Date();
+    oneDay.setDate(oneDay.getDate() - 1);
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -160,60 +157,13 @@ export const performCleanup = async () => {
     });
 
     // Handle expired pending payments
-    let recheckedPayments = 0;
     let cancelledPayments = 0;
     if (razorpay) {
-      // First, handle payments pending for more than 7 days (recheck)
-      const sevenDayPendingPayments = await readOnlyPrisma.payment.findMany({
-        where: {
-          status: 'PENDING',
-          createdAt: {
-            lt: sevenDaysAgo,
-          },
-        },
-      });
-
-      for (const payment of sevenDayPendingPayments) {
-        try {
-          // Recheck with Razorpay
-          const order = await razorpay.orders.fetch(payment.razorpayOrderId);
-
-          if (order.status === 'paid') {
-            // If somehow paid, trigger verification
-            await inngest.send({
-              name: 'payment/verified',
-              data: {
-                userId: payment.userId,
-                orderId: payment.razorpayOrderId,
-                paymentId: '',
-                signature: '',
-                planId: payment.planId,
-                planName: payment.planName,
-                amount: payment.amount,
-                credits: payment.credits,
-                paymentMethod: '',
-                paymentContact: '',
-              },
-            });
-            logger.info('Late payment detected and verified', { paymentId: payment.id });
-          } else {
-            recheckedPayments++;
-            logger.info('Payment still pending after 7 days', { paymentId: payment.id });
-          }
-        } catch (error) {
-          logger.error('Error rechecking 7-day pending payment with Razorpay', {
-            paymentId: payment.id,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
-      // Then, handle payments pending for more than 2 weeks (cancel)
       const twoWeekPendingPayments = await readOnlyPrisma.payment.findMany({
         where: {
           status: 'PENDING',
           createdAt: {
-            lt: twoWeeksAgo,
+            lt: oneDay,
           },
         },
       });
@@ -254,18 +204,32 @@ export const performCleanup = async () => {
       },
     });
 
-    return {
+    const result = {
       message: 'Cleanup completed',
       deletedLogs: deletedLogs.count,
       deletedUsers: deletedUsers.count,
       deletedNotifications: deletedNotifications.count,
       warningEmailsSent,
-      recheckedPayments,
       cancelledPayments,
       deletedCancelledPayments: deletedCancelledPayments.count,
     };
+
+    // Send success heartbeat
+    await fetch(`https://uptime.betterstack.com/api/v1/heartbeat/${ENV.BETTER_STACK_HEARTBEAT_ID}`)
+      .then(() => logger.info('Success heartbeat sent to Better Stack'))
+      .catch((error) => logger.error('Failed to send success heartbeat', { error }));
+
+    return result;
   } catch (error: unknown) {
     logger.error('Error during cleanup:', { error });
+
+    // Send failure heartbeat
+    await fetch(
+      `https://uptime.betterstack.com/api/v1/heartbeat/${ENV.BETTER_STACK_HEARTBEAT_ID}/fail`,
+    )
+      .then(() => logger.info('Failure heartbeat sent to Better Stack'))
+      .catch((error) => logger.error('Failed to send failure heartbeat', { error }));
+
     throw error; // Re-throw for Inngest to handle
   }
 };

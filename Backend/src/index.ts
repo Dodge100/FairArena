@@ -367,6 +367,38 @@ app.use((_, res) => {
   res.status(404).json({ error: { message: 'Not found', status: 404 } });
 });
 
+// Global error handler for uncaught errors
+app.use((err: unknown, req: express.Request, res: express.Response) => {
+  let errorMessage = 'Unknown error';
+  let errorStack = undefined;
+
+  if (err instanceof Error) {
+    errorMessage = err.message;
+    errorStack = err.stack;
+  } else if (typeof err === 'string') {
+    errorMessage = err;
+  }
+
+  logger.error('Unhandled error', {
+    error: errorMessage,
+    stack: errorStack,
+    url: req.url,
+    method: req.method,
+  });
+  res.status(500).json({ error: { message: 'Internal Server Error', status: 500 } });
+});
+
+// Handle uncaught exceptions and unhandled rejections
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection', { reason, promise });
+  process.exit(1);
+});
+
 // Start the server
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);

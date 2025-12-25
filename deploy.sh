@@ -1,6 +1,21 @@
 #!/bin/bash
 
-set -e  # Exit on any error
+# Configuration
+LOG_FILE="/var/log/fairarena-deploy.log"
+
+# Check if running in background mode
+if [ "${1:-}" != "--background" ]; then
+    nohup "$0" --background "$@" > /dev/null 2>&1 &
+    echo "Deployment started in background. Check logs at $LOG_FILE. Run tail -n 50 /var/log/fairarena-deploy.log with sudo privileges to see the latest logs."
+    exit 0
+fi
+# Shift to remove --background from arguments
+shift
+
+set -euo pipefail  # Exit on error, unset variables, and pipe failures
+
+# Logging to file for persistence
+exec >>"$LOG_FILE" 2>&1
 
 # Color codes for output
 GREEN='\033[0;32m'
@@ -11,52 +26,88 @@ NC='\033[0m' # No Color
 # Configuration
 GIT_BRANCH="main"
 COMPOSE_FILE="docker-compose.yml"
+LOCK_FILE="/tmp/deploy.lock"
+EXPECTED_REPO="FairArena/FairArena"
 
-echo -e "${BLUE}Starting zero-downtime deployment...${NC}"
+# Function to log with timestamp
+log() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
 
-# Read token and remove any whitespace/newlines
-GITHUB_TOKEN=$(cat .github_token | tr -d '[:space:]')
-
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo -e "${RED}Error: GitHub token is empty!${NC}"
+# Atomic deploy lock using flock
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+    log "${RED}Deployment already in progress. Exiting.${NC}"
     exit 1
 fi
 
-# Use git credential helper for authentication
-echo -e "${GREEN}[1/3] Configuring authentication...${NC}"
-git config --local credential.helper "!f() { echo username=\$GITHUB_TOKEN; echo password=x; }; f"
+# Cleanup function to release lock (don't remove file)
+cleanup() {
+    flock -u 200
+}
+trap cleanup EXIT
 
-# Pull latest code
-echo -e "${GREEN}[2/3] Pulling latest code from ${GIT_BRANCH}...${NC}"
-GIT_ASKPASS_HELPER=$(cat <<EOF
-#!/bin/bash
-echo "$GITHUB_TOKEN"
-EOF
-)
-echo "$GIT_ASKPASS_HELPER" > /tmp/git-askpass-helper.sh
-chmod +x /tmp/git-askpass-helper.sh
+log "${BLUE}Starting deployment...${NC}"
 
-GIT_ASKPASS=/tmp/git-askpass-helper.sh git fetch origin
-GIT_ASKPASS=/tmp/git-askpass-helper.sh git reset --hard origin/${GIT_BRANCH}
+# Safety checks for git
+current_repo=$(git config --get remote.origin.url | sed 's/.*github.com[:/]\(.*\)\.git/\1/' | tr '[:upper:]' '[:lower:]')
+expected_repo_lower=$(echo "$EXPECTED_REPO" | tr '[:upper:]' '[:lower:]')
+if [[ "$current_repo" != "$expected_repo_lower" ]]; then
+    log "${RED}Unexpected repository: $current_repo. Expected: $EXPECTED_REPO${NC}"
+    exit 1
+fi
 
-# Setup environment variables
-echo -e "${GREEN}[3/5] Setting up Backend environment...${NC}"
-cd Backend
-bash envs.sh
-cd ..
+# Fetch latest code
+log "${GREEN}[1/6] Fetching latest code from ${GIT_BRANCH}...${NC}"
+git fetch origin || {
+    log "${RED}Failed to fetch from origin${NC}"
+    exit 1
+}
 
-echo -e "${GREEN}[4/5] Setting up Frontend environment...${NC}"
-cd Frontend
-bash envs.sh
-cd ..
+# Explicitly checkout and reset branch
+git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH" || {
+    log "${RED}Failed to checkout branch $GIT_BRANCH${NC}"
+    exit 1
+}
+
+# Setup environment variables with error checking
+log "${GREEN}[2/6] Setting up Backend environment...${NC}"
+if [ -f "Backend/envs.sh" ]; then
+    cd Backend
+    if ! bash envs.sh 2>&1; then
+        log "${RED}Failed to setup Backend environment${NC}"
+        exit 1
+    fi
+    cd ..
+else
+    log "Backend envs.sh not found, skipping"
+fi
+
+log "${GREEN}[3/6] Setting up Frontend environment...${NC}"
+if [ -f "Frontend/envs.sh" ]; then
+    cd Frontend
+    if ! bash envs.sh 2>&1; then
+        log "${RED}Failed to setup Frontend environment${NC}"
+        exit 1
+    fi
+    cd ..
+else
+    log "Frontend envs.sh not found, skipping"
+fi
 
 # Build and update containers
-echo -e "${GREEN}[5/5] Building and updating containers...${NC}"
+log "${GREEN}[4/6] Pulling latest images...${NC}"
+docker compose -f ${COMPOSE_FILE} pull || {
+    log "${RED}Failed to pull images${NC}"
+    exit 1
+}
+
+log "${GREEN}[5/6] Building and updating containers...${NC}"
 docker compose -f ${COMPOSE_FILE} up -d --build
 
-# Cleanup
-docker image prune -f
-rm -f /tmp/git-askpass-helper.sh
+# Note: Removed docker image prune -f to prevent removing images used by other projects or for rollback
+# Consider running prune periodically via cron instead
 
-echo -e "${BLUE}Deployment completed successfully!${NC}"
+log "${BLUE}Deployment completed successfully!${NC}"
+log "${GREEN}[6/6] Checking container status...${NC}"
 docker compose -f ${COMPOSE_FILE} ps
