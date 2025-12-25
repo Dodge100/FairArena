@@ -12,3 +12,6 @@ dist/
 .DS_Store
 Thumbs.db
 .vercel
+
+.env.inngest
+.env.srh

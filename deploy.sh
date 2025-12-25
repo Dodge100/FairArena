@@ -1,21 +1,26 @@
 #!/bin/bash
 
-# Configuration
 LOG_FILE="/var/log/fairarena-deploy.log"
+SCRIPT_PATH="$(readlink -f "$0")"
 
-# Check if running in background mode
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $*" | sed 's/\x1b\[[0-9;]*m//g'
+}
+
+# Relaunch in background
 if [ "${1:-}" != "--background" ]; then
-    nohup "$0" --background "$@" > /dev/null 2>&1 &
-    echo "Deployment started in background. Check logs at $LOG_FILE. Run tail -n 50 /var/log/fairarena-deploy.log with sudo privileges to see the latest logs."
+    nohup bash "$SCRIPT_PATH" --background "$@" &
+    echo "Deployment started in background. Check logs at $LOG_FILE. Run 'tail -n 50 $LOG_FILE' to monitor in real-time."
     exit 0
 fi
-# Shift to remove --background from arguments
 shift
 
-set -euo pipefail  # Exit on error, unset variables, and pipe failures
+set -euo pipefail
 
 # Logging to file for persistence
 exec >>"$LOG_FILE" 2>&1
+
+log "Background deployment process started"
 
 # Color codes for output
 GREEN='\033[0;32m'
@@ -28,11 +33,6 @@ GIT_BRANCH="main"
 COMPOSE_FILE="docker-compose.yml"
 LOCK_FILE="/tmp/deploy.lock"
 EXPECTED_REPO="FairArena/FairArena"
-
-# Function to log with timestamp
-log() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - $1"
-}
 
 # Atomic deploy lock using flock
 exec 200>"$LOCK_FILE"
@@ -111,3 +111,6 @@ docker compose -f ${COMPOSE_FILE} up -d --build
 log "${BLUE}Deployment completed successfully!${NC}"
 log "${GREEN}[6/6] Checking container status...${NC}"
 docker compose -f ${COMPOSE_FILE} ps
+
+# Final confirmation log
+log "${GREEN}Deployment finished at $(date). All containers are running.${NC}"

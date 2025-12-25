@@ -315,21 +315,25 @@ app.get('/healthz', async (req, res) => {
   const headerName = ENV.HEALTHZ_HEADER_NAME;
   const headerValue = ENV.HEALTHZ_HEADER_VALUE;
 
+  const isInternalHealthcheck =
+    req.ip === '127.0.0.1' || req.ip === '::1' || req.connection.remoteAddress === '172.17.0.1';
+
   if (headerName && headerValue) {
-    const provided = req.header(headerName);
-    if (!provided) {
-      logger.warn('Health check header missing', { headerName, ip: req.ip });
-      res.status(401).send('Unauthorized');
-      return;
-    }
+    if (!isInternalHealthcheck) {
+      const provided = req.header(headerName);
+      if (!provided) {
+        logger.warn('Health check header missing', { headerName, ip: req.ip });
+        res.status(401).send('Unauthorized');
+        return;
+      }
 
-    if (provided !== headerValue) {
-      logger.warn('Invalid health check header value', { headerName, ip: req.ip });
-      res.status(401).send('Unauthorized');
-      return;
+      if (provided !== headerValue) {
+        logger.warn('Invalid health check header value', { headerName, ip: req.ip });
+        res.status(401).send('Unauthorized');
+        return;
+      }
+      logger.info('Health check ping received (header auth)', { ip: req.ip });
     }
-
-    logger.info('Health check ping received (header auth)', { ip: req.ip });
 
     // Perform actual health checks
     try {
