@@ -58,7 +58,7 @@ if [[ "$current_repo" != "$expected_repo_lower" ]]; then
 fi
 
 # Fetch latest code
-log "${GREEN}[1/6] Fetching latest code from ${GIT_BRANCH}...${NC}"
+log "${GREEN}[1/8] Fetching latest code from ${GIT_BRANCH}...${NC}"
 git fetch origin || {
     log "${RED}Failed to fetch from origin${NC}"
     exit 1
@@ -71,7 +71,7 @@ git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH" || {
 }
 
 # Setup environment variables with error checking
-log "${GREEN}[2/6] Setting up Backend environment...${NC}"
+log "${GREEN}[2/8] Setting up Backend environment...${NC}"
 if [ -f "Backend/envs.sh" ]; then
     cd Backend
     if ! bash envs.sh 2>&1; then
@@ -83,7 +83,31 @@ else
     log "Backend envs.sh not found, skipping"
 fi
 
-log "${GREEN}[3/6] Setting up Frontend environment...${NC}"
+log "${GREEN}[3/8] Setting up Inngest environment...${NC}"
+if [ -f "Backend/envs.inngest.sh" ]; then
+    cd Backend
+    if ! bash envs.inngest.sh 2>&1; then
+        log "${RED}Failed to setup Inngest environment${NC}"
+        exit 1
+    fi
+    cd ..
+else
+    log "Backend envs.inngest.sh not found, skipping"
+fi
+
+log "${GREEN}[4/8] Setting up SRH environment...${NC}"
+if [ -f "Backend/envs.srh.sh" ]; then
+    cd Backend
+    if ! bash envs.srh.sh 2>&1; then
+        log "${RED}Failed to setup SRH environment${NC}"
+        exit 1
+    fi
+    cd ..
+else
+    log "Backend envs.srh.sh not found, skipping"
+fi
+
+log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
 if [ -f "Frontend/envs.sh" ]; then
     cd Frontend
     if ! bash envs.sh 2>&1; then
@@ -96,20 +120,20 @@ else
 fi
 
 # Build and update containers
-log "${GREEN}[4/6] Pulling latest images...${NC}"
+log "${GREEN}[6/8] Pulling latest images...${NC}"
 docker compose -f ${COMPOSE_FILE} pull || {
     log "${RED}Failed to pull images${NC}"
     exit 1
 }
 
-log "${GREEN}[5/6] Building and updating containers...${NC}"
+log "${GREEN}[7/8] Building and updating containers...${NC}"
 docker compose -f ${COMPOSE_FILE} up -d --build
 
 # Note: Removed docker image prune -f to prevent removing images used by other projects or for rollback
 # Consider running prune periodically via cron instead
 
 log "${BLUE}Deployment completed successfully!${NC}"
-log "${GREEN}[6/6] Checking container status...${NC}"
+log "${GREEN}[8/8] Checking container status...${NC}"
 docker compose -f ${COMPOSE_FILE} ps
 
 # Final confirmation log

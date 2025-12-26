@@ -15,3 +15,6 @@ Thumbs.db
 
 .env.inngest
 .env.srh
+.doppler_inngest_token
+.doppler_srh_token
+.doppler_token
