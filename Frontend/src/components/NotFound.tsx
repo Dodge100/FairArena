@@ -8,7 +8,6 @@ function NotFound() {
 
   useEffect(() => {
     setIsDark(theme === 'dark');
-    console.log(theme);
   }, [theme]);
 
   return (

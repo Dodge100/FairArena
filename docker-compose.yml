@@ -45,7 +45,7 @@ services:
     container_name: "Inngest"
     restart: unless-stopped
     ports:
-      - "8288:8288"
+      - "127.0.0.1:8288:8288"
     command:
       - sh
       - -c
@@ -91,22 +91,22 @@ services:
       retries: 3
       start_period: 60s
 
-  frontend:
-    build: ./Frontend
-    container_name: "Frontend"
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:4173:4173"
-    env_file:
-      - ./Frontend/.env
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4173 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - backend-net
+  # frontend:
+  #   build: ./Frontend
+  #   container_name: "Frontend"
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:4173:4173"
+  #   env_file:
+  #     - ./Frontend/.env
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:4173 || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   networks:
+  #     - backend-net
 
   prom-server:
     image: prom/prometheus

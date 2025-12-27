@@ -1,5 +1,5 @@
 import { useTheme } from '@/hooks/useTheme';
-import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Twitter, Github } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
@@ -39,15 +39,14 @@ function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-4 mt-5">
-            {[Twitter, Linkedin, Facebook, Instagram].map((Icon, i) => (
-              <Icon
-                key={i}
+            <a href="https://github.com/FairArena/FairArena" target="_blank" rel="noopener noreferrer">
+              <Github
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
                   ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}
                 `}
               />
-            ))}
+            </a>
           </div>
         </div>
 
@@ -58,7 +57,7 @@ function Footer() {
             {[
               { label: 'About', path: 'about' },
               { label: 'Why Choose Us', path: 'why-choose-us' },
-              { label: 'Pricing', path: 'pricing' },
+              { label: 'Pricing', path: '#pricing', hash: true },
               { label: 'Status', path: 'https://fairarena.betteruptime.com', external: true },
             ].map((item) => (
               <li
@@ -68,7 +67,9 @@ function Footer() {
                     ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
                   `}
               >
-                {item.external ? (
+                {item.hash ? (
+                  <a href={item.path}>{item.label}</a>
+                ) : item.external ? (
                   <a href={item.path} target="_blank" rel="noopener noreferrer">
                     {item.label}
                   </a>
@@ -86,17 +87,14 @@ function Footer() {
             Resources
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            {['Blog', 'Ebooks & Guides'].map((item) => (
-              <li
-                key={item}
-                className={`
-                  cursor-pointer
-                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-                `}
-              >
-                {item}
-              </li>
-            ))}
+            <li
+              className={`
+                cursor-pointer
+                ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
+              `}
+            >
+              <a href="https://docs.fair.sakshamg.me" target="_blank" rel="noopener noreferrer">Docs</a>
+            </li>
           </ul>
         </div>
 

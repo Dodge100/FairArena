@@ -60,7 +60,11 @@ export default function Navbar() {
                 className={`${isDark ? 'hover:text-white' : 'hover:text-black'
                   } transition cursor-pointer capitalize`}
               >
-                <Link to={item}>{item}</Link>
+                {item === 'pricing' ? (
+                  <a href="#pricing">{item}</a>
+                ) : (
+                  <Link to={item}>{item}</Link>
+                )}
               </motion.button>
             ))}
 
@@ -199,7 +203,11 @@ export default function Navbar() {
                       } transition capitalize cursor-pointer`}
                     onClick={() => setOpen(false)}
                   >
-                    <Link to={item}>{item}</Link>
+                    {item === 'pricing' ? (
+                      <a href="#pricing">{item}</a>
+                    ) : (
+                      <Link to={item}>{item}</Link>
+                    )}
                   </motion.button>
                 ))}
               </motion.div>

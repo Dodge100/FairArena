@@ -113,7 +113,6 @@ export class PaymentService {
       // Check if cache is valid
       const now = Date.now();
       if (this.plansCache && now - this.plansCacheTimestamp < this.CACHE_DURATION) {
-        console.log('Using cached plans from memory');
         return this.plansCache;
       }
 
@@ -123,9 +122,6 @@ export class PaymentService {
       if (response.data.success && response.data.plans) {
         this.plansCache = response.data.plans;
         this.plansCacheTimestamp = now;
-        console.log(
-          `Fetched ${response.data.plans.length} plans from API ${response.data.cached ? '(server cache)' : '(database)'}`,
-        );
         return response.data.plans;
       }
 

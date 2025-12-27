@@ -107,17 +107,17 @@ else
     log "Backend envs.srh.sh not found, skipping"
 fi
 
-log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
-if [ -f "Frontend/envs.sh" ]; then
-    cd Frontend
-    if ! bash envs.sh 2>&1; then
-        log "${RED}Failed to setup Frontend environment${NC}"
-        exit 1
-    fi
-    cd ..
-else
-    log "Frontend envs.sh not found, skipping"
-fi
+# log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
+# if [ -f "Frontend/envs.sh" ]; then
+#     cd Frontend
+#     if ! bash envs.sh 2>&1; then
+#         log "${RED}Failed to setup Frontend environment${NC}"
+#         exit 1
+#     fi
+#     cd ..
+# else
+#     log "Frontend envs.sh not found, skipping"
+# fi
 
 # Build and update containers
 log "${GREEN}[6/8] Pulling latest images...${NC}"

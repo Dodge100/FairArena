@@ -24,7 +24,6 @@ export function ClarityManager() {
         // If data saver is enabled OR analytics consent is denied, stop/disable Clarity
         if (dataSaverSettings.enabled || !consentSettings?.analytics) {
             if (isInitializedRef.current) {
-                console.log('Data saver enabled or analytics consent denied: Stopping Clarity monitoring');
                 try {
                     Clarity.consent(false);
                     isInitializedRef.current = false;

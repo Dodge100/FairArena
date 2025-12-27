@@ -1,5 +1,6 @@
 import { Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -59,6 +60,7 @@ interface RazorpayOptions {
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const { getToken } = useAuthState();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -130,7 +132,8 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     try {
       const token = await getToken();
       if (!token) {
-        toast.error('Please sign in to make a payment');
+        navigate('/signin');
+        onClose();
         return;
       }
 

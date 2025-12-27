@@ -17,7 +17,6 @@ export function FirebaseAnalyticsManager() {
         // If data saver is enabled OR analytics consent is denied, stop/disable Firebase Analytics
         if (dataSaverSettings.enabled || !consentSettings?.analytics) {
             if (isInitializedRef.current) {
-                console.log('Data saver enabled or analytics consent denied: Stopping Firebase Analytics');
                 try {
                     isInitializedRef.current = false;
                 } catch (error) {

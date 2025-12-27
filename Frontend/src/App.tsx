@@ -23,7 +23,6 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
-import PricingPage from './pages/PricingPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
 import ProfileStars from './pages/ProfileStars';
@@ -106,7 +105,6 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/why-choose-us" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/refund" element={<RefundPage />} />
