@@ -39,7 +39,7 @@ function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-4 mt-5">
-            <a href="https://github.com/FairArena/FairArena" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer">
               <Github
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110

@@ -119,6 +119,9 @@ importers:
       nodemailer:
         specifier: ^7.0.12
         version: 7.0.12
+      notificationapi-node-server-sdk:
+        specifier: ^2.8.0
+        version: 2.8.0
       opossum:
         specifier: ^9.0.0
         version: 9.0.0
@@ -1507,6 +1510,10 @@ packages:
       '@opentelemetry/core': ^1.30.1 || ^2.1.0 || ^2.2.0
       '@opentelemetry/sdk-trace-base': ^1.30.1 || ^2.1.0 || ^2.2.0
       '@opentelemetry/semantic-conventions': ^1.37.0
+
+  '@slack/types@2.19.0':
+    resolution: {integrity: sha512-7+QZ38HGcNh/b/7MpvPG6jnw7mliV6UmrquJLqgdxkzJgQEYUcEztvFWRU49z0x4vthF0ixL5lTK601AXrS8IA==}
+    engines: {node: '>= 12.13.0', npm: '>= 6.12.0'}
 
   '@smithy/abort-controller@4.2.7':
     resolution: {integrity: sha512-rzMY6CaKx2qxrbYbqjXWS0plqEy7LOdKHS0bg4ixJ6aoGDPNUcLWk/FRNuCILh7GKLG9TFUXYYeQQldMBBwuyw==}
@@ -3003,6 +3010,9 @@ packages:
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
+
+  notificationapi-node-server-sdk@2.8.0:
+    resolution: {integrity: sha512-Wcl2SpKR0AXHu6f+SS1pS+65Fpt8bpJN9QRXZvTgzjpnepEXLcHaziz0mye06i4qMLoZntI/tqcEFfihCyQ8EQ==}
 
   nypm@0.6.2:
     resolution: {integrity: sha512-7eM+hpOtrKrBDCh7Ypu2lJ9Z7PNZBdi/8AT3AX8xoCj43BBVHD0hPSTEvMtkMpfs8FCqBGhxB+uToIQimA111g==}
@@ -5616,6 +5626,8 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.38.0
       '@sentry/core': 10.32.1
 
+  '@slack/types@2.19.0': {}
+
   '@smithy/abort-controller@4.2.7':
     dependencies:
       '@smithy/types': 4.11.0
@@ -7320,6 +7332,13 @@ snapshots:
       undefsafe: 2.0.5
 
   normalize-path@3.0.0: {}
+
+  notificationapi-node-server-sdk@2.8.0:
+    dependencies:
+      '@slack/types': 2.19.0
+      axios: 1.13.2
+    transitivePeerDependencies:
+      - debug
 
   nypm@0.6.2:
     dependencies:

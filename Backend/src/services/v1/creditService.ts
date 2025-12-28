@@ -102,8 +102,80 @@ export async function verifyUserCredits(
 }
 
 /**
- * Deduct credits from user account
+ * Add credits to user account
  */
+export async function addUserCredits(
+  userId: string,
+  amount: number,
+  type: 'BONUS' | 'PURCHASE' | 'REFUND' | 'ADJUSTMENT' | 'TRANSFER_IN' | 'INITIAL_ALLOCATION',
+  description: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ success: boolean; newBalance: number; transactionId: string }> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Get current balance
+      const lastTransaction = await tx.creditTransaction.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const currentBalance = lastTransaction?.balance || 0;
+      const newBalance = currentBalance + amount;
+
+      // Create addition transaction
+      const transaction = await tx.creditTransaction.create({
+        data: {
+          userId,
+          amount,
+          balance: newBalance,
+          type,
+          description,
+          metadata: metadata ? JSON.stringify(metadata) : undefined,
+        },
+      });
+
+      logger.info('Credits added successfully', {
+        userId,
+        amount,
+        newBalance,
+        transactionId: transaction.id,
+      });
+
+      // Invalidate user credits cache
+      try {
+        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`;
+        const historyCachePattern = `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`;
+
+        // Delete specific cache keys
+        await redis.del(creditsCacheKey);
+
+        // Delete all credit history cache keys for this user
+        const historyKeys = await redis.keys(historyCachePattern);
+        if (historyKeys.length > 0) {
+          await redis.del(...historyKeys);
+        }
+
+        logger.info('User credits cache invalidated after addition', { userId });
+      } catch (error) {
+        logger.warn('Failed to invalidate credits cache after addition', { error, userId });
+      }
+
+      return {
+        success: true,
+        newBalance,
+        transactionId: transaction.id,
+      };
+    });
+  } catch (error) {
+    logger.error('Failed to add user credits', {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      amount,
+    });
+    throw error;
+  }
+}
+
 export async function deductUserCredits(
   userId: string,
   amount: number,

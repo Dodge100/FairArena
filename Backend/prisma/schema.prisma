@@ -20,6 +20,9 @@ model User {
   lastName              String?
   profileImageUrl       String?
   username              String?
+  phoneNumber           String?                 @unique
+  isPhoneVerified       Boolean                 @default(false)
+  hasClaimedFreeCredits Boolean                 @default(false)
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
@@ -40,6 +43,13 @@ model User {
 
   @@index([userId])
   @@index([email])
+  @@index([phoneNumber])
+  @@index([isPhoneVerified])
+  @@index([hasClaimedFreeCredits])
+  @@index([isDeleted])
+  @@index([userId, isPhoneVerified])
+  @@index([userId, hasClaimedFreeCredits])
+  @@index([phoneNumber, isPhoneVerified])
 }
 
 model Plan {
@@ -128,6 +138,8 @@ model CreditTransaction {
   @@index([type])
   @@index([createdAt])
   @@index([userId, createdAt])
+  @@index([userId, type])
+  @@index([userId, type, createdAt])
 }
 
 model PaymentWebhookEvent {
@@ -762,6 +774,7 @@ enum CreditTransactionType {
   BONUS
   DEDUCTION
   ADJUSTMENT
+  INITIAL_ALLOCATION
   EXPIRY
   TRANSFER_IN
   TRANSFER_OUT

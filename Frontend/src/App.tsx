@@ -16,6 +16,7 @@ import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
 import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
+import CreditsVerificationPage from './pages/CreditsVerificationPage';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Feedback from './pages/Feedback';
@@ -113,6 +114,7 @@ function App() {
         <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/dashboard/credits" element={<CreditsPage />} />
+          <Route path="/dashboard/credits/verify" element={<CreditsVerificationPage />} />
           <Route path="/dashboard/inbox" element={<Inbox />} />
           <Route path="/dashboard/teams" element={<TeamsPage />} />
           <Route path="/dashboard/profile" element={<Profile />} />

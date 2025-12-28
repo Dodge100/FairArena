@@ -77,6 +77,11 @@ const CreditsPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentDetails | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [userEligibility, setUserEligibility] = useState<{
+    canClaimFreeCredits: boolean;
+    hasClaimedFreeCredits: boolean;
+    phoneVerified: boolean;
+  } | null>(null);
   const { getToken } = useAuthState();
 
   const fetchCreditHistory = useCallback(
@@ -90,13 +95,16 @@ const CreditsPage = () => {
       try {
         const offset = loadMore && history ? history.offset + history.limit : 0;
         const token = await getToken();
+        // Add cache busting for fresh data
+        const cacheBuster = Date.now();
         const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${offset}`,
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${offset}&_=${cacheBuster}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
             credentials: 'include',
+            cache: 'no-store', // Disable browser cache
           },
         );
 
@@ -133,11 +141,14 @@ const CreditsPage = () => {
   const fetchCreditBalance = useCallback(async () => {
     try {
       const token = await getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance`, {
+      // Add cache busting to ensure fresh data after claims
+      const cacheBuster = Date.now();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance?_=${cacheBuster}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
+        cache: 'no-store', // Disable browser cache
       });
 
       if (!response.ok) {
@@ -154,6 +165,43 @@ const CreditsPage = () => {
     } catch (error) {
       console.error('Error fetching credit balance:', error);
       toast.error('Failed to load credit balance');
+    }
+  }, [getToken]);
+
+  const checkUserEligibility = useCallback(async () => {
+    try {
+      const token = await getToken();
+      // Add cache busting parameter to force fresh data
+      const cacheBuster = Date.now();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility?_=${cacheBuster}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        // Disable browser cache
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUserEligibility(data.data);
+
+          // Log for debugging
+          console.debug('Eligibility check result:', {
+            canClaimFreeCredits: data.data.canClaimFreeCredits,
+            hasClaimedFreeCredits: data.data.hasClaimedFreeCredits,
+            phoneVerified: data.data.phoneVerified,
+            hasPhoneNumber: data.data.hasPhoneNumber,
+          });
+        }
+      } else {
+        console.error('Eligibility check failed:', response.status);
+        toast.error('Failed to check user eligibility');
+      }
+    } catch (error) {
+      console.error('Error checking user eligibility:', error);
+      toast.error('Failed to check user eligibility');
     }
   }, [getToken]);
 
@@ -187,8 +235,29 @@ const CreditsPage = () => {
       return;
     }
 
-    fetchCreditBalance();
-    fetchCreditHistory();
+    // Check if we're being redirected with a refresh parameter (after claim)
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldRefresh = urlParams.get('refresh');
+
+    if (shouldRefresh) {
+      // Remove the refresh parameter from URL
+      window.history.replaceState({}, '', '/dashboard/credits');
+
+      // Force fresh data fetch with slight delay to ensure backend cache is cleared
+      setTimeout(() => {
+        setLoading(true);
+        Promise.all([
+          fetchCreditBalance(),
+          fetchCreditHistory(),
+          checkUserEligibility()
+        ]).finally(() => setLoading(false));
+      }, 500);
+    } else {
+      // Normal load
+      fetchCreditBalance();
+      fetchCreditHistory();
+      checkUserEligibility();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, navigate]);
 
@@ -321,18 +390,99 @@ const CreditsPage = () => {
           </CardHeader>
           <CardContent className="relative z-10">
             <div className="flex flex-wrap gap-4">
-              <a
-                href='/dashboard/credits#pricing'
-                className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold shadow-lg p-2 rounded-lg"
+              {/* Only show free credits buttons after eligibility is loaded */}
+              {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
+                <Button
+                  onClick={() => navigate('/dashboard/credits/verify')}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:scale-105"
+                >
+                  <Gift className="h-5 w-5" />
+                  Claim 200 Free Credits
+                </Button>
+              )}
+              {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
+                <Button
+                  onClick={() => navigate('/dashboard/credits/verify')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:scale-105"
+                >
+                  <Shield className="h-5 w-5" />
+                  Get 200 Free Credits
+                </Button>
+              )}
+              <Button
+                onClick={() => window.location.hash = 'pricing'}
+                className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2"
               >
-                <Plus className="h-5 w-5 mr-2" />
+                <Plus className="h-5 w-5" />
                 Buy More Credits
-              </a>
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          {/* Free Credits Info Card - Show if phone verified and eligible (only after loading) */}
+          {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
+            <Card className="lg:col-span-3 border-2 border-yellow-400 bg-linear-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-yellow-400 p-3 rounded-full">
+                      <Gift className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                        🎉 Claim Your Free 200 Credits!
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-300">
+                        Your phone is verified! Click the button to claim your free credits now.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/dashboard/credits/verify')}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-lg px-6 py-3 rounded-lg transition-all hover:scale-105"
+                    size="lg"
+                  >
+                    <Gift className="h-5 w-5 mr-2" />
+                    Claim Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Phone Verification Required Card - Show if not verified and not claimed (only after loading) */}
+          {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
+            <Card className="lg:col-span-3 border-2 border-blue-400 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-400 p-3 rounded-full animate-pulse">
+                      <Gift className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                        🎁 Get 200 Free Credits!
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-300">
+                        Verify your phone number to unlock your welcome bonus and start creating hackathons
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/dashboard/credits/verify')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-lg px-6 py-3 rounded-lg transition-all hover:scale-105"
+                    size="lg"
+                  >
+                    <Shield className="h-5 w-5 mr-2" />
+                    Verify Phone & Get Credits
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Quick Stats */}
           <Card className="lg:col-span-1">
             <CardHeader>
