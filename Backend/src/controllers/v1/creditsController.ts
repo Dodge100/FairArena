@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
+import { sendFreeCreditsClaimedEmail, sendPhoneNumberAddedEmail } from '../../email/v1/send-mail.js';
 import { inngest } from '../../inngest/v1/client.js';
 import { getUserCreditBalance, getUserCreditHistory } from '../../services/v1/creditService.js';
 import logger from '../../utils/logger.js';
@@ -550,7 +551,7 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
       } else {
         user = await prisma.user.findUnique({
           where: { userId },
-          select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true },
+          select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true, email: true, firstName: true, lastName: true },
         });
 
         if (user) {
@@ -562,7 +563,7 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
       // Fallback to direct database query
       user = await prisma.user.findUnique({
         where: { userId },
-        select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true },
+        select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true, email: true, firstName: true, lastName: true },
       });
     }
 
@@ -843,6 +844,19 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
     } catch (notificationError) {
       logger.warn('Failed to send in-app notification for credit claim', { userId, error: notificationError });
       // Don't fail the request if notification fails
+    }
+
+    // Send email notification for free credits claimed
+    try {
+      const userName = user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.firstName || user.lastName || 'User';
+
+      await sendFreeCreditsClaimedEmail(user.email, userName, 200, result.newBalance);
+      logger.info('Free credits claimed email sent', { userId, email: user.email });
+    } catch (emailError) {
+      logger.warn('Failed to send free credits claimed email', { userId, error: emailError });
+      // Don't fail the request if email fails
     }
 
     res.json({
@@ -1401,13 +1415,54 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
             phoneNumber: phoneNumber as string,
             isPhoneVerified: true,
           },
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
         });
 
         logger.info('Phone number saved to database and marked as verified', {
           userId,
           phoneNumber: (phoneNumber as string).substring(0, 5) + '***',
-          nowVerified: updatedUser.isPhoneVerified,
+          nowVerified: true, // Since we just set it
         });
+
+        // Send email notification for phone number addition
+        try {
+          const userName = updatedUser.firstName && updatedUser.lastName
+            ? `${updatedUser.firstName} ${updatedUser.lastName}`
+            : updatedUser.firstName || updatedUser.lastName || 'User';
+
+          await sendPhoneNumberAddedEmail(updatedUser.email, userName, phoneNumber as string);
+          logger.info('Phone number addition email sent', { userId, email: updatedUser.email });
+        } catch (emailError) {
+          logger.warn('Failed to send phone number addition email', { userId, error: emailError });
+          // Don't fail the verification if email fails
+        }
+
+        // Send in-app notification for phone verification
+        try {
+          await inngest.send({
+            name: 'notification/send',
+            data: {
+              userId,
+              title: '📱 Phone Number Verified!',
+              message: 'Your phone number has been successfully verified.',
+              description: 'You can now claim your free credits and use additional security features.',
+              actionUrl: '/credits',
+              actionLabel: 'Claim Credits',
+              metadata: {
+                type: 'phone_verification_success',
+                phoneNumber: phoneNumber,
+              },
+            },
+          });
+          logger.info('In-app notification sent for phone verification', { userId });
+        } catch (notificationError) {
+          logger.warn('Failed to send in-app notification for phone verification', { userId, error: notificationError });
+          // Don't fail the verification if notification fails
+        }
 
         // Invalidate ALL related caches including eligibility and user status
         await invalidateUserCaches(userId);
@@ -2013,15 +2068,56 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
     // Update user with phone verification if phone number was stored
     if (phoneNumber) {
       try {
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
           where: { userId },
           data: {
             phoneNumber: phoneNumber as string,
             isPhoneVerified: true,
           },
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
         });
 
         logger.info('User phone number verified and updated in database', { userId, phoneNumber: (phoneNumber as string).substring(0, 3) + '***' });
+
+        // Send email notification for phone number addition
+        try {
+          const userName = updatedUser.firstName && updatedUser.lastName
+            ? `${updatedUser.firstName} ${updatedUser.lastName}`
+            : updatedUser.firstName || updatedUser.lastName || 'User';
+
+          await sendPhoneNumberAddedEmail(updatedUser.email, userName, phoneNumber as string);
+          logger.info('Phone number addition email sent', { userId, email: updatedUser.email });
+        } catch (emailError) {
+          logger.warn('Failed to send phone number addition email', { userId, error: emailError });
+          // Don't fail the verification if email fails
+        }
+
+        // Send in-app notification for phone verification
+        try {
+          await inngest.send({
+            name: 'notification/send',
+            data: {
+              userId,
+              title: '📱 Phone Number Verified!',
+              message: 'Your phone number has been successfully verified.',
+              description: 'You can now claim your free credits and use additional security features.',
+              actionUrl: '/credits',
+              actionLabel: 'Claim Credits',
+              metadata: {
+                type: 'phone_verification_success',
+                phoneNumber: phoneNumber,
+              },
+            },
+          });
+          logger.info('In-app notification sent for phone verification', { userId });
+        } catch (notificationError) {
+          logger.warn('Failed to send in-app notification for phone verification', { userId, error: notificationError });
+          // Don't fail the verification if notification fails
+        }
       } catch (dbError) {
         logger.error('Failed to update user phone verification in database', { userId, error: dbError });
 

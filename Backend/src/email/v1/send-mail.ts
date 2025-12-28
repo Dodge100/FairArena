@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import notificationapi from 'notificationapi-node-server-sdk';
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
@@ -7,9 +8,11 @@ import { accountPermanentDeletionEmailTemplate } from '../templates/accountPerma
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
+import { freeCreditsClaimedEmailTemplate } from '../templates/freeCreditsClaimed.js';
 import { otpEmailTemplate } from '../templates/otp.js';
 import { paymentFailedEmailTemplate } from '../templates/paymentFailed.js';
 import { paymentSuccessEmailTemplate } from '../templates/paymentSuccess.js';
+import { phoneNumberAddedEmailTemplate } from '../templates/phoneNumberAdded.js';
 import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { refundCompletedEmailTemplate } from '../templates/refundCompleted.js';
 import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
@@ -20,6 +23,9 @@ import { weeklyFeedbackEmailTemplate } from '../templates/weekly-feedback.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
+
+// Initialize NotificationAPI
+notificationapi.init(ENV.NOTIFICATIONAPI_CLIENT_ID, ENV.NOTIFICATIONAPI_CLIENT_SECRET);
 
 // Create nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -54,6 +60,8 @@ type DataExportEmailParams = {
   dataSize: string;
 };
 type DataExportErrorEmailParams = { userName: string; errorMessage: string };
+type FreeCreditsClaimedEmailParams = { userName: string; creditsAdded: number; newBalance: number };
+type PhoneNumberAddedEmailParams = { userName: string; phoneNumber: string };
 type PaymentSuccessEmailParams = {
   userName: string;
   planName: string;
@@ -145,6 +153,12 @@ export const emailTemplates = {
   'data-export-error': dataExportErrorEmailTemplate as (
     params: DataExportErrorEmailParams,
   ) => string,
+  'free-credits-claimed': freeCreditsClaimedEmailTemplate as (
+    params: FreeCreditsClaimedEmailParams,
+  ) => string,
+  'phone-number-added': phoneNumberAddedEmailTemplate as (
+    params: PhoneNumberAddedEmailParams,
+  ) => string,
   'payment-success': paymentSuccessEmailTemplate as (params: PaymentSuccessEmailParams) => string,
   'payment-failed': paymentFailedEmailTemplate as (params: PaymentFailedEmailParams) => string,
   'refund-initiated': refundInitiatedEmailTemplate as (
@@ -229,6 +243,22 @@ export function sendEmail(
 export function sendEmail(
   to: string,
   subject: string,
+  templateName: 'free-credits-claimed',
+  params: FreeCreditsClaimedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'phone-number-added',
+  params: PhoneNumberAddedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
   templateName: 'payment-success',
   params: PaymentSuccessEmailParams,
   headers?: Record<string, string>,
@@ -302,6 +332,8 @@ export async function sendEmail(
     | 'account-permanent-deletion'
     | 'data-export'
     | 'data-export-error'
+    | 'free-credits-claimed'
+    | 'phone-number-added'
     | 'payment-success'
     | 'payment-order-created'
     | 'payment-failed'
@@ -320,6 +352,8 @@ export async function sendEmail(
     | AccountPermanentDeletionEmailParams
     | DataExportEmailParams
     | DataExportErrorEmailParams
+    | FreeCreditsClaimedEmailParams
+    | PhoneNumberAddedEmailParams
     | PaymentSuccessEmailParams
     | PaymentFailedEmailParams
     | RefundInitiatedEmailParams
@@ -350,6 +384,10 @@ export async function sendEmail(
     html = emailTemplates['data-export'](params as DataExportEmailParams);
   } else if (templateName === 'data-export-error') {
     html = emailTemplates['data-export-error'](params as DataExportErrorEmailParams);
+  } else if (templateName === 'free-credits-claimed') {
+    html = emailTemplates['free-credits-claimed'](params as FreeCreditsClaimedEmailParams);
+  } else if (templateName === 'phone-number-added') {
+    html = emailTemplates['phone-number-added'](params as PhoneNumberAddedEmailParams);
   } else if (templateName === 'payment-success') {
     html = emailTemplates['payment-success'](params as PaymentSuccessEmailParams);
   } else if (templateName === 'payment-failed') {
@@ -395,6 +433,38 @@ export async function sendEmail(
       logger.info('Email sent successfully via Nodemailer', { messageId: info.messageId });
 
       return info;
+    } else if (ENV.EMAIL_PROVIDER === 'notificationapi') {
+      const emailData: {
+        subject: string;
+        html: string;
+        attachments?: Array<{
+          filename: string;
+          content: string;
+          contentType: string;
+        }>;
+      } = {
+        subject,
+        html,
+      };
+      if (attachments && attachments.length > 0) {
+        emailData.attachments = attachments.map(att => ({
+          filename: att.filename,
+          content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
+          contentType: att.contentType || 'application/octet-stream',
+        }));
+      }
+      const result = await notificationapi.send({
+        type: 'fairarena_emails',
+        to: {
+          id: to,
+          email: to,
+        },
+        email: emailData,
+      });
+
+      logger.info('Email sent successfully via NotificationAPI', { data: result.data });
+
+      return result;
     } else {
       // Default to Resend
       const emailData: {
@@ -649,5 +719,29 @@ export const sendRefundFailedEmail = async (
     refundId,
     failureReason,
     failureDate,
+  });
+};
+
+export const sendFreeCreditsClaimedEmail = async (
+  to: string,
+  userName: string,
+  creditsAdded: number,
+  newBalance: number,
+): Promise<unknown> => {
+  return sendEmail(to, 'Congratulations! Free Credits Claimed - FairArena', 'free-credits-claimed', {
+    userName,
+    creditsAdded,
+    newBalance,
+  });
+};
+
+export const sendPhoneNumberAddedEmail = async (
+  to: string,
+  userName: string,
+  phoneNumber: string,
+): Promise<unknown> => {
+  return sendEmail(to, 'Phone Number Added to Your Account - FairArena', 'phone-number-added', {
+    userName,
+    phoneNumber,
   });
 };
