@@ -37,6 +37,8 @@ import {
   Trash2,
   Trophy,
   Users,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -127,6 +129,7 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
 
   const fetchNotifications = useCallback(
     async (filter?: 'read' | 'unread') => {
@@ -385,6 +388,19 @@ export default function InboxPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="gap-2"
+              >
+                {soundEnabled ? (
+                  <Volume2 className="h-4 w-4" />
+                ) : (
+                  <VolumeX className="h-4 w-4" />
+                )}
+                Sound
+              </Button>
               {unreadCount > 0 && (
                 <Button variant="outline" size="sm" onClick={markAllAsRead}>
                   <CheckCheck className="h-4 w-4 mr-2" />

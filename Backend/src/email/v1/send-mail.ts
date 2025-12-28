@@ -434,32 +434,27 @@ export async function sendEmail(
 
       return info;
     } else if (ENV.EMAIL_PROVIDER === 'notificationapi') {
-      const emailData: {
-        subject: string;
-        html: string;
-        attachments?: Array<{
-          filename: string;
-          content: string;
-          contentType: string;
-        }>;
-      } = {
-        subject,
-        html,
-      };
-      if (attachments && attachments.length > 0) {
-        emailData.attachments = attachments.map(att => ({
-          filename: att.filename,
-          content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
-          contentType: att.contentType || 'application/octet-stream',
-        }));
-      }
       const result = await notificationapi.send({
         type: 'fairarena_emails',
         to: {
           id: to,
           email: to,
         },
-        email: emailData,
+        email: {
+          subject,
+          html,
+        },
+        options: {
+          email: {
+            fromAddress: ENV.FROM_EMAIL_ADDRESS,
+            fromName: 'FairArena',
+            attachments: attachments && attachments.length > 0 ? attachments.map(att => ({
+              filename: att.filename,
+              content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
+              contentType: att.contentType || 'application/octet-stream',
+            })) : undefined,
+          },
+        },
       });
 
       logger.info('Email sent successfully via NotificationAPI', { data: result.data });

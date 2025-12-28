@@ -36,9 +36,30 @@ import {
   Trophy,
   Users,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+interface WindowWithWebkit extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
+
+const playSound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as WindowWithWebkit).webkitAudioContext;
+    const audioContext = new AudioContextClass();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -49,6 +70,14 @@ export function AppSidebar() {
   const { customization } = useSidebarCustomization();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const saved = localStorage.getItem('notificationSoundEnabled');
+  const soundEnabled = saved ? JSON.parse(saved) : false;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const previousUnreadCountRef = useRef(0);
+
+  useEffect(() => {
+    localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));
+  }, [soundEnabled]);
 
   // Fetch unread notification count
   useEffect(() => {
@@ -69,7 +98,15 @@ export function AppSidebar() {
 
         if (response.ok) {
           const data = await response.json();
-          setUnreadCount(data.data.count);
+          const current = data.data.count;
+          setUnreadCount(current);
+          if (!isInitialLoad && soundEnabled && current > previousUnreadCountRef.current) {
+            playSound();
+          }
+          if (isInitialLoad) {
+            setIsInitialLoad(false);
+          }
+          previousUnreadCountRef.current = current;
         }
       } catch (error) {
         console.error('Error fetching unread count:', error);
@@ -82,7 +119,7 @@ export function AppSidebar() {
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
-  }, [getToken, dataSaverSettings, isLoaded]);
+  }, [getToken, dataSaverSettings, isLoaded, isInitialLoad, soundEnabled]);
 
   // Menu items - defined inside component to access unreadCount and customization
   const menuItems = customization.mainItems
