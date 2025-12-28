@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
+import { useSocket } from '@/contexts/SocketContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthState } from '@/lib/auth';
 import {
@@ -70,18 +71,22 @@ export function AppSidebar() {
   const { customization } = useSidebarCustomization();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const saved = localStorage.getItem('notificationSoundEnabled');
-  const soundEnabled = saved ? JSON.parse(saved) : false;
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('notificationSoundEnabled');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const previousUnreadCountRef = useRef(0);
+
+  const { socket } = useSocket();
 
   useEffect(() => {
     localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));
   }, [soundEnabled]);
 
-  // Fetch unread notification count
+  // Fetch initial unread notification count and set up socket listeners
   useEffect(() => {
-    if (!isLoaded || (dataSaverSettings.enabled && dataSaverSettings.disableNotifications)) return; // Skip fetching in data saver mode or when not loaded
+    if (!isLoaded || (dataSaverSettings.enabled && dataSaverSettings.disableNotifications)) return;
 
     const fetchUnreadCount = async () => {
       try {
@@ -113,13 +118,34 @@ export function AppSidebar() {
       }
     };
 
+    // Fetch initial count
     fetchUnreadCount();
 
-    if (!(dataSaverSettings.enabled && dataSaverSettings.disableAutoRefresh)) {
-      const interval = setInterval(fetchUnreadCount, 60000);
-      return () => clearInterval(interval);
+    // Set up socket listeners for real-time updates
+    if (socket) {
+      const handleNewNotification = (data: { count: number }) => {
+        setUnreadCount(prev => {
+          const newCount = prev + data.count;
+          if (soundEnabled && newCount > prev) {
+            playSound();
+          }
+          return newCount;
+        });
+      };
+
+      const handleReadNotification = (data: { count: number }) => {
+        setUnreadCount(prev => Math.max(0, prev + data.count));
+      };
+
+      socket.on('notification:new', handleNewNotification);
+      socket.on('notification:read', handleReadNotification);
+
+      return () => {
+        socket.off('notification:new', handleNewNotification);
+        socket.off('notification:read', handleReadNotification);
+      };
     }
-  }, [getToken, dataSaverSettings, isLoaded, isInitialLoad, soundEnabled]);
+  }, [getToken, dataSaverSettings, isLoaded, isInitialLoad, soundEnabled, socket]);
 
   // Menu items - defined inside component to access unreadCount and customization
   const menuItems = customization.mainItems

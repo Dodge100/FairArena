@@ -123,7 +123,7 @@ model Payment {
 model CreditTransaction {
   id          String                @id @default(cuid())
   userId      String
-  paymentId   String?
+  paymentId   String?               @unique
   amount      Int
   balance     Int
   type        CreditTransactionType
@@ -134,6 +134,7 @@ model CreditTransaction {
   user        User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
+  @@unique([userId, type.INITIAL_ALLOCATION])
   @@index([paymentId])
   @@index([type])
   @@index([createdAt])

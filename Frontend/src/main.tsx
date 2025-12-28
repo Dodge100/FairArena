@@ -11,6 +11,7 @@ import { AIButtonProvider } from './contexts/AIButtonContext.tsx';
 import { CookieConsentProvider } from './contexts/CookieConsentContext.tsx';
 import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import { SidebarCustomizationProvider } from './contexts/SidebarCustomizationContext.tsx';
+import { SocketProvider } from './contexts/SocketContext.tsx';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
 
@@ -47,15 +48,17 @@ createRoot(document.getElementById('root')!).render(
         <DataSaverProvider>
           <SidebarCustomizationProvider>
             <AIButtonProvider>
-              <ClarityManager />
-              <FirebaseAnalyticsManager />
-              <ThemeProvider>
-                <BrowserRouter>
-                  <ErrorBoundary>
-                    <App />
-                  </ErrorBoundary>
-                </BrowserRouter>
-              </ThemeProvider>
+              <SocketProvider>
+                <ClarityManager />
+                <FirebaseAnalyticsManager />
+                <ThemeProvider>
+                  <BrowserRouter>
+                    <ErrorBoundary>
+                      <App />
+                    </ErrorBoundary>
+                  </BrowserRouter>
+                </ThemeProvider>
+              </SocketProvider>
             </AIButtonProvider>
           </SidebarCustomizationProvider>
         </DataSaverProvider>

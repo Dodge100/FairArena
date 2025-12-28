@@ -129,7 +129,10 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('notificationSoundEnabled');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const fetchNotifications = useCallback(
     async (filter?: 'read' | 'unread') => {
@@ -178,6 +181,10 @@ export default function InboxPage() {
     fetchNotifications();
     fetchUnreadCount();
   }, [fetchNotifications, fetchUnreadCount]);
+
+  useEffect(() => {
+    localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (activeTab === 'all') {

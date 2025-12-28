@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis } from '../../config/redis.js';
+import { getIo } from '../../config/socket.js';
 import { NotificationType } from '../../generated/enums.js';
 import * as Prisma from '../../generated/internal/prismaNamespace.js';
 import logger from '../../utils/logger.js';
@@ -139,6 +140,18 @@ class NotificationService {
     // Invalidate cache
     await this.invalidateUserCache(userId);
 
+    // Emit socket event if notification was marked as read
+    if (result.count > 0) {
+      try {
+        const io = getIo();
+        if (io) {
+          io.to(userId).emit('notification:read', { count: -1 });
+        }
+      } catch (error) {
+        logger.warn('Failed to emit notification read socket event', { error, userId });
+      }
+    }
+
     return result;
   }
 
@@ -161,6 +174,18 @@ class NotificationService {
 
     // Invalidate cache
     await this.invalidateUserCache(userId);
+
+    // Emit socket event if notifications were marked as read
+    if (result.count > 0) {
+      try {
+        const io = getIo();
+        if (io) {
+          io.to(userId).emit('notification:read', { count: -result.count });
+        }
+      } catch (error) {
+        logger.warn('Failed to emit notification read socket event', { error, userId });
+      }
+    }
 
     return result;
   }
@@ -326,6 +351,16 @@ class NotificationService {
 
     // Invalidate cache
     await this.invalidateUserCache(data.userId);
+
+    // Emit socket event to notify frontend
+    try {
+      const io = getIo();
+      if (io) {
+        io.to(data.userId).emit('notification:new', { count: 1 });
+      }
+    } catch (error) {
+      logger.warn('Failed to emit notification socket event', { error, userId: data.userId });
+    }
 
     return notification;
   }

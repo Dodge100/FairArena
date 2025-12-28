@@ -11,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import { ENV } from './config/env.js';
 import { getReadOnlyPrisma } from './config/read-only.database.js';
 import { redis } from './config/redis.js';
+import { initSocket } from './config/socket.js';
 import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
@@ -21,6 +22,7 @@ import {
     createTeamFunction,
     createUserSettingsFunction,
     creditsSendSmsOtp,
+    creditsSendVoiceOtp,
     dailyCleanup,
     deleteAllReadNotifications,
     deleteNotifications,
@@ -57,7 +59,6 @@ import {
     updateSettingsFunction,
     updateTeamFunction,
     updateUser,
-    creditsSendVoiceOtp,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -403,6 +404,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
 });
+
+initSocket(server);
