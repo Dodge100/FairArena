@@ -20,7 +20,7 @@ services:
     container_name: "SRH"
     restart: unless-stopped
     env_file:
-      - ./Backend/.env.srh
+      - ./ShellScripts/.env.srh
     depends_on:
       redis:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
           --sdk-url=$$SERVE_URL \
           --port=8288
     env_file:
-      - ./Backend/.env.inngest
+      - ./ShellScripts/.env.inngest
     depends_on:
       redis:
         condition: service_healthy
@@ -80,7 +80,7 @@ services:
     volumes:
       - credential-validator-data:/app/data
     env_file:
-      - ./Backend/.env.credential-validator
+      - ./ShellScripts/.env.credential-validator
     networks:
       - backend-net
     healthcheck:
@@ -88,7 +88,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
+      start_period: 40s
 
   backend:
     build: ./Backend
@@ -97,14 +97,14 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     env_file:
-      - ./Backend/.env
+      - ./Backend/ShellScripts/.env
     depends_on:
       srh:
         condition: service_healthy
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -H '$$HEALTHZ_HEADER_NAME: $$HEALTHZ_HEADER_VALUE' http://localhost:3000/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f -H \"${HEALTHZ_HEADER_NAME}: ${HEALTHZ_HEADER_VALUE}\" http://localhost:3000/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -134,7 +134,7 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
-      - ./Backend/prometheus-config.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-config.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     healthcheck:
       test:

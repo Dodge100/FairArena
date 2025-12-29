@@ -72,51 +72,45 @@ git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH" || {
 
 # Setup environment variables with error checking
 log "${GREEN}[2/8] Setting up Backend environment...${NC}"
-if [ -f "Backend/envs.sh" ]; then
-    cd Backend
+if [ -f "../Backend/ShellScripts/envs.sh" ]; then
+    cd ../Backend/ShellScripts
     if ! bash envs.sh 2>&1; then
         log "${RED}Failed to setup Backend environment${NC}"
         exit 1
     fi
-    cd ..
+    cd ../../ShellScripts
 else
     log "Backend envs.sh not found, skipping"
 fi
 
 log "${GREEN}[3/8] Setting up Inngest environment...${NC}"
-if [ -f "Backend/envs.inngest.sh" ]; then
-    cd Backend
+if [ -f "./envs.inngest.sh" ]; then
     if ! bash envs.inngest.sh 2>&1; then
         log "${RED}Failed to setup Inngest environment${NC}"
         exit 1
     fi
-    cd ..
 else
-    log "Backend envs.inngest.sh not found, skipping"
+    log "envs.inngest.sh not found, skipping"
 fi
 
 log "${GREEN}[4/8] Setting up SRH environment...${NC}"
-if [ -f "Backend/envs.srh.sh" ]; then
-    cd Backend
+if [ -f "./envs.srh.sh" ]; then
     if ! bash envs.srh.sh 2>&1; then
         log "${RED}Failed to setup SRH environment${NC}"
         exit 1
     fi
-    cd ..
 else
-    log "Backend envs.srh.sh not found, skipping"
+    log "envs.srh.sh not found, skipping"
 fi
 
 log "${GREEN}[5/8] Setting up Credential Validator environment...${NC}"
-if [ -f "Backend/envs.credential-validator.sh" ]; then
-    cd Backend
+if [ -f "./envs.credential-validator.sh" ]; then
     if ! bash envs.credential-validator.sh 2>&1; then
         log "${RED}Failed to setup Credential Validator environment${NC}"
         exit 1
     fi
-    cd ..
 else
-    log "Backend envs.credential-validator.sh not found, skipping"
+    log "envs.credential-validator.sh not found, skipping"
 fi
 
 # log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
@@ -133,6 +127,7 @@ fi
 
 # Build and update containers
 log "${GREEN}[6/8] Pulling latest images...${NC}"
+cd ..
 docker compose -f ${COMPOSE_FILE} pull || {
     log "${RED}Failed to pull images${NC}"
     exit 1
