@@ -120,33 +120,60 @@ export const performCleanup = async () => {
       select: { userId: true, email: true },
     });
 
-    // Send permanent deletion emails
-    for (const user of usersToDelete) {
-      try {
-        inngest.send({
-          name: 'email.send',
-          data: {
-            to: user.email,
-            subject: 'Your Account Has Been Permanently Deleted',
-            template: 'account-permanent-deletion',
-            templateData: {},
+    let deletedUsers = { count: 0 };
+
+    try {
+      deletedUsers = await prisma.user.deleteMany({
+        where: {
+          isDeleted: true,
+          deletedAt: {
+            lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
           },
-        });
-      } catch (emailError: unknown) {
-        logger.error(`Failed to send permanent deletion email to ${user.email}:`, {
-          error: emailError,
-        });
+        },
+      });
+
+      // Send permanent deletion emails
+      for (const user of usersToDelete) {
+        try {
+          inngest.send({
+            name: 'email.send',
+            data: {
+              to: user.email,
+              subject: 'Your Account Has Been Permanently Deleted',
+              template: 'account-permanent-deletion',
+              templateData: {},
+            },
+          });
+        } catch (emailError: unknown) {
+          logger.error(`Failed to send permanent deletion email to ${user.email}:`, {
+            error: emailError,
+          });
+        }
+      }
+    } catch (deletionError: unknown) {
+      logger.error('Failed to permanently delete users:', { error: deletionError });
+
+      // Send failure emails to users
+      for (const user of usersToDelete) {
+        try {
+          inngest.send({
+            name: 'email.send',
+            data: {
+              to: user.email,
+              subject: 'Account Deletion Failed',
+              template: 'account-deletion-failed',
+              templateData: {
+                message: 'We were unable to permanently delete your account data. Please contact support for assistance.',
+              },
+            },
+          });
+        } catch (emailError: unknown) {
+          logger.error(`Failed to send deletion failure email to ${user.email}:`, {
+            error: emailError,
+          });
+        }
       }
     }
-
-    const deletedUsers = await prisma.user.deleteMany({
-      where: {
-        isDeleted: true,
-        deletedAt: {
-          lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-        },
-      },
-    });
 
     const deletedNotifications = await prisma.notification.deleteMany({
       where: {

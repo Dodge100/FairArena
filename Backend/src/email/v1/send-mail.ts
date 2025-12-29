@@ -3,6 +3,7 @@ import notificationapi from 'notificationapi-node-server-sdk';
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
+import { accountDeletionFailedEmailTemplate } from '../templates/accountDeletionFailed.js';
 import { accountDeletionWarningEmailTemplate } from '../templates/accountDeletionWarning.js';
 import { accountPermanentDeletionEmailTemplate } from '../templates/accountPermanentDeletion.js';
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
@@ -52,6 +53,7 @@ type OtpEmailParams = {
 };
 type PlatformInviteEmailParams = { inviterName: string };
 type AccountDeletionWarningEmailParams = { recoveryInstructions: string; deadline: string };
+type AccountDeletionFailedEmailParams = { message: string };
 type AccountRecoveryEmailParams = { userName?: string };
 type AccountPermanentDeletionEmailParams = {};
 type DataExportEmailParams = {
@@ -142,6 +144,9 @@ export const emailTemplates = {
   platformInvite: platformInviteEmailTemplate as (params: PlatformInviteEmailParams) => string,
   'account-deletion-warning': accountDeletionWarningEmailTemplate as (
     params: AccountDeletionWarningEmailParams,
+  ) => string,
+  'account-deletion-failed': accountDeletionFailedEmailTemplate as (
+    params: AccountDeletionFailedEmailParams,
   ) => string,
   'account-recovery': accountRecoveryEmailTemplate as (
     params: AccountRecoveryEmailParams,
@@ -320,6 +325,14 @@ export function sendEmail(
   headers?: Record<string, string>,
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown>;
+export function sendEmail(
+  to: string,
+  subject: string,
+  templateName: 'account-deletion-failed',
+  params: AccountDeletionFailedEmailParams,
+  headers?: Record<string, string>,
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
+): Promise<unknown>;
 export async function sendEmail(
   to: string,
   subject: string,
@@ -328,6 +341,7 @@ export async function sendEmail(
     | 'otp'
     | 'platformInvite'
     | 'account-deletion-warning'
+    | 'account-deletion-failed'
     | 'account-recovery'
     | 'account-permanent-deletion'
     | 'data-export'
@@ -348,6 +362,7 @@ export async function sendEmail(
     | OtpEmailParams
     | PlatformInviteEmailParams
     | AccountDeletionWarningEmailParams
+    | AccountDeletionFailedEmailParams
     | AccountRecoveryEmailParams
     | AccountPermanentDeletionEmailParams
     | DataExportEmailParams
@@ -374,6 +389,8 @@ export async function sendEmail(
     html = emailTemplates.platformInvite(params as PlatformInviteEmailParams);
   } else if (templateName === 'account-deletion-warning') {
     html = emailTemplates['account-deletion-warning'](params as AccountDeletionWarningEmailParams);
+  } else if (templateName === 'account-deletion-failed') {
+    html = emailTemplates['account-deletion-failed'](params as AccountDeletionFailedEmailParams);
   } else if (templateName === 'account-recovery') {
     html = emailTemplates['account-recovery'](params as AccountRecoveryEmailParams);
   } else if (templateName === 'account-permanent-deletion') {
@@ -553,6 +570,18 @@ export const sendAccountPermanentDeletionEmail = async (to: string): Promise<unk
     'Your Account Has Been Permanently Deleted',
     'account-permanent-deletion',
     {},
+  );
+};
+
+export const sendAccountDeletionFailedEmail = async (
+  to: string,
+  message: string,
+): Promise<unknown> => {
+  return sendEmail(
+    to,
+    'Account Deletion Failed',
+    'account-deletion-failed',
+    { message },
   );
 };
 
