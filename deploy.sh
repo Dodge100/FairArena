@@ -107,6 +107,18 @@ else
     log "Backend envs.srh.sh not found, skipping"
 fi
 
+log "${GREEN}[5/8] Setting up Credential Validator environment...${NC}"
+if [ -f "Backend/envs.credential-validator.sh" ]; then
+    cd Backend
+    if ! bash envs.credential-validator.sh 2>&1; then
+        log "${RED}Failed to setup Credential Validator environment${NC}"
+        exit 1
+    fi
+    cd ..
+else
+    log "Backend envs.credential-validator.sh not found, skipping"
+fi
+
 # log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
 # if [ -f "Frontend/envs.sh" ]; then
 #     cd Frontend

@@ -71,6 +71,25 @@ services:
       retries: 3
       start_period: 120s
 
+  credential-validator:
+    image: sakshamgoel1107/credential-validator:latest
+    container_name: "credential-validator"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3002"
+    volumes:
+      - credential-validator-data:/app/data
+    env_file:
+      - ./Backend/.env.credential-validator
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
   backend:
     build: ./Backend
     container_name: "Backend"
@@ -160,6 +179,7 @@ services:
 volumes:
   redis-data:
   prometheus-data:
+  credential-validator-data:
 
 networks:
   backend-net:
