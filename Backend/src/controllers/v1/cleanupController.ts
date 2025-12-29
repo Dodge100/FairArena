@@ -194,16 +194,6 @@ export const performCleanup = async () => {
       }
     }
 
-    // Delete old cancelled payments
-    const deletedCancelledPayments = await prisma.payment.deleteMany({
-      where: {
-        status: 'CANCELLED',
-        createdAt: {
-          lt: ninetyDaysAgo,
-        },
-      },
-    });
-
     const result = {
       message: 'Cleanup completed',
       deletedLogs: deletedLogs.count,
@@ -211,7 +201,6 @@ export const performCleanup = async () => {
       deletedNotifications: deletedNotifications.count,
       warningEmailsSent,
       cancelledPayments,
-      deletedCancelledPayments: deletedCancelledPayments.count,
     };
 
     // Send success heartbeat
