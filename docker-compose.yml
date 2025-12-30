@@ -3,7 +3,7 @@ services:
     image: redis:7-alpine
     container_name: "Redis"
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --logfile /data/redis-server.log
     volumes:
       - redis-data:/data
     networks:
@@ -14,6 +14,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: "otel-collector"
+    command:
+      - "--config=/etc/otel/redis-metrics-collection-config.yaml"
+      - "--config=/etc/otel/redis-logs-collection-config.yaml"
+    volumes:
+      - ./redis-metrics-collection-config.yaml:/etc/otel/redis-metrics-collection-config.yaml
+      - ./redis-logs-collection-config.yaml:/etc/otel/redis-logs-collection-config.yaml
+      - redis-data:/var/log/redis
+    env_file:
+      - ./ShellScripts/.env.otel
+    networks:
+      - backend-net
+    restart: unless-stopped
 
   srh:
     image: hiett/serverless-redis-http:latest # ✅ Upstash-compatible proxy
@@ -104,7 +120,7 @@ services:
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -H \"${HEALTHZ_HEADER_NAME}: ${HEALTHZ_HEADER_VALUE}\" http://localhost:3000/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f -H \"$${HEALTHZ_HEADER_NAME}: $${HEALTHZ_HEADER_VALUE}\" http://localhost:3000/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -162,15 +178,7 @@ services:
     networks:
       - backend-net
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8080/healthz",
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
