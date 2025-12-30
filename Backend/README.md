@@ -1,333 +1,461 @@
-# FairArena Backend
+<p align="center">
+  <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" width="120" height="120">
+</p>
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-[![Express](https://img.shields.io/badge/Express-5.0+-black.svg)](https://expressjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.0+-orange.svg)](https://www.prisma.io/)
-[![Inngest](https://img.shields.io/badge/Inngest-3.0+-purple.svg)](https://www.inngest.com/)
-[![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+<h1 align="center">FairArena Backend</h1>
 
-Express API server with TypeScript, security middleware, and event-driven architecture.
+<p align="center">
+  <strong>Production-grade REST API powering the FairArena platform</strong>
+</p>
 
-## Features
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#api-reference">API Reference</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#deployment">Deployment</a> •
+  <a href="#documentation">Documentation</a>
+</p>
 
-- 🔒 **Arcjet Security**: Rate limiting, bot detection, DDoS protection
-- 🛡️ **Security Headers**: Helmet, HPP, CORS protection
-- 📊 **Monitoring**: Prometheus metrics with Grafana dashboards
-- ⚡ **Hot Reload**: nodemon + tsx for development
-- 🎯 **Event-Driven**: Inngest for reliable background processing
-- 📝 **TypeScript**: Strict mode with full type safety
-- 🐳 **Docker Ready**: Containerized deployment
-- 🔄 **Database**: PostgreSQL with Prisma ORM
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-20_LTS-339933?logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Express-5.2-000000?logo=express&logoColor=white" alt="Express">
+  <img src="https://img.shields.io/badge/Prisma-7.2-2D3748?logo=prisma&logoColor=white" alt="Prisma">
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis">
+</p>
 
-## Quick Start
+<p align="center">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/OpenTelemetry-Enabled-7B36ED?logo=opentelemetry&logoColor=white" alt="OpenTelemetry">
+  <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
+</p>
+
+---
+
+## 📖 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Architecture](#-architecture)
+- [API Reference](#-api-reference)
+- [Technology Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [Configuration](#-configuration)
+- [Scripts](#-scripts)
+- [Deployment](#-deployment)
+- [Documentation](#-documentation)
+- [Author](#-author)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+| Requirement | Version | Purpose |
+|-------------|---------|---------|
+| Node.js | 20 LTS+ | JavaScript runtime |
+| pnpm | 8.x+ | Package manager |
+| PostgreSQL | 15+ | Primary database |
+| Redis | 7+ | Caching & rate limiting |
+
+### Local Development
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 pnpm install
 
-# Configure environment
+# 2. Configure environment
 cp .env.example .env
-# Edit .env with your values
+# Edit .env with your configuration (see Configuration section)
 
-# Start development server
-pnpm run dev
+# 3. Set up database
+pnpm db:generate      # Generate Prisma client
+pnpm db:migrate       # Run migrations
+pnpm db:seed          # (Optional) Seed with sample data
 
-# In another terminal, start Inngest CLI
-pnpm run dev:inngest
+# 4. Start development servers
+pnpm dev              # API Server → http://localhost:3000
+pnpm dev:inngest      # Background Jobs → http://localhost:8288
 ```
 
-## Development Workflow
-
-### 1. Start the Backend Server
+### Docker Development
 
 ```bash
-pnpm run dev
-```
-
-Server runs on `http://localhost:3000`
-
-### 2. Start Inngest CLI (in separate terminal)
-
-```bash
-pnpm run dev:inngest
-```
-
-This provides the local Inngest dashboard at `http://localhost:8288`
-
-### 3. Access Services
-
-- **API**: http://localhost:3000
-- **Inngest Dashboard**: http://localhost:8288
-- **Prometheus**: http://localhost:9090 (with Docker)
-- **Grafana**: http://localhost:3001 (with Docker)
-
-## Environment Variables
-
-See `.env.example` for all required variables:
-
-- `DATABASE_URL`: PostgreSQL connection string
-- `CLERK_SECRET_KEY`: Clerk authentication
-- `CLERK_WEBHOOK_SECRET`: Webhook signature verification
-- `INNGEST_SIGNING_KEY`: Inngest function signing
-- `INNGEST_EVENT_KEY`: Inngest event publishing
-- `ARCJET_KEY`: Security service key
-
-## Architecture
-
-### Event-Driven User Sync
-
-The backend uses Inngest for reliable event processing:
-
-```
-Clerk Webhook → Express Route → Inngest Event → Background Function → Database
-```
-
-#### Inngest Functions
-
-- `userSync`: Handles `user.created` events
-- `userUpdate`: Handles `user.updated` events
-
-#### Webhook Security
-
-- Svix signature verification
-- Raw body parsing for signature validation
-- Rate limiting (100 requests/15min per IP)
-
-## Docker
-
-### Start Backend and Prometheus
-
-```bash
-# Start the backend server and Prometheus monitoring
+# From project root
 docker compose up -d
 
-# Backend will be available at http://localhost:3000
-# Prometheus will be available at http://localhost:9090
+# Verify services
+curl http://localhost:3000/healthz
+docker compose logs -f backend
 ```
 
-### Grafana Setup
+### Development URLs
 
-Run Grafana using Docker:
+| Service | URL | Description |
+|---------|-----|-------------|
+| 🌐 **API Server** | http://localhost:3000 | Main REST API |
+| 📖 **Swagger Docs** | http://localhost:3000/api-docs | Interactive API documentation |
+| ⚡ **Inngest Dashboard** | http://localhost:8288 | Background job monitoring |
+| 📊 **Prometheus** | http://localhost:9090 | Metrics dashboard |
+| 🗄️ **Prisma Studio** | http://localhost:5555 | Database GUI (`pnpm db:studio`) |
+
+---
+
+## 🏗 Architecture
+
+<p align="center">
+  <img src="https://fairarena.blob.core.windows.net/fairarena/FairArena-Design.png" alt="FairArena System Architecture" width="100%">
+</p>
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FairArena Backend                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
+│  │   Cloudflare │───▶│    Caddy     │───▶│   Express    │                  │
+│  │   WAF + CDN  │    │    Proxy     │    │    Server    │                  │
+│  └──────────────┘    └──────────────┘    └──────┬───────┘                  │
+│                                                  │                          │
+│         ┌───────────────────┬───────────────────┼───────────────────┐      │
+│         ▼                   ▼                   ▼                   ▼      │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────┐ │
+│  │   Inngest    │    │    Redis     │    │  PostgreSQL  │    │ External │ │
+│  │   (Events)   │    │   (Cache)    │    │  (Primary +  │    │   APIs   │ │
+│  │              │    │              │    │   Replicas)  │    │          │ │
+│  └──────────────┘    └──────────────┘    └──────────────┘    └──────────┘ │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Highlights
+
+| Metric | Target | Description |
+|--------|--------|-------------|
+| **Availability** | 99.9% | Health checks + auto-recovery |
+| **P99 Latency** | <200ms | Redis caching + read replicas |
+| **Throughput** | 1000 req/min | Arcjet rate limiting |
+| **Background Jobs** | 34+ functions | Event-driven with Inngest |
+
+---
+
+## 📡 API Reference
+
+### Base URLs
+
+| Environment | URL |
+|-------------|-----|
+| **Production** | `https://api.fairarena.app/api/v1` |
+| **Development** | `http://localhost:3000/api/v1` |
+
+### Authentication
+
+All authenticated endpoints require a Clerk JWT token:
+
+```http
+Authorization: Bearer <clerk_jwt_token>
+```
+
+### Endpoint Summary
+
+| Category | Endpoints | Auth | Description |
+|----------|:---------:|:----:|-------------|
+| **Profile** | 5 | ✅ | User profile management |
+| **Credits** | 8 | ✅ | Credit balance & OTP verification |
+| **Account Settings** | 5 | ✅ | Email verification, data export |
+| **Organizations** | 8 | ✅ | Organization CRUD & management |
+| **Teams** | 7 | ✅ | Team management |
+| **Team Invitations** | 7 | Mixed | Invite flow (accept/decline public) |
+| **AI Assistant** | 3 | ✅ | Streaming & non-streaming chat |
+| **Notifications** | 8 | ✅ | Real-time notification system |
+| **Stars** | 4 | Mixed | Profile starring |
+| **Payments** | 3 | ✅ | Razorpay integration |
+| **Plans** | 2 | ❌ | Public pricing plans |
+| **Settings** | 3 | ✅ | User preferences |
+| **Reports** | 2 | ✅ | Content reporting |
+| **Feedback** | 2 | ❌ | Public feedback submission |
+| **Newsletter** | 2 | ❌ | Email subscriptions |
+| **Support** | 2 | Mixed | Support tickets |
+| **Health** | 1 | ❌ | Service health check |
+| | **70+** | | **Total Endpoints** |
+
+### Postman Collection
+
+Complete API testing collection available in `postman/`:
 
 ```bash
-docker run -d -p 3001:3000 --name=grafana grafana/grafana-oss
+# Files included:
+postman/
+├── FairArena_API.postman_collection.json     # 70+ endpoints with examples
+├── FairArena_API.postman_environment.json    # Development variables
+├── FairArena_API_Production.postman_environment.json
+└── README.md                                  # Complete endpoint reference
 ```
 
-Grafana will be available at `http://localhost:3001` (default login: admin/admin).
+**Quick Setup:**
 
-### Run Backend Only (Dockerfile)
+1. Import `FairArena_API.postman_collection.json` in Postman
+2. Import appropriate environment file
+3. Set `clerkToken` from browser cookies (`__session`)
 
-If you only want to run the backend without Prometheus:
+---
+
+## 🛠 Technology Stack
+
+### Core Technologies
+
+| Layer | Technology | Version | Purpose |
+|-------|------------|:-------:|---------|
+| **Runtime** | Node.js | 20 LTS | JavaScript runtime |
+| **Language** | TypeScript | 5.9 | Type-safe development |
+| **Framework** | Express | 5.2 | HTTP server |
+| **ORM** | Prisma | 7.2 | Database access |
+| **Database** | PostgreSQL | 15+ | Primary data store |
+| **Cache** | Redis (Upstash) | 7 | Caching & rate limits |
+
+### Integrations
+
+| Service | Technology | Purpose |
+|---------|------------|---------|
+| **Authentication** | Clerk | JWT-based auth with webhooks |
+| **Background Jobs** | Inngest | Event-driven job processing |
+| **Payments** | Razorpay | Payment gateway (INR) |
+| **Email** | Resend | Transactional emails |
+| **AI** | Google Gemini + LangChain | AI assistant with tools |
+| **Security** | Arcjet + Helmet | Rate limiting & headers |
+| **Observability** | OpenTelemetry + SigNoz | Tracing & metrics |
+
+---
+
+## 📁 Project Structure
+
+```
+Backend/
+├── 📂 docs/                      # Comprehensive documentation
+│   ├── SYSTEM_ARCHITECTURE.md   # Architecture diagrams
+│   ├── DATA_FLOW.md             # Request lifecycle
+│   ├── API_REFERENCE.md         # Full API docs
+│   ├── DATABASE_DESIGN.md       # Schema & ERD
+│   └── INFRASTRUCTURE.md        # Deployment guide
+│
+├── 📂 postman/                   # API testing
+│   ├── FairArena_API.postman_collection.json
+│   └── README.md
+│
+├── 📂 prisma/                    # Database
+│   ├── schema.prisma            # Database schema (30+ models)
+│   ├── migrations/              # Migration history
+│   └── seed.ts                  # Seed data
+│
+└── 📂 src/
+    ├── 📂 config/               # Configuration
+    │   ├── arcjet.ts            # Rate limiting
+    │   ├── database.ts          # Prisma client
+    │   ├── env.ts               # Environment validation (Zod)
+    │   ├── razorpay.ts          # Payment config
+    │   ├── redis.ts             # Cache config
+    │   └── swagger.ts           # OpenAPI config
+    │
+    ├── 📂 controllers/v1/       # Request handlers
+    │   ├── organization/        # 8 org controllers
+    │   ├── team/                # 7 team controllers
+    │   ├── creditsController.ts
+    │   ├── paymentsController.ts
+    │   └── ... (15+ controllers)
+    │
+    ├── 📂 email/                # Email system
+    │   └── templates/           # 19 React Email templates
+    │
+    ├── 📂 inngest/v1/           # Background jobs
+    │   ├── client.ts            # Inngest client config
+    │   ├── payment-webhook.ts   # Payment processing
+    │   ├── userSync.ts          # Clerk user sync
+    │   └── ... (34+ functions)
+    │
+    ├── 📂 middleware/           # Express middleware
+    │   ├── arcjet.middleware.ts
+    │   ├── auth.middleware.ts
+    │   ├── organizationPermissions.middleware.ts
+    │   └── team-permission.middleware.ts
+    │
+    ├── 📂 routes/v1/            # API routes (17 modules)
+    ├── 📂 services/v1/          # Business logic
+    ├── 📂 utils/                # Utilities
+    │
+    ├── index.ts                 # Application entry
+    ├── instrument.ts            # OpenTelemetry setup
+    └── tracing.ts               # Tracing configuration
+```
+
+---
+
+## ⚙ Configuration
+
+### Required Environment Variables
+
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `DATABASE_URL` | [Neon](https://neon.tech) / [Supabase](https://supabase.com) | PostgreSQL connection |
+| `CLERK_SECRET_KEY` | [Clerk Dashboard](https://dashboard.clerk.com) | Auth secret (`sk_...`) |
+| `CLERK_WEBHOOK_SECRET` | Clerk Dashboard | Webhook verification |
+| `INNGEST_SIGNING_KEY` | [Inngest Dashboard](https://app.inngest.com) | Function signing |
+| `INNGEST_EVENT_KEY` | Inngest Dashboard | Event publishing |
+| `UPSTASH_REDIS_REST_URL` | [Upstash Console](https://console.upstash.com) | Redis endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Console | Redis auth |
+| `RESEND_API_KEY` | [Resend Dashboard](https://resend.com) | Email service (`re_...`) |
+| `RAZORPAY_KEY_ID` | [Razorpay Dashboard](https://dashboard.razorpay.com) | Payment key (`rzp_...`) |
+| `RAZORPAY_KEY_SECRET` | Razorpay Dashboard | Payment secret |
+| `GOOGLE_GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com) | AI service |
+
+### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Server port |
+| `NODE_ENV` | `development` | Environment mode |
+| `MAINTENANCE_MODE` | `false` | Enable maintenance page |
+| `PAYMENTS_ENABLED` | `false` | Enable payment processing |
+| `CREDENTIAL_VALIDATOR_URL` | - | Phone validation service |
+
+---
+
+## 📜 Scripts
+
+### Development
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start dev server with hot reload |
+| `pnpm dev:inngest` | Start Inngest local dev server |
+| `pnpm build` | Compile TypeScript |
+| `pnpm start` | Run production build |
+
+### Code Quality
+
+| Command | Description |
+|---------|-------------|
+| `pnpm typecheck` | Type check without emit |
+| `pnpm lint` | Run ESLint |
+| `pnpm format` | Format with Prettier |
+| `pnpm format:check` | Check formatting |
+
+### Database
+
+| Command | Description |
+|---------|-------------|
+| `pnpm db:generate` | Generate Prisma client |
+| `pnpm db:migrate` | Run migrations |
+| `pnpm db:studio` | Open Prisma Studio |
+| `pnpm db:seed` | Seed database |
+| `pnpm db:reset` | Reset database (⚠️ destructive) |
+
+### Utilities
+
+| Command | Description |
+|---------|-------------|
+| `pnpm script:clear-redis` | Clear Redis cache |
+| `pnpm script:sync-env-to-db` | Sync env vars to database |
+
+---
+
+## 🚢 Deployment
+
+### Docker Build
 
 ```bash
-# Build the Docker image
-docker build -t backend .
+# Build image
+docker build -t fairarena-backend .
 
-# Run the container
-docker run -p 3000:3000 --env-file .env backend
+# Run container
+docker run -p 3000:3000 --env-file .env fairarena-backend
 ```
 
-The backend will be available at `http://localhost:3000`. Note: Prometheus metrics will still be available at `/metrics`, but no external Prometheus server will be running.
+### Production Checklist
 
-## Deployment
-
-### Deploy to Render
-
-1. Sign up/login to [Render](https://render.com).
-2. Create a new **Web Service** and connect your GitHub repository.
-3. Choose **Docker** as the runtime.
-4. Render will automatically build the Docker image using the `Dockerfile` (runs `docker build`) and start the container (runs `docker run` with the specified `CMD`).
-5. Set the following environment variables in Render's dashboard:
-   - `ARCJET_KEY`: Your Arcjet API key
-   - `NODE_ENV`: `production`
-   - Any other variables from your `.env` file
-6. Deploy! Your app will be accessible at the URL provided by Render (e.g., `https://your-app.onrender.com`).
-
-## Production Deployment
-
-### Inngest Cloud Setup
-
-For production, deploy functions to Inngest Cloud:
-
-1. **Connect Repository**: Link your GitHub repo to Inngest Cloud
-2. **Automatic Deployment**: Functions deploy automatically on git push
-3. **Environment Variables**: Set production keys in Inngest dashboard
-4. **Monitoring**: Use Inngest dashboard for function metrics
-
-### Key Differences: Local vs Production
-
-| Feature          | Local (CLI)     | Production (Cloud) |
-| ---------------- | --------------- | ------------------ |
-| **Availability** | Your machine    | 99.9% SLA          |
-| **Scaling**      | Single instance | Auto-scaling       |
-| **Persistence**  | Local only      | Durable storage    |
-| **Monitoring**   | Basic logs      | Advanced metrics   |
-| **Cost**         | Free            | Pay per execution  |
-
-### Environment Variables for Production
-
-Ensure these are set in your production environment:
-
-```env
-INNGEST_SIGNING_KEY=sign_your_prod_key
-INNGEST_EVENT_KEY=event_your_prod_key
-NODE_ENV=production
-```
-
-## Contributing
-
-## Environment Variables
-
-```env
-PORT=3000
-ARCJET_KEY=your_arcjet_key_here
-JWT_SECRET=your_jwt_secret_here
-NODE_ENV=development
-```
-
-## Scripts
-
-- `pnpm run dev` - Development server with hot reload
-- `pnpm run dev:inngest` - Start Inngest CLI for local development
-- `pnpm run build` - Compile TypeScript to JavaScript
-- `pnpm run typecheck` - Type check without emitting
-- `pnpm run start` - Run production build
-- `pnpm run lint` - Lint code with ESLint
-- `pnpm run format` - Format code with Prettier
-- `pnpm run format:check` - Check code formatting
-
-## API Endpoints
+- [ ] Set `NODE_ENV=production`
+- [ ] Configure secrets via Azure Key Vault
+- [ ] Enable database read replicas
+- [ ] Configure Inngest Cloud keys
+- [ ] Enable Arcjet production mode
+- [ ] Set `PAYMENTS_ENABLED=true`
+- [ ] Configure SigNoz for observability
+- [ ] Set up Cloudflare WAF rules
+- [ ] Verify health check endpoint
 
 ### Health Check
 
-```
-GET /healthz
-```
-
-### Metrics
-
-```
-GET /metrics
-```
-
-Returns Prometheus metrics
-
-## Project Structure
-
-```
-src/
-├── config/
-│   ├── arcjet.ts          # Arcjet security configuration
-│   ├── database.ts        # Prisma database client
-│   └── env.ts             # Environment variables validation
-├── controllers/
-│   └── webhookController.ts  # Clerk webhook handlers
-├── inngest/
-│   ├── client.ts          # Inngest client configuration
-│   ├── functions.ts       # Legacy functions (deprecated)
-│   ├── index.ts           # Function exports
-│   ├── userOperations.ts  # Shared user operations
-│   ├── userSync.ts        # User creation handler
-│   └── userUpdate.ts      # User update handler
-├── middleware/
-│   └── arcjet.middleware.ts  # Security middleware
-├── routes/
-│   └── webhook.ts         # Webhook routes with signature verification
-└── index.ts               # Application entry point
-```
-
-## Security Features
-
-- Rate limiting (60 requests/minute)
-- Bot detection and blocking
-- Shield protection against common attacks
-- HTTP security headers (Helmet)
-- HPP protection
-- CORS configuration
-
-## Troubleshooting
-
-### Inngest CLI Setup
-
-The Inngest CLI provides a local development environment for testing functions:
-
 ```bash
-# Install CLI globally (optional)
-npm install -g inngest-cli
-
-# Or run with npx
-pnpm run dev:inngest
+curl -H "X-Health-Check: ${HEALTHZ_HEADER_VALUE}" \
+  https://api.fairarena.app/healthz
 ```
 
-#### CLI Features
+---
 
-- **Local Dashboard**: http://localhost:8288
-- **Function Testing**: Trigger and debug functions
-- **Event Replay**: Re-run past events
-- **Logs**: Real-time function execution logs
+## 📚 Documentation
 
-#### Configuration
+Comprehensive documentation available in `docs/`:
 
-The `inngest.json` file configures the CLI:
+| Document | Description |
+|----------|-------------|
+| [📐 **System Architecture**](./docs/SYSTEM_ARCHITECTURE.md) | Complete architecture with Mermaid diagrams |
+| [🔄 **Data Flow**](./docs/DATA_FLOW.md) | Request lifecycle, workflows, state machines |
+| [📡 **API Reference**](./docs/API_REFERENCE.md) | Full endpoint documentation with examples |
+| [💾 **Database Design**](./docs/DATABASE_DESIGN.md) | Schema, ERD, indexing, retention policies |
+| [⚙️ **Infrastructure**](./docs/INFRASTRUCTURE.md) | Deployment, Docker, monitoring, runbooks |
 
-```json
-{
-  "functions": "src/inngest/index.ts",
-  "serve": {
-    "host": "localhost",
-    "port": 3000,
-    "url": "http://localhost:3000"
-  },
-  "app": "fairarena-backend"
-}
-```
+---
 
-#### Development Workflow
+## ✨ Key Features
 
-1. Start backend: `pnpm run dev`
-2. Start Inngest CLI: `pnpm run dev:inngest`
-3. Trigger webhooks or use dashboard to test functions
-4. Check logs in both terminals
+| Feature | Description |
+|---------|-------------|
+| 🔐 **JWT Authentication** | Clerk-based auth with role-based access control |
+| 💳 **Payment Processing** | Razorpay integration with webhook handling |
+| 🤖 **AI Assistant** | Google Gemini with 10 context-aware tools |
+| ⚡ **Event-Driven** | 34+ Inngest background functions |
+| 📧 **Email System** | 19 React Email templates via Resend |
+| 🗄️ **Read Replicas** | Horizontal read scaling (2 replicas) |
+| 🚀 **Redis Caching** | TTL-based caching for performance |
+| 📊 **Observability** | Prometheus metrics + OpenTelemetry tracing |
+| 🛡️ **Security** | Arcjet rate limiting + Helmet headers |
+| 🔔 **Notifications** | Real-time notification system |
 
-### Webhook Verification Fails
+---
 
-- Ensure `CLERK_WEBHOOK_SECRET` is set correctly
-- Check webhook URL in Clerk dashboard: `https://yourdomain.com/webhooks/clerk`
-- Verify Svix headers are being sent
+## 👤 Author
 
-### Database Connection Issues
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Saksham-Goel1107">
+        <img src="https://github.com/Saksham-Goel1107.png" width="100px;" alt=""/>
+        <br />
+        <sub><b>Saksham Goel</b></sub>
+      </a>
+      <br />
+      <a href="https://www.sakshamg.me">🌐 Website</a> •
+      <a href="https://github.com/Saksham-Goel1107">GitHub</a>
+    </td>
+  </tr>
+</table>
 
-```bash
-# Test database connection
-pnpm exec prisma db push
+---
 
-# Check database logs
-docker logs fairarena-postgres
-```
+## 📄 License
 
-### Common Errors
+This project is licensed under the **Proprietary License** — see the [LICENSE](../LICENSE) file for details.
 
-- **"Headers already sent"**: Check for duplicate response sends in controllers
-- **"Invalid webhook signature"**: Verify webhook secret matches Clerk dashboard
-- **"Function not found"**: Ensure Inngest functions are properly exported
+---
 
-## Tech Stack
+<p align="center">
+  <a href="https://fair.sakshamg.me">🌐 Website</a> •
+  <a href="https://github.com/fairarena">💻 GitHub</a> •
+  <a href="mailto:fairarena.contact@gmail.com">📧 Support</a>
+</p>
 
-- Express 5
-- TypeScript 5.9
-- Arcjet (Security)
-- Prometheus (Metrics)
-- Helmet, HPP, CORS
-- ESLint + Prettier
-
-## Git Hooks
-
-- **Pre-commit**: Formats code, runs linting and type checking
-- **Pre-push**: Builds both Backend and Frontend
-
-## Development
-
-The server runs on `http://localhost:3000` by default.
-
-Hot reload is enabled - changes to `.ts` files will automatically restart the server.
+<p align="center">
+  <sub>Built with ❤️ by the FairArena Team</sub>
+</p>

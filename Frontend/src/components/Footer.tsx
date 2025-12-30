@@ -93,7 +93,7 @@ function Footer() {
                 ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
               `}
             >
-              <a href="https://docs.fair.sakshamg.me" target="_blank" rel="noopener noreferrer">Docs</a>
+              <a href={import.meta.env.VITE_DOCS_URL} target="_blank" rel="noopener noreferrer">Docs</a>
             </li>
           </ul>
         </div>

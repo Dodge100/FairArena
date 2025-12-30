@@ -1,3 +1,4 @@
+import { ENV } from '../../config/env.js';
 import { SupportService } from '../../services/v1/supportService.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
@@ -20,7 +21,7 @@ export const supportRequestCreated = inngest.createFunction(
         try {
           logger.info('Checking if email is disposable', { email: emailId });
 
-          const disposableCheckUrl = `https://pro-tempmail-api.onrender.com/check?email=${encodeURIComponent(emailId)}`;
+          const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(emailId)}`;
           const response = await fetch(disposableCheckUrl, {
             method: 'GET',
             signal: AbortSignal.timeout(5000), // 5 second timeout

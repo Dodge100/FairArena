@@ -1,3 +1,4 @@
+import { ENV } from '../../config/env.js';
 import { sendPlatformInviteEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
@@ -25,7 +26,7 @@ export const inviteToPlatform = inngest.createFunction(
       try {
         logger.info('Checking if email is disposable', { email });
 
-        const disposableCheckUrl = `https://pro-tempmail-api.onrender.com/check?email=${encodeURIComponent(email)}`;
+        const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(email)}`;
         const response = await fetch(disposableCheckUrl, {
           method: 'GET',
           signal: AbortSignal.timeout(5000), // 5 second timeout

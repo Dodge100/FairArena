@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
+import { ENV } from '../../config/env.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendFreeCreditsClaimedEmail, sendPhoneNumberAddedEmail } from '../../email/v1/send-mail.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -55,6 +56,94 @@ const sanitizeInput = (input: string): string => {
 
 const logSecurityEvent = (event: string, userId: string, details: Record<string, unknown>) => {
   logger.warn(`SECURITY: ${event}`, { userId, ...details, timestamp: new Date().toISOString() });
+};
+
+const checkDisposablePhoneNumber = async (
+  phoneNumber: string,
+  userId: string
+): Promise<{ isDisposable: boolean; error?: string }> => {
+  // Strip the + from the phone number for the API call
+  const phoneForApi = phoneNumber.replace(/^\+/, '');
+
+  // Check if credential validator URL is configured
+  if (!ENV.CREDENTIAL_VALIDATOR_URL) {
+    logger.info('CREDENTIAL_VALIDATOR_URL not configured, skipping disposable phone check', { userId });
+    return { isDisposable: false };
+  }
+
+  try {
+    const checkUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check-phone?phone=${encodeURIComponent(phoneForApi)}`;
+
+    logger.info('Checking phone number against disposable database', {
+      userId,
+      phoneNumber: phoneNumber.substring(0, 5) + '***',
+    });
+
+    const response = await fetch(checkUrl, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    if (!response.ok) {
+      // Non-200 response - fail open (allow the request)
+      logger.warn('Disposable phone check API returned non-OK status, allowing request', {
+        userId,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      return { isDisposable: false };
+    }
+
+    const data = await response.json();
+    const tempphoneValue = data.tempphone;
+
+    // Handle "invalid phone number" string response
+    if (tempphoneValue === 'invalid phone number') {
+      logger.warn('Phone validation returned invalid phone format', {
+        userId,
+        phoneNumber: phoneNumber.substring(0, 5) + '***',
+      });
+      return {
+        isDisposable: true,
+        error: 'Invalid phone number format. Please enter a valid mobile number.'
+      };
+    }
+
+    // Handle null (API internal error) - fail open
+    if (tempphoneValue === null) {
+      logger.warn('Phone validation API returned null (internal error), allowing request', {
+        userId,
+        phoneNumber: phoneNumber.substring(0, 5) + '***',
+      });
+      return { isDisposable: false };
+    }
+
+    // Handle boolean response
+    const isDisposable = tempphoneValue === true;
+
+    if (isDisposable) {
+      logger.warn('Temporary/disposable phone number detected - BLOCKING', {
+        userId,
+        phoneNumber: phoneNumber.substring(0, 5) + '***',
+      });
+      return {
+        isDisposable: true,
+        error: 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.'
+      };
+    }
+
+    logger.info('Phone number passed disposable check', { userId });
+    return { isDisposable: false };
+  } catch (error) {
+    // API failure (timeout, network error, etc.) - fail open (allow the request)
+    logger.warn('Disposable phone check failed (API down/timeout), allowing request to proceed', {
+      userId,
+      phoneNumber: phoneNumber.substring(0, 5) + '***',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { isDisposable: false };
+  }
 };
 
 // Cache invalidation helper
@@ -951,7 +1040,7 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
     // Additional security: Check for suspicious patterns
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
     if (fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
-        fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
+      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
       logSecurityEvent('SUSPICIOUS_PHONE_FORMAT', userId, { phoneLength: fullPhoneNumber.length });
       return res.status(400).json({
         success: false,
@@ -965,6 +1054,20 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         message: 'Invalid phone number format.',
+      });
+    }
+
+    // Check for disposable/temporary phone numbers
+    const disposableCheck = await checkDisposablePhoneNumber(fullPhoneNumber, userId);
+    if (disposableCheck.isDisposable) {
+      logSecurityEvent('DISPOSABLE_PHONE_BLOCKED', userId, {
+        phoneNumber: fullPhoneNumber.substring(0, 5) + '***',
+        reason: disposableCheck.error,
+      });
+      return res.status(400).json({
+        success: false,
+        message: disposableCheck.error || 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
+        code: 'DISPOSABLE_PHONE',
       });
     }
 
@@ -1647,7 +1750,7 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
     // Additional security: Check for suspicious patterns
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
     if (fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
-        fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
+      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
       logSecurityEvent('SUSPICIOUS_PHONE_FORMAT', userId, { phoneLength: fullPhoneNumber.length });
       return res.status(400).json({
         success: false,
@@ -1661,6 +1764,20 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         message: 'Invalid phone number format.',
+      });
+    }
+
+    // Check for disposable/temporary phone numbers
+    const disposableCheck = await checkDisposablePhoneNumber(fullPhoneNumber, userId);
+    if (disposableCheck.isDisposable) {
+      logSecurityEvent('DISPOSABLE_PHONE_BLOCKED', userId, {
+        phoneNumber: fullPhoneNumber.substring(0, 5) + '***',
+        reason: disposableCheck.error,
+      });
+      return res.status(400).json({
+        success: false,
+        message: disposableCheck.error || 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
+        code: 'DISPOSABLE_PHONE',
       });
     }
 
