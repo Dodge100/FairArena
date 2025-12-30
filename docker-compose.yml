@@ -16,20 +16,43 @@ services:
       start_period: 5s
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.130.1
     container_name: "otel-collector"
+    user: "0:0"  # Run as root to access Docker logs and stats
     command:
       - "--config=/etc/otel/redis-metrics-collection-config.yaml"
       - "--config=/etc/otel/redis-logs-collection-config.yaml"
+      - "--config=/etc/otel/docker-logs-collection-config.yaml"
+      - "--config=/etc/otel/docker-metrics-collection-config.yaml"
     volumes:
       - ./redis-metrics-collection-config.yaml:/etc/otel/redis-metrics-collection-config.yaml
       - ./redis-logs-collection-config.yaml:/etc/otel/redis-logs-collection-config.yaml
+      - ./docker-logs-collection-config.yaml:/etc/otel/docker-logs-collection-config.yaml
+      - ./docker-metrics-collection-config.yaml:/etc/otel/docker-metrics-collection-config.yaml
       - redis-data:/var/log/redis
+      # Docker container logs and stats access
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./ShellScripts/.env.otel
     networks:
       - backend-net
     restart: unless-stopped
+
+  # GitHub Metrics Collector - Scrapes GitHub repository metrics
+  github-otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.130.1
+    container_name: "github-otel-collector"
+    command:
+      - "--config=/etc/otel/github-otel-collector-config.yaml"
+    volumes:
+      - ./github-otel-collector-config.yaml:/etc/otel/github-otel-collector-config.yaml
+    env_file:
+      - ./ShellScripts/.env.github
+    networks:
+      - backend-net
+    restart: unless-stopped
+
 
   srh:
     image: hiett/serverless-redis-http:latest # ✅ Upstash-compatible proxy

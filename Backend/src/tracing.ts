@@ -1,9 +1,12 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import * as opentelemetry from '@opentelemetry/sdk-node';
+import { LangChainInstrumentation } from '@arizeai/openinference-instrumentation-langchain';
 import process from 'process';
 
 // Get configuration from environment
@@ -34,10 +37,23 @@ const logExporter = new OTLPLogExporter({
   headers,
 });
 
+// Configure metrics exporter for Gemini/LLM metrics
+const metricExporter = new OTLPMetricExporter({
+  url: `${signozEndpoint.replace(/\/v1\/traces$/, '')}/v1/metrics`,
+  headers,
+});
+
+// Create LangChain instrumentation for Google Gemini tracing
+const langchainInstrumentation = new LangChainInstrumentation();
+
 // Initialize the OpenTelemetry SDK
 const sdk = new opentelemetry.NodeSDK({
   serviceName,
   traceExporter,
+  metricReader: new PeriodicExportingMetricReader({
+    exporter: metricExporter,
+    exportIntervalMillis: 60000, // Export metrics every 60 seconds
+  }),
   logRecordProcessor: new BatchLogRecordProcessor(logExporter, {
     maxQueueSize: 1000,
     maxExportBatchSize: 512,
@@ -60,6 +76,8 @@ const sdk = new opentelemetry.NodeSDK({
         record['trace_flags'] = span.spanContext().traceFlags;
       },
     }),
+    // Add LangChain instrumentation for Google Gemini tracing
+    langchainInstrumentation,
   ],
 });
 

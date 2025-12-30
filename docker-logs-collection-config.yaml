@@ -1,0 +1,58 @@
+receivers:
+  # Filelog receiver for Docker container logs
+  filelog/docker:
+    include: [/var/lib/docker/containers/*/*-json.log]
+    poll_interval: 200ms
+    start_at: end
+    include_file_name: false
+    include_file_path: true
+    operators:
+      # Parse Docker JSON log format
+      - id: container-parser
+        type: container
+        format: docker
+        add_metadata_from_filepath: false
+      # Extract service name from JSON log body if present
+      - id: extract-service-name
+        type: regex_parser
+        parse_from: body
+        regex: 'service\.name":\s*"(?P<svc>[^"]+)"'
+        if: 'body matches "service\\.name"'
+      # Move extracted service name to resource level
+      - id: set-service-name
+        type: move
+        from: attributes.svc
+        to: resource["service.name"]
+        if: 'attributes.svc != nil'
+      # Add source identifier
+      - type: add
+        field: attributes.source
+        value: docker
+
+processors:
+  batch/docker:
+    send_batch_size: 10000
+    send_batch_max_size: 11000
+    timeout: 10s
+
+exporters:
+  # Export to SigNoz cloud
+  otlp/docker-logs:
+    endpoint: "${env:OTLP_DESTINATION_ENDPOINT}"
+    tls:
+      insecure: false
+    headers:
+      "signoz-ingestion-key": "${env:SIGNOZ_INGESTION_KEY}"
+
+  # Export to local collector (uncomment if needed)
+  # otlp/docker-logs:
+  #   endpoint: "localhost:4317"
+  #   tls:
+  #     insecure: true
+
+service:
+  pipelines:
+    logs/docker:
+      receivers: [filelog/docker]
+      processors: [batch/docker]
+      exporters: [otlp/docker-logs]

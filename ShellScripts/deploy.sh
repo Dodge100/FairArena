@@ -133,6 +133,16 @@ else
     log "envs.n8n.sh not found, skipping"
 fi
 
+log "${GREEN}[7/8] Setting up GitHub OTel environment...${NC}"
+if [ -f "./envs.github.sh" ]; then
+    if ! bash envs.github.sh 2>&1; then
+        log "${RED}Failed to setup GitHub OTel environment${NC}"
+        exit 1
+    fi
+else
+    log "envs.github.sh not found, skipping"
+fi
+
 # log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
 # if [ -f "Frontend/envs.sh" ]; then
 #     cd Frontend

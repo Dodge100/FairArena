@@ -1,0 +1,75 @@
+# GitHub Metrics Collection Configuration
+# This collector scrapes metrics from GitHub using the GitHub Receiver
+
+receivers:
+  # GitHub Receiver for repository metrics
+  github:
+    log_level: debug
+    initial_delay: 1s
+    collection_interval: 60s
+    timeout: 30s
+    scrapers:
+      scraper:
+        # Your GitHub organization name
+        github_org: ${env:GITHUB_ORG}
+        # Optional: Filter repositories with a search query
+        # search_query: "repo:org/repo-name"
+        metrics:
+          # Enable contributor count metric
+          vcs.contributor.count:
+            enabled: true
+          # All other default metrics are enabled by default:
+          # - vcs.repository.count
+          # - vcs.ref.count (branches, tags)
+          # - vcs.ref.lines_added
+          # - vcs.ref.lines_deleted
+          # - vcs.ref.revisions_ahead
+          # - vcs.ref.revisions_behind
+          # - vcs.ref.time
+          # - vcs.change.count (pull requests)
+          # - vcs.change.duration
+          # - vcs.change.time_to_approval
+          # - vcs.change.time_to_merge
+        auth:
+          authenticator: bearertokenauth/github
+
+processors:
+  # Add service name for easier identification in SigNoz
+  resource/github:
+    attributes:
+      - key: service.name
+        value: ${env:GITHUB_SERVICE_NAME}
+        action: insert
+      - key: deployment.environment
+        value: production
+        action: insert
+
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+
+extensions:
+  # Bearer token authentication for GitHub API
+  bearertokenauth/github:
+    token: ${env:GH_PAT}
+
+exporters:
+  # Export to SigNoz Cloud
+  otlp/github:
+    endpoint: "${env:OTLP_DESTINATION_ENDPOINT}"
+    tls:
+      insecure: false
+    headers:
+      "signoz-ingestion-key": "${env:SIGNOZ_INGESTION_KEY}"
+
+  # Debug exporter for troubleshooting (optional)
+  debug:
+    verbosity: basic
+
+service:
+  extensions: [bearertokenauth/github]
+  pipelines:
+    metrics/github:
+      receivers: [github]
+      processors: [resource/github, batch]
+      exporters: [otlp/github, debug]
