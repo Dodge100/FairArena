@@ -123,6 +123,16 @@ else
     log "envs.n8n.sh not found, skipping"
 fi
 
+log "${GREEN}[7/8] Setting up OTel environment...${NC}"
+if [ -f "./envs.otel.sh" ]; then
+    if ! bash envs.otel.sh 2>&1; then
+        log "${RED}Failed to setup OTel environment${NC}"
+        exit 1
+    fi
+else
+    log "envs.n8n.sh not found, skipping"
+fi
+
 # log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
 # if [ -f "Frontend/envs.sh" ]; then
 #     cd Frontend

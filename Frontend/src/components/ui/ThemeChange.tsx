@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useId } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import { cn } from '../../libs/utils';
 
@@ -16,6 +17,8 @@ export default function ThemeToggleButton({ className }: { className: string }) 
 const ThemeToggleButton3 = ({ className = '' }: { className?: string }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+  const id = useId();
+  const clipPathId = `skiper-btn-${id}`;
 
   return (
     <button
@@ -34,14 +37,14 @@ const ThemeToggleButton3 = ({ className = '' }: { className?: string }) => {
         strokeLinecap="round"
         viewBox="0 0 32 32"
       >
-        <clipPath id="skiper-btn-3">
+        <clipPath id={clipPathId}>
           <motion.path
             animate={{ y: isDark ? 14 : 0, x: isDark ? -11 : 0 }}
             transition={{ ease: 'easeInOut', duration: 0.35 }}
             d="M0-11h25a1 1 0 0017 13v30H0Z"
           />
         </clipPath>
-        <g clipPath="url(#skiper-btn-3)">
+        <g clipPath={`url(#${clipPathId})`}>
           <motion.circle
             initial={{ r: 8 }}
             animate={{ r: isDark ? 10 : 8 }}

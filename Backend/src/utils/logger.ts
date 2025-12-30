@@ -40,7 +40,7 @@ class BetterStackTransport extends Transport {
     };
 
     const req = https.request(options, (res) => {
-      res.on('data', () => {});
+      res.on('data', () => { });
       res.on('end', () => {
         callback();
       });
@@ -87,6 +87,44 @@ const addTraceContext = format((info) => {
   return info;
 });
 
+// Custom transport for OpenTelemetry
+class OpenTelemetryTransport extends Transport {
+  constructor() {
+    super();
+  }
+
+  log(info: Record<string, unknown>, callback: () => void) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const logsApi = (api as any).logs;
+    if (logsApi) {
+      const logger = logsApi.getLogger('winston-logger');
+
+      const { message, level, timestamp, trace_id, span_id, trace_flags, ...meta } = info;
+
+      const levelStr = level as string;
+
+      // Map Winston levels to OpenTelemetry SeverityNumbers
+      let severityNumber = 0; // UNSPECIFIED
+      switch (levelStr) {
+        case 'error': severityNumber = 17; break; // ERROR
+        case 'warn': severityNumber = 13; break; // WARN
+        case 'info': severityNumber = 9; break; // INFO
+        case 'debug': severityNumber = 5; break; // DEBUG
+        case 'verbose': severityNumber = 1; break; // TRACE
+      }
+
+      logger.emit({
+        body: message as string,
+        severityNumber,
+        severityText: levelStr.toUpperCase(),
+        attributes: meta as api.Attributes,
+        timestamp: timestamp ? new Date(timestamp as string) : new Date(),
+      });
+    }
+    callback();
+  }
+}
+
 const logger = createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: format.combine(
@@ -115,6 +153,9 @@ const logger = createLogger({
         }),
       ),
     }),
+
+    // Add OpenTelemetry transport
+    new OpenTelemetryTransport(),
 
     // Conditionally add Better Stack transport if available
     ...(betterStackTransport ? [betterStackTransport] : []),
