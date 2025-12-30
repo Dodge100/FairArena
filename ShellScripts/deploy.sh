@@ -113,6 +113,16 @@ else
     log "envs.credential-validator.sh not found, skipping"
 fi
 
+log "${GREEN}[6/8] Setting up N8N environment...${NC}"
+if [ -f "./envs.n8n.sh" ]; then
+    if ! bash envs.n8n.sh 2>&1; then
+        log "${RED}Failed to setup N8N environment${NC}"
+        exit 1
+    fi
+else
+    log "envs.n8n.sh not found, skipping"
+fi
+
 # log "${GREEN}[5/8] Setting up Frontend environment...${NC}"
 # if [ -f "Frontend/envs.sh" ]; then
 #     cd Frontend
