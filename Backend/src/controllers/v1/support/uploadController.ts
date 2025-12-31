@@ -1,9 +1,9 @@
 import { BlobSASPermissions, generateBlobSASQueryParameters, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import logger from '../../../utils/logger.js';
 import { ENV } from '../../../config/env.js';
-
+import logger from '../../../utils/logger.js';
+import { getCachedUserInfo } from '../../../utils/userCache.js';
 // Validation schema
 const uploadRequestSchema = z.object({
     fileName: z.string().min(1).max(255),
@@ -50,7 +50,16 @@ export const generateUploadSasToken = async (req: Request, res: Response) => {
     try {
         const auth = await req.auth();
         const userId = auth?.userId;
-        const userEmail = auth?.user?.primaryEmailAddress?.emailAddress;
+
+        let userEmail: string | undefined;
+        if (userId) {
+            try {
+                const user = await getCachedUserInfo(userId);
+                userEmail = user?.email;
+            } catch (error) {
+                logger.error('Error fetching user details from Clerk', { error, userId });
+            }
+        }
 
         if (!userId) {
             return res.status(401).json({

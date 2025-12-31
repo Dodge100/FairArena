@@ -5,6 +5,7 @@ import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 import { Verifier } from '../../utils/settings-token-verfier.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 
 const CACHE_TTL = {
   USER_SUPPORT: 3600,
@@ -178,7 +179,12 @@ export class SupportController {
       let emailId: string | undefined;
 
       if (userId) {
-        emailId = req.auth()?.user?.primaryEmailAddress?.emailAddress;
+        try {
+          const user = await getCachedUserInfo(userId);
+          emailId = user?.email;
+        } catch (error) {
+          logger.error('Error fetching user for support request', { error, userId });
+        }
       } else {
         // Non-authenticated user - require email in request
         if (!email) {
