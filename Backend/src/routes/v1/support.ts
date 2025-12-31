@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import * as UploadController from '../../controllers/v1/support/uploadController.js';
 import { SupportController } from '../../controllers/v1/supportController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
@@ -121,5 +122,84 @@ router.post(
   SupportController.getRateLimitMiddleware(),
   SupportController.createSupportRequest,
 );
+
+/**
+ * @swagger
+ * /api/v1/support/upload/sas-token:
+ *   post:
+ *     summary: Generate SAS token for file upload
+ *     description: Generate a time-limited SAS token for direct upload to Azure Blob Storage
+ *     tags: [Support]
+ *     security:
+ *       - ClerkAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fileName
+ *               - fileSize
+ *               - contentType
+ *             properties:
+ *               fileName:
+ *                 type: string
+ *                 description: Name of the file to upload
+ *               fileSize:
+ *                 type: number
+ *                 description: Size of the file in bytes (max 100MB)
+ *               contentType:
+ *                 type: string
+ *                 description: MIME type of the file
+ *     responses:
+ *       200:
+ *         description: SAS token generated successfully
+ *       400:
+ *         description: Invalid request or file type not allowed
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Server error
+ */
+router.post('/upload/sas-token', protectRoute, UploadController.generateUploadSasToken);
+
+/**
+ * @swagger
+ * /api/v1/support/upload/confirm:
+ *   post:
+ *     summary: Confirm file upload completion
+ *     description: Confirm that a file has been successfully uploaded to Azure Blob Storage
+ *     tags: [Support]
+ *     security:
+ *       - ClerkAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - blobName
+ *             properties:
+ *               blobName:
+ *                 type: string
+ *                 description: Name of the uploaded blob
+ *               supportTicketId:
+ *                 type: string
+ *                 description: Optional support ticket ID to associate with upload
+ *     responses:
+ *       200:
+ *         description: Upload confirmed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Unauthorized access to blob
+ *       500:
+ *         description: Server error
+ */
+router.post('/upload/confirm', protectRoute, UploadController.confirmUpload);
 
 export default router;

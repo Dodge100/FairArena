@@ -22,7 +22,7 @@ export const recordView = async (req: Request, res: Response) => {
     }
 
     const userInfo = await getCachedUserInfo(viewerUserId);
-    const viewerEmail = req.auth()?.user?.primaryEmailAddress?.emailAddress || null;
+    const viewerEmail = userInfo?.email || null;
     const viewerName =
       userInfo?.firstName && userInfo?.lastName
         ? `${userInfo.firstName} ${userInfo.lastName}`

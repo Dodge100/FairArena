@@ -55,6 +55,13 @@ export default function AccountSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [disableHomePage, setDisableHomePage] = useState(() => localStorage.getItem('disableHomePage') === 'true');
+
+  const toggleDisableHomePage = (checked: boolean) => {
+    setDisableHomePage(checked);
+    localStorage.setItem('disableHomePage', String(checked));
+    toast.success(`Home page ${checked ? 'disabled' : 'enabled'}`);
+  };
 
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
@@ -366,6 +373,39 @@ export default function AccountSettings() {
               ) : (
                 <p className="text-sm text-muted-foreground">Failed to load settings</p>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {isVerified && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>General Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Manage your general application preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex-1">
+                    <Label htmlFor="disable-home-page" className="text-sm font-medium">
+                      Disable Home Page
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      If enabled, you will be redirected to the dashboard when visiting the home page
+                    </p>
+                  </div>
+                  <Switch
+                    id="disable-home-page"
+                    checked={disableHomePage}
+                    onCheckedChange={toggleDisableHomePage}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}

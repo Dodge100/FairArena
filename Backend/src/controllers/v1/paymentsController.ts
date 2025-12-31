@@ -7,6 +7,7 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 import { ENV } from '../../config/env.js';
+import { getCachedUserInfo } from '../../utils/userCache.js';
 
 interface RazorpayOrderOptions {
   amount: number;
@@ -36,9 +37,13 @@ const verifyPaymentSchema = z.object({
 // Create Razorpay order
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
-    const userId = auth.userId;
-    const userEmail = auth.user?.primaryEmailAddress?.emailAddress;
+    const auth = await req.auth();
+    const userId = auth?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const userInfo = await getCachedUserInfo(userId);
+    const userEmail = userInfo?.email || null;
 
     if (ENV.PAYMENTS_ENABLED === false) {
       return res

@@ -30,6 +30,7 @@
     "@arizeai/openinference-instrumentation-langchain": "^4.0.6",
     "@azure/identity": "^4.13.0",
     "@azure/keyvault-secrets": "^4.10.0",
+    "@azure/storage-blob": "^12.29.1",
     "@clerk/express": "^1.7.60",
     "@langchain/core": "^1.1.7",
     "@langchain/google-genai": "^2.1.2",

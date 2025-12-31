@@ -1,0 +1,354 @@
+# FairArena - Cline AI Context
+
+## Project Identity
+
+**Name:** FairArena
+**Type:** Full-stack skill assessment platform
+**Stage:** Production (https://fair.sakshamg.me)
+**License:** Proprietary
+**Author:** Saksham Goel (@Saksham-Goel1107)
+
+## Technology Stack
+
+### Frontend
+- React 19.2 + TypeScript 5.9 (strict)
+- Vite 7.3, TailwindCSS 4.1
+- Clerk Auth, Radix UI, Shadcn
+- React Router v7, Axios, Socket.IO
+- Forms: React Hook Form + Zod
+
+### Backend
+- Node.js 20, Express 5.2, TypeScript 5.9
+- Prisma 7.2 (PostgreSQL 15+)
+- Clerk JWT, Inngest (34+ jobs)
+- Redis (Upstash), Resend (email)
+- Gemini + LangChain, Razorpay
+- OpenTelemetry + SigNoz
+
+### Infrastructure
+- Docker + Compose
+- Caddy + Cloudflare
+- Azure Blob, Azure Key Vault
+- pnpm 10.26
+
+## Architecture
+
+**Monorepo:** Backend + Frontend in same repo
+**API:** RESTful (70+ endpoints on /api/v1)
+**Database:** PostgreSQL with 30+ Prisma models
+**Cache:** Redis for sessions, rate limits, data
+**Jobs:** Event-driven via Inngest
+**Auth:** Clerk with webhook sync
+**Observability:** Traces, logs, metrics to SigNoz
+
+## Code Patterns
+
+### Database (Prisma)
+```typescript
+// Always use transactions for multi-table writes
+await prisma.$transaction(async (tx) => {
+  const payment = await tx.payment.update({ ... });
+  const credit = await tx.creditTransaction.create({ ... });
+  return { payment, credit };
+});
+
+// Use select for optimization
+const user = await prisma.user.findUnique({
+  where: { userId },
+  select: { id: true, email: true, profile: { select: { bio: true } } }
+});
+```
+
+### Caching (Redis)
+```typescript
+import { redis } from '@/config/redis';
+
+// Get with fallback
+const data = await redis.get(key) ?? await fetchFromDB();
+
+// Set with TTL
+await redis.set(key, JSON.stringify(data), 'EX', 3600);
+
+// Invalidate on update
+await redis.del(key);
+```
+
+### API Controllers
+```typescript
+import { z } from 'zod';
+import { Request, Response } from 'express';
+
+const schema = z.object({ email: z.string().email() });
+
+export const handler = async (req: Request, res: Response) => {
+  try {
+    const data = schema.parse(req.body);
+    const result = await service.execute(data);
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, error: error.errors });
+    }
+    logger.error('Handler failed', { error });
+    return res.status(500).json({ success: false, error: 'Internal error' });
+  }
+};
+```
+
+### React Components
+```tsx
+interface Props {
+  userId: string;
+  onUpdate?: (user: User) => void;
+}
+
+export const UserCard: FC<Props> = ({ userId, onUpdate }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUser();
+  }, [userId]);
+
+  const loadUser = async () => {
+    try {
+      const { data } = await api.get(`/users/${userId}`);
+      setUser(data);
+    } catch {
+      toast.error('Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <Skeleton />;
+  return user ? <div>{/* render */}</div> : <Error />;
+};
+```
+
+### Forms (RHF + Zod)
+```tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export const Form = () => {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const onSubmit = async (data: FormData) => {
+    await api.post('/endpoint', data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('email')} />
+      {errors.email && <span>{errors.email.message}</span>}
+    </form>
+  );
+};
+```
+
+### Background Jobs (Inngest)
+```typescript
+import { inngest } from '@/inngest/client';
+
+export const job = inngest.createFunction(
+  { id: 'job-name' },
+  { event: 'event/name' },
+  async ({ event, step }) => {
+    await step.run('step1', async () => {
+      // Execute step
+    });
+  }
+);
+
+// Trigger
+await inngest.send({ name: 'event/name', data: { ... } });
+```
+
+## Project Structure
+
+```
+FairArena/Website/
+├── Backend/src/
+│   ├── config/          # DB, Redis, etc.
+│   ├── controllers/v1/  # Handlers (31)
+│   ├── email/templates/ # React Email (19)
+│   ├── inngest/v1/      # Jobs (34+)
+│   ├── middleware/      # Auth, security
+│   ├── routes/v1/       # Routes (17)
+│   ├── services/v1/     # Business logic
+│   ├── utils/           # Helpers
+│   └── index.ts         # Entry
+│
+├── Frontend/src/
+│   ├── components/      # UI (61)
+│   ├── pages/           # Pages (27)
+│   ├── contexts/        # Contexts (7)
+│   ├── hooks/           # Hooks
+│   └── services/        # API layer
+│
+├── prisma/schema.prisma # 30+ models
+└── docker-compose.yml
+```
+
+## Database Models (Key)
+
+- User, Profile, Settings
+- Organization, Team, Project (RBAC)
+- Payment, CreditTransaction, Plan
+- Notification, Support, Feedback
+- OrganizationRole, TeamRole, ProjectRole
+- InviteCode (org/team/project)
+- Audit logs (org/team/project)
+- ProfileStars, ProfileView
+
+## API Endpoints
+
+```
+/api/v1/profile          # Profile CRUD
+/api/v1/credits          # Balance, OTP, history
+/api/v1/payments         # Razorpay integration
+/api/v1/organizations    # Org management
+/api/v1/teams            # Team management
+/api/v1/projects         # Project management
+/api/v1/invitations      # Invite flow
+/api/v1/ai               # AI chat
+/api/v1/notifications    # Notifications
+/api/v1/support          # Tickets
+/healthz                 # Health check
+```
+
+## Environment Variables
+
+**Backend:**
+```
+DATABASE_URL (PostgreSQL)
+CLERK_SECRET_KEY, CLERK_WEBHOOK_SECRET
+INNGEST_SIGNING_KEY, INNGEST_EVENT_KEY
+UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+RESEND_API_KEY
+RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+GOOGLE_GEMINI_API_KEY
+```
+
+**Frontend:**
+```
+VITE_CLERK_PUBLISHABLE_KEY
+VITE_API_BASE_URL
+VITE_SOCKET_URL
+VITE_RAZORPAY_KEY_ID
+```
+
+## Critical Rules
+
+1. **TypeScript strict mode** - No any, explicit types
+2. **Zod validation** - All inputs (client + server)
+3. **Clerk JWT** - All protected routes
+4. **Prisma transactions** - Multi-table writes
+5. **Redis caching** - TTL + invalidation
+6. **Winston logging** - Structured, no secrets
+7. **Arcjet rate limiting** - Public endpoints
+8. **Sentry error tracking** - Production monitoring
+9. **Idempotency** - Payments, credits
+10. **Comprehensive errors** - Try-catch everywhere
+
+## Development
+
+```bash
+# Install
+pnpm install
+
+# Database
+cd Backend
+pnpm db:generate     # Prisma client
+pnpm db:migrate      # Migrations
+pnpm db:studio       # GUI
+
+# Run
+cd Backend && pnpm dev           # API :3000
+cd Backend && pnpm dev:inngest   # Jobs :8288
+cd Frontend && pnpm dev          # UI :5173
+
+# Docker
+docker compose up -d
+```
+
+## Naming Conventions
+
+- **Files:** camelCase (utils), PascalCase (components)
+- **Components:** PascalCase (UserCard.tsx)
+- **Functions:** camelCase (getUserProfile)
+- **Constants:** UPPER_SNAKE_CASE (API_BASE_URL)
+- **Types:** PascalCase (UserProfile)
+
+## Import Order
+
+```typescript
+// 1. External
+import React from 'react';
+
+// 2. Internal (absolute)
+import { api } from '@/services/api';
+
+// 3. Relative
+import { helper } from './utils';
+
+// 4. Types
+import type { User } from '@/types';
+
+// 5. Styles
+import './styles.css';
+```
+
+## Common Utilities
+
+- **Logger:** `logger.info()`, `logger.error()`
+- **Date:** Use `date-fns`
+- **Currency:** `Intl.NumberFormat` (INR)
+- **API:** Centralized `@/services/api`
+
+## Testing
+
+- Unit: Utilities, services
+- Integration: API endpoints
+- E2E: Critical flows
+- Mock: External dependencies
+
+## Documentation
+
+**Inline:**
+```typescript
+/**
+ * Description
+ * @param param - Description
+ * @returns Description
+ * @throws Error - When...
+ */
+```
+
+**Resources:**
+- Swagger: http://localhost:3000/api-docs
+- Postman: Backend/postman/
+- Docs: Backend/docs/
+
+## Deployment
+
+- Docker build + compose
+- Environment: production
+- Health checks: /healthz
+- Monitoring: SigNoz + Sentry
+- CDN: Cloudflare
+- Secrets: Azure Key Vault
+
+---
+
+**Support:** fairarena.contact@gmail.com

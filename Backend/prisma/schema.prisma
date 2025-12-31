@@ -736,6 +736,7 @@ model Support {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   user      User?       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  attachments SupportAttachment[]
 
   @@index([userId])
   @@index([status])
@@ -841,4 +842,41 @@ enum NotificationType {
   STAR
   COMMENT
   ANNOUNCEMENT
+}
+
+enum AttachmentStatus {
+  PENDING
+  UPLOADING
+  UPLOADED
+  FAILED
+  DELETED
+}
+
+model SupportAttachment {
+  id                String           @id @default(cuid())
+  userId            String
+  supportRequestId  String
+  fileName          String
+  originalFileName  String
+  fileSize          Int
+  mimeType          String
+  fileHash          String
+  fileData          Bytes?           // Store file temporarily until uploaded to Azure
+  status            AttachmentStatus @default(PENDING)
+  azureBlobName     String?
+  azureUrl          String?
+  uploadedAt        DateTime?
+  deletedAt         DateTime?
+  errorMessage      String?
+  referenceCount    Int              @default(1) // How many support requests use this file
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  supportRequest    Support          @relation(fields: [supportRequestId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([supportRequestId])
+  @@index([status])
+  @@index([fileHash]) // For deduplication lookups
+  @@index([fileHash, status]) // For finding uploaded duplicates
+  @@index([createdAt])
 }

@@ -182,7 +182,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       const userInfo = await getCachedUserInfo(profile.userId);
       if (userInfo) {
         avatarUrl = userInfo.profileImageUrl;
-        email = req.auth()?.user?.primaryEmailAddress?.emailAddress || userInfo.email;
+        email = userInfo.email;
       }
     } catch (error) {
       logger.error('Error fetching user info:', { error });
@@ -313,6 +313,12 @@ export const getOwnProfile = async (req: Request, res: Response) => {
   try {
     const auth = req.auth();
     const userId = auth?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        error: { message: 'Unauthorized - Authentication required', status: 401 },
+      });
+    }
+    const userInfo = await getCachedUserInfo(userId);
 
     if (!userId) {
       return res.status(401).json({
@@ -350,7 +356,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
 
     if (!profile) {
       // Ensure user exists in database
-      const email = req.auth()?.user?.primaryEmailAddress?.emailAddress || '';
+      const email = userInfo?.email || '';
 
       try {
         await prisma.user.upsert({

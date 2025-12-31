@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { FileUpload } from '../components/FileUpload';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -35,6 +36,8 @@ export default function Support() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState('');
   const [showFAQ, setShowFAQ] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -604,6 +607,33 @@ export default function Support() {
                         focus:border-[#DDEF00] focus:ring-[3px] focus:ring-[#DDEF00]/20
                       `}
                     />
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <label
+                      className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
+                    >
+                      Attachments (Optional)
+                    </label>
+                    <FileUpload
+                      onUploadComplete={(blobName: string) => {
+                        setUploadedFiles(prev => [...prev, blobName]);
+                        setUploadError('');
+                      }}
+                      onUploadError={(error: string) => {
+                        setUploadError(error);
+                      }}
+                      maxSizeMB={100}
+                    />
+                    {uploadError && (
+                      <p className="text-sm text-red-500 mt-2">{uploadError}</p>
+                    )}
+                    {uploadedFiles.length > 0 && (
+                      <p className={`text-sm mt-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                        {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} uploaded successfully
+                      </p>
+                    )}
                   </div>
 
                   {/* reCAPTCHA Verification */}

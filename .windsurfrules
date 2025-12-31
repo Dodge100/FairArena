@@ -1,0 +1,507 @@
+# FairArena - Windsurf AI Context
+
+## Project Overview
+
+FairArena is a production-grade full-stack skill assessment platform with enterprise architecture.
+
+**Live:** https://fair.sakshamg.me
+**API:** https://api.fairarena.app/api/v1
+**License:** Proprietary
+**Author:** Saksham Goel
+
+## Stack
+
+**Frontend:** React 19.2 + TypeScript 5.9 + Vite 7.3 + TailwindCSS 4.1
+**Backend:** Node.js 20 + Express 5.2 + Prisma 7.2 + PostgreSQL 15+
+**Cache:** Redis 7 (Upstash)
+**Jobs:** Inngest (34+ background functions)
+**Auth:** Clerk (JWT-based)
+**Email:** Resend (19 React templates)
+**AI:** Google Gemini + LangChain
+**Payments:** Razorpay
+**Security:** Arcjet + Helmet
+**Observability:** OpenTelemetry + SigNoz
+**Infra:** Docker + Caddy + Cloudflare
+
+## Key Architecture Decisions
+
+### Why These Technologies?
+
+1. **Prisma ORM:** Type-safe queries, migration management, 30+ models
+2. **Inngest:** Event-driven architecture for 34+ async jobs (email, payments, notifications)
+3. **Redis (Upstash):** Serverless caching with global edge network
+4. **Clerk:** Comprehensive auth with webhooks, OAuth, MFA
+5. **OpenTelemetry:** Distributed tracing to SigNoz for production debugging
+6. **Arcjet:** Production-ready rate limiting and bot detection
+7. **pnpm:** Fast, efficient package manager (disk space optimization)
+
+### Database Schema Highlights
+
+**30+ Models including:**
+- User, Profile, Settings
+- Organization → Team → Project (RBAC hierarchy)
+- Payment, CreditTransaction, Plan
+- Notification, Support, Feedback
+- Audit logs for all entities
+- Soft deletes everywhere
+
+**Key patterns:**
+- Role-based permissions (JSON field)
+- Invite codes with expiry
+- Comprehensive indexing
+- Read replicas for scaling
+
+## Code Standards
+
+### TypeScript (Strict Mode)
+
+```typescript
+// ✅ Good: Explicit types
+interface UserProfile {
+  userId: string;
+  bio: string;
+  skills: string[];
+}
+
+async function getProfile(userId: string): Promise<UserProfile> {
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  if (!profile) throw new NotFoundError('Profile not found');
+  return profile;
+}
+
+// ❌ Bad: Using any
+function getProfile(userId: any): any {
+  return prisma.profile.findUnique({ where: { userId } });
+}
+```
+
+### React Components
+
+```tsx
+// ✅ Functional components with TypeScript
+interface Props {
+  userId: string;
+  onUpdate?: (user: User) => void;
+}
+
+export const UserCard: React.FC<Props> = ({ userId, onUpdate }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUser();
+  }, [userId]);
+
+  const loadUser = async () => {
+    try {
+      const { data } = await api.get(`/users/${userId}`);
+      setUser(data);
+    } catch (error) {
+      toast.error('Failed to load user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <Skeleton />;
+  if (!user) return <ErrorState />;
+
+  return <div>{/* Render user */}</div>;
+};
+```
+
+### API Endpoints
+
+```typescript
+// ✅ Controller pattern with validation
+import { Request, Response } from 'express';
+import { z } from 'zod';
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+});
+
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    // Validate
+    const data = createUserSchema.parse(req.body);
+
+    // Execute
+    const user = await prisma.user.create({ data });
+
+    // Log
+    logger.info('User created', { userId: user.id });
+
+    // Respond
+    return res.status(201).json({ success: true, data: user });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: error.errors
+      });
+    }
+
+    logger.error('User creation failed', { error });
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+```
+
+### Database Queries
+
+```typescript
+// ✅ Use transactions for multi-table writes
+const result = await prisma.$transaction(async (tx) => {
+  const payment = await tx.payment.update({
+    where: { id: paymentId },
+    data: { status: 'COMPLETED' },
+  });
+
+  const transaction = await tx.creditTransaction.create({
+    data: {
+      userId: payment.userId,
+      amount: payment.credits,
+      type: 'PURCHASE',
+      description: `Credits from ${payment.planName}`,
+    },
+  });
+
+  return { payment, transaction };
+});
+
+// ✅ Use select to minimize data transfer
+const users = await prisma.user.findMany({
+  select: {
+    id: true,
+    email: true,
+    profile: { select: { bio: true, skills: true } },
+  },
+  where: { isDeleted: false },
+});
+
+// ✅ Use include for relations
+const user = await prisma.user.findUnique({
+  where: { userId },
+  include: {
+    profile: true,
+    settings: true,
+    organizationUserRoles: {
+      include: { organization: true, role: true },
+    },
+  },
+});
+```
+
+### Caching Pattern
+
+```typescript
+import { redis } from '@/config/redis';
+
+const CACHE_TTL = 3600; // 1 hour
+
+async function getCached<T>(
+  key: string,
+  fetcher: () => Promise<T>
+): Promise<T> {
+  // Try cache
+  const cached = await redis.get(key);
+  if (cached) {
+    return JSON.parse(cached) as T;
+  }
+
+  // Fetch fresh data
+  const data = await fetcher();
+
+  // Store in cache
+  await redis.set(key, JSON.stringify(data), 'EX', CACHE_TTL);
+
+  return data;
+}
+
+// Usage
+const profile = await getCached(
+  `profile:${userId}`,
+  () => prisma.profile.findUnique({ where: { userId } })
+);
+
+// Invalidation on update
+async function updateProfile(userId: string, data: any) {
+  const updated = await prisma.profile.update({
+    where: { userId },
+    data
+  });
+
+  await redis.del(`profile:${userId}`);
+
+  return updated;
+}
+```
+
+## Common Patterns
+
+### Error Handling
+
+```typescript
+// Backend
+try {
+  const result = await operation();
+  return res.status(200).json({ success: true, data: result });
+} catch (error) {
+  logger.error('Operation failed', { error, context });
+  return res.status(500).json({ success: false, error: 'Internal error' });
+}
+
+// Frontend
+try {
+  const { data } = await api.post('/endpoint', payload);
+  toast.success('Success!');
+  return data;
+} catch (error) {
+  toast.error('Operation failed');
+  console.error('Error:', error);
+  throw error;
+}
+```
+
+### Form Validation
+
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  age: z.number().int().min(13).max(120),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export const MyForm = () => {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm<FormData>({
+      resolver: zodResolver(schema),
+    });
+
+  const onSubmit = async (data: FormData) => {
+    await api.post('/endpoint', data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('email')} />
+      {errors.email && <span>{errors.email.message}</span>}
+      <button disabled={isSubmitting}>Submit</button>
+    </form>
+  );
+};
+```
+
+### Background Jobs (Inngest)
+
+```typescript
+import { inngest } from '@/inngest/client';
+
+export const sendEmail = inngest.createFunction(
+  { id: 'send-welcome-email' },
+  { event: 'user/created' },
+  async ({ event, step }) => {
+    const user = await step.run('fetch-user', async () => {
+      return await prisma.user.findUnique({
+        where: { userId: event.data.userId },
+      });
+    });
+
+    await step.run('send-email', async () => {
+      await resend.emails.send({
+        from: 'FairArena <noreply@fairarena.app>',
+        to: user.email,
+        subject: 'Welcome!',
+        react: WelcomeEmail({ user }),
+      });
+    });
+  }
+);
+
+// Trigger
+await inngest.send({
+  name: 'user/created',
+  data: { userId: 'user_123' },
+});
+```
+
+## Project Structure
+
+```
+FairArena/
+├── Backend/
+│   ├── src/
+│   │   ├── config/           # DB, Redis, Arcjet configs
+│   │   ├── controllers/v1/   # Request handlers (31 files)
+│   │   ├── email/templates/  # 19 React Email templates
+│   │   ├── inngest/v1/       # 34+ background jobs
+│   │   ├── middleware/       # Auth, security, validation
+│   │   ├── routes/v1/        # API routes (17 modules)
+│   │   ├── services/v1/      # Business logic
+│   │   ├── utils/            # Helpers
+│   │   ├── index.ts          # App entry
+│   │   └── tracing.ts        # OpenTelemetry
+│   ├── prisma/
+│   │   └── schema.prisma     # 30+ models
+│   └── docs/                 # Comprehensive docs
+│
+├── Frontend/
+│   └── src/
+│       ├── components/       # UI components (61 files)
+│       ├── pages/            # Pages (27 files)
+│       ├── contexts/         # React contexts
+│       ├── hooks/            # Custom hooks
+│       └── services/         # API layer
+│
+├── docker-compose.yml
+└── .cursorrules
+```
+
+## API Patterns
+
+### Endpoints (70+)
+
+```
+POST   /api/v1/profile              # Create/update profile
+GET    /api/v1/profile              # Get current user profile
+GET    /api/v1/profile/:username    # Get public profile
+
+POST   /api/v1/credits/verify-otp   # Verify phone for free credits
+GET    /api/v1/credits/balance      # Get credit balance
+GET    /api/v1/credits/history      # Credit transaction history
+
+POST   /api/v1/payments/create      # Create Razorpay order
+POST   /api/v1/payments/verify      # Verify payment signature
+POST   /api/v1/payments/webhook     # Razorpay webhook
+
+POST   /api/v1/organizations        # Create organization
+GET    /api/v1/organizations/:slug  # Get organization
+PUT    /api/v1/organizations/:slug  # Update organization
+
+POST   /api/v1/ai/chat             # AI assistant (streaming)
+POST   /api/v1/ai/chat-stream      # AI assistant (SSE)
+
+GET    /api/v1/notifications        # List notifications
+PATCH  /api/v1/notifications/:id/read # Mark as read
+DELETE /api/v1/notifications/:id    # Delete notification
+
+POST   /api/v1/support              # Create ticket
+GET    /api/v1/support/:id          # Get ticket status
+
+GET    /healthz                     # Health check
+```
+
+### Response Format
+
+```json
+// Success
+{
+  "success": true,
+  "data": { /* payload */ }
+}
+
+// Error
+{
+  "success": false,
+  "error": "Error message",
+  "details": { /* optional */ }
+}
+```
+
+## Environment Variables
+
+### Backend
+```env
+DATABASE_URL=postgresql://...
+CLERK_SECRET_KEY=sk_...
+CLERK_WEBHOOK_SECRET=whsec_...
+INNGEST_SIGNING_KEY=...
+INNGEST_EVENT_KEY=...
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+RESEND_API_KEY=re_...
+RAZORPAY_KEY_ID=rzp_...
+RAZORPAY_KEY_SECRET=...
+GOOGLE_GEMINI_API_KEY=...
+NODE_ENV=production
+PORT=3000
+```
+
+### Frontend
+```env
+VITE_CLERK_PUBLISHABLE_KEY=pk_...
+VITE_API_BASE_URL=https://api.fairarena.app
+VITE_SOCKET_URL=wss://api.fairarena.app
+VITE_RAZORPAY_KEY_ID=rzp_...
+```
+
+## Important Rules
+
+1. **Type Safety:** Always use TypeScript strict mode
+2. **Validation:** Zod for all inputs (both client & server)
+3. **Authentication:** All protected routes require Clerk JWT
+4. **Transactions:** Use Prisma transactions for multi-table writes
+5. **Caching:** Cache with TTL, invalidate on mutation
+6. **Logging:** Winston with structured logs (never log secrets)
+7. **Security:** Rate limit public endpoints (Arcjet)
+8. **Errors:** Track with Sentry, log with context
+9. **Payments:** Always use transactions, implement idempotency
+10. **Testing:** Test edge cases and error scenarios
+
+## Development
+
+```bash
+# Local setup
+pnpm install
+cd Backend && pnpm db:generate && pnpm db:migrate
+
+# Run services
+cd Backend && pnpm dev              # API (port 3000)
+cd Backend && pnpm dev:inngest      # Jobs (port 8288)
+cd Frontend && pnpm dev             # Frontend (port 5173)
+
+# Docker
+docker compose up -d                # All services
+docker compose logs -f backend      # View logs
+```
+
+## Useful Commands
+
+```bash
+# Database
+pnpm db:studio          # Prisma Studio GUI
+pnpm db:migrate         # Run migrations
+pnpm db:seed            # Seed data
+
+# Utilities
+pnpm script:clear-redis     # Clear cache
+pnpm script:sync-env-to-db  # Sync env to DB
+
+# Code quality
+pnpm typecheck          # TypeScript check
+pnpm lint               # ESLint
+```
+
+## Resources
+
+- API Docs: http://localhost:3000/api-docs (Swagger)
+- Postman: `Backend/postman/FairArena_API.postman_collection.json`
+- Architecture: `Backend/docs/SYSTEM_ARCHITECTURE.md`
+- Database: `Backend/docs/DATABASE_DESIGN.md`
+- Infrastructure: `Backend/docs/INFRASTRUCTURE.md`
+
+---
+
+**Support:** fairarena.contact@gmail.com
+**Author:** @Saksham-Goel1107

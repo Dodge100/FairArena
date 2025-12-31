@@ -7,9 +7,6 @@ declare global {
       auth: () => {
         userId?: string;
         isAuthenticated?: boolean;
-        user?: {
-          primaryEmailAddress?: { emailAddress: string };
-        };
       };
     }
   }

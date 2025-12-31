@@ -1,0 +1,479 @@
+# FairArena Project - Cursor AI Context
+
+## Project Overview
+FairArena is a production-ready full-stack platform for fair and transparent skill assessment. Built with modern technologies and enterprise-grade architecture.
+
+**Live URL:** https://fair.sakshamg.me
+**Author:** Saksham Goel (Saksham-Goel1107)
+**License:** Proprietary
+
+## Tech Stack
+
+### Frontend
+- **Framework:** React 19.2 with TypeScript 5.9
+- **Build Tool:** Vite 7.3
+- **Styling:** TailwindCSS 4.1 with custom design system
+- **UI Components:** Radix UI, Shadcn UI, Aceternity UI
+- **Animations:** Framer Motion 12.23, TSParticles
+- **Authentication:** Clerk React 5.59
+- **State Management:** React Context API
+- **Routing:** React Router v7
+- **HTTP Client:** Axios 1.13
+- **Real-time:** Socket.IO Client 4.8
+- **Forms:** React Hook Form with Zod validation
+- **Markdown:** Marked with DOMPurify sanitization
+- **Analytics:** Microsoft Clarity, Sentry
+- **Payments:** Razorpay
+
+### Backend
+- **Runtime:** Node.js 20 LTS
+- **Framework:** Express 5.2
+- **ORM:** Prisma 7.2 (PostgreSQL)
+- **Cache/Queue:** Redis 7 (Upstash)
+- **Background Jobs:** Inngest (34+ functions)
+- **Authentication:** Clerk Express (JWT-based)
+- **Email:** Resend with 19 React Email templates
+- **AI:** Google Gemini + LangChain with 10 tools
+- **Payments:** Razorpay
+- **Security:** Arcjet (rate limiting), Helmet (security headers)
+- **Observability:** OpenTelemetry + SigNoz (traces, logs, metrics)
+- **Validation:** Zod 4.2
+- **Monitoring:** Prometheus + cAdvisor
+
+### Infrastructure
+- **Database:** PostgreSQL 15+ with read replicas
+- **Cache:** Redis 7 (Upstash)
+- **Container:** Docker + Docker Compose
+- **Proxy:** Caddy with Cloudflare WAF + CDN
+- **Storage:** Azure Blob Storage
+- **Secrets:** Azure Key Vault
+- **Package Manager:** pnpm 10.26
+
+## Project Structure
+
+```
+FairArena/
+├── Backend/
+│   ├── src/
+│   │   ├── config/           # App configuration (8 files)
+│   │   ├── controllers/v1/   # Request handlers (31 files)
+│   │   ├── email/templates/  # 19 React Email templates
+│   │   ├── inngest/v1/       # 34+ background job functions
+│   │   ├── middleware/       # Express middleware (8 files)
+│   │   ├── routes/v1/        # API routes (17 modules)
+│   │   ├── services/v1/      # Business logic
+│   │   ├── utils/            # Shared utilities
+│   │   ├── index.ts          # App entry point
+│   │   ├── instrument.ts     # OpenTelemetry setup
+│   │   └── tracing.ts        # Distributed tracing
+│   ├── prisma/
+│   │   ├── schema.prisma     # 30+ database models
+│   │   └── migrations/       # Migration history
+│   ├── docs/                 # Comprehensive documentation
+│   ├── postman/              # API collection (70+ endpoints)
+│   └── package.json
+│
+├── Frontend/
+│   ├── src/
+│   │   ├── components/       # Reusable UI components (61 files)
+│   │   ├── pages/            # Page components (27 files)
+│   │   ├── contexts/         # React contexts (7 files)
+│   │   ├── hooks/            # Custom hooks
+│   │   ├── services/         # API services
+│   │   ├── lib/              # Utilities
+│   │   └── config/           # Frontend config
+│   └── package.json
+│
+├── ShellScripts/             # Deployment automation (10 scripts)
+├── docker-compose.yml        # Full stack orchestration
+└── README.md
+```
+
+## Database Schema (Prisma)
+
+### Core Models (30+)
+- **User:** Authentication, profile, credits, settings
+- **Profile:** Bio, skills, experience, social links, portfolio
+- **Organization:** Multi-org support with roles & permissions
+- **Team:** Team management within organizations
+- **Project:** Project collaboration with access control
+- **Payment:** Razorpay integration with webhook handling
+- **CreditTransaction:** Credit balance tracking
+- **Plan:** Subscription/credit plans
+- **Notification:** Real-time notification system
+- **Support:** Ticketing system with attachments
+- **Settings:** User preferences (JSON)
+- **Feedback:** User feedback collection
+- **Report:** Content reporting system
+- **Logs:** Audit trail
+
+### Key Features
+- Role-based access control (RBAC) for Organizations/Teams/Projects
+- Invite code system with expiry
+- Profile starring and views tracking
+- Audit logs for all entities
+- Soft deletes with `isDeleted` + `deletedAt`
+- Comprehensive indexing for performance
+
+## API Architecture
+
+### Base URLs
+- **Production:** `https://api.fairarena.app/api/v1`
+- **Development:** `http://localhost:3000/api/v1`
+
+### Authentication
+All authenticated routes require Clerk JWT:
+```
+Authorization: Bearer <clerk_jwt_token>
+```
+
+### Endpoints (70+)
+- `/profile/*` - User profile management (5 endpoints)
+- `/credits/*` - Credit balance & OTP verification (8 endpoints)
+- `/account/*` - Email verification, data export (5 endpoints)
+- `/organizations/*` - Organization CRUD (8 endpoints)
+- `/teams/*` - Team management (7 endpoints)
+- `/invitations/*` - Team invite flow (7 endpoints)
+- `/ai/*` - AI chat (streaming/non-streaming) (3 endpoints)
+- `/notifications/*` - Notification system (8 endpoints)
+- `/stars/*` - Profile starring (4 endpoints)
+- `/payments/*` - Razorpay integration (3 endpoints)
+- `/plans/*` - Pricing plans (2 endpoints, public)
+- `/settings/*` - User preferences (3 endpoints)
+- `/reports/*` - Content reporting (2 endpoints)
+- `/feedback/*` - Feedback submission (2 endpoints, public)
+- `/newsletter/*` - Email subscriptions (2 endpoints, public)
+- `/support/*` - Support tickets (2 endpoints)
+- `/healthz` - Health check (1 endpoint, public)
+
+### Response Format
+Standard JSON responses with consistent error handling via Sentry.
+
+## Background Jobs (Inngest)
+
+**34+ Functions** handling:
+- User lifecycle (Clerk webhook sync)
+- Payment processing (Razorpay webhooks)
+- Email delivery (19 templates via Resend)
+- Profile updates & cache invalidation
+- Credit transactions & balance updates
+- Notification dispatch
+- Support ticket processing
+- AI assistant context management
+- Audit log creation
+- Data cleanup & archival
+
+## AI Assistant Features
+
+**Platform:** Google Gemini + LangChain
+**Tools:** 10 context-aware tools for:
+- User profile data retrieval
+- Credit balance queries
+- Organization/team lookup
+- Notification management
+- Support ticket creation
+- Payment history
+- Settings management
+
+**Modes:**
+- Streaming chat (SSE)
+- Non-streaming responses
+- Context-aware conversation memory
+
+## Coding Guidelines
+
+### TypeScript
+- **Strict mode enabled** in both frontend and backend
+- Use `interface` for object shapes, `type` for unions/intersections
+- Prefer `unknown` over `any`
+- Use Zod for runtime validation
+- Leverage discriminated unions for state management
+
+### React (Frontend)
+- **Functional components** with hooks only
+- Use TypeScript for all components
+- Props interface naming: `<ComponentName>Props`
+- Prefer composition over inheritance
+- Use React.memo() for expensive renders
+- Custom hooks for reusable logic (prefix with `use`)
+- Context for global state, useState for local
+- Implement error boundaries for resilience
+
+### Express (Backend)
+- **Async/await** for all async operations
+- Use try-catch with proper error logging (Winston)
+- Middleware order: security → auth → business logic
+- Controller → Service → Repository pattern
+- Validate inputs with Zod schemas
+- Use Prisma transactions for multi-step operations
+- Implement circuit breakers (Opossum) for external APIs
+- Always return consistent error responses
+
+### Database (Prisma)
+- Use transactions for multi-table writes
+- Prefer `findUnique` over `findFirst` when possible
+- Use select/include to minimize data transfer
+- Implement soft deletes (`isDeleted` + `deletedAt`)
+- Create indexes for frequently queried fields
+- Use read replicas for heavy read operations
+- Avoid N+1 queries (use `include` wisely)
+
+### Security
+- **Never commit secrets** (use .env files, Azure Key Vault)
+- Use Arcjet for rate limiting (production-ready configs)
+- Helmet for security headers
+- Validate all inputs (Zod schemas)
+- Sanitize HTML (DOMPurify on frontend)
+- Implement CSRF protection
+- Use parameterized queries (Prisma does this automatically)
+- JWT expiry and refresh token rotation via Clerk
+
+### Performance
+- **Redis caching** with TTL for frequently accessed data
+- Database read replicas for scaling reads
+- CDN (Cloudflare) for static assets
+- Lazy loading for React components
+- Image optimization (Azure Blob Storage)
+- Compression (gzip/brotli via Caddy)
+- Debounce/throttle user inputs
+
+### Testing
+- Write unit tests for utilities and services
+- Integration tests for API endpoints (Postman/Jest)
+- E2E tests for critical user flows
+- Test error scenarios and edge cases
+- Mock external dependencies (Inngest, Razorpay, Resend)
+
+### Observability
+- **OpenTelemetry** for distributed tracing
+- Winston for structured logging
+- Prometheus metrics for API performance
+- SigNoz for visualization
+- Error tracking with Sentry
+- Health checks for all services
+
+## Environment Variables
+
+### Backend Required
+```
+DATABASE_URL                  # PostgreSQL connection
+CLERK_SECRET_KEY             # Auth secret (sk_...)
+CLERK_WEBHOOK_SECRET         # Webhook verification
+INNGEST_SIGNING_KEY          # Function signing
+INNGEST_EVENT_KEY            # Event publishing
+UPSTASH_REDIS_REST_URL       # Redis endpoint
+UPSTASH_REDIS_REST_TOKEN     # Redis auth
+RESEND_API_KEY               # Email service (re_...)
+RAZORPAY_KEY_ID              # Payment key (rzp_...)
+RAZORPAY_KEY_SECRET          # Payment secret
+GOOGLE_GEMINI_API_KEY        # AI service
+```
+
+### Frontend Required
+```
+VITE_CLERK_PUBLISHABLE_KEY   # Clerk public key
+VITE_API_BASE_URL            # Backend API URL
+VITE_SOCKET_URL              # WebSocket URL
+VITE_RAZORPAY_KEY_ID         # Razorpay public key
+```
+
+### Optional
+```
+NODE_ENV                     # development/production
+PORT                         # Server port (default: 3000)
+MAINTENANCE_MODE             # Enable maintenance page
+PAYMENTS_ENABLED             # Enable payment processing
+CREDENTIAL_VALIDATOR_URL     # Phone validation service
+HEALTHZ_HEADER_NAME          # Health check header name
+HEALTHZ_HEADER_VALUE         # Health check header value
+```
+
+## Development Workflow
+
+### Local Setup
+```bash
+# Install dependencies
+pnpm install
+
+# Database setup
+cd Backend
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed  # Optional
+
+# Run development servers
+# Terminal 1: Backend API
+cd Backend && pnpm dev
+
+# Terminal 2: Background jobs
+cd Backend && pnpm dev:inngest
+
+# Terminal 3: Frontend
+cd Frontend && pnpm dev
+```
+
+### Docker Development
+```bash
+# Start all services
+docker compose up -d
+
+# View logs
+docker compose logs -f backend
+
+# Stop services
+docker compose down
+```
+
+### Access Points
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+- Swagger Docs: http://localhost:3000/api-docs
+- Inngest Dashboard: http://localhost:8288
+- Prometheus: http://localhost:9090
+
+## Code Style
+
+### Naming Conventions
+- **Files:** camelCase for utilities, PascalCase for components
+- **Components:** PascalCase (e.g., `ProfileCard.tsx`)
+- **Functions:** camelCase (e.g., `getUserProfile`)
+- **Constants:** UPPER_SNAKE_CASE (e.g., `API_BASE_URL`)
+- **Interfaces/Types:** PascalCase (e.g., `UserProfile`)
+- **Enums:** PascalCase with UPPER_CASE values
+
+### Import Order
+1. External dependencies (React, Express, etc.)
+2. Internal modules (absolute imports)
+3. Relative imports (components, utils)
+4. Types/interfaces
+5. Styles
+
+### Comments
+- JSDoc for public functions/components
+- Inline comments for complex logic
+- TODO/FIXME/NOTE for tracking work
+- Avoid obvious comments
+
+## Git Workflow
+
+### Branch Naming
+- `feature/description` - New features
+- `fix/description` - Bug fixes
+- `refactor/description` - Code refactoring
+- `docs/description` - Documentation
+- `chore/description` - Maintenance
+
+### Commit Messages
+Follow conventional commits:
+- `feat: add user profile API`
+- `fix: resolve payment webhook issue`
+- `refactor: optimize database queries`
+- `docs: update API documentation`
+- `chore: update dependencies`
+
+## Common Patterns
+
+### Error Handling
+```typescript
+// Backend
+try {
+  const result = await someOperation();
+  return res.status(200).json({ success: true, data: result });
+} catch (error) {
+  logger.error('Operation failed', { error, context });
+  return res.status(500).json({ success: false, error: 'Internal server error' });
+}
+
+// Frontend
+try {
+  const { data } = await api.getProfile();
+  setProfile(data);
+} catch (error) {
+  toast.error('Failed to load profile');
+  console.error('Profile load error:', error);
+}
+```
+
+### API Calls (Frontend)
+```typescript
+// Use services/api.ts for centralized API calls
+import { api } from '@/services/api';
+
+const fetchProfile = async () => {
+  const response = await api.get('/profile');
+  return response.data;
+};
+```
+
+### Database Queries (Backend)
+```typescript
+// Use Prisma client from config/database.ts
+import { prisma } from '@/config/database';
+
+const user = await prisma.user.findUnique({
+  where: { userId },
+  include: { profile: true, settings: true }
+});
+```
+
+### Redis Caching
+```typescript
+import { redis } from '@/config/redis';
+
+// Set with TTL
+await redis.set('user:123', JSON.stringify(data), 'EX', 3600);
+
+// Get
+const cached = await redis.get('user:123');
+```
+
+## Production Checklist
+
+- [ ] Environment variables configured (production values)
+- [ ] Database migrations applied
+- [ ] Redis cache configured
+- [ ] Cloudflare WAF rules active
+- [ ] SSL/TLS certificates valid
+- [ ] Health checks passing
+- [ ] Monitoring enabled (SigNoz, Sentry)
+- [ ] Rate limiting configured (Arcjet)
+- [ ] Email templates tested
+- [ ] Payment webhooks verified
+- [ ] Background jobs running (Inngest)
+- [ ] Backup strategy implemented
+- [ ] Log rotation configured
+- [ ] Performance testing completed
+
+## Important Notes
+
+1. **Never expose sensitive data** in API responses (filter credentials, tokens)
+2. **Validate all inputs** server-side with Zod, even if validated client-side
+3. **Use transactions** for operations affecting multiple tables
+4. **Implement idempotency** for payment and credit operations
+5. **Cache aggressively** but invalidate correctly
+6. **Log errors** with context but never log sensitive data
+7. **Rate limit** all public endpoints
+8. **Version APIs** (currently v1) for backwards compatibility
+9. **Document breaking changes** in commit messages
+10. **Test payment flows** in sandbox mode before production
+
+## Resources
+
+- **Documentation:** `Backend/docs/` (5 comprehensive docs)
+- **Postman Collection:** `Backend/postman/` (70+ endpoints)
+- **API Docs:** http://localhost:3000/api-docs (Swagger)
+- **PRD/Architecture:** See `Backend/docs/SYSTEM_ARCHITECTURE.md`
+- **Database Schema:** See `Backend/docs/DATABASE_DESIGN.md`
+- **Deployment Guide:** See `Backend/docs/INFRASTRUCTURE.md`
+
+## Support
+
+For issues or questions, contact:
+- **Email:** fairarena.contact@gmail.com
+- **Support Portal:** https://fair.sakshamg.me/support
+- **GitHub Issues:** (Internal repository)
+
+---
+
+**Last Updated:** 2025-12-31
+**Maintained by:** Saksham Goel (@Saksham-Goel1107)
