@@ -4,9 +4,7 @@ export type SupportConfirmationEmailParams = {
   userName: string;
   subject: string;
   requestId: string;
-  type?: string;
   severity?: string;
-  shortDescription?: string;
 };
 
 export const supportConfirmationEmailTemplate = (
@@ -29,28 +27,6 @@ export const supportConfirmationEmailTemplate = (
       default:
         return '#6b7280'; // Gray
     }
-  };
-
-  // Helper function to get type badge color
-  const getTypeColor = (type?: string) => {
-    switch (type?.toUpperCase()) {
-      case 'BUG':
-        return '#ef4444'; // Red
-      case 'FEATURE_REQUEST':
-        return '#8b5cf6'; // Purple
-      case 'QUERY':
-        return '#3b82f6'; // Blue
-      case 'SUGGESTION':
-        return '#14b8a6'; // Teal
-      default:
-        return '#6b7280'; // Gray
-    }
-  };
-
-  // Format type for display
-  const formatType = (type?: string) => {
-    if (!type) return 'Other';
-    return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   return `
@@ -125,20 +101,8 @@ export const supportConfirmationEmailTemplate = (
                 <p><strong>Request ID:</strong> ${params.requestId}</p>
                 <p><strong>Subject:</strong> ${params.subject}</p>
                 <p><strong>Status:</strong> Received</p>
-                ${params.type ? `<p><strong>Type:</strong><span class="badge" style="background-color: ${getTypeColor(params.type)};">${formatType(params.type)}</span></p>` : ''}
                 ${params.severity ? `<p><strong>Priority:</strong><span class="badge" style="background-color: ${getSeverityColor(params.severity)};">${params.severity}</span></p>` : ''}
               </div>
-
-              ${params.shortDescription ? `
-              <div class="classification-section">
-                <h3>📋 AI Classification Summary</h3>
-                <p>Our AI has analyzed your request and generated the following summary:</p>
-                <div class="short-description">
-                  "${params.shortDescription}"
-                </div>
-                <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">This helps us route your request to the right team member for faster resolution.</p>
-              </div>
-              ` : ''}
 
               <p>You can track the status of your support request and view all your previous requests by visiting your <a href="${supportUrl}" style="color: #667eea;">support dashboard</a>.</p>
 

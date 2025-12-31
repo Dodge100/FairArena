@@ -15,7 +15,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiFetch } from '@/lib/apiClient';
@@ -33,6 +41,7 @@ import {
   Megaphone,
   MessageSquare,
   MoreVertical,
+  Search,
   Star,
   Trash2,
   Trophy,
@@ -84,49 +93,66 @@ interface Notification {
   readAt?: string;
 }
 
-const getNotificationIcon = (type: string) => {
-  const iconMap: Record<string, React.ElementType> = {
-    SYSTEM: AlertCircle,
-    MENTION: MessageSquare,
-    INVITATION: Mail,
-    ACHIEVEMENT: Trophy,
-    UPDATE: Bell,
-    REMINDER: Calendar,
-    ALERT: AlertCircle,
-    MESSAGE: MessageSquare,
-    FOLLOW: Users,
-    STAR: Star,
-    COMMENT: MessageSquare,
-    ANNOUNCEMENT: Megaphone,
-  };
+const NOTIFICATION_TYPES = [
+  'SYSTEM',
+  'MENTION',
+  'INVITATION',
+  'ACHIEVEMENT',
+  'UPDATE',
+  'REMINDER',
+  'ALERT',
+  'MESSAGE',
+  'FOLLOW',
+  'STAR',
+  'COMMENT',
+  'ANNOUNCEMENT',
+] as const;
 
-  const Icon = iconMap[type] || Bell;
+const ICON_MAP: Record<string, React.ElementType> = {
+  SYSTEM: AlertCircle,
+  MENTION: MessageSquare,
+  INVITATION: Mail,
+  ACHIEVEMENT: Trophy,
+  UPDATE: Bell,
+  REMINDER: Calendar,
+  ALERT: AlertCircle,
+  MESSAGE: MessageSquare,
+  FOLLOW: Users,
+  STAR: Star,
+  COMMENT: MessageSquare,
+  ANNOUNCEMENT: Megaphone,
+};
+
+const COLOR_MAP: Record<string, string> = {
+  SYSTEM: 'bg-blue-500/10 text-blue-500',
+  MENTION: 'bg-purple-500/10 text-purple-500',
+  INVITATION: 'bg-green-500/10 text-green-500',
+  ACHIEVEMENT: 'bg-yellow-500/10 text-yellow-500',
+  UPDATE: 'bg-blue-500/10 text-blue-500',
+  REMINDER: 'bg-orange-500/10 text-orange-500',
+  ALERT: 'bg-red-500/10 text-red-500',
+  MESSAGE: 'bg-purple-500/10 text-purple-500',
+  FOLLOW: 'bg-indigo-500/10 text-indigo-500',
+  STAR: 'bg-yellow-500/10 text-yellow-500',
+  COMMENT: 'bg-teal-500/10 text-teal-500',
+  ANNOUNCEMENT: 'bg-pink-500/10 text-pink-500',
+};
+
+const getNotificationIcon = (type: string) => {
+  const Icon = ICON_MAP[type] || Bell;
   return <Icon className="h-5 w-5" />;
 };
 
 const getNotificationColor = (type: string) => {
-  const colorMap: Record<string, string> = {
-    SYSTEM: 'bg-blue-500/10 text-blue-500',
-    MENTION: 'bg-purple-500/10 text-purple-500',
-    INVITATION: 'bg-green-500/10 text-green-500',
-    ACHIEVEMENT: 'bg-yellow-500/10 text-yellow-500',
-    UPDATE: 'bg-blue-500/10 text-blue-500',
-    REMINDER: 'bg-orange-500/10 text-orange-500',
-    ALERT: 'bg-red-500/10 text-red-500',
-    MESSAGE: 'bg-purple-500/10 text-purple-500',
-    FOLLOW: 'bg-indigo-500/10 text-indigo-500',
-    STAR: 'bg-yellow-500/10 text-yellow-500',
-    COMMENT: 'bg-teal-500/10 text-teal-500',
-    ANNOUNCEMENT: 'bg-pink-500/10 text-pink-500',
-  };
-
-  return colorMap[type] || 'bg-gray-500/10 text-gray-500';
+  return COLOR_MAP[type] || 'bg-gray-500/10 text-gray-500';
 };
 
 export default function InboxPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -369,6 +395,15 @@ export default function InboxPage() {
     }
   };
 
+  const filteredNotifications = notifications.filter((notification) => {
+    const matchesSearch =
+      (notification.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (notification.description?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (notification.message?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'all' || notification.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsRead(notification.id);
@@ -438,8 +473,8 @@ export default function InboxPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <div className="border-b px-6">
-            <TabsList className="bg-transparent h-12">
+          <div className="border-b px-6 flex flex-col gap-4 py-4 xl:flex-row xl:items-center xl:justify-between">
+            <TabsList className="bg-transparent h-12 p-0 justify-start w-auto">
               <TabsTrigger value="all" className="gap-2">
                 All
                 {notifications.length > 0 && (
@@ -458,13 +493,38 @@ export default function InboxPage() {
               </TabsTrigger>
               <TabsTrigger value="read">Read</TabsTrigger>
             </TabsList>
+
+            <div className="flex items-center gap-2 w-full xl:w-auto">
+              <div className="relative flex-1 xl:w-[300px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search notifications..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {NOTIFICATION_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0) + type.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <ScrollArea className="flex-1">
             <div className="p-6">
               <TabsContent value="all" className="m-0">
                 <NotificationList
-                  notifications={notifications}
+                  notifications={filteredNotifications}
                   loading={loading}
                   onMarkAsRead={markAsRead}
                   onMarkAsUnread={markAsUnread}
@@ -475,7 +535,7 @@ export default function InboxPage() {
 
               <TabsContent value="unread" className="m-0">
                 <NotificationList
-                  notifications={notifications}
+                  notifications={filteredNotifications}
                   loading={loading}
                   onMarkAsRead={markAsRead}
                   onMarkAsUnread={markAsUnread}
@@ -486,7 +546,7 @@ export default function InboxPage() {
 
               <TabsContent value="read" className="m-0">
                 <NotificationList
-                  notifications={notifications}
+                  notifications={filteredNotifications}
                   loading={loading}
                   onMarkAsRead={markAsRead}
                   onMarkAsUnread={markAsUnread}

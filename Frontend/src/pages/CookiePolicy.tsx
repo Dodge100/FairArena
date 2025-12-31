@@ -243,7 +243,7 @@ function CookiePolicy() {
                     <LegalList
                         isDark={isDark}
                         items={[
-                            'Email: privacy@fairarena.com',
+                            'Email: fairarena.contact@gmail.com',
                             'Through our support system in the platform',
                             'Via our website contact form',
                         ]}

@@ -177,11 +177,13 @@ export class SupportController {
       const userId = auth?.userId;
       let userEmail: string | undefined;
       let emailId: string | undefined;
+      let userName: string | undefined | null;
 
       if (userId) {
         try {
           const user = await getCachedUserInfo(userId);
           emailId = user?.email;
+          userName = user?.firstName;
         } catch (error) {
           logger.error('Error fetching user for support request', { error, userId });
         }
@@ -209,7 +211,7 @@ export class SupportController {
           subject,
           message,
           userEmail,
-          userName: null, // Will be resolved in Inngest
+          userName,
         },
       });
 

@@ -98,16 +98,43 @@ export const supportRequestCreated = inngest.createFunction(
       }
     }
 
-    // Step 2: Create support request in database
+    // Step 2: Analyze support request with AI
+    const classification = await step.run('analyze-support-request', async () => {
+      try {
+        const aiService = (await import('../../services/v1/aiClassificationService.js')).getAIClassificationService();
+        return await aiService.classifySupportTicket(subject, message);
+      } catch (error) {
+        logger.error('Failed to classify support request', { error });
+        // Return undefined to use defaults in service
+        return undefined;
+      }
+    });
+
+    // Step 3: Create support request in database
     const supportData = userId
-      ? { userId, emailId, subject, message }
-      : { emailId, subject, message };
+      ? {
+        userId,
+        emailId,
+        subject,
+        message,
+        type: classification?.type,
+        severity: classification?.severity,
+        shortDescription: classification?.shortDescription
+      }
+      : {
+        emailId,
+        subject,
+        message,
+        type: classification?.type,
+        severity: classification?.severity,
+        shortDescription: classification?.shortDescription
+      };
 
     const supportRequest = await step.run('create-support-request', async () => {
       return await SupportService.createSupportRequest(supportData);
     });
 
-    // Step 3: Get user name if not provided (for authenticated users)
+    // Step 4: Get user name if not provided (for authenticated users)
     let finalUserName = userName;
     if (userId && !finalUserName) {
       await step.run('get-user-name', async () => {
@@ -122,7 +149,7 @@ export const supportRequestCreated = inngest.createFunction(
       });
     }
 
-    // Step 4: Send confirmation email to the user
+    // Step 5: Send confirmation email to the user
     await step.run('send-confirmation-email', async () => {
       const recipientEmail = userEmail || emailId;
       if (!recipientEmail) {
@@ -140,12 +167,13 @@ export const supportRequestCreated = inngest.createFunction(
             userName: finalUserName || 'Valued User',
             subject,
             requestId: supportRequest.id,
+            severity: classification?.severity,
           },
         },
       });
     });
 
-    // Step 5: Send in-app notification to authenticated user
+    // Step 6: Send in-app notification to authenticated user
     if (userId) {
       await step.run('send-in-app-notification', async () => {
         await inngest.send({
@@ -168,7 +196,7 @@ export const supportRequestCreated = inngest.createFunction(
       });
     }
 
-    // Step 6: Log the support request creation
+    // Step 7: Log the support request creation
     await step.run('log-support-request', async () => {
       console.log(`Support request created: ${supportRequest.id}`, {
         userId,

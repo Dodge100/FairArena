@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database.js';
-import { ReportState } from '../../generated/enums.js';
+import { ReportSeverity, ReportState, ReportType } from '../../generated/enums.js';
 import logger from '../../utils/logger.js';
 
 export interface CreateSupportRequestData {
@@ -7,6 +7,9 @@ export interface CreateSupportRequestData {
   emailId?: string;
   subject: string;
   message: string;
+  type?: ReportType;
+  severity?: ReportSeverity;
+  shortDescription?: string;
 }
 
 export class SupportService {
@@ -22,6 +25,9 @@ export class SupportService {
           subject: data.subject,
           message: data.message,
           status: ReportState.QUEUED,
+          type: data.type || ReportType.BUG,
+          severity: data.severity || ReportSeverity.LOW,
+          shortDescription: data.shortDescription,
         },
         include: {
           user: {

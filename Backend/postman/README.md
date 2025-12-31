@@ -267,7 +267,7 @@ Authorization: Bearer <clerk_jwt_token>
 
 ## Support
 
-- Email: support@fairarena.app
+- Email: fairarena.contact@gmail.com
 - API Issues: Create support ticket via `/api/v1/support`
 
 ---

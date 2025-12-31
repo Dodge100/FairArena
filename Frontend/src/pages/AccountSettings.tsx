@@ -7,7 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { apiFetch } from '@/lib/apiClient';
-import { Cookie, Download, Loader2, Settings } from 'lucide-react';
+import {
+  Activity,
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Cookie,
+  Download,
+  Layout,
+  Loader2,
+  Search,
+  Settings,
+  Shield,
+  Smartphone
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -206,18 +219,31 @@ export default function AccountSettings() {
     }
   }, [isVerified, fetchSettings]);
 
-  return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 flex items-center space-x-2">
-          {/* <Shield className="h-8 w-8 " /> */}
-          <span className="">Account Settings</span>
-        </h1>
+  const [searchQuery, setSearchQuery] = useState('');
+  const [openSections, setOpenSections] = useState<string[]>(['activity', 'preferences', 'data', 'privacy']);
 
-        <OTPVerification onVerified={() => setIsVerified(true)} />
+  const toggleSection = (sectionId: string) => {
+    setOpenSections((prev) =>
+      prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId],
+    );
+  };
 
-        {isVerified && (
-          <Card className="mt-6">
+  useEffect(() => {
+    if (searchQuery) {
+      setOpenSections(['activity', 'communication', 'preferences', 'data', 'privacy']);
+    }
+  }, [searchQuery]);
+
+  const sections = [
+    {
+      id: 'activity',
+      title: 'Activity & Support',
+      icon: Activity,
+      description: 'View your logs, reports, and support tickets',
+      keywords: ['logs', 'history', 'report', 'ticket', 'support', 'help', 'status'],
+      content: (
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
               <CardTitle>Account Logs</CardTitle>
               <CardDescription>View your account activity logs.</CardDescription>
@@ -228,10 +254,8 @@ export default function AccountSettings() {
               </Button>
             </CardContent>
           </Card>
-        )}
 
-        {isVerified && (
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>Your Reports</CardTitle>
               <CardDescription>View the status of reports you've submitted.</CardDescription>
@@ -258,8 +282,8 @@ export default function AccountSettings() {
               />
             </CardContent>
           </Card>
-        )}        {isVerified && (
-          <Card className="mt-6">
+
+          <Card>
             <CardHeader>
               <CardTitle>Your Support Tickets</CardTitle>
               <CardDescription>View the status of support requests you've submitted.</CardDescription>
@@ -284,101 +308,115 @@ export default function AccountSettings() {
               />
             </CardContent>
           </Card>
-        )}
-
-        {isVerified && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Messages Preferences</CardTitle>
-              <CardDescription>Control how you receive and interact with messages</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {isLoadingSettings ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span>Loading settings...</span>
-                </div>
-              ) : settings ? (
-                <div className="space-y-8">
-                  {/* Feedback Preferences */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="feedback-emails" className="text-sm font-medium">
-                          Weekly Feedback Emails
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Receive a weekly email asking for your feedback to help us improve
-                        </p>
-                      </div>
-                      <Switch
-                        id="feedback-emails"
-                        checked={settings.wantToGetFeedbackMail || false}
-                        onCheckedChange={(checked) =>
-                          updateSettingsValue('wantToGetFeedbackMail', checked)
-                        }
-                        disabled={isSavingSettings}
-                      />
+        </div>
+      ),
+    },
+    {
+      id: 'communication',
+      title: 'Communication',
+      icon: Bell,
+      description: 'Manage your messages and notification preferences',
+      keywords: ['email', 'feedback', 'notification', 'message', 'alert', 'communication'],
+      content: (
+        <Card>
+          <CardHeader>
+            <CardTitle>Messages Preferences</CardTitle>
+            <CardDescription>Control how you receive and interact with messages</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {isLoadingSettings ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Loading settings...</span>
+              </div>
+            ) : settings ? (
+              <div className="space-y-8">
+                {/* Feedback Preferences */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex-1">
+                      <Label htmlFor="feedback-emails" className="text-sm font-medium">
+                        Weekly Feedback Emails
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Receive a weekly email asking for your feedback to help us improve
+                      </p>
                     </div>
+                    <Switch
+                      id="feedback-emails"
+                      checked={settings.wantToGetFeedbackMail || false}
+                      onCheckedChange={(checked) =>
+                        updateSettingsValue('wantToGetFeedbackMail', checked)
+                      }
+                      disabled={isSavingSettings}
+                    />
+                  </div>
 
-                    {/* Feedback Notifications */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="feedback-notifications" className="text-sm font-medium">
-                          Weekly Feedback in-app Notifications
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Get in app notification when new feedback is available
-                        </p>
-                      </div>
-                      <Switch
-                        id="feedback-notifications"
-                        checked={settings.wantFeedbackNotifications || false}
-                        onCheckedChange={(checked) =>
-                          updateSettingsValue('wantFeedbackNotifications', checked)
-                        }
-                        disabled={isSavingSettings}
-                      />
+                  {/* Feedback Notifications */}
+                  <div className="flex items-center justify-between space-x-4">
+                    <div className="flex-1">
+                      <Label htmlFor="feedback-notifications" className="text-sm font-medium">
+                        Weekly Feedback in-app Notifications
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Get in app notification when new feedback is available
+                      </p>
                     </div>
+                    <Switch
+                      id="feedback-notifications"
+                      checked={settings.wantFeedbackNotifications || false}
+                      onCheckedChange={(checked) =>
+                        updateSettingsValue('wantFeedbackNotifications', checked)
+                      }
+                      disabled={isSavingSettings}
+                    />
+                  </div>
 
-                    {/* Reset Settings Button */}
-                    <div className="flex items-center justify-between space-x-4 pt-4 border-t">
-                      <div className="flex-1">
-                        <Label className="text-sm font-medium text-destructive">
-                          Reset All Settings
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Reset all your preferences back to the default values
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={resetSettings}
-                        disabled={isSavingSettings}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        {isSavingSettings ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Resetting...
-                          </>
-                        ) : (
-                          'Reset Settings'
-                        )}
-                      </Button>
+                  {/* Reset Settings Button */}
+                  <div className="flex items-center justify-between space-x-4 pt-4 border-t">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium text-destructive">
+                        Reset All Settings
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Reset all your preferences back to the default values
+                      </p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetSettings}
+                      disabled={isSavingSettings}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {isSavingSettings ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        'Reset Settings'
+                      )}
+                    </Button>
                   </div>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Failed to load settings</p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {isVerified && (
-          <Card className="mt-6">
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Failed to load settings</p>
+            )}
+          </CardContent>
+        </Card>
+      ),
+    },
+    {
+      id: 'preferences',
+      title: 'General Preferences',
+      icon: Layout,
+      description: 'Customize layout, homepage, and navigation',
+      keywords: ['home', 'page', 'sidebar', 'menu', 'layout', 'navigation', 'general', 'customize'],
+      content: (
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Settings className="h-5 w-5" />
@@ -408,10 +446,8 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {isVerified && (
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Settings className="h-5 w-5" />
@@ -475,10 +511,18 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {isVerified && (
-          <Card className="mt-6">
+        </div>
+      ),
+    },
+    {
+      id: 'data',
+      title: 'Data & Performance',
+      icon: Smartphone,
+      description: 'Manage data usage, battery settings, and exports',
+      keywords: ['data', 'saver', 'battery', 'performance', 'bandwidth', 'export', 'download', 'animations', 'dark mode'],
+      content: (
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Download className="h-5 w-5" />
@@ -599,10 +643,7 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
 
-        )}
-
-        {isVerified && (
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>Data Export</CardTitle>
               <CardDescription>Download all your personal data from FairArena.</CardDescription>
@@ -672,9 +713,58 @@ export default function AccountSettings() {
               )}
             </CardContent>
           </Card>
-        )}
-        {isVerified && (
-          < Card className="mt-6">
+        </div>
+      ),
+    },
+    {
+      id: 'privacy',
+      title: 'Privacy & Legal',
+      icon: Shield,
+      description: 'Manage cookie consents and privacy settings',
+      keywords: ['cookie', 'privacy', 'consent', 'legal', 'tracking', 'security'],
+      content: (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Legal Documents</span>
+              </CardTitle>
+              <CardDescription>
+                Review our terms, policies, and legal information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/privacy-policy')}>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-semibold">Privacy Policy</span>
+                    <span className="text-xs text-muted-foreground">How we handle your data</span>
+                  </div>
+                </Button>
+                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/terms-and-conditions')}>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-semibold">Terms of Service</span>
+                    <span className="text-xs text-muted-foreground">Rules and regulations</span>
+                  </div>
+                </Button>
+                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/cookie-policy')}>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-semibold">Cookie Policy</span>
+                    <span className="text-xs text-muted-foreground">Cookie usage and tracking</span>
+                  </div>
+                </Button>
+                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/refund')}>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-semibold">Refund Policy</span>
+                    <span className="text-xs text-muted-foreground">Returns and refunds</span>
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Cookie className="h-5 w-5" />
@@ -755,8 +845,91 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
+      ),
+    },
+  ];
+
+  const filteredSections = sections.filter((section) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      section.title.toLowerCase().includes(query) ||
+      section.description.toLowerCase().includes(query) ||
+      section.keywords.some((k) => k.toLowerCase().includes(query))
+    );
+  });
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex flex-col gap-4 mb-6">
+        <h1 className="text-3xl font-bold flex items-center space-x-2">
+          <span>Account Settings</span>
+        </h1>
+        <p className="text-muted-foreground">Manage your account preferences, security, and personal data.</p>
       </div>
+
+      <OTPVerification onVerified={() => setIsVerified(true)} />
+
+      {isVerified && (
+        <div className="space-y-6 mt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search settings..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-4">
+            {filteredSections.map((section) => {
+              const Icon = section.icon;
+              const isOpen = openSections.includes(section.id);
+              return (
+                <div key={section.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                  <button
+                    onClick={() => toggleSection(section.id)}
+                    className="flex items-center justify-between w-full p-6 text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-full bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{section.title}</h3>
+                        <p className="text-sm text-muted-foreground">{section.description}</p>
+                      </div>
+                    </div>
+                    {isOpen ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-6 pb-6 pt-0 border-t animate-in slide-in-from-top-2 duration-200">
+                      <div className="mt-6">{section.content}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {filteredSections.length === 0 && (
+              <div className="text-center py-12">
+                <Search className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                <h3 className="text-lg font-medium">No settings found</h3>
+                <p className="text-muted-foreground">
+                  Try searching for a different keyword or browse the categories.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Cookie Consent Modal */}
       <CookieConsentModal
