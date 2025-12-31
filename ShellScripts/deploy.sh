@@ -27,33 +27,112 @@ EMAIL_FROM="${EMAIL_FROM:-$GMAIL_USER}"
 EMAIL_TO="${EMAIL_TO:-}"
 EMAIL_SUBJECT_PREFIX="${EMAIL_SUBJECT_PREFIX:-[FairArena Deploy]}"
 
+# Azure Blob Storage settings for log upload
+AZURE_STORAGE_CONTAINER="${AZURE_STORAGE_CONTAINER:-fairarena-vm-deploy-logs}"
+AZURE_STORAGE_CONNECTION_STRING="${AZURE_STORAGE_CONNECTION_STRING:-}"
+AZURE_STORAGE_ACCOUNT="${AZURE_STORAGE_ACCOUNT:-}"
+AZURE_STORAGE_SAS_TOKEN="${AZURE_STORAGE_SAS_TOKEN:-}"
+
 # Deployment metadata
 HOSTNAME=$(hostname 2>/dev/null || echo "unknown")
 DEPLOY_ID="$(date +%Y%m%d%H%M%S)-$$"
 START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 START_EPOCH=$(date +%s)
 
-# Color codes for output (stripped from logs/emails)
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Color codes - use $'...' syntax for proper escape sequence interpretation
+# These are only used for visual output, stripped from logs
+GREEN=$'\033[0;32m'
+BLUE=$'\033[0;34m'
+RED=$'\033[0;31m'
+YELLOW=$'\033[1;33m'
+NC=$'\033[0m' # No Color
 
+# Log function - writes to stdout (which is redirected to LOG_FILE by exec)
 log() {
     local message="$(date '+%Y-%m-%d %H:%M:%S') - $*"
-    # Write to temp log (strip colors)
-    echo "$message" | sed 's/\x1b\[[0-9;]*m//g' >> "$TEMP_LOG_FILE"
-    # Write to persistent log
-    echo "$message" | sed 's/\x1b\[[0-9;]*m//g' >> "$LOG_FILE"
-    # Write to stdout with colors
-    echo -e "$message"
+    # Strip both actual ANSI escape sequences and literal \033 strings
+    echo "$message" | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\\033\[[0-9;]*m//g'
 }
 
 log_section() {
     log "========================================================================"
     log "$1"
     log "========================================================================"
+}
+
+# Create a snapshot of logs for email/azure upload (called at end)
+create_log_snapshot() {
+    # Ensure temp log file can be created
+    touch "$TEMP_LOG_FILE" 2>/dev/null || true
+
+    if [ -f "$LOG_FILE" ]; then
+        # Extract only this deployment's logs using the deploy ID marker
+        local start_marker="STARTING DEPLOYMENT - ID: $DEPLOY_ID"
+        # Copy from start marker to end of file
+        sed -n "/$start_marker/,\$p" "$LOG_FILE" > "$TEMP_LOG_FILE" 2>/dev/null || \
+            tail -n 1000 "$LOG_FILE" > "$TEMP_LOG_FILE" 2>/dev/null || \
+            echo "No logs available" > "$TEMP_LOG_FILE"
+    else
+        echo "Log file not found: $LOG_FILE" > "$TEMP_LOG_FILE"
+    fi
+}
+
+# Upload logs to Azure Blob Storage
+upload_logs_to_azure() {
+    local status="$1"  # SUCCESS or FAILURE
+
+    # Check if Azure CLI is available
+    if ! command -v az &> /dev/null; then
+        log "${YELLOW}Warning: Azure CLI not installed - skipping blob upload${NC}"
+        return 0
+    fi
+
+    # Check if we have credentials
+    if [ -z "$AZURE_STORAGE_CONNECTION_STRING" ] && [ -z "$AZURE_STORAGE_SAS_TOKEN" ]; then
+        log "${YELLOW}Warning: No Azure storage credentials configured - skipping blob upload${NC}"
+        return 0
+    fi
+
+    if [ ! -f "$TEMP_LOG_FILE" ]; then
+        log "${YELLOW}Warning: Temp log file not found - skipping blob upload${NC}"
+        return 0
+    fi
+
+    # Generate blob name with timestamp and status
+    local blob_name="deploy-${DEPLOY_ID}-${status}.log"
+
+    log "Uploading logs to Azure Blob Storage: ${AZURE_STORAGE_CONTAINER}/${blob_name}"
+
+    local upload_result
+    local upload_exit_code
+
+    # Try connection string first, then SAS token
+    if [ -n "$AZURE_STORAGE_CONNECTION_STRING" ]; then
+        upload_result=$(az storage blob upload \
+            --container-name "$AZURE_STORAGE_CONTAINER" \
+            --file "$TEMP_LOG_FILE" \
+            --name "$blob_name" \
+            --connection-string "$AZURE_STORAGE_CONNECTION_STRING" \
+            --overwrite true \
+            2>&1) || upload_exit_code=$?
+    elif [ -n "$AZURE_STORAGE_SAS_TOKEN" ] && [ -n "$AZURE_STORAGE_ACCOUNT" ]; then
+        upload_result=$(az storage blob upload \
+            --container-name "$AZURE_STORAGE_CONTAINER" \
+            --file "$TEMP_LOG_FILE" \
+            --name "$blob_name" \
+            --account-name "$AZURE_STORAGE_ACCOUNT" \
+            --sas-token "$AZURE_STORAGE_SAS_TOKEN" \
+            --overwrite true \
+            2>&1) || upload_exit_code=$?
+    fi
+
+    if [ "${upload_exit_code:-0}" -eq 0 ]; then
+        log "${GREEN}Logs uploaded to Azure Blob Storage successfully${NC}"
+        return 0
+    else
+        log "${YELLOW}Warning: Failed to upload logs to Azure: $upload_result${NC}"
+        return 0  # Non-blocking - don't fail deployment
+    fi
 }
 
 validate_email_config() {
@@ -249,24 +328,44 @@ ${log_base64}
 
 DEPLOY_STATUS="FAILURE"
 DEPLOY_MESSAGE="Deployment failed unexpectedly"
+LOCK_ACQUIRED="false"  # Track if we actually hold the lock
+PID_FILE="/tmp/deploy.pid"  # Define here for cleanup access
 
 cleanup() {
     local exit_code=$?
 
-    # Release the lock
-    if [ -n "${LOCK_FD:-}" ]; then
+    # Only release the lock if we actually acquired it
+    if [ "$LOCK_ACQUIRED" = "true" ] && [ -n "${LOCK_FD:-}" ]; then
         flock -u "$LOCK_FD" 2>/dev/null || true
+        # Clear the PID file to indicate we're done
+        rm -f "$PID_FILE" 2>/dev/null || true
+        log "Lock released"
     fi
 
-    # Send notification based on final status
+    # Log final status
     if [ "$DEPLOY_STATUS" = "SUCCESS" ]; then
         log_section "DEPLOYMENT COMPLETED SUCCESSFULLY"
-        send_email "$DEPLOY_MESSAGE" "" "SUCCESS"
     else
         log_section "DEPLOYMENT FAILED"
         log "Exit code: $exit_code"
         log "Error: $DEPLOY_MESSAGE"
+    fi
+
+    # Create snapshot of this deployment's logs for email/azure upload
+    create_log_snapshot
+
+    # Send email notification (uses TEMP_LOG_FILE snapshot as attachment)
+    if [ "$DEPLOY_STATUS" = "SUCCESS" ]; then
+        send_email "$DEPLOY_MESSAGE" "" "SUCCESS"
+    else
         send_email "$DEPLOY_MESSAGE" "" "FAILURE"
+    fi
+
+    # Upload logs to Azure Blob Storage
+    if [ "$DEPLOY_STATUS" = "SUCCESS" ]; then
+        upload_logs_to_azure "SUCCESS"
+    else
+        upload_logs_to_azure "FAILURE"
     fi
 
     # Cleanup temp files (but keep for debugging if failed)
@@ -290,25 +389,39 @@ error_handler() {
 
 trap 'error_handler ${LINENO} $?' ERR
 
-# -----------------------------------------------------------------------------
 # Background Execution Handler
-# -----------------------------------------------------------------------------
 if [ "${1:-}" != "--background" ]; then
-    nohup bash "$SCRIPT_PATH" --background "$@" &
-    echo "Deployment started in background. Check logs at $LOG_FILE"
-    echo "Run 'tail -f $LOG_FILE' to monitor in real-time."
+    # Launch in background and fully detach from terminal
+    nohup bash "$SCRIPT_PATH" --background "$@" > /dev/null 2>&1 &
+
+    # Store the PID for reference
+    BACKGROUND_PID=$!
+
+    echo "Deployment started in background (PID: $BACKGROUND_PID)"
+    echo "Check logs at: $LOG_FILE"
+    echo "Monitor with: tail -f $LOG_FILE"
     echo "Deploy ID: $DEPLOY_ID"
+
+    # Disown to fully detach from this shell
+    disown $BACKGROUND_PID 2>/dev/null || true
+
     # Don't trigger cleanup trap for the foreground process
     trap - EXIT
     exit 0
 fi
 shift
 
-# Enable strict mode AFTER background check
+# Create all required files BEFORE enabling strict mode
+# This ensures they exist and avoids errors with set -e
+mkdir -p /tmp 2>/dev/null || true
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+touch "$LOG_FILE" "$LOCK_FILE" "$TEMP_LOG_FILE" 2>/dev/null || true
+
+# Enable strict mode AFTER file creation
 set -euo pipefail
 
-# Redirect all output to log files
-exec > >(tee -a "$TEMP_LOG_FILE" | tee -a "$LOG_FILE") 2>&1
+# Redirect stdout/stderr to log file for real-time monitoring
+exec >> "$LOG_FILE" 2>&1
 
 # Main Deployment Logic
 log_section "STARTING DEPLOYMENT - ID: $DEPLOY_ID"
@@ -317,16 +430,40 @@ log "Branch: $GIT_BRANCH"
 log "Compose File: $COMPOSE_FILE"
 log "Start Time: $START_TIME"
 
-# Acquire deployment lock
+# Acquire deployment lock with stale lock detection
 log "${BLUE}[INIT] Acquiring deployment lock...${NC}"
+
+# PID_FILE is defined earlier for cleanup access
+
+# Check for stale lock - if PID file exists, check if the PID is still running
+if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+    if [ -n "$OLD_PID" ] && [ "$OLD_PID" != "$$" ]; then
+        if ! kill -0 "$OLD_PID" 2>/dev/null; then
+            log "${YELLOW}Stale lock detected (PID $OLD_PID is dead). Clearing...${NC}"
+            rm -f "$LOCK_FILE" "$PID_FILE"
+        else
+            log "${YELLOW}Deployment already running (PID $OLD_PID is alive)${NC}"
+        fi
+    fi
+fi
+
+# Use flock for atomic locking (files already created before strict mode)
 LOCK_FD=200
-exec 200>"$LOCK_FILE"
+exec 200>>"$LOCK_FILE"
 if ! flock -n 200; then
     DEPLOY_MESSAGE="Deployment already in progress"
     log "${RED}$DEPLOY_MESSAGE. Exiting.${NC}"
+    # Don't set LOCK_ACQUIRED - we don't hold the lock
     exit 1
 fi
-log "${GREEN}Lock acquired${NC}"
+
+# Mark that we successfully acquired the lock
+LOCK_ACQUIRED="true"
+
+# Write our PID to the separate PID file for stale detection
+echo "$$" > "$PID_FILE"
+log "${GREEN}Lock acquired (PID: $$)${NC}"
 
 # Safety checks for git
 log "${BLUE}[INIT] Validating repository...${NC}"
@@ -382,11 +519,27 @@ if [ -f "../Backend/ShellScripts/envs.sh" ]; then
         log "${RED}$DEPLOY_MESSAGE${NC}"
         exit 1
     fi
+    # cd ../../
     cd ../../ShellScripts
     log "Backend environment configured"
 else
     log "${YELLOW}Backend envs.sh not found, skipping${NC}"
 fi
+
+# Step 4: Setup Frontend environment
+# log "${GREEN}[4/10] Setting up Frontend environment...${NC}"
+# if [ -f "./Frontend/ShellScripts/envs.sh" ]; then
+#     cd ./Frontend/
+#     if ! bash envs.sh 2>&1; then
+#         DEPLOY_MESSAGE="Failed to setup Frontend environment"
+#         log "${RED}$DEPLOY_MESSAGE${NC}"
+#         exit 1
+#     fi
+#     cd ../ShellScripts
+#     log "Frontend environment configured"
+# else
+#     log "${YELLOW}Frontend envs.sh not found, skipping${NC}"
+# fi
 
 # Step 4: Setup Inngest environment
 log "${GREEN}[4/10] Setting up Inngest environment...${NC}"
@@ -428,17 +581,17 @@ else
 fi
 
 # Step 7: Setup N8N environment
-log "${GREEN}[7/10] Setting up N8N environment...${NC}"
-if [ -f "./envs.n8n.sh" ]; then
-    if ! bash envs.n8n.sh 2>&1; then
-        DEPLOY_MESSAGE="Failed to setup N8N environment"
-        log "${RED}$DEPLOY_MESSAGE${NC}"
-        exit 1
-    fi
-    log "N8N environment configured"
-else
-    log "${YELLOW}envs.n8n.sh not found, skipping${NC}"
-fi
+# log "${GREEN}[7/10] Setting up N8N environment...${NC}"
+# if [ -f "./envs.n8n.sh" ]; then
+#     if ! bash envs.n8n.sh 2>&1; then
+#         DEPLOY_MESSAGE="Failed to setup N8N environment"
+#         log "${RED}$DEPLOY_MESSAGE${NC}"
+#         exit 1
+#     fi
+#     log "N8N environment configured"
+# else
+#     log "${YELLOW}envs.n8n.sh not found, skipping${NC}"
+# fi
 
 # Step 8: Setup OTel environments
 log "${GREEN}[8/10] Setting up Observability environment...${NC}"
@@ -468,13 +621,13 @@ fi
 log "${GREEN}[9/10] Pulling latest images and building containers...${NC}"
 cd ..
 
-log "Pulling Docker images..."
-if ! docker compose -f ${COMPOSE_FILE} pull 2>&1; then
-    DEPLOY_MESSAGE="Failed to pull Docker images"
-    log "${RED}$DEPLOY_MESSAGE${NC}"
-    exit 1
-fi
-log "Docker pull completed"
+# log "Pulling Docker images..."
+# if ! docker compose -f ${COMPOSE_FILE} pull 2>&1; then
+#     DEPLOY_MESSAGE="Failed to pull Docker images"
+#     log "${RED}$DEPLOY_MESSAGE${NC}"
+#     exit 1
+# fi
+# log "Docker pull completed"
 
 log "Building and starting containers..."
 if ! docker compose -f ${COMPOSE_FILE} up -d --build 2>&1; then
