@@ -4,3 +4,6 @@ dist
 .gitignore
 README.md
 *.log
+postman
+docs
+ShellScripts
