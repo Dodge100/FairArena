@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
-type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification' | 'push';
+type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification';
 type AuthStep = 'credentials' | 'mfa';
 
 interface MfaSessionState {
@@ -58,17 +58,27 @@ export default function Signin() {
 
   // Get redirect path from location state or cookie (OAuth flow uses cookie)
   const getRedirectPath = useCallback(() => {
+    let path = '/dashboard';
+
     // First check location state (from ProtectedLayout redirect)
     if (location.state?.from?.pathname) {
-      return location.state.from.pathname;
+      path = location.state.from.pathname;
     }
     // Then check cookie (from OAuth MFA redirect)
-    const cookieRedirect = getCookie('mfa_redirect');
-    if (cookieRedirect) {
-      deleteCookie('mfa_redirect'); // Clean up after reading
-      return cookieRedirect;
+    else {
+      const cookieRedirect = getCookie('mfa_redirect');
+      if (cookieRedirect) {
+        deleteCookie('mfa_redirect'); // Clean up after reading
+        path = cookieRedirect;
+      }
     }
-    return '/dashboard';
+
+    // Ensure path is decoded to avoid double-encoding issues
+    try {
+      return decodeURIComponent(path);
+    } catch {
+      return path;
+    }
   }, [location.state]);
 
   // Calculate time remaining for MFA session
@@ -81,6 +91,16 @@ export default function Signin() {
   // Clean up URL parameters on mount (in case of old redirects or errors)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Check for specific errors
+    const errorParam = params.get('error');
+    if (errorParam === 'signup_disabled') {
+      toast.error('Signups are currently disabled. Please join our waitlist.');
+    } else if (errorParam) {
+      // Decode potential URL-encoded error messages
+      toast.error(decodeURIComponent(errorParam).replace(/_/g, ' '));
+    }
+
     if (params.has('mfaRequired') || params.has('tempToken') || params.has('error')) {
       // Clean up URL without reloading
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -305,93 +325,7 @@ export default function Signin() {
     setIsLoading(false);
   };
 
-  // State for push approval
-  const [pushRequestId, setPushRequestId] = useState<string | null>(null);
-  const [pushStatus, setPushStatus] = useState<'idle' | 'pending' | 'approved' | 'denied'>('idle');
 
-  // Send push approval request
-  const handleSendPushApproval = async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/mfa/send-push-approval`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to send approval request');
-      }
-
-      setMfaMethod('push');
-      setPushRequestId(result.data?.pushRequestId || null);
-      setPushStatus('pending');
-      toast.success('Approval request sent to your devices');
-
-      // Start polling for approval status
-      pollPushStatus();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send request';
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Poll push approval status
-  const pollPushStatus = useCallback(async () => {
-    const checkStatus = async () => {
-      try {
-        const response = await fetch(`${apiUrl}/api/v1/auth/mfa/check-push-status`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'approved') {
-          setPushStatus('approved');
-          // Complete login
-          toast.success('Login approved!');
-          const redirectPath = getRedirectPath();
-          window.location.href = redirectPath;
-          return true; // Stop polling
-        } else if (result.status === 'denied') {
-          setPushStatus('denied');
-          toast.error('Login was denied');
-          return true; // Stop polling
-        } else if (result.status === 'expired' || result.status === 'not_found') {
-          setPushStatus('idle');
-          toast.error('Approval request expired');
-          return true; // Stop polling
-        }
-        return false; // Continue polling
-      } catch (err) {
-        console.error('Failed to check push status:', err);
-        return false;
-      }
-    };
-
-    // Poll every 2 seconds for up to 2 minutes
-    let attempts = 0;
-    const maxAttempts = 60;
-    const interval = setInterval(async () => {
-      attempts++;
-      const shouldStop = await checkStatus();
-      if (shouldStop || attempts >= maxAttempts) {
-        clearInterval(interval);
-        if (attempts >= maxAttempts && pushStatus === 'pending') {
-          setPushStatus('idle');
-          toast.error('Approval request timed out');
-        }
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [apiUrl, getRedirectPath, pushStatus]);
 
 
   // Google OAuth login
@@ -449,7 +383,7 @@ export default function Signin() {
   const renderMfaForm = () => {
     const isBackupCode = mfaMethod === 'backup';
     const isOtpMethod = mfaMethod === 'email' || mfaMethod === 'notification';
-    const isPushMethod = mfaMethod === 'push';
+
     const timeRemaining = getTimeRemaining();
     // Backup codes are 10 alphanumeric chars (shown with dashes as XXXX-XXXX-XX)
     const codeLength = isBackupCode ? 10 : 6;
@@ -462,13 +396,11 @@ export default function Signin() {
         </h1>
 
         <p className={`text-center max-w-md mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-          {mfaMethod === 'push'
-            ? 'Approve this login request from one of your trusted devices'
-            : isBackupCode
-              ? 'Enter one of your 8-character backup codes'
-              : isOtpMethod
-                ? `Enter the 6-digit code sent to your ${mfaMethod}`
-                : "Enter the 6-digit code from your authenticator app"}
+          {isBackupCode
+            ? 'Enter one of your 8-character backup codes'
+            : isOtpMethod
+              ? `Enter the 6-digit code sent to your ${mfaMethod}`
+              : "Enter the 6-digit code from your authenticator app"}
         </p>
 
         {/* Session timer */}
@@ -490,50 +422,48 @@ export default function Signin() {
               </div>
             )}
 
-            {/* Code input - hide for push method */}
-            {!isPushMethod && (
-              <div>
-                <label
-                  htmlFor="mfaCode"
-                  className={`block text-sm font-medium mb-2 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                >
-                  {isBackupCode ? 'Backup Code' : 'Verification Code'}
-                </label>
-                <input
-                  id="mfaCode"
-                  type="text"
-                  value={mfaCode}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (isBackupCode) {
-                      // Allow alphanumeric, strip dashes, max 10 chars
-                      setMfaCode(val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10));
-                    } else {
-                      setMfaCode(val.replace(/\D/g, '').slice(0, 6));
-                    }
-                    setError('');
-                  }}
-                  autoFocus
-                  autoComplete="one-time-code"
-                  inputMode={isBackupCode ? 'text' : 'numeric'}
-                  required
-                  placeholder={isBackupCode ? 'XXXX-XXXX-XX' : '123456'}
-                  className={`
+            {/* Code input */}
+            <div>
+              <label
+                htmlFor="mfaCode"
+                className={`block text-sm font-medium mb-2 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
+              >
+                {isBackupCode ? 'Backup Code' : 'Verification Code'}
+              </label>
+              <input
+                id="mfaCode"
+                type="text"
+                value={mfaCode}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (isBackupCode) {
+                    // Allow alphanumeric, strip dashes, max 10 chars
+                    setMfaCode(val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10));
+                  } else {
+                    setMfaCode(val.replace(/\D/g, '').slice(0, 6));
+                  }
+                  setError('');
+                }}
+                autoFocus
+                autoComplete="one-time-code"
+                inputMode={isBackupCode ? 'text' : 'numeric'}
+                required
+                placeholder={isBackupCode ? 'XXXX-XXXX-XX' : '123456'}
+                className={`
                     w-full px-4 py-4 rounded-xl border-2 transition-all font-mono text-center text-2xl tracking-[0.4em]
                     ${isDark
-                      ? 'bg-neutral-800/50 text-neutral-100 border-neutral-700 focus:border-[#DDEF00] focus:bg-neutral-800'
-                      : 'bg-neutral-50 text-neutral-900 border-neutral-200 focus:border-[#DDEF00] focus:bg-white'}
+                    ? 'bg-neutral-800/50 text-neutral-100 border-neutral-700 focus:border-[#DDEF00] focus:bg-neutral-800'
+                    : 'bg-neutral-50 text-neutral-900 border-neutral-200 focus:border-[#DDEF00] focus:bg-white'}
                     focus:outline-none focus:ring-4 focus:ring-[#DDEF00]/20
                     ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}
                   `}
-                />
-                {mfaSession.attemptsRemaining < 5 && (
-                  <p className={`text-xs mt-2 ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                    {mfaSession.attemptsRemaining} attempt{mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
-                  </p>
-                )}
-              </div>
-            )}
+              />
+              {mfaSession.attemptsRemaining < 5 && (
+                <p className={`text-xs mt-2 ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                  {mfaSession.attemptsRemaining} attempt{mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
+                </p>
+              )}
+            </div>
 
             {/* Help section */}
             {showMfaHelp && !isBackupCode && !isOtpMethod && (
@@ -547,24 +477,22 @@ export default function Signin() {
               </div>
             )}
 
-            {/* Submit button - hide for push method */}
-            {!isPushMethod && (
-              <button
-                type="submit"
-                disabled={isLoading || mfaCode.length !== codeLength}
-                className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#DDEF00] shadow-sm hover:shadow-md"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Verifying...
-                  </span>
-                ) : 'Verify'}
-              </button>
-            )}
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={isLoading || mfaCode.length !== codeLength}
+              className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#DDEF00] shadow-sm hover:shadow-md"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Verifying...
+                </span>
+              ) : 'Verify'}
+            </button>
 
             {/* Alternative methods section */}
             <div className="mt-6 space-y-4">
@@ -672,44 +600,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaMethod !== 'push' && pushStatus === 'idle' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSendPushApproval();
-                        setShowAlternatives(false);
-                      }}
-                      disabled={isLoading}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
-                    >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      Device Approval
-                    </button>
-                  )}
 
-                  {pushStatus === 'pending' && (
-                    <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="animate-pulse">
-                          <svg className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className={`font-medium text-sm ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
-                            Waiting for approval...
-                          </p>
-                          <p className={`text-xs ${isDark ? 'text-blue-400/70' : 'text-blue-600'}`}>
-                            Check your other logged-in devices
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -872,14 +763,24 @@ export default function Signin() {
 
           {/* Sign up link */}
           <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-            Don't have an account?{' '}
+            {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Don't have an account? " : "Want to join? "}
             <Link
-              to="/signup"
+              to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "/signup" : "/waitlist"}
               state={location.state}
               className={`font-medium ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-900 hover:underline'}`}
             >
-              Sign up
+              {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Sign up" : "Join Waitlist"}
             </Link>
+          </p>
+          <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+            By signing in, you agree to our{' '}
+            <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
+              Privacy Policy
+            </Link>.
           </p>
         </form>
       </div>

@@ -2,9 +2,9 @@ import { Router } from 'express';
 import {
     changePassword,
     checkMfaSession,
-    checkPushStatus,
     forgotPassword,
     getCurrentUser,
+    getRecentActivity,
     invalidateMfaSession,
     listSessions,
     login,
@@ -14,11 +14,9 @@ import {
     register,
     resendVerificationEmail,
     resetPassword,
-    respondToPush,
     revokeSession,
     sendEmailOtp,
     sendNotificationOtp,
-    sendPushApproval,
     verifyEmail,
     verifyLoginMFA,
     verifyMfaOtp
@@ -450,6 +448,20 @@ router.delete('/sessions/:sessionId', protectRoute, revokeSession);
 
 /**
  * @swagger
+ * /api/v1/auth/recent-activity:
+ *   get:
+ *     summary: Get recent security activity
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of recent activity logs
+ */
+router.get('/recent-activity', protectRoute, getRecentActivity);
+
+/**
+ * @swagger
  * /api/v1/auth/mfa/check-session:
  *   get:
  *     summary: Check if MFA session is active
@@ -537,63 +549,6 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
  *         description: Invalid OTP
  */
 router.post('/mfa/verify-otp', loginLimiter, verifyMfaOtp);
-
-/**
- * @swagger
- * /api/v1/auth/mfa/send-push-approval:
- *   post:
- *     summary: Send push approval request to logged-in devices
- *     tags: [MFA]
- *     security: []
- *     responses:
- *       200:
- *         description: Push request sent successfully
- *       401:
- *         description: No active MFA session
- */
-router.post('/mfa/send-push-approval', loginLimiter, sendPushApproval);
-
-/**
- * @swagger
- * /api/v1/auth/mfa/check-push-status:
- *   get:
- *     summary: Check push approval status
- *     tags: [MFA]
- *     security: []
- *     responses:
- *       200:
- *         description: Push status retrieved
- */
-router.get('/mfa/check-push-status', checkPushStatus);
-
-/**
- * @swagger
- * /api/v1/auth/mfa/respond-push:
- *   post:
- *     summary: Approve or deny a push login request (requires authentication)
- *     tags: [MFA]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [requestId, action]
- *             properties:
- *               requestId:
- *                 type: string
- *               action:
- *                 type: string
- *                 enum: [approve, deny]
- *     responses:
- *       200:
- *         description: Response recorded
- *       401:
- *         description: Authentication required
- */
-router.post('/mfa/respond-push', protectRoute, respondToPush);
 
 // OAuth Routes
 import {

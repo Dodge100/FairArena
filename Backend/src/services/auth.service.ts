@@ -6,11 +6,11 @@ import { redis } from '../config/redis.js';
 import logger from '../utils/logger.js';
 
 // Constants
-const BCRYPT_ROUNDS = 12;
-const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY_DAYS = 30;
-const SESSION_PREFIX = 'session:';
-const USER_SESSIONS_PREFIX = 'user_sessions:';
+const BCRYPT_ROUNDS = ENV.BCRYPT_ROUNDS!;
+const ACCESS_TOKEN_EXPIRY = ENV.ACCESS_TOKEN_EXPIRY!;
+const REFRESH_TOKEN_EXPIRY_DAYS = ENV.REFRESH_TOKEN_EXPIRY_DAYS!;
+const SESSION_PREFIX = ENV.SESSION_PREFIX!;
+const USER_SESSIONS_PREFIX = ENV.USER_SESSIONS_PREFIX!;
 
 // Types
 export interface TokenPayload {

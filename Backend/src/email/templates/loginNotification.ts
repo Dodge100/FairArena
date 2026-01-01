@@ -1,15 +1,15 @@
 
 export const loginNotificationTemplate = (params: {
-    firstName: string;
-    ipAddress: string;
-    deviceName: string;
-    location: string;
-    loginTime: string;
-    securityUrl: string;
+  firstName: string;
+  ipAddress: string;
+  deviceName: string;
+  location: string;
+  loginTime: string;
+  securityUrl: string;
 }): string => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +34,7 @@ export const loginNotificationTemplate = (params: {
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
       <h1>New Login to FairArena</h1>
     </div>
     <div class="content">

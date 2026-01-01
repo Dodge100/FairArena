@@ -5,8 +5,9 @@ import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendOtpEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
+import { ENV } from '../../config/env.js';
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = ENV.BCRYPT_ROUNDS!;
 const OTP_EXPIRY_SECONDS = 600; // 10 minutes
 
 function generateOtp(): string {

@@ -87,6 +87,7 @@ export const supportConfirmationEmailTemplate = (
           <!-- Header -->
           <tr>
             <td class="header">
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
               <h1>Support Request Received</h1>
             </td>
           </tr>

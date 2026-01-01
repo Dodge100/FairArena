@@ -26,6 +26,14 @@ export const joinWaitlist = async (req: Request, res: Response) => {
             });
         }
 
+        if (ENV.NEW_SIGNUP_ENABLED) {
+            return res.status(403).json({
+                success: false,
+                message: 'Waitlist is closed. Please sign up directly.',
+                code: 'WAITLIST_DISABLED',
+            });
+        }
+
         const { email, name, source } = validation.data;
         const normalizedEmail = email.toLowerCase().trim();
 

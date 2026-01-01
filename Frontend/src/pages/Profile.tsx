@@ -107,6 +107,7 @@ function Profile() {
   const [regenerateCode, setRegenerateCode] = useState('');
   const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
   const [copiedCodes, setCopiedCodes] = useState(false);
+  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -136,7 +137,7 @@ function Profile() {
   const fetchActivityLogs = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(`${API_BASE}/api/v1/account-settings/logs?limit=10`, {
+      const response = await fetch(`${API_BASE}/api/v1/auth/recent-activity`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -335,6 +336,33 @@ function Profile() {
     setShowRegenerateMfa(false);
     setNewBackupCodes([]);
     setRegenerateCode('');
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user?.email) {
+      toast.error('Unable to send password reset email');
+      return;
+    }
+
+    setSendingPasswordReset(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Password reset email sent! Check your inbox.');
+      } else {
+        toast.error(data.message || 'Failed to send password reset email');
+      }
+    } catch (error) {
+      toast.error('An error occurred while sending the password reset email');
+    } finally {
+      setSendingPasswordReset(false);
+    }
   };
 
   const getDeviceIcon = (deviceType: string) => {
@@ -868,8 +896,13 @@ function Profile() {
                   Manage your password and recovery settings.
                 </p>
                 <div className="flex items-center gap-4">
-                  <button className="px-4 py-2 text-sm font-medium rounded-lg bg-muted hover:bg-muted/80 transition-colors" onClick={() => toast.info('Password change is managed via email flow')}>
-                    Change Password
+                  <button
+                    className="px-4 py-2 text-sm font-medium rounded-lg bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    onClick={handlePasswordChange}
+                    disabled={sendingPasswordReset}
+                  >
+                    {sendingPasswordReset && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {sendingPasswordReset ? 'Sending...' : 'Change Password'}
                   </button>
                 </div>
               </div>

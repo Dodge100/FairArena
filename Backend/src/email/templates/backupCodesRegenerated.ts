@@ -38,6 +38,7 @@ export const backupCodesRegeneratedTemplate = (params: {
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
       <div class="header-icon">
         <svg width="32" height="32" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>

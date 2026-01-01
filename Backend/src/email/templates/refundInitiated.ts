@@ -46,6 +46,7 @@ export const refundInitiatedEmailTemplate = (params: {
           <!-- Warning Badge -->
           <tr>
             <td align="center" style="padding: 40px 40px 0;">
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 24px;" />
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
                 <tr>
                   <td style="width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; text-align: center; vertical-align: middle; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);">

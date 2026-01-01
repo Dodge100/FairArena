@@ -121,6 +121,11 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         });
 
         if (!user) {
+            // Check if signups are enabled
+            if (!ENV.NEW_SIGNUP_ENABLED) {
+                return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+            }
+
             // Create new user
             const { createId } = await import('@paralleldrive/cuid2');
             const userId = createId();
@@ -285,6 +290,15 @@ export const handleGoogleToken = async (req: Request, res: Response) => {
         let isNewUser = false;
 
         if (!user) {
+            // Check if signups are enabled
+            if (!ENV.NEW_SIGNUP_ENABLED) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Signups are currently disabled. Please join our waitlist.',
+                    code: 'SIGNUP_DISABLED',
+                });
+            }
+
             // Create new user
             const { createId } = await import('@paralleldrive/cuid2');
             const userId = createId();
@@ -528,6 +542,11 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
             });
 
             if (!user) {
+                // Check if signups are enabled
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
                 // Create new user
                 const { createId } = await import('@paralleldrive/cuid2');
                 const userId = createId();
@@ -625,8 +644,13 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
         return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
 
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+
         logger.error('GitHub auth error', {
-            error: error instanceof Error ? error.message : String(error),
+            error: errorMessage,
         });
         return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
     }

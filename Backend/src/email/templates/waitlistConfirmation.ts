@@ -1,8 +1,8 @@
 export const waitlistConfirmationTemplate = (params: { name: string, position: number }): string => {
-    const currentYear = new Date().getFullYear();
-    const positionText = params.position > 0 ? `#${params.position}` : 'on the list';
+  const currentYear = new Date().getFullYear();
+  const positionText = params.position > 0 ? `#${params.position}` : 'on the list';
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -30,6 +30,7 @@ export const waitlistConfirmationTemplate = (params: { name: string, position: n
           <!-- Header -->
           <tr>
             <td align="center" style="padding: 40px 40px 32px; background: #000000;">
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
               <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Welcome to the Waitlist</h1>
             </td>
           </tr>

@@ -22,8 +22,15 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated or if signup is disabled
   useEffect(() => {
+    const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
+
+    if (!isNewSignupEnabled) {
+      navigate('/waitlist', { replace: true });
+      return;
+    }
+
     if (!authLoading && isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }
@@ -300,6 +307,16 @@ export default function Signup() {
                 <Link to="/signin" className={`font-medium ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900 hover:underline'}`}>
                   Sign in
                 </Link>
+              </p>
+              <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                By creating an account, you agree to our{' '}
+                <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
+                  Privacy Policy
+                </Link>.
               </p>
             </form>
           </div>

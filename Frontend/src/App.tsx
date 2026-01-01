@@ -45,6 +45,7 @@ function App() {
   const location = useLocation();
   const [showPricingModal, setShowPricingModal] = useState(false);
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+  const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
   const token = useToken();
 
@@ -130,9 +131,9 @@ function App() {
         <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/profile/:userId/stars" element={<ProfileStars />} />
         <Route path="/support" element={<Support />} />
-        <Route path="/waitlist" element={<WaitList />} />
+        <Route path="/waitlist" element={isNewSignupEnabled ? <Navigate to="/signup" replace /> : <WaitList />} />
         <Route path="/signin" element={<Signin />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={isNewSignupEnabled ? <Signup /> : <Navigate to="/waitlist" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />

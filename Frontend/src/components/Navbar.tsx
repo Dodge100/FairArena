@@ -10,6 +10,7 @@ export default function Navbar() {
   const [isDark, setIsDark] = useState(false);
   const [open, setOpen] = useState(false);
   const { isSignedIn } = useAuthState();
+  const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
   useEffect(() => {
     setIsDark(theme === 'dark');
   }, [theme]);
@@ -69,7 +70,7 @@ export default function Navbar() {
             ))}
 
             {!isSignedIn ? (
-              <Link to={'/waitlist'}>
+              <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
                 <motion.button
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -80,7 +81,7 @@ export default function Navbar() {
                       : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
                     }`}
                 >
-                  Join Waitlist
+                  {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
                 </motion.button>
               </Link>
             ) : (
@@ -214,7 +215,7 @@ export default function Navbar() {
 
               <>
                 {!isSignedIn ? (
-                  <Link to="/waitlist">
+                  <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
                     <motion.button
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -225,7 +226,7 @@ export default function Navbar() {
                       transition-all duration-300 cursor-pointer
                     `}
                     >
-                      Join Waitlist
+                      {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
                     </motion.button>
                   </Link>
                 ) : (

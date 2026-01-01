@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
-import { redis } from '../../config/redis.js';
+import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import { upsertUser } from '../../inngest/v1/userOperations.js';
 import {
@@ -77,7 +77,7 @@ const changePasswordSchema = z.object({
 
 const verifyMfaOtpSchema = z.object({
   code: z.string().length(6, 'OTP must be 6 digits'),
-  method: z.enum(['email', 'notification', 'push']).optional(),
+  method: z.enum(['email', 'notification']).optional(),
 });
 
 // Cryptographically secure OTP generation
@@ -105,10 +105,7 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
   }
 };
 
-// Generate unique push approval request ID
-const generatePushRequestId = (): string => {
-  return crypto.randomBytes(16).toString('hex');
-};
+
 
 // Cookie configuration
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
@@ -147,6 +144,14 @@ export const register = async (req: Request, res: Response) => {
         success: false,
         message: 'Validation failed',
         errors: validation.error.flatten().fieldErrors,
+      });
+    }
+
+    if (!ENV.NEW_SIGNUP_ENABLED) {
+      return res.status(403).json({
+        success: false,
+        message: 'Signups are currently disabled. Please join our waitlist.',
+        code: 'SIGNUP_DISABLED',
       });
     }
 
@@ -1812,302 +1817,7 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Send push approval request to logged-in sessions
- * POST /api/v1/auth/mfa/send-push-approval
- */
-export const sendPushApproval = async (req: Request, res: Response) => {
-  try {
-    const mfaToken = req.cookies?.mfa_session;
 
-    if (!mfaToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'No active MFA session. Please sign in again.',
-      });
-    }
-
-    // Verify JWT token
-    let payload: MFAPendingPayload;
-    try {
-      const jwt = await import('jsonwebtoken');
-      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
-        issuer: 'fairarena',
-      }) as MFAPendingPayload;
-
-      if (payload.type !== 'mfa_pending') {
-        throw new Error('Invalid token type');
-      }
-    } catch {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Your session has expired. Please sign in again.',
-      });
-    }
-
-    // Validate IP and device
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
-
-    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentDevice) {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Security validation failed. Please sign in again.',
-      });
-    }
-
-    // Check rate limit for push requests (max 3 per session)
-    const pushRateLimitKey = `mfa_push_rate:${payload.userId}`;
-    const pushCount = await redis.get<string>(pushRateLimitKey);
-    const currentCount = pushCount ? parseInt(pushCount, 10) : 0;
-
-    if (currentCount >= 3) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many approval requests. Please try a different method.',
-      });
-    }
-
-    // Generate unique push request ID
-    const pushRequestId = generatePushRequestId();
-    const pushKey = `mfa_push:${payload.userId}`;
-    const pushExpiry = Date.now() + 2 * 60 * 1000; // 2 minutes for push approval
-
-    // Store push request (pending status)
-    await redis.setex(pushKey, 120, {
-      requestId: pushRequestId,
-      status: 'pending',
-      ipAddress: clientIp,
-      device: currentDevice,
-      createdAt: Date.now(),
-      expiresAt: pushExpiry,
-    });
-
-    // Increment rate limit
-    const sessionTtl = Math.max(0, (payload.exp || 0) - Math.floor(Date.now() / 1000));
-    await redis.setex(pushRateLimitKey, Math.max(sessionTtl, 60), (currentCount + 1).toString());
-
-    // Parse device info for display
-    const { deviceType, deviceName } = parseUserAgent(currentDevice);
-
-    // Send push notification to all active sessions (except current MFA session)
-    await inngest.send({
-      name: 'notification/send',
-      data: {
-        userId: payload.userId,
-        type: 'MFA_PUSH_APPROVAL',
-        title: 'Login Approval Request',
-        message: `A login attempt from ${deviceName} (${deviceType}) is requesting approval.`,
-        description: `IP: ${clientIp}\nTap to approve or deny this login.`,
-        actionUrl: `/api/v1/auth/mfa/approve-push?requestId=${pushRequestId}`,
-        actionLabel: 'Review Request',
-        priority: 'high',
-        data: {
-          pushRequestId,
-          ipAddress: clientIp,
-          device: deviceName,
-          deviceType,
-          expiresAt: pushExpiry,
-        },
-      },
-    });
-
-    logger.info('Push approval request sent', { userId: payload.userId, pushRequestId });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Approval request sent to your devices',
-      data: {
-        pushRequestId,
-        expiresIn: 120,
-      },
-    });
-  } catch (error) {
-    logger.error('Send push approval error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to send approval request',
-    });
-  }
-};
-
-/**
- * Check push approval status
- * GET /api/v1/auth/mfa/check-push-status
- */
-export const checkPushStatus = async (req: Request, res: Response) => {
-  try {
-    const mfaToken = req.cookies?.mfa_session;
-
-    if (!mfaToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'No active MFA session',
-      });
-    }
-
-    // Verify JWT token
-    let payload: MFAPendingPayload;
-    try {
-      const jwt = await import('jsonwebtoken');
-      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
-        issuer: 'fairarena',
-      }) as MFAPendingPayload;
-    } catch {
-      return res.status(401).json({
-        success: false,
-        status: 'expired',
-      });
-    }
-
-    // Get push request status
-    const pushKey = `mfa_push:${payload.userId}`;
-    const push = await redis.get<any>(pushKey);
-
-    if (!push) {
-      return res.status(200).json({
-        success: true,
-        status: 'not_found',
-      });
-    }
-
-    // Check if approved
-    if (push.status === 'approved') {
-      // Complete login immediately
-      return res.status(200).json({
-        success: true,
-        status: 'approved',
-        message: 'Login approved',
-      });
-    }
-
-    if (push.status === 'denied') {
-      return res.status(200).json({
-        success: true,
-        status: 'denied',
-        message: 'Login denied',
-      });
-    }
-
-    // Still pending
-    const remainingTime = Math.max(0, Math.floor((push.expiresAt - Date.now()) / 1000));
-    return res.status(200).json({
-      success: true,
-      status: 'pending',
-      remainingTime,
-    });
-  } catch (error) {
-    logger.error('Check push status error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred',
-    });
-  }
-};
-
-/**
- * Approve or deny push request (from logged-in session)
- * POST /api/v1/auth/mfa/respond-push
- */
-export const respondToPush = async (req: Request, res: Response) => {
-  try {
-    // This endpoint requires authentication (existing session)
-    const userId = req.user?.userId;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-      });
-    }
-
-    const schema = z.object({
-      requestId: z.string().min(1),
-      action: z.enum(['approve', 'deny']),
-    });
-
-    const validation = schema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid request',
-      });
-    }
-
-    const { requestId, action } = validation.data;
-
-    // Get push request
-    // Get push request
-    const pushKey = `mfa_push:${userId}`;
-    const push = await redis.get<any>(pushKey);
-
-    if (!push) {
-      return res.status(404).json({
-        success: false,
-        message: 'No pending approval request found',
-      });
-    }
-
-    if (push.requestId !== requestId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid request ID',
-      });
-    }
-
-    if (push.status !== 'pending') {
-      return res.status(400).json({
-        success: false,
-        message: 'Request already processed',
-      });
-    }
-
-    // Update status
-    push.status = action === 'approve' ? 'approved' : 'denied';
-    push.respondedAt = Date.now();
-
-    // Store updated status (short TTL, just for the other session to read)
-    await redis.setex(pushKey, 30, push);
-
-    logger.info(`Push approval ${action}d`, { userId, requestId });
-
-    // Send notification about the response
-    await inngest.send({
-      name: 'notification/send',
-      data: {
-        userId,
-        type: 'MFA_PUSH_RESPONSE',
-        title: action === 'approve' ? 'Login Approved' : 'Login Denied',
-        message: action === 'approve'
-          ? 'You approved a login request.'
-          : 'You denied a login request.',
-        priority: 'normal',
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: action === 'approve' ? 'Login approved' : 'Login denied',
-    });
-  } catch (error) {
-    logger.error('Respond to push error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred',
-    });
-  }
-};
 
 export const verifyMfaOtp = async (req: Request, res: Response) => {
   try {
@@ -2180,72 +1890,39 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
       });
     }
 
-    // Handle push approval method
-    if (method === 'push') {
-      const pushKey = `mfa_push:${payload.userId}`;
-      const push = await redis.get<any>(pushKey);
+    // Handle OTP verification (email or notification)
+    const otpKey = method === 'email'
+      ? `mfa_email_otp:${payload.userId}`
+      : `mfa_notification_otp:${payload.userId}`;
+    const storedOtpHash = await redis.get<string>(otpKey);
 
-      if (!push) {
-        return res.status(400).json({
-          success: false,
-          message: 'No approval request found. Please request one first.',
-        });
-      }
-
-      if (push.status === 'denied') {
-        await redis.del(pushKey);
-        return res.status(401).json({
-          success: false,
-          message: 'Login was denied from another device.',
-        });
-      }
-
-      if (push.status !== 'approved') {
-        return res.status(400).json({
-          success: false,
-          message: 'Approval still pending. Please wait for confirmation.',
-          status: 'pending',
-        });
-      }
-
-      // Push was approved - clear and continue to login
-      await redis.del(pushKey);
-      await redis.del(mfaAttemptsKey);
-    } else {
-      // Handle OTP verification (email or notification)
-      const otpKey = method === 'email'
-        ? `mfa_email_otp:${payload.userId}`
-        : `mfa_notification_otp:${payload.userId}`;
-      const storedOtpHash = await redis.get<string>(otpKey);
-
-      if (!storedOtpHash) {
-        return res.status(400).json({
-          success: false,
-          message: 'No verification code found. Please request a new code.',
-        });
-      }
-
-      // Verify OTP against stored hash (timing-safe comparison)
-      const isValidOtp = verifyOTPHash(code, storedOtpHash);
-
-      if (!isValidOtp) {
-        // Increment failed attempts
-        const remainingAttempts = 5 - (attemptCount + 1);
-        await redis.setex(mfaAttemptsKey, 900, (attemptCount + 1).toString());
-
-        return res.status(401).json({
-          success: false,
-          message: remainingAttempts > 0
-            ? `Invalid verification code. ${remainingAttempts} attempt(s) remaining.`
-            : 'Too many failed attempts. Please try again in 15 minutes.',
-          attemptsRemaining: remainingAttempts,
-        });
-      }
-
-      // OTP is valid - clear it from Redis
-      await redis.del(otpKey);
-      await redis.del(mfaAttemptsKey);
+    if (!storedOtpHash) {
+      return res.status(400).json({
+        success: false,
+        message: 'No verification code found. Please request a new code.',
+      });
     }
+
+    // Verify OTP against stored hash (timing-safe comparison)
+    const isValidOtp = verifyOTPHash(code, storedOtpHash);
+
+    if (!isValidOtp) {
+      // Increment failed attempts
+      const remainingAttempts = 5 - (attemptCount + 1);
+      await redis.setex(mfaAttemptsKey, 900, (attemptCount + 1).toString());
+
+      return res.status(401).json({
+        success: false,
+        message: remainingAttempts > 0
+          ? `Invalid verification code. ${remainingAttempts} attempt(s) remaining.`
+          : 'Too many failed attempts. Please try again in 15 minutes.',
+        attemptsRemaining: remainingAttempts,
+      });
+    }
+
+    // OTP is valid - clear it from Redis
+    await redis.del(otpKey);
+    await redis.del(mfaAttemptsKey);
 
     // Complete login - get user
     const user = await prisma.user.findUnique({
@@ -2323,6 +2000,80 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred during verification',
+    });
+  }
+};
+
+
+/**
+ * Get recent security activity
+ * GET /api/v1/auth/recent-activity
+ */
+export const getRecentActivity = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated',
+      });
+    }
+
+    const cacheKey = `${REDIS_KEYS.USER_RECENT_ACTIVITY_CACHE}${userId}`;
+    const cached = await redis.get(cacheKey);
+
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        data: cached,
+      });
+    }
+
+    const logs = await prisma.logs.findMany({
+      where: {
+        userId,
+        action: {
+          in: [
+            'register',
+            'login',
+            'user-created',
+            'user-updated',
+            'mfa-enabled',
+            'mfa-disabled',
+            'sensitive-action-attempted',
+            'sensitive-action-verified',
+            'user-deletion-process-started',
+            'Account recovered',
+          ],
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      select: {
+        id: true,
+        action: true,
+        level: true,
+        metadata: true,
+        createdAt: true,
+      },
+    });
+
+    await redis.setex(cacheKey, 600, logs);
+
+    return res.status(200).json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    logger.error('Get recent activity error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity',
     });
   }
 };

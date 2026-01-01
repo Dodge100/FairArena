@@ -12,6 +12,7 @@ function Header() {
   const { dataSaverSettings } = useDataSaverUtils();
   const [isDark, setIsDark] = useState(false);
   const { isSignedIn } = useAuthState();
+  const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
 
   useEffect(() => {
     setIsDark(theme === 'dark');
@@ -105,13 +106,13 @@ function Header() {
       )}
 
       {!isSignedIn ? (
-        <Link to={'/waitlist'}>
+        <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
           {dataSaverSettings.enabled && dataSaverSettings.reduceAnimations ? (
             <button className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
           bg-[#d9ff00] flex items-center gap-2 text-neutral-800 shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
           hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
           transition-all duration-300 cursor-pointer">
-              <Zap /> Join WaitList
+              <Zap /> {isNewSignupEnabled ? 'Get Started' : 'Join WaitList'}
             </button>
           ) : (
             <motion.button
@@ -125,7 +126,7 @@ function Header() {
           hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
           transition-all duration-300 cursor-pointer"
             >
-              <Zap /> Join WaitList
+              <Zap /> {isNewSignupEnabled ? 'Get Started' : 'Join WaitList'}
             </motion.button>
           )}
         </Link>

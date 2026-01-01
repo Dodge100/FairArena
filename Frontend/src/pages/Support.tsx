@@ -22,6 +22,7 @@ import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
 import { apiFetch } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
+import { Link } from 'react-router';
 
 export default function Support() {
   const { theme } = useTheme();
@@ -688,6 +689,16 @@ export default function Support() {
                       </>
                     )}
                   </Button>
+                  <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                    By submitting this form, you agree to our{' '}
+                    <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
+                      Privacy Policy
+                    </Link>.
+                  </p>
                 </form>
               </CardContent>
             </Card>

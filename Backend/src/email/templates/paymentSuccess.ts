@@ -45,6 +45,7 @@ export const paymentSuccessEmailTemplate = (params: {
           <!-- Success Badge -->
           <tr>
             <td align="center" style="padding: 40px 40px 0;">
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 24px;" />
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
                 <tr>
                   <td style="width: 80px; height: 80px; background: linear-gradient(135deg, #d9ff00 0%, #c0e600 100%); border-radius: 50%; text-align: center; vertical-align: middle; box-shadow: 0 8px 24px rgba(217, 255, 0, 0.3);">
@@ -118,15 +119,14 @@ export const paymentSuccessEmailTemplate = (params: {
                   <td align="center">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        ${
-                          params.invoiceUrl
-                            ? `
+                        ${params.invoiceUrl
+      ? `
                         <td style="padding: 0 8px 0 0;">
                           <a href="${params.invoiceUrl}" style="display: inline-block; padding: 14px 28px; background-color: #1a1a1a; color: #d9ff00; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px; border: 2px solid #1a1a1a;">Download Invoice</a>
                         </td>
                         `
-                            : ''
-                        }
+      : ''
+    }
                         <td style="padding: 0 8px;">
                           <a href="${creditsUrl}" style="display: inline-block; padding: 14px 28px; background-color: ${params.invoiceUrl ? 'transparent' : '#1a1a1a'}; color: ${params.invoiceUrl ? '#1a1a1a' : '#d9ff00'}; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px; border: 2px solid ${params.invoiceUrl ? '#e5e7eb' : '#1a1a1a'};">View Credits</a>
                         </td>

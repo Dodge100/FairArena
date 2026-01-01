@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
@@ -31,6 +31,13 @@ function WaitList() {
   const [totalWaitlist, setTotalWaitlist] = useState<number | null>(null);
 
   useEffect(() => {
+    const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
+
+    if (isNewSignupEnabled) {
+      navigate('/signup', { replace: true });
+      return;
+    }
+
     if (isSignedIn) {
       navigate('/dashboard');
     }
@@ -225,6 +232,16 @@ function WaitList() {
                   </form>
                   <p className={`text-xs text-center mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
                     No spam, ever. We respect your privacy.
+                  </p>
+                  <p className={`text-center text-xs mt-2 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                    By joining, you agree to our{' '}
+                    <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
+                      Privacy Policy
+                    </Link>.
                   </p>
                 </>
               )}

@@ -182,6 +182,7 @@ export const teamInviteEmailTemplate = (params: {
 <body>
     <div class="container">
         <div class="header">
+            <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
             <div class="icon">👥</div>
             <h1>You've Been Invited!</h1>
         </div>

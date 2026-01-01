@@ -47,6 +47,7 @@ export const phoneNumberAddedEmailTemplate = (params: { userName: string; phoneN
           <!-- Header -->
           <tr>
             <td align="center" style="padding: 32px 40px 24px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 8px 8px 0 0;">
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
               <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; line-height: 1.3;">⚠️ Security Alert</h1>
             </td>
           </tr>

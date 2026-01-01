@@ -51,4 +51,5 @@ export const REDIS_KEYS = {
   USER_TEAMS: 'user:teams:',
   RATE_LIMIT: 'ratelimit:',
   USER_ORGANIZATIONS: 'user:organizations:',
+  USER_RECENT_ACTIVITY_CACHE: 'user:recent:activity:',
 } as const;

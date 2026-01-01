@@ -116,6 +116,7 @@ export const mfaOtpTemplate = (params: {
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
       <h1>Your Verification Code</h1>
     </div>
     <div class="content">
