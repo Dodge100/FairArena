@@ -212,7 +212,7 @@ const createOrganizationSchema = z.object({
 });
 
 export const CreateOrganization = async (req: Request, res: Response) => {
-  const auth = req.auth();
+  const auth = req.user;
   try {
     const userId = auth.userId;
 

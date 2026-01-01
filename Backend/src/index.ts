@@ -1,4 +1,3 @@
-import { clerkMiddleware } from '@clerk/express';
 import * as Sentry from '@sentry/node';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -15,56 +14,61 @@ import { initSocket } from './config/socket.js';
 import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
-    createLog,
-    createOrganizationAuditLog,
-    createReport,
-    createTeamAuditLog,
-    createTeamFunction,
-    createUserSettingsFunction,
-    creditsSendSmsOtp,
-    creditsSendVoiceOtp,
-    dailyCleanup,
-    deleteAllReadNotifications,
-    deleteNotifications,
-    deleteOrganization,
-    deleteTeamFunction,
-    deleteUser,
-    exportUserDataHandler,
-    inviteToPlatform,
-    markAllNotificationsAsRead,
-    markNotificationsAsRead,
-    markNotificationsAsUnread,
-    paymentOrderCreated,
-    paymentVerified,
-    paymentWebhookReceived,
-    processBulkTeamInvites,
-    processFeedbackSubmission,
-    processSingleTeamInvite,
-    processTeamInviteAcceptance,
-    recordProfileView,
-    resetSettingsFunction,
-    sendEmailHandler,
-    sendNotification,
-    sendOtpForAccountSettings,
-    sendTeamInviteEmail,
-    sendWeeklyFeedbackEmail,
-    starProfile,
-    subscribeToNewsletter,
-    supportRequestCreated,
-    syncUser,
-    unstarProfile,
-    unsubscribeFromNewsletter,
-    updateOrganization,
-    updateProfileFunction,
-    updateSettingsFunction,
-    updateTeamFunction,
-    updateUser,
+  createLog,
+  createOrganizationAuditLog,
+  createReport,
+  createTeamAuditLog,
+  createTeamFunction,
+  createUserSettingsFunction,
+  creditsSendSmsOtp,
+  creditsSendVoiceOtp,
+  dailyCleanup,
+  deleteAllReadNotifications,
+  deleteNotifications,
+  deleteOrganization,
+  deleteTeamFunction,
+  deleteUser,
+  exportUserDataHandler,
+  inviteToPlatform,
+  markAllNotificationsAsRead,
+  markNotificationsAsRead,
+  markNotificationsAsUnread,
+  paymentOrderCreated,
+  paymentVerified,
+  paymentWebhookReceived,
+  processBulkTeamInvites,
+  processFeedbackSubmission,
+  processSingleTeamInvite,
+  processTeamInviteAcceptance,
+  recordProfileView,
+  resetSettingsFunction,
+  sendEmailHandler,
+  sendEmailVerification,
+  sendLoginNotification,
+  sendNotification,
+  sendOtpForAccountSettings,
+  sendPasswordChangedEmail,
+  sendPasswordResetEmail,
+  sendTeamInviteEmail,
+  sendWeeklyFeedbackEmail,
+  starProfile,
+  subscribeToNewsletter,
+  supportRequestCreated,
+  syncUser,
+  unstarProfile,
+  unsubscribeFromNewsletter,
+  updateOrganization,
+  updateProfileFunction,
+  updateSettingsFunction,
+  updateTeamFunction,
+  updateUser,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
+import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
 import newsletterRouter from './routes/v1/newsletter.js';
@@ -79,6 +83,8 @@ import settingsRouter from './routes/v1/settings.js';
 import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
+import waitlistRouter from './routes/v1/waitlist.routes.js';
+import mfaRouter from './routes/v1/mfa.routes.js';
 import webhookRouter from './routes/v1/webhook.js';
 import logger from './utils/logger.js';
 
@@ -127,17 +133,13 @@ app.use(
       'Authorization',
       'ip.src',
       'X-Recaptcha-Token',
-      'X-Clerk-Auth',
       'X-Requested-With',
     ],
     credentials: true,
   }),
 );
 
-// Clerk middleware
-app.use(clerkMiddleware({ secretKey: ENV.CLERK_SECRET_KEY }));
-
-// Webhook routes
+// Webhook routes (must be before JSON middleware for raw body parsing)
 app.use('/webhooks/v1', webhookRouter);
 
 // JSON middleware
@@ -196,6 +198,9 @@ if (ENV.NODE_ENV !== 'production') {
   );
 }
 
+// Authentication routes (public)
+app.use('/api/v1/auth', authRouter);
+
 // Profile routes
 app.use('/api/v1/profile', profileRouter);
 
@@ -204,6 +209,12 @@ app.use('/api/v1/account-settings', accountSettingsRouter);
 
 // Newsletter routes
 app.use('/api/v1/newsletter', newsletterRouter);
+
+// Waitlist routes (public)
+app.use('/api/v1/waitlist', waitlistRouter);
+
+// MFA routes (authenticated)
+app.use('/api/v1/mfa', mfaRouter);
 
 // Platform invite routes
 app.use('/api/v1/platform', platformInviteRouter);
@@ -297,6 +308,10 @@ app.use(
       updateTeamFunction,
       deleteTeamFunction,
       creditsSendVoiceOtp,
+      sendEmailVerification,
+      sendLoginNotification,
+      sendPasswordChangedEmail,
+      sendPasswordResetEmail,
     ],
   }),
 );

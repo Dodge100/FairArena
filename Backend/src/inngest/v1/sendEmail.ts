@@ -19,7 +19,12 @@ export const sendEmailHandler = inngest.createFunction(
     }
 
     try {
-      await sendEmail(to, subject, template, templateData || {});
+      await sendEmail({
+        to,
+        subject,
+        templateType: template as any,
+        templateData: templateData || {},
+      });
       logger.info('Email sent successfully', { to, subject, template });
     } catch (error) {
       logger.error('Failed to send email', { to, subject, template, error });

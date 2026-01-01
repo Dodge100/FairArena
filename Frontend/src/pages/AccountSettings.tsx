@@ -105,6 +105,9 @@ export default function AccountSettings() {
     try {
       const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ [key]: value }),
       });
       const data = await res.json();

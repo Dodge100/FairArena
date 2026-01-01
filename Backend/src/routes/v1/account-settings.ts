@@ -8,6 +8,7 @@ import {
 } from '../../controllers/v1/accountSettingsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 const router = Router();
 
@@ -172,7 +173,7 @@ router.get('/status', protectRoute, checkStatus);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/logs', protectRoute, getLogs);
+router.get('/logs', protectRoute, requireSettingsVerification, getLogs);
 
 /**
  * @swagger
@@ -199,6 +200,6 @@ router.get('/logs', protectRoute, getLogs);
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/export-data', protectRoute, exportUserData);
+router.post('/export-data', protectRoute, requireSettingsVerification, exportUserData);
 
 export default router;

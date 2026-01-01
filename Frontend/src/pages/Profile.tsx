@@ -1,82 +1,738 @@
-import { UserProfile } from '@clerk/clerk-react';
+import { MFASetup } from '@/components/MFASetup';
+import { OTPVerification } from '@/components/OTPVerification';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import { apiFetch } from '@/lib/apiClient';
+import {
+  AlertTriangle,
+  Check,
+  Chrome,
+  Clock,
+  Globe,
+  Laptop,
+  Loader2,
+  Lock,
+  LogOut,
+  Monitor,
+  RefreshCw,
+  Shield,
+  Smartphone,
+  Tablet,
+  User,
+  X
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+interface Session {
+  id: string;
+  deviceName: string;
+  deviceType: string;
+  ipAddress: string;
+  lastActiveAt: string;
+  createdAt: string;
+  isCurrent: boolean;
+}
+
+interface ActivityLog {
+  id: string;
+  action: string;
+  level: string;
+  metadata?: {
+    deviceName?: string;
+    deviceType?: string;
+    ipAddress?: string;
+    timestamp?: string;
+  };
+  createdAt: string;
+}
+
+interface MFAStatus {
+  enabled: boolean;
+  enabledAt?: string;
+  backupCodesRemaining: number;
+}
+
+// function to format time ago
+const formatTimeAgo = (date: Date) => {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 30) return 'just now';
+  if (diffInSeconds < 60) return 'less than a minute ago';
+
+  const minutes = Math.floor(diffInSeconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} year${years > 1 ? 's' : ''} ago`;
+};
 
 function Profile() {
   const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const { user, logout, getToken } = useAuth();
+  const [activeTab, setActiveTab] = useState<'overview' | 'security'>('overview');
+
+  // Data State
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [revokingSession, setRevokingSession] = useState<string | null>(null);
+
+  // Security State
+  const [isSecurityVerified, setIsSecurityVerified] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<MFAStatus | null>(null);
+  const [loadingMfa, setLoadingMfa] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [showDisableMfa, setShowDisableMfa] = useState(false);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableCode, setDisableCode] = useState('');
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+  // Fetch sessions
+  const fetchSessions = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE}/api/v1/auth/sessions`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  // Fetch activity logs
+  const fetchActivityLogs = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE}/api/v1/account-settings/logs?limit=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setActivityLogs(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  // Fetch MFA Status
+  const fetchMfaStatus = async () => {
+    setLoadingMfa(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/status`);
+      const data = await res.json();
+      if (data.success) {
+        setMfaStatus(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch MFA status', error);
+    } finally {
+      setLoadingMfa(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchSessions();
+      fetchActivityLogs();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'security' && isSecurityVerified) {
+      fetchMfaStatus();
+    }
+  }, [activeTab, isSecurityVerified]);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await logout();
+      toast.success('Logged out successfully');
+    } catch (error) {
+      toast.error('Failed to logout');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    setRevokingSession(sessionId);
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE}/api/v1/auth/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        toast.success('Session revoked successfully');
+        setSessions(sessions.filter(s => s.id !== sessionId));
+      } else {
+        throw new Error('Failed to revoke session');
+      }
+    } catch (error) {
+      toast.error('Failed to revoke session');
+    } finally {
+      setRevokingSession(null);
+    }
+  };
+
+  const handleRevokeAllOtherSessions = async () => {
+    const otherSessions = sessions.filter(s => !s.isCurrent);
+    if (otherSessions.length === 0) {
+      toast.info('No other sessions to revoke');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      for (const session of otherSessions) {
+        await fetch(`${API_BASE}/api/v1/auth/sessions/${session.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
+        });
+      }
+      toast.success(`Revoked ${otherSessions.length} session(s)`);
+      setSessions(sessions.filter(s => s.isCurrent));
+    } catch (error) {
+      toast.error('Failed to revoke some sessions');
+      fetchSessions();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    if (!disablePassword || !disableCode) {
+      toast.error('Please enter your password and a verification code');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/disable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: disablePassword,
+          code: disableCode
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('MFA disabled successfully');
+        setShowDisableMfa(false);
+        setDisablePassword('');
+        setDisableCode('');
+        fetchMfaStatus();
+      } else {
+        toast.error(data.message || 'Failed to disable MFA');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getDeviceIcon = (deviceType: string) => {
+    const iconClass = "w-5 h-5";
+    switch (deviceType?.toLowerCase()) {
+      case 'mobile':
+      case 'phone': return <Smartphone className={iconClass} />;
+      case 'tablet': return <Tablet className={iconClass} />;
+      case 'desktop': return <Monitor className={iconClass} />;
+      case 'browser': return <Chrome className={iconClass} />;
+      default: return <Laptop className={iconClass} />;
+    }
+  };
+
+  const getActionLabel = (action: string) => {
+    const labels: Record<string, string> = {
+      'login': 'Signed in',
+      'logout': 'Signed out',
+      'register': 'Account created',
+      'password-changed': 'Password changed',
+      'email-verified': 'Email verified',
+      'profile-updated': 'Profile updated',
+      'session-revoked': 'Session ended',
+      'mfa-enabled': 'Two-factor auth enabled',
+      'mfa-disabled': 'Two-factor auth disabled',
+    };
+    return labels[action] || action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  };
+
+  const getActionIcon = (action: string) => {
+    const iconClass = "w-4 h-4";
+    switch (action) {
+      case 'login': return <LogOut className={iconClass} style={{ transform: 'rotate(180deg)' }} />;
+      case 'logout': return <LogOut className={iconClass} />;
+      case 'register': return <User className={iconClass} />;
+      case 'password-changed': return <Lock className={iconClass} />;
+      case 'mfa-enabled':
+      case 'mfa-disabled': return <Shield className={iconClass} />;
+      default: return <Clock className={iconClass} />;
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <UserProfile
-      appearance={{
-        elements: {
-          rootBox: 'w-full',
-          card: 'bg-card border-border shadow-lg',
-          headerTitle: 'text-foreground',
-          headerSubtitle: 'text-muted-foreground',
-          profileSectionTitle: 'text-foreground font-semibold',
-          profileSectionTitleText: 'text-foreground',
-          profileSectionContent: 'text-foreground',
-          formButtonPrimary: 'bg-primary hover:bg-primary/90 text-primary-foreground',
-          formButtonReset: 'bg-secondary hover:bg-secondary/80 text-secondary-foreground',
-          formFieldInput:
-            'bg-background border-border text-foreground placeholder:text-muted-foreground',
-          formFieldLabel: 'text-foreground',
-          formFieldHintText: 'text-muted-foreground',
-          navbarButton: 'text-muted-foreground hover:text-foreground',
-          navbarMobileMenuButton: 'text-muted-foreground hover:text-foreground',
-          pageScrollBox: 'bg-background',
-          page: 'bg-background',
-          alert: 'bg-destructive/10 border-destructive/20 text-destructive',
-          alertText: 'text-destructive',
-          badge: 'bg-secondary text-secondary-foreground',
-          button: 'bg-primary hover:bg-primary/90 text-primary-foreground',
-          dividerLine: 'bg-border',
-          dividerText: 'text-muted-foreground',
-          footer: 'bg-background border-t border-border',
-          footerActionLink: 'text-primary hover:text-primary/80',
-          identityPreview: 'bg-muted',
-          identityPreviewText: 'text-foreground',
-          identityPreviewEditButton: 'text-muted-foreground hover:text-foreground',
-          otpCodeField: 'bg-background border-border text-foreground',
-          phoneNumberField: 'bg-background border-border text-foreground',
-          profileSection: 'border-border',
-          scrollBox: 'bg-background',
-          selectButton: 'bg-background border-border text-foreground hover:bg-accent',
-          selectButtonIcon: 'text-muted-foreground',
-          selectOptions: 'bg-popover border-border',
-          selectOption: 'text-foreground hover:bg-accent',
-          socialButtonsBlockButton: 'bg-background border-border text-foreground hover:bg-accent',
-          socialButtonsBlockButtonText: 'text-foreground',
-          socialButtonsBlockButtonArrow: 'text-muted-foreground',
-          table: 'text-foreground',
-          tableHead: 'text-foreground font-semibold',
-          tableBody: 'text-foreground',
-          tableRow: 'border-border hover:bg-muted/50',
-          userButtonPopoverCard: 'bg-popover border-border',
-          userButtonPopoverActionButton: 'text-foreground hover:bg-accent',
-          userButtonPopoverActionButtonText: 'text-foreground',
-          userButtonPopoverActionButtonIcon: 'text-muted-foreground',
-          userPreview: 'bg-muted',
-          userPreviewAvatarBox: 'bg-primary text-primary-foreground',
-          userPreviewAvatarImage: 'object-cover',
-          userPreviewSecondaryIdentifier: 'text-muted-foreground',
-          userPreviewMainIdentifier: 'text-foreground',
-          userButtonTrigger: 'bg-background border-border text-foreground hover:bg-accent',
-          userButtonAvatarBox: 'bg-primary text-primary-foreground',
-          userButtonAvatarImage: 'object-cover',
-        },
-        variables: {
-          colorPrimary: theme === 'dark' ? 'hsl(var(--primary))' : 'hsl(var(--primary))',
-          colorBackground: theme === 'dark' ? 'hsl(var(--background))' : 'hsl(var(--background))',
-          colorInputBackground:
-            theme === 'dark' ? 'hsl(var(--background))' : 'hsl(var(--background))',
-          colorInputText: theme === 'dark' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground))',
-          colorText: theme === 'dark' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground))',
-          colorTextSecondary:
-            theme === 'dark' ? 'hsl(var(--muted-foreground))' : 'hsl(var(--muted-foreground))',
-          borderRadius: '0.5rem',
-        },
-      }}
-    />
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Profile Header Card */}
+      <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+        <div className={`p-6 ${isDark ? 'bg-gradient-to-r from-[#DDEF00]/10 to-transparent' : 'bg-gradient-to-r from-primary/10 to-transparent'}`}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            {user.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover border-4 border-background shadow-md"
+              />
+            ) : (
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ${isDark ? 'bg-[#DDEF00] text-black' : 'bg-primary text-primary-foreground'}`}>
+                {user.firstName?.[0] || user.email[0].toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-2xl font-bold text-foreground">
+                {user.firstName} {user.lastName}
+              </h1>
+              <p className="text-muted-foreground">{user.email}</p>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
+                {user.emailVerified ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-500/20 text-green-600">
+                    <Check className="w-3 h-3" /> Email verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600">
+                    <AlertTriangle className="w-3 h-3" /> Email not verified
+                  </span>
+                )}
+                {mfaStatus?.enabled && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-600">
+                    <Shield className="w-3 h-3" /> 2FA Enabled
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isDark
+                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                : 'bg-red-100 text-red-600 hover:bg-red-200'
+                } disabled:opacity-50`}
+            >
+              <LogOut className="w-4 h-4" />
+              {isLoading ? 'Signing out...' : 'Sign Out'}
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className={`flex border-b ${isDark ? 'border-neutral-800' : 'border-neutral-200'}`}>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
+                ? isDark
+                  ? 'border-[#DDEF00] text-[#DDEF00]'
+                  : 'border-black text-black'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'security'
+                ? isDark
+                  ? 'border-[#DDEF00] text-[#DDEF00]'
+                  : 'border-black text-black'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Security
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'overview' && (
+        <>
+          {/* Active Sessions Card */}
+          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
+                <h2 className="text-lg font-semibold text-foreground">Active Sessions</h2>
+                <span className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
+                  {sessions.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchSessions}
+                  disabled={loadingSessions}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                  title="Refresh sessions"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSessions ? 'animate-spin' : ''}`} />
+                </button>
+                {sessions.length > 1 && (
+                  <button
+                    onClick={handleRevokeAllOtherSessions}
+                    disabled={isLoading}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                      } disabled:opacity-50`}
+                  >
+                    Sign out all other devices
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingSessions ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading sessions...</p>
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No active sessions found
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`p-4 flex items-center gap-4 ${session.isCurrent ? (isDark ? 'bg-[#DDEF00]/5' : 'bg-primary/5') : ''}`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                      {getDeviceIcon(session.deviceType)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground truncate">
+                          {session.deviceName || 'Unknown Device'}
+                        </span>
+                        {session.isCurrent && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${isDark ? 'bg-[#DDEF00]/20 text-[#DDEF00]' : 'bg-green-100 text-green-700'}`}>
+                            This device
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          {session.ipAddress || 'Unknown IP'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {session.lastActiveAt
+                            ? formatTimeAgo(new Date(session.lastActiveAt))
+                            : 'Unknown'}
+                        </span>
+                      </div>
+                    </div>
+                    {!session.isCurrent && (
+                      <button
+                        onClick={() => handleRevokeSession(session.id)}
+                        disabled={revokingSession === session.id}
+                        className={`p-2 rounded-lg transition-colors ${isDark
+                          ? 'hover:bg-red-500/20 text-red-400'
+                          : 'hover:bg-red-100 text-red-600'
+                          } disabled:opacity-50`}
+                        title="Revoke session"
+                      >
+                        {revokingSession === session.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Recent Activity Card */}
+          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
+                <h2 className="text-lg font-semibold text-foreground">Recent Security Activity</h2>
+              </div>
+              <button
+                onClick={fetchActivityLogs}
+                disabled={loadingLogs}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                title="Refresh activity"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingLogs ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading activity...</p>
+                </div>
+              ) : activityLogs.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No recent activity
+                </div>
+              ) : (
+                activityLogs.map((log) => (
+                  <div key={log.id} className="p-4 flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                      {getActionIcon(log.action)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground">
+                        {getActionLabel(log.action)}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        {log.metadata?.deviceName && (
+                          <span className="flex items-center gap-1">
+                            {getDeviceIcon(log.metadata.deviceType || 'unknown')}
+                            {log.metadata.deviceName}
+                          </span>
+                        )}
+                        {log.metadata?.ipAddress && (
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            {log.metadata.ipAddress}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatTimeAgo(new Date(log.createdAt))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Security Tips */}
+          <div className={`rounded-xl border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'} p-4`}>
+            <div className="flex items-start gap-3">
+              <Shield className={`w-5 h-5 mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+              <div>
+                <h3 className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Security Tip</h3>
+                <p className={`text-sm mt-1 ${isDark ? 'text-blue-200/80' : 'text-blue-700'}`}>
+                  Review your active sessions regularly. If you see any device you don't recognize,
+                  revoke that session immediately and consider changing your password.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'security' && (
+        <div className="space-y-6">
+          {!isSecurityVerified ? (
+            <OTPVerification
+              onVerified={() => setIsSecurityVerified(true)}
+              fullScreen={false}
+              className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-sm`}
+              title="Security Verification"
+              description="Please verify your identity to access security settings."
+            />
+          ) : (
+            <>
+              {/* MFA Section */}
+              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-lg ${isDark ? 'bg-[#DDEF00]/10 text-[#DDEF00]' : 'bg-primary/10 text-primary'}`}>
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Two-Factor Authentication</h3>
+                      <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
+                    </div>
+                  </div>
+                  {mfaStatus?.enabled ? (
+                    <span className="bg-green-500/10 text-green-600 px-3 py-1 rounded-full text-sm font-medium border border-green-200">
+                      Enabled
+                    </span>
+                  ) : (
+                    <span className="bg-yellow-500/10 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium border border-yellow-200">
+                      Disabled
+                    </span>
+                  )}
+                </div>
+
+                {showMfaSetup ? (
+                  <MFASetup
+                    onComplete={() => {
+                      setShowMfaSetup(false);
+                      fetchMfaStatus();
+                    }}
+                    onCancel={() => setShowMfaSetup(false)}
+                  />
+                ) : showDisableMfa ? (
+                  <div className="max-w-md mx-auto space-y-4 p-4 border rounded-lg bg-muted/20">
+                    <h4 className="font-medium text-center">Disable Two-Factor Authentication</h4>
+                    <p className="text-sm text-muted-foreground text-center">
+                      Enter your password and a current 2FA code to confirm.
+                    </p>
+                    <input
+                      type="password"
+                      placeholder="Current Password"
+                      value={disablePassword}
+                      onChange={e => setDisablePassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border bg-background"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Verification Code (6 digits)"
+                      value={disableCode}
+                      maxLength={6}
+                      onChange={e => setDisableCode(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border bg-background"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowDisableMfa(false)}
+                        className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDisableMfa}
+                        disabled={isLoading}
+                        className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {isLoading ? 'Disabling...' : 'Disable MFA'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {loadingMfa ? (
+                      <div className="py-4 flex justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : mfaStatus?.enabled ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50/50 border border-green-100 dark:bg-green-950/20 dark:border-green-800">
+                          <Check className="w-5 h-5 text-green-600" />
+                          <div className="flex-1">
+                            <p className="font-medium text-green-800 dark:text-green-300">
+                              MFA is active since {new Date(mfaStatus.enabledAt || '').toLocaleDateString()}
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-400">
+                              Your account is protected.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => setShowDisableMfa(true)}
+                            className="text-red-600 hover:text-red-700 text-sm font-medium"
+                          >
+                            Disable 2FA
+                          </button>
+                          <button
+                            className="text-muted-foreground hover:text-foreground text-sm font-medium"
+                            onClick={() => toast.info('To regenerate backup codes, please use the API directly for now.')}
+                          >
+                            Regenerate Backup Codes
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <p className="text-muted-foreground">
+                          Protect your account from unauthorized access mainly by enabling Two-Factor Authentication.
+                          You'll need a mobile authenticator app.
+                        </p>
+                        <button
+                          onClick={() => setShowMfaSetup(true)}
+                          className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 ${isDark ? 'bg-[#DDEF00] text-black hover:bg-[#DDEF00]/90' : 'bg-black text-white hover:bg-black/90'}`}
+                        >
+                          <Shield className="w-4 h-4" />
+                          Enable MFA
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Password Change Info */}
+              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Lock className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
+                  <h3 className="text-lg font-semibold text-foreground">Password</h3>
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  Manage your password and recovery settings in Account Settings.
+                </p>
+                <button className="text-sm font-medium text-primary hover:underline">
+                  Manage in Settings &rarr;
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+    </div>
   );
 }
 

@@ -12,7 +12,7 @@ const profileIdSchema = z.string().min(1).max(255);
 export const recordView = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.params;
-    const auth = req.auth();
+    const auth = req.user;
     const viewerUserId = auth?.userId;
 
     if (!viewerUserId) {
@@ -60,7 +60,7 @@ export const recordView = async (req: Request, res: Response) => {
 // Get profile views for authenticated user
 export const getProfileViews = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {

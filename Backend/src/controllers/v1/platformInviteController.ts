@@ -14,7 +14,7 @@ export async function inviteToPlatform(req: Request, res: Response) {
     const { email } = newsletterSchema.parse(req.body);
 
     // Get current user info
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.isAuthenticated) {
       return res.status(401).json({
         success: false,

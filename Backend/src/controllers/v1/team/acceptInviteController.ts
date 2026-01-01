@@ -83,7 +83,7 @@ export const getInvitationDetails = async (req: Request, res: Response) => {
  */
 export const acceptTeamInvitation = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { inviteCode } = req.params;
 
@@ -211,7 +211,7 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
     logger.error('Error accepting team invitation', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -222,7 +222,7 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
  */
 export const declineTeamInvitation = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { inviteCode } = req.params;
 
@@ -301,7 +301,7 @@ export const declineTeamInvitation = async (req: Request, res: Response) => {
     logger.error('Error declining team invitation', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }

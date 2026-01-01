@@ -37,7 +37,7 @@ const getNotificationsQuerySchema = z.object({
  */
 export const getNotifications = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -85,7 +85,7 @@ export const getNotifications = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error) {
-    logger.error('Error fetching notifications', { error, userId: req.auth()?.userId });
+    logger.error('Error fetching notifications', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 };
@@ -95,7 +95,7 @@ export const getNotifications = async (req: Request, res: Response) => {
  */
 export const getUnreadCount = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -145,7 +145,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
       data: responseData,
     });
   } catch (error) {
-    logger.error('Error fetching unread count', { error, userId: req.auth()?.userId });
+    logger.error('Error fetching unread count', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to fetch unread count' });
   }
 };
@@ -155,7 +155,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
  */
 export const markAsRead = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     const { id } = req.params;
 
@@ -177,7 +177,7 @@ export const markAsRead = async (req: Request, res: Response) => {
       message: 'Notification is being marked as read',
     });
   } catch (error) {
-    logger.error('Error marking notification as read', { error, userId: req.auth()?.userId });
+    logger.error('Error marking notification as read', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 };
@@ -187,7 +187,7 @@ export const markAsRead = async (req: Request, res: Response) => {
  */
 export const markAsUnread = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     const { id } = req.params;
 
@@ -209,7 +209,7 @@ export const markAsUnread = async (req: Request, res: Response) => {
       message: 'Notification is being marked as unread',
     });
   } catch (error) {
-    logger.error('Error marking notification as unread', { error, userId: req.auth()?.userId });
+    logger.error('Error marking notification as unread', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to mark notification as unread' });
   }
 };
@@ -219,7 +219,7 @@ export const markAsUnread = async (req: Request, res: Response) => {
  */
 export const markMultipleAsRead = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -249,7 +249,7 @@ export const markMultipleAsRead = async (req: Request, res: Response) => {
       message: 'Notifications are being marked as read',
     });
   } catch (error) {
-    logger.error('Error marking notifications as read', { error, userId: req.auth()?.userId });
+    logger.error('Error marking notifications as read', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to mark notifications as read' });
   }
 };
@@ -259,7 +259,7 @@ export const markMultipleAsRead = async (req: Request, res: Response) => {
  */
 export const markAllAsRead = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -277,7 +277,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
       message: 'All notifications are being marked as read',
     });
   } catch (error) {
-    logger.error('Error marking all notifications as read', { error, userId: req.auth()?.userId });
+    logger.error('Error marking all notifications as read', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 };
@@ -287,7 +287,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
  */
 export const deleteNotification = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     const { id } = req.params;
 
@@ -309,7 +309,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
       message: 'Notification is being deleted',
     });
   } catch (error) {
-    logger.error('Error deleting notification', { error, userId: req.auth()?.userId });
+    logger.error('Error deleting notification', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to delete notification' });
   }
 };
@@ -319,7 +319,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
  */
 export const deleteAllRead = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -337,7 +337,7 @@ export const deleteAllRead = async (req: Request, res: Response) => {
       message: 'All read notifications are being deleted',
     });
   } catch (error) {
-    logger.error('Error deleting read notifications', { error, userId: req.auth()?.userId });
+    logger.error('Error deleting read notifications', { error, userId: req.user?.userId });
     res.status(500).json({ error: 'Failed to delete read notifications' });
   }
 };

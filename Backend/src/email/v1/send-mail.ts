@@ -9,8 +9,12 @@ import { accountPermanentDeletionEmailTemplate } from '../templates/accountPerma
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
+import { emailVerificationTemplate } from '../templates/emailVerification.js';
 import { freeCreditsClaimedEmailTemplate } from '../templates/freeCreditsClaimed.js';
+import { loginNotificationTemplate } from '../templates/loginNotification.js';
 import { otpEmailTemplate } from '../templates/otp.js';
+import { passwordChangedTemplate } from '../templates/passwordChanged.js';
+import { passwordResetTemplate } from '../templates/passwordReset.js';
 import { paymentFailedEmailTemplate } from '../templates/paymentFailed.js';
 import { paymentSuccessEmailTemplate } from '../templates/paymentSuccess.js';
 import { phoneNumberAddedEmailTemplate } from '../templates/phoneNumberAdded.js';
@@ -20,6 +24,7 @@ import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
 import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
 import { supportConfirmationEmailTemplate } from '../templates/support-confirmation.js';
 import { teamInviteEmailTemplate } from '../templates/teamInvite.js';
+import { waitlistConfirmationTemplate } from '../templates/waitlistConfirmation.js';
 import { weeklyFeedbackEmailTemplate } from '../templates/weekly-feedback.js';
 import { welcomeEmailTemplate } from '../templates/welcome.js';
 
@@ -110,6 +115,7 @@ type RefundCompletedEmailParams = {
   refundId: string;
   completedDate: string;
   paymentMethod: string;
+  paymentIdOrMethod?: string; // Legacy support
 };
 type RefundFailedEmailParams = {
   userName: string;
@@ -136,6 +142,13 @@ type TeamInviteEmailParams = {
   inviteLink: string;
   expiresAt: string;
 };
+
+// New Auth Email Params
+type EmailVerificationParams = { firstName: string; verificationUrl: string; expiryHours: number };
+type PasswordResetParams = { firstName: string; resetUrl: string; expiryMinutes: number };
+type LoginNotificationParams = { firstName: string; ipAddress: string; deviceName: string; location: string; loginTime: string; securityUrl: string };
+type PasswordChangedParams = { firstName: string; supportUrl: string; changeTime: string };
+type WaitlistConfirmationParams = { name: string; position: number };
 
 // Collect all templates with correct types
 export const emailTemplates = {
@@ -178,252 +191,31 @@ export const emailTemplates = {
     params: SupportConfirmationEmailParams,
   ) => string,
   'team-invite': teamInviteEmailTemplate as (params: TeamInviteEmailParams) => string,
+  // New templates
+  EMAIL_VERIFICATION: emailVerificationTemplate as (params: EmailVerificationParams) => string,
+  PASSWORD_RESET: passwordResetTemplate as (params: PasswordResetParams) => string,
+  LOGIN_NOTIFICATION: loginNotificationTemplate as (params: LoginNotificationParams) => string,
+  PASSWORD_CHANGED: passwordChangedTemplate as (params: PasswordChangedParams) => string,
+  'waitlist-confirmation': waitlistConfirmationTemplate as (params: WaitlistConfirmationParams) => string,
 };
 
-// Function overloads for sendEmail
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'welcome',
-  params: WelcomeEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'otp',
-  params: OtpEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'platformInvite',
-  params: PlatformInviteEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'account-deletion-warning',
-  params: AccountDeletionWarningEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'account-recovery',
-  params: AccountRecoveryEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'account-permanent-deletion',
-  params: AccountPermanentDeletionEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'data-export',
-  params: DataExportEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'data-export-error',
-  params: DataExportErrorEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'free-credits-claimed',
-  params: FreeCreditsClaimedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'phone-number-added',
-  params: PhoneNumberAddedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'payment-success',
-  params: PaymentSuccessEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'payment-failed',
-  params: PaymentFailedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'refund-initiated',
-  params: RefundInitiatedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'refund-completed',
-  params: RefundCompletedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'refund-failed',
-  params: RefundFailedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'weekly-feedback',
-  params: WeeklyFeedbackEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'support-confirmation',
-  params: SupportConfirmationEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'team-invite',
-  params: TeamInviteEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export function sendEmail(
-  to: string,
-  subject: string,
-  templateName: 'account-deletion-failed',
-  params: AccountDeletionFailedEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown>;
-export async function sendEmail(
-  to: string,
-  subject: string,
-  templateName:
-    | 'welcome'
-    | 'otp'
-    | 'platformInvite'
-    | 'account-deletion-warning'
-    | 'account-deletion-failed'
-    | 'account-recovery'
-    | 'account-permanent-deletion'
-    | 'data-export'
-    | 'data-export-error'
-    | 'free-credits-claimed'
-    | 'phone-number-added'
-    | 'payment-success'
-    | 'payment-order-created'
-    | 'payment-failed'
-    | 'refund-initiated'
-    | 'refund-completed'
-    | 'refund-failed'
-    | 'weekly-feedback'
-    | 'support-confirmation'
-    | 'team-invite',
-  params:
-    | WelcomeEmailParams
-    | OtpEmailParams
-    | PlatformInviteEmailParams
-    | AccountDeletionWarningEmailParams
-    | AccountDeletionFailedEmailParams
-    | AccountRecoveryEmailParams
-    | AccountPermanentDeletionEmailParams
-    | DataExportEmailParams
-    | DataExportErrorEmailParams
-    | FreeCreditsClaimedEmailParams
-    | PhoneNumberAddedEmailParams
-    | PaymentSuccessEmailParams
-    | PaymentFailedEmailParams
-    | RefundInitiatedEmailParams
-    | RefundCompletedEmailParams
-    | RefundFailedEmailParams
-    | WeeklyFeedbackEmailParams
-    | SupportConfirmationEmailParams
-    | TeamInviteEmailParams,
-  headers?: Record<string, string>,
-  attachments?: { filename: string; content: Buffer | string; contentType?: string }[],
-): Promise<unknown> {
-  let html: string;
-  if (templateName === 'welcome') {
-    html = emailTemplates.welcome(params as WelcomeEmailParams);
-  } else if (templateName === 'otp') {
-    html = emailTemplates.otp(params as OtpEmailParams);
-  } else if (templateName === 'platformInvite') {
-    html = emailTemplates.platformInvite(params as PlatformInviteEmailParams);
-  } else if (templateName === 'account-deletion-warning') {
-    html = emailTemplates['account-deletion-warning'](params as AccountDeletionWarningEmailParams);
-  } else if (templateName === 'account-deletion-failed') {
-    html = emailTemplates['account-deletion-failed'](params as AccountDeletionFailedEmailParams);
-  } else if (templateName === 'account-recovery') {
-    html = emailTemplates['account-recovery'](params as AccountRecoveryEmailParams);
-  } else if (templateName === 'account-permanent-deletion') {
-    html = emailTemplates['account-permanent-deletion'](
-      params as AccountPermanentDeletionEmailParams,
-    );
-  } else if (templateName === 'data-export') {
-    html = emailTemplates['data-export'](params as DataExportEmailParams);
-  } else if (templateName === 'data-export-error') {
-    html = emailTemplates['data-export-error'](params as DataExportErrorEmailParams);
-  } else if (templateName === 'free-credits-claimed') {
-    html = emailTemplates['free-credits-claimed'](params as FreeCreditsClaimedEmailParams);
-  } else if (templateName === 'phone-number-added') {
-    html = emailTemplates['phone-number-added'](params as PhoneNumberAddedEmailParams);
-  } else if (templateName === 'payment-success') {
-    html = emailTemplates['payment-success'](params as PaymentSuccessEmailParams);
-  } else if (templateName === 'payment-failed') {
-    html = emailTemplates['payment-failed'](params as PaymentFailedEmailParams);
-  } else if (templateName === 'refund-initiated') {
-    html = emailTemplates['refund-initiated'](params as RefundInitiatedEmailParams);
-  } else if (templateName === 'refund-completed') {
-    html = emailTemplates['refund-completed'](params as RefundCompletedEmailParams);
-  } else if (templateName === 'refund-failed') {
-    html = emailTemplates['refund-failed'](params as RefundFailedEmailParams);
-  } else if (templateName === 'weekly-feedback') {
-    html = emailTemplates['weekly-feedback'](params as WeeklyFeedbackEmailParams);
-  } else if (templateName === 'support-confirmation') {
-    html = emailTemplates['support-confirmation'](params as SupportConfirmationEmailParams);
-  } else if (templateName === 'team-invite') {
-    html = emailTemplates['team-invite'](params as TeamInviteEmailParams);
-  } else {
-    throw new Error(`Unknown template name: ${templateName}`);
-  }
+type TemplateType = keyof typeof emailTemplates;
+
+interface SendEmailOptions<T extends TemplateType> {
+  to: string;
+  subject: string;
+  templateType: T;
+  templateData: Parameters<(typeof emailTemplates)[T]>[0];
+  headers?: Record<string, string>;
+  attachments?: { filename: string; content: Buffer | string; contentType?: string }[];
+}
+
+export async function sendEmail<T extends TemplateType>(options: SendEmailOptions<T>): Promise<unknown> {
+  const { to, subject, templateType, templateData, headers, attachments } = options;
+
+  // Get HTML from template
+  // @ts-ignore - TypeScript struggles with the generic type mapping here but it's safe
+  const html = emailTemplates[templateType](templateData);
 
   try {
     if (ENV.EMAIL_PROVIDER === 'nodemailer') {
@@ -515,8 +307,15 @@ export async function sendEmail(
   }
 }
 
+// Legacy helpers updated to use new signature
+
 export const sendWelcomeEmail = async (to: string, userName: string): Promise<unknown> => {
-  return sendEmail(to, 'Welcome to FairArena', 'welcome', { userName });
+  return sendEmail({
+    to,
+    subject: 'Welcome to FairArena',
+    templateType: 'welcome',
+    templateData: { userName }
+  });
 };
 
 export const sendOtpEmail = async (
@@ -530,7 +329,12 @@ export const sendOtpEmail = async (
     longitude: number;
   } | null,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Account Verification - FairArena', 'otp', { otp, location });
+  return sendEmail({
+    to,
+    subject: 'Account Verification - FairArena',
+    templateType: 'otp',
+    templateData: { otp, location }
+  });
 };
 
 export const sendPlatformInviteEmail = async (
@@ -538,15 +342,15 @@ export const sendPlatformInviteEmail = async (
   inviterName: string,
 ): Promise<unknown> => {
   const unsubscribeUrl = `${ENV.FRONTEND_URL}/api/email/unsubscribe/${encodeURIComponent(to)}`;
-  return sendEmail(
+  return sendEmail({
     to,
-    "You're invited to join FairArena!",
-    'platformInvite',
-    { inviterName },
-    {
+    subject: "You're invited to join FairArena!",
+    templateType: 'platformInvite',
+    templateData: { inviterName },
+    headers: {
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
     },
-  );
+  });
 };
 
 export const sendAccountDeletionWarningEmail = async (
@@ -554,35 +358,45 @@ export const sendAccountDeletionWarningEmail = async (
   recoveryInstructions: string,
   deadline: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Your Account Has Been Deleted', 'account-deletion-warning', {
-    recoveryInstructions,
-    deadline,
+  return sendEmail({
+    to,
+    subject: 'Your Account Has Been Deleted',
+    templateType: 'account-deletion-warning',
+    templateData: {
+      recoveryInstructions,
+      deadline,
+    }
   });
 };
 
 export const sendAccountRecoveryEmail = async (to: string, userName?: string): Promise<unknown> => {
-  return sendEmail(to, 'Your Account Has Been Recovered', 'account-recovery', { userName });
+  return sendEmail({
+    to,
+    subject: 'Your Account Has Been Recovered',
+    templateType: 'account-recovery',
+    templateData: { userName }
+  });
 };
 
 export const sendAccountPermanentDeletionEmail = async (to: string): Promise<unknown> => {
-  return sendEmail(
+  return sendEmail({
     to,
-    'Your Account Has Been Permanently Deleted',
-    'account-permanent-deletion',
-    {},
-  );
+    subject: 'Your Account Has Been Permanently Deleted',
+    templateType: 'account-permanent-deletion',
+    templateData: {},
+  });
 };
 
 export const sendAccountDeletionFailedEmail = async (
   to: string,
   message: string,
 ): Promise<unknown> => {
-  return sendEmail(
+  return sendEmail({
     to,
-    'Account Deletion Failed',
-    'account-deletion-failed',
-    { message },
-  );
+    subject: 'Account Deletion Failed',
+    templateType: 'account-deletion-failed',
+    templateData: { message },
+  });
 };
 
 export const sendDataExportEmail = async (
@@ -592,18 +406,17 @@ export const sendDataExportEmail = async (
   dataSize: string,
   attachments: { filename: string; content: Buffer | string; contentType?: string }[],
 ): Promise<unknown> => {
-  return sendEmail(
+  return sendEmail({
     to,
-    'Your FairArena Data Export',
-    'data-export',
-    {
+    subject: 'Your FairArena Data Export',
+    templateType: 'data-export',
+    templateData: {
       userName,
       exportDate,
       dataSize,
     },
-    undefined,
     attachments,
-  );
+  });
 };
 
 export const sendDataExportErrorEmail = async (
@@ -611,9 +424,14 @@ export const sendDataExportErrorEmail = async (
   userName: string,
   errorMessage: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Data Export Failed', 'data-export-error', {
-    userName,
-    errorMessage,
+  return sendEmail({
+    to,
+    subject: 'Data Export Failed',
+    templateType: 'data-export-error',
+    templateData: {
+      userName,
+      errorMessage,
+    }
   });
 };
 
@@ -630,17 +448,22 @@ export const sendPaymentSuccessEmail = async (
   transactionDate: string,
   invoiceUrl?: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Payment Successful - FairArena', 'payment-success', {
-    userName,
-    planName,
-    amount,
-    currency,
-    credits,
-    orderId,
-    paymentId,
-    paymentMethod,
-    transactionDate,
-    invoiceUrl,
+  return sendEmail({
+    to,
+    subject: 'Payment Successful - FairArena',
+    templateType: 'payment-success',
+    templateData: {
+      userName,
+      planName,
+      amount,
+      currency,
+      credits,
+      orderId,
+      paymentId,
+      paymentMethod,
+      transactionDate,
+      invoiceUrl,
+    }
   });
 };
 
@@ -655,15 +478,20 @@ export const sendPaymentFailedEmail = async (
   transactionDate: string,
   paymentId?: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Payment Failed - FairArena', 'payment-failed', {
-    userName,
-    planName,
-    amount,
-    currency,
-    orderId,
-    paymentId,
-    failureReason,
-    transactionDate,
+  return sendEmail({
+    to,
+    subject: 'Payment Failed - FairArena',
+    templateType: 'payment-failed',
+    templateData: {
+      userName,
+      planName,
+      amount,
+      currency,
+      orderId,
+      paymentId,
+      failureReason,
+      transactionDate,
+    }
   });
 };
 
@@ -681,18 +509,23 @@ export const sendRefundInitiatedEmail = async (
   refundDate: string,
   estimatedDays: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Refund Initiated - FairArena', 'refund-initiated', {
-    userName,
-    planName,
-    refundAmount,
-    originalAmount,
-    currency,
-    credits,
-    orderId,
-    paymentId,
-    refundId,
-    refundDate,
-    estimatedDays,
+  return sendEmail({
+    to,
+    subject: 'Refund Initiated - FairArena',
+    templateType: 'refund-initiated',
+    templateData: {
+      userName,
+      planName,
+      refundAmount,
+      originalAmount,
+      currency,
+      credits,
+      orderId,
+      paymentId,
+      refundId,
+      refundDate,
+      estimatedDays,
+    }
   });
 };
 
@@ -708,16 +541,21 @@ export const sendRefundCompletedEmail = async (
   completedDate: string,
   paymentMethod: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Refund Completed - FairArena', 'refund-completed', {
-    userName,
-    planName,
-    refundAmount,
-    currency,
-    orderId,
-    paymentId,
-    refundId,
-    completedDate,
-    paymentMethod,
+  return sendEmail({
+    to,
+    subject: 'Refund Completed - FairArena',
+    templateType: 'refund-completed',
+    templateData: {
+      userName,
+      planName,
+      refundAmount,
+      currency,
+      orderId,
+      paymentId,
+      refundId,
+      completedDate,
+      paymentMethod,
+    }
   });
 };
 
@@ -733,16 +571,21 @@ export const sendRefundFailedEmail = async (
   failureReason: string,
   failureDate: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Refund Failed - FairArena', 'refund-failed', {
-    userName,
-    planName,
-    refundAmount,
-    currency,
-    orderId,
-    paymentId,
-    refundId,
-    failureReason,
-    failureDate,
+  return sendEmail({
+    to,
+    subject: 'Refund Failed - FairArena',
+    templateType: 'refund-failed',
+    templateData: {
+      userName,
+      planName,
+      refundAmount,
+      currency,
+      orderId,
+      paymentId,
+      refundId,
+      failureReason,
+      failureDate,
+    }
   });
 };
 
@@ -752,10 +595,15 @@ export const sendFreeCreditsClaimedEmail = async (
   creditsAdded: number,
   newBalance: number,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Congratulations! Free Credits Claimed - FairArena', 'free-credits-claimed', {
-    userName,
-    creditsAdded,
-    newBalance,
+  return sendEmail({
+    to,
+    subject: 'Congratulations! Free Credits Claimed - FairArena',
+    templateType: 'free-credits-claimed',
+    templateData: {
+      userName,
+      creditsAdded,
+      newBalance,
+    }
   });
 };
 
@@ -764,8 +612,13 @@ export const sendPhoneNumberAddedEmail = async (
   userName: string,
   phoneNumber: string,
 ): Promise<unknown> => {
-  return sendEmail(to, 'Phone Number Added to Your Account - FairArena', 'phone-number-added', {
-    userName,
-    phoneNumber,
+  return sendEmail({
+    to,
+    subject: 'Phone Number Added to Your Account - FairArena',
+    templateType: 'phone-number-added',
+    templateData: {
+      userName,
+      phoneNumber,
+    }
   });
 };

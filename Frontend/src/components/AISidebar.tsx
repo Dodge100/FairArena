@@ -25,6 +25,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAIButton } from '../contexts/AIButtonContext';
 import { useChat } from '../contexts/ChatContext';
 import { useTheme } from '../hooks/useTheme';
+import { useAuthState } from '../lib/auth';
 
 interface AISidebarProps {
   isOpen: boolean;
@@ -68,6 +69,7 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
   } = useChat();
   const { position: aiButtonPosition, setPosition: setAIButtonPosition } = useAIButton();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuthState();
 
   const [input, setInput] = useState('');
   const [sidebarWidth, setSidebarWidth] = useState(420);
@@ -632,8 +634,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setAIButtonPosition(option.value as AIButtonPosition)}
                             className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${aiButtonPosition === option.value
-                                ? 'bg-[#DDEF00] text-black'
-                                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                              ? 'bg-[#DDEF00] text-black'
+                              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                               }`}
                           >
                             {option.label}
@@ -985,8 +987,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                                       }
                                     }}
                                     className={`p-1.5 rounded-lg transition-colors ${aiSpeaking
-                                        ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
-                                        : 'hover:bg-muted'
+                                      ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
+                                      : 'hover:bg-muted'
                                       }`}
                                     title={aiSpeaking ? 'Stop speaking' : 'Read aloud'}
                                   >
@@ -1023,7 +1025,7 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         </div>
                         {message.role === 'user' && (
                           <img
-                            src={window.Clerk.user.imageUrl}
+                            src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${user?.firstName || 'User'}`}
                             alt="User avatar"
                             className="w-6 h-6 rounded-full object-cover"
                           />
@@ -1072,8 +1074,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         whileTap={{ scale: 0.95 }}
                         onClick={handleVoiceInput}
                         className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${isListening
-                            ? 'bg-red-500 hover:bg-red-600 text-white'
-                            : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                          ? 'bg-red-500 hover:bg-red-600 text-white'
+                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                           }`}
                         title={isListening ? 'Stop recording' : 'Voice input'}
                       >

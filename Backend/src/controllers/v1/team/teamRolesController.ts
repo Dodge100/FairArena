@@ -8,7 +8,7 @@ const CACHE_KEY = (teamId: string) => `team:roles:${teamId}`;
 
 export const getTeamRoles = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
 
@@ -103,7 +103,7 @@ export const getTeamRoles = async (req: Request, res: Response) => {
     logger.error('Error fetching team roles', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }

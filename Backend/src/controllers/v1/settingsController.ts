@@ -19,7 +19,7 @@ const updateSettingsSchema = z.object({
 
 export const getSettings = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -86,7 +86,7 @@ export const getSettings = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Get settings error', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth ? (await req.auth()).userId : 'unknown',
+      userId: req.user?.userId ?? 'unknown',
     });
     res.status(500).json({ success: false, message: 'Failed to fetch settings' });
   }
@@ -94,7 +94,7 @@ export const getSettings = async (req: Request, res: Response) => {
 
 export const updateSettings = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -128,7 +128,7 @@ export const updateSettings = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Update settings error', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth ? (await req.auth()).userId : 'unknown',
+      userId: req.user?.userId ?? 'unknown',
     });
     res.status(500).json({ success: false, message: 'Failed to update settings' });
   }
@@ -136,7 +136,7 @@ export const updateSettings = async (req: Request, res: Response) => {
 
 export const resetSettings = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -158,7 +158,7 @@ export const resetSettings = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Reset settings error', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth ? (await req.auth()).userId : 'unknown',
+      userId: req.user?.userId ?? 'unknown',
     });
     res.status(500).json({ success: false, message: 'Failed to reset settings' });
   }

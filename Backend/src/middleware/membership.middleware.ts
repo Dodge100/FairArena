@@ -24,7 +24,7 @@ export const requireOrganizationMembership = async (
 ) => {
   try {
     const { organizationSlug } = req.params;
-    const auth = req.auth();
+    const auth = req.user;
 
     if (!auth?.userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -89,7 +89,7 @@ export const requireOrganizationMembership = async (
 export const requireTeamMembership = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { organizationSlug, teamSlug } = req.params;
-    const auth = req.auth();
+    const auth = req.user;
 
     if (!auth?.userId) {
       return res.status(401).json({ error: 'Unauthorized' });

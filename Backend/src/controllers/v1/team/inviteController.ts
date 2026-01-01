@@ -77,7 +77,7 @@ function parseJSONInvites(jsonContent: string): { valid: BulkInviteInput[]; inva
  */
 export const sendTeamInvite = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
 
@@ -181,7 +181,7 @@ export const sendTeamInvite = async (req: Request, res: Response) => {
     logger.error('Error sending team invitation', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -192,7 +192,7 @@ export const sendTeamInvite = async (req: Request, res: Response) => {
  */
 export const sendBulkTeamInvites = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
 
@@ -313,7 +313,7 @@ export const sendBulkTeamInvites = async (req: Request, res: Response) => {
     logger.error('Error processing bulk team invitations', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -324,7 +324,7 @@ export const sendBulkTeamInvites = async (req: Request, res: Response) => {
  */
 export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
 
@@ -386,7 +386,7 @@ export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
     logger.error('Error processing CSV upload', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -397,7 +397,7 @@ export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
  */
 export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
 
@@ -475,7 +475,7 @@ export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
     logger.error('Error processing JSON upload', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -486,7 +486,7 @@ export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
  */
 export const getTeamInvitations = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug } = req.params;
     const { status = 'pending', page = 1, limit = 20 } = req.query;
@@ -582,7 +582,7 @@ export const getTeamInvitations = async (req: Request, res: Response) => {
     logger.error('Error fetching team invitations', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -593,7 +593,7 @@ export const getTeamInvitations = async (req: Request, res: Response) => {
  */
 export const revokeTeamInvitation = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { teamSlug, organizationSlug, inviteId } = req.params;
 
@@ -671,7 +671,7 @@ export const revokeTeamInvitation = async (req: Request, res: Response) => {
     logger.error('Error revoking team invitation', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -48,7 +48,7 @@ export class AIController {
       }
 
       const { message, sessionId, metadata } = validation.data;
-      const userId = req.auth()?.userId;
+      const userId = req.user?.userId;
 
       if (!userId) {
         res.status(401).json({
@@ -146,7 +146,7 @@ export class AIController {
       }
 
       const { message, sessionId, metadata } = validation.data;
-      const userId = req.auth()?.userId;
+      const userId = req.user?.userId;
 
       if (!userId) {
         res.status(401).json({

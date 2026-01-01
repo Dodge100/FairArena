@@ -51,7 +51,7 @@ export const ORGANIZATION_RATE_LIMITS = {
 export const createRateLimiter = (config: RateLimitConfig) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const auth = req.auth();
+            const auth = req.user;
             const userId = auth.userId;
 
             if (!userId) {
@@ -105,7 +105,7 @@ export const createRateLimiter = (config: RateLimitConfig) => {
         } catch (error) {
             logger.error('Rate limiter error', {
                 error: (error as Error).message,
-                userId: req.auth()?.userId,
+                userId: req.user?.userId,
             });
             // Fail open - don't block requests if rate limiter fails
             next();

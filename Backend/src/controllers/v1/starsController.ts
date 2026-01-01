@@ -19,7 +19,7 @@ const unstarProfileSchema = z.object({
 export const starProfile = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.body;
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -152,7 +152,7 @@ export const starProfile = async (req: Request, res: Response) => {
 export const unstarProfile = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.body;
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     const readOnlyDb = getReadOnlyPrisma();
 
@@ -414,7 +414,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
 export const checkStarStatus = async (req: Request, res: Response) => {
   try {
     const { profileId } = req.params;
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {

@@ -1,4 +1,3 @@
-import { GoogleOneTap } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
@@ -20,6 +19,7 @@ import CreditsVerificationPage from './pages/CreditsVerificationPage';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Feedback from './pages/Feedback';
+import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
@@ -30,6 +30,7 @@ import ProfileStars from './pages/ProfileStars';
 import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
 import RefundPage from './pages/RefundPage';
+import ResetPassword from './pages/ResetPassword';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Support from './pages/Support';
@@ -37,6 +38,7 @@ import TeamInviteAcceptPage from './pages/TeamInviteAcceptPage';
 import TeamsPage from './pages/TeamsPage';
 import TermsAndConditions from './pages/TermsAndConditions';
 import Unsubscribe from './pages/Unsubscribe';
+import VerifyEmail from './pages/VerifyEmail';
 import HowItWorks from './pages/WhyChooseUsPage';
 
 function App() {
@@ -85,7 +87,6 @@ function App() {
   return (
     <>
       <Toaster richColors position="top-right" />
-      <GoogleOneTap />
       <PricingModal
         isOpen={showPricingModal}
         onClose={() => {
@@ -132,6 +133,9 @@ function App() {
         <Route path="/waitlist" element={<WaitList />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
         <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

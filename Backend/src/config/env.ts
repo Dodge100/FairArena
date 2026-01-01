@@ -4,7 +4,6 @@ import logger from '../utils/logger.js';
 import { redis } from './redis.js';
 
 const requiredEnvVars = [
-  'CLERK_WEBHOOK_SECRET',
   'DATABASE_URL',
   'INNGEST_SIGNING_KEY',
   'INNGEST_EVENT_KEY',
@@ -149,9 +148,10 @@ export const ENV = {
   NODE_ENV: getEnv('NODE_ENV', 'development'),
   CORS_URL: getEnv('CORS_URL', 'localhost:5173'),
   MAINTENANCE_MODE: getEnv('MAINTENANCE_MODE') === 'true',
-  CLERK_PUBLISHABLE_KEY: getEnv('CLERK_PUBLISHABLE_KEY'),
-  CLERK_SECRET_KEY: getEnv('CLERK_SECRET_KEY'),
-  CLERK_WEBHOOK_SECRET: getEnv('CLERK_WEBHOOK_SECRET'),
+  // Google OAuth
+  GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID', ''),
+  GOOGLE_CLIENT_SECRET: getEnv('GOOGLE_CLIENT_SECRET', ''),
+  GOOGLE_CALLBACK_URL: getEnv('GOOGLE_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/google/callback'),
   ARCJET_KEY: getEnv('ARCJET_KEY'),
   DATABASE_URL: getEnv('DATABASE_URL'),
   DATABASE_URL_READ_ONLY_1: getEnv('DATABASE_URL_READ_ONLY_1'),
@@ -194,4 +194,5 @@ export const ENV = {
   CREDENTIAL_VALIDATOR_URL: getEnv('CREDENTIAL_VALIDATOR_URL', ''),
   AZURE_STORAGE_CONNECTION_STRING: getEnv('AZURE_STORAGE_CONNECTION_STRING'),
   AZURE_STORAGE_CONTAINER_NAME: getEnv('AZURE_STORAGE_CONTAINER_NAME'),
+  MFA_ENCRYPTION_KEY: getEnv('MFA_ENCRYPTION_KEY', ''),
 };

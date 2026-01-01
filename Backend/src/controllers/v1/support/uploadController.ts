@@ -48,7 +48,7 @@ const ALLOWED_EXTENSIONS = [
  */
 export const generateUploadSasToken = async (req: Request, res: Response) => {
     try {
-        const auth = await req.auth();
+        const auth = req.user;
         const userId = auth?.userId;
 
         let userEmail: string | undefined;
@@ -187,7 +187,7 @@ export const generateUploadSasToken = async (req: Request, res: Response) => {
 
 export const confirmUpload = async (req: Request, res: Response) => {
     try {
-        const auth = await req.auth();
+        const auth = req.user;
         const userId = auth?.userId;
 
         if (!userId) {

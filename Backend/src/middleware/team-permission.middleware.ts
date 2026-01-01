@@ -52,7 +52,7 @@ const PERMISSION_CACHE_TTL = 3600; // 1 hour - permissions don't change frequent
  */
 export const teamPermissionMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { organizationSlug, teamSlug } = req.params;
 
@@ -185,7 +185,7 @@ export const teamPermissionMiddleware = async (req: Request, res: Response, next
   } catch (error) {
     logger.error('Error loading team permissions', {
       error: (error as Error).message,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
       organizationSlug: req.params.organizationSlug,
       teamSlug: req.params.teamSlug,
     });
@@ -208,7 +208,7 @@ export const requireTeamPermission = (category: keyof TeamPermissions, action: s
 
     if (!categoryPermissions || !categoryPermissions[action]) {
       logger.warn('Team permission denied', {
-        userId: req.auth()?.userId,
+        userId: req.user?.userId,
         teamId: req.teamContext.teamId,
         category,
         action,

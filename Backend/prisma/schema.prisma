@@ -23,6 +23,21 @@ model User {
   phoneNumber           String?                 @unique
   isPhoneVerified       Boolean                 @default(false)
   hasClaimedFreeCredits Boolean                 @default(false)
+
+  // Authentication fields
+  passwordHash          String?
+  emailVerified         Boolean                 @default(false)
+  googleId              String?                 @unique
+  lastLoginAt           DateTime?
+  lastLoginIp           String?
+
+  // MFA (Two-Factor Authentication) fields
+  mfaEnabled            Boolean                 @default(false)
+  mfaSecret             String?                 // Encrypted TOTP secret
+  mfaBackupCodes        String[]                // Encrypted backup codes
+  mfaEnabledAt          DateTime?
+
+  // Relations
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]
   notifications         Notification[]
@@ -50,6 +65,8 @@ model User {
   @@index([userId, isPhoneVerified])
   @@index([userId, hasClaimedFreeCredits])
   @@index([phoneNumber, isPhoneVerified])
+  @@index([googleId])
+  @@index([emailVerified])
 }
 
 model Plan {
@@ -726,7 +743,7 @@ model Feedback {
 model Support {
   id        String      @id @default(cuid())
   userId    String?
-  emailId   String?
+  emailId   String
   subject   String
   message   String
   status    ReportState @default(QUEUED)
@@ -879,4 +896,25 @@ model SupportAttachment {
   @@index([fileHash]) // For deduplication lookups
   @@index([fileHash, status]) // For finding uploaded duplicates
   @@index([createdAt])
+}
+
+// Waitlist for early access signups
+model Waitlist {
+  id         String         @id @default(cuid())
+  email      String         @unique
+  name       String?
+  source     String?        // Where they came from (homepage, referral, etc.)
+  status     WaitlistStatus @default(PENDING)
+  notifiedAt DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum WaitlistStatus {
+  PENDING
+  INVITED
+  REGISTERED
 }

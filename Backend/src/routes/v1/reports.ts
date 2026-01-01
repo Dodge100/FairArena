@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { CreateReport, GetUserReports } from '../../controllers/v1/reportsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 const router = Router();
 
@@ -80,7 +81,7 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/', protectRoute, GetUserReports);
+router.get('/', protectRoute, requireSettingsVerification, GetUserReports);
 router.post('/', protectRoute, CreateReport);
 
 export default router;

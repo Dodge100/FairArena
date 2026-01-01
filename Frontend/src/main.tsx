@@ -1,4 +1,3 @@
-import { ClerkProvider } from '@clerk/clerk-react';
 // import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -8,6 +7,7 @@ import { ClarityManager } from './components/ClarityManager.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { FirebaseAnalyticsManager } from './components/FirebaseAnalyticsManager.tsx';
 import { AIButtonProvider } from './contexts/AIButtonContext.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
 import { CookieConsentProvider } from './contexts/CookieConsentContext.tsx';
 import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import { SidebarCustomizationProvider } from './contexts/SidebarCustomizationContext.tsx';
@@ -28,22 +28,9 @@ import { ThemeProvider } from './theme-context.tsx';
 //   ],
 // });
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  throw new Error('Missing Publishable Key');
-}
-
-
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY}
-      waitlistUrl="/waitlist"
-      signUpUrl="/signup"
-      signInUrl="/signin"
-    >
+    <AuthProvider>
       <CookieConsentProvider>
         <DataSaverProvider>
           <SidebarCustomizationProvider>
@@ -63,6 +50,6 @@ createRoot(document.getElementById('root')!).render(
           </SidebarCustomizationProvider>
         </DataSaverProvider>
       </CookieConsentProvider>
-    </ClerkProvider>
+    </AuthProvider>
   </StrictMode>,
 );

@@ -4,7 +4,6 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
-import { Verifier } from '../../utils/settings-token-verfier.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
 
 const CACHE_TTL = {
@@ -29,15 +28,13 @@ export class SupportController {
    */
   static async getUserSupportTickets(req: Request, res: Response) {
     try {
-      const auth = await req.auth();
+      const auth = req.user;
       const userId = auth?.userId;
       const readOnlyPrisma = getReadOnlyPrisma();
 
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-
-      Verifier(req, res, auth);
 
       const cacheKey = `${REDIS_KEYS.USER_SUPPORT_CACHE}${userId}`;
 
@@ -116,7 +113,7 @@ export class SupportController {
 
   private static async checkRateLimit(req: Request, res: Response, next: Function) {
     try {
-      const auth = req.auth();
+      const auth = req.user;
       const identifier = auth?.userId || req.ip || 'anonymous';
       const key = `support_rate_limit:${identifier}`;
 
@@ -173,7 +170,7 @@ export class SupportController {
       }
 
       const { subject, message, email } = validationResult.data;
-      const auth = await req.auth();
+      const auth = req.user;
       const userId = auth?.userId;
       let userEmail: string | undefined;
       let emailId: string | undefined;

@@ -73,7 +73,7 @@ export const loadOrganizationPermissions = async (
   next: NextFunction,
 ) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { organizationSlug, slug } = req.params;
     const orgSlug = organizationSlug || slug;
@@ -169,7 +169,7 @@ export const loadOrganizationPermissions = async (
   } catch (error) {
     logger.error('Error loading organization permissions', {
       error: (error as Error).message,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
       orgSlug: req.params.organizationSlug || req.params.slug,
     });
     res.status(500).json({ error: 'Internal server error' });
@@ -191,7 +191,7 @@ export const requirePermission = (category: keyof OrganizationPermissions, actio
 
     if (!categoryPermissions || !categoryPermissions[action]) {
       logger.warn('Permission denied', {
-        userId: req.auth()?.userId,
+        userId: req.user?.userId,
         organizationId: req.organizationContext.organizationId,
         category,
         action,

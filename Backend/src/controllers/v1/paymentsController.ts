@@ -37,7 +37,7 @@ const verifyPaymentSchema = z.object({
 // Create Razorpay order
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -190,7 +190,7 @@ export const createOrder = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Create order error', {
       error: error instanceof Error ? error.message : JSON.stringify(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({
       success: false,
@@ -202,7 +202,7 @@ export const createOrder = async (req: Request, res: Response) => {
 // Verify payment and award credits
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
 
     if (!userId) {
@@ -349,7 +349,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Payment verification error', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({
       success: false,

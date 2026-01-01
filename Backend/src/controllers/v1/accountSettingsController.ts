@@ -31,7 +31,7 @@ const verifyOtpSchema = z.object({
 
 export const sendOtp = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -143,7 +143,7 @@ export const sendOtp = async (req: Request, res: Response) => {
 
 export const verifyOtp = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -397,7 +397,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
 export const checkStatus = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
 
     if (!auth?.userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -419,7 +419,7 @@ export const checkStatus = async (req: Request, res: Response) => {
 
 export const getLogs = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -503,15 +503,10 @@ export const getLogs = async (req: Request, res: Response) => {
 
 export const exportUserData = async (req: Request, res: Response) => {
   try {
-    const auth = await req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    try {
-      Verifier(req, res, auth);
-    } catch (error) {
-      return res.status(401).json({ success: false, message: (error as Error).message });
     }
 
     logger.info('User data export requested', { userId });

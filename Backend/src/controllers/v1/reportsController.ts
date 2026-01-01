@@ -3,7 +3,6 @@ import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
-import { Verifier } from '../../utils/settings-token-verfier.js';
 
 // Cache configuration
 const CACHE_TTL = {
@@ -19,15 +18,13 @@ interface CreateReportRequest {
 
 export const GetUserReports = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
-    const userId = auth.userId;
+    const auth = req.user;
+    const userId = auth?.userId;
     const readOnlyPrisma = getReadOnlyPrisma();
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-
-    Verifier(req, res, auth);
 
     const cacheKey = `${REDIS_KEYS.USER_REPORTS_CACHE}${userId}`;
 
@@ -101,8 +98,8 @@ export const GetUserReports = async (req: Request, res: Response) => {
 
 export const CreateReport = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
-    const userId = auth.userId;
+    const auth = req.user;
+    const userId = auth?.userId;
     const readOnlyPrisma = getReadOnlyPrisma();
 
     if (!userId) {

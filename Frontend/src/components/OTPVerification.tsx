@@ -10,12 +10,16 @@ interface OTPVerificationProps {
   onVerified: () => void;
   title?: string;
   description?: string;
+  className?: string;
+  fullScreen?: boolean;
 }
 
 export function OTPVerification({
   onVerified,
   title = 'Account Verification',
   description = 'Verify your account to access sensitive settings. Verification expires in 10 minutes.',
+  className = '',
+  fullScreen = true,
 }: OTPVerificationProps) {
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
@@ -242,7 +246,7 @@ export function OTPVerification({
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
+      <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-linear-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
         <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
           <CardContent className="flex flex-col items-center justify-center py-16 px-8">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
@@ -261,7 +265,7 @@ export function OTPVerification({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted/20 p-4">
+    <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-linear-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
       <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
         <CardHeader className="text-center pb-6 pt-8">
           <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -400,8 +404,8 @@ export function OTPVerification({
           {message && (
             <div
               className={`text-sm p-4 rounded-xl border-2 ${message.includes('success')
-                  ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                  : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
                 }`}
             >
               <div className="flex items-center space-x-2">

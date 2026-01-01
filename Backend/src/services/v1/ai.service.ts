@@ -31,8 +31,8 @@ function sanitizeTOON(text: string | null | undefined): string {
 // Initialize LangSmith client for monitoring
 const langsmithClient = ENV.LANGCHAIN_API_KEY
   ? new Client({
-      apiKey: ENV.LANGCHAIN_API_KEY,
-    })
+    apiKey: ENV.LANGCHAIN_API_KEY,
+  })
   : null;
 
 // Define secure tools that AI can use
@@ -42,7 +42,7 @@ const tools = [
     description:
       "Get the current authenticated user's profile information. Use this when user asks about their own profile, settings, or personal information.",
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.userId) {
           return 'Error: User not authenticated';
@@ -87,9 +87,9 @@ const tools = [
           profile.yearsOfExperience && `yearsOfExperience: ${profile.yearsOfExperience}`,
           profile.skills?.length && `skills[${profile.skills.length}]: ${profile.skills.join(',')}`,
           profile.interests?.length &&
-            `interests[${profile.interests.length}]: ${profile.interests.join(',')}`,
+          `interests[${profile.interests.length}]: ${profile.interests.join(',')}`,
           profile.languages?.length &&
-            `languages[${profile.languages.length}]: ${profile.languages.join(',')}`,
+          `languages[${profile.languages.length}]: ${profile.languages.join(',')}`,
           profile.githubUsername && `github: ${sanitizeTOON(profile.githubUsername)}`,
           profile.linkedInProfile && `linkedin: ${sanitizeTOON(profile.linkedInProfile)}`,
           profile.twitterHandle && `twitter: ${sanitizeTOON(profile.twitterHandle)}`,
@@ -109,7 +109,7 @@ const tools = [
     description:
       "Get the current authenticated user's organizations. Use this when user asks about their organizations or company affiliations.",
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.userId) {
           return 'Error: User not authenticated';
@@ -167,7 +167,7 @@ const tools = [
     description:
       "Get the current authenticated user's teams. Use this when user asks about their teams or team memberships.",
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.userId) {
           return 'Error: User not authenticated';
@@ -230,7 +230,7 @@ const tools = [
     description:
       "Get the current authenticated user's projects. Use this when user asks about their projects or project memberships.",
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.userId) {
           return 'Error: User not authenticated';
@@ -391,7 +391,7 @@ const tools = [
     description:
       'Get the current page/route context and content that the user is viewing. Use this when user asks about what they are currently seeing or need help with the current page.',
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.metadata?.pageContext) {
           return 'No current page context available. Please refresh the page or navigate to a specific section.';
@@ -407,7 +407,7 @@ const tools = [
         // Sanitize and limit content length for security
         const sanitizedContent = pageContext.content
           ? pageContext.content.substring(0, 2000) +
-            (pageContext.content.length > 2000 ? '...' : '')
+          (pageContext.content.length > 2000 ? '...' : '')
           : 'No content available';
 
         // Return in TOON format
@@ -430,7 +430,7 @@ const tools = [
     description:
       'Get client-side debug information including console logs and errors. Use this when users report issues or ask why something is not working.',
     schema: z.object({}),
-    func: async ({}, context) => {
+    func: async ({ }, context) => {
       try {
         if (!context?.metadata?.debugInfo) {
           return 'No debug information available. Please ensure the page has loaded properly and try again.';
@@ -542,7 +542,7 @@ const tools = [
 
         // Automatically clear profile cache after update
         const cacheKey = `${REDIS_KEYS.PROFILE_CACHE}${context.userId}`;
-        await redis.del(cacheKey).catch(() => {}); // Ignore cache clearing errors
+        await redis.del(cacheKey).catch(() => { }); // Ignore cache clearing errors
 
         const valueStr = Array.isArray(updatedProfile[field])
           ? updatedProfile[field].join(',')
@@ -627,6 +627,44 @@ const tools = [
         helpContent[topic] ||
         'Help topic not found. Available topics: getting_started, profile, organizations, teams, projects, notifications, search, settings'
       );
+    },
+  }),
+
+  new DynamicStructuredTool({
+    name: 'get_available_plans',
+    description:
+      'Get all available pricing plans from the database. Use this when user asks about pricing, plans, or subscription options.',
+    schema: z.object({}),
+    func: async ({ }) => {
+      try {
+        const plans = await prisma.plan.findMany({
+          where: { isActive: true },
+          select: {
+            planId: true,
+            name: true,
+            amount: true,
+            currency: true,
+            credits: true,
+            description: true,
+            features: true,
+          },
+          orderBy: { amount: 'asc' },
+        });
+
+        if (plans.length === 0) return 'No active plans found.';
+
+        // Return in TOON format for token efficiency
+        const lines = plans.map((plan) => {
+          const amountInRupees = (plan.amount / 100).toFixed(2);
+          const featuresStr = plan.features?.join(', ') || '';
+          return `plan: ${sanitizeTOON(plan.name)} (${plan.planId}) - ₹${amountInRupees} (${plan.credits} credits) - ${sanitizeTOON(plan.description || '')} - features: ${sanitizeTOON(featuresStr)}`;
+        });
+
+        return `Available plans[${plans.length}]:\n${lines.join('\\n')}`;
+      } catch (error) {
+        logger.error('Error getting available plans:', error);
+        return 'Error retrieving pricing plans. Please try again.';
+      }
     },
   }),
 ];
@@ -927,46 +965,7 @@ When user asks to navigate, wants to go somewhere, or needs to see a specific pa
 Current context: ${metadata?.context || 'General assistance'}`,
       );
 
-      // Add the get_available_plans tool to the tools array
-      tools.push(
-        new DynamicStructuredTool({
-          name: 'get_available_plans',
-          description:
-            'Get all available pricing plans from the database. Use this when user asks about pricing, plans, or subscription options.',
-          schema: z.object({}),
-          func: async ({}) => {
-            try {
-              const plans = await prisma.plan.findMany({
-                where: { isActive: true },
-                select: {
-                  planId: true,
-                  name: true,
-                  amount: true,
-                  currency: true,
-                  credits: true,
-                  description: true,
-                  features: true,
-                },
-                orderBy: { amount: 'asc' },
-              });
-
-              if (plans.length === 0) return 'No active plans found.';
-
-              // Return in TOON format for token efficiency
-              const lines = plans.map((plan) => {
-                const amountInRupees = (plan.amount / 100).toFixed(2);
-                const featuresStr = plan.features?.join(', ') || '';
-                return `plan: ${sanitizeTOON(plan.name)} (${plan.planId}) - ₹${amountInRupees} (${plan.credits} credits) - ${sanitizeTOON(plan.description || '')} - features: ${sanitizeTOON(featuresStr)}`;
-              });
-
-              return `Available plans[${plans.length}]:\n${lines.join('\n')}`;
-            } catch (error) {
-              logger.error('Error getting available plans:', error);
-              return 'Error retrieving pricing plans. Please try again.';
-            }
-          },
-        }),
-      );
+      // Tools are already defined globally
 
       // Add user message to history
       const userMessage = new HumanMessage(message);
@@ -1073,10 +1072,10 @@ Current context: ${metadata?.context || 'General assistance'}`,
                 tool.name === 'get_platform_help'
                   ? await tool.func(toolArgs as { topic: string })
                   : await tool.func(toolArgs as Record<string, unknown>, {
-                      userId,
-                      sessionId,
-                      metadata,
-                    });
+                    userId,
+                    sessionId,
+                    metadata,
+                  });
               toolMessages.push(
                 new ToolMessage({
                   content: toolResult,

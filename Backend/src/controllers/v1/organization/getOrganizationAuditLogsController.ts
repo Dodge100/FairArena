@@ -48,7 +48,7 @@ const CACHE_TTL = 300; // 5 minutes
 
 export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth.userId;
     const { slug } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -194,7 +194,7 @@ export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
     logger.error('Error fetching organization audit logs', {
       error: err.message,
       stack: err.stack,
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }

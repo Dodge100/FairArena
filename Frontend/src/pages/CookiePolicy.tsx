@@ -141,7 +141,6 @@ function CookiePolicy() {
                         items={[
                             'Microsoft Clarity (analytics and user behavior tracking)',
                             'Payment processors (Stripe, Razorpay) for secure transactions',
-                            'Authentication providers (Clerk) for user login',
                             'Content delivery networks (CDNs) for faster loading',
                             'Error monitoring and performance tracking services',
                         ]}

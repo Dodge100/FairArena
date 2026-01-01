@@ -22,7 +22,7 @@ const createTeamSchema = z.object({
 export const createTeam = async (req: Request, res: Response) => {
   try {
     const { organizationSlug } = req.params;
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {

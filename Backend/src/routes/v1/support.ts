@@ -3,6 +3,7 @@ import * as UploadController from '../../controllers/v1/support/uploadController
 import { SupportController } from '../../controllers/v1/supportController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/', protectRoute, SupportController.getUserSupportTickets);
+router.get('/', protectRoute, requireSettingsVerification, SupportController.getUserSupportTickets);
 
 /**
  * @swagger

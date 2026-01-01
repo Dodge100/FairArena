@@ -166,7 +166,7 @@ const invalidateUserCaches = async (userId: string) => {
 
 export const getCreditBalance = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -245,7 +245,7 @@ export const getCreditBalance = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to get credit balance', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -261,7 +261,7 @@ export const getCreditBalance = async (req: Request, res: Response) => {
  */
 export const getCreditHistory = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -371,7 +371,7 @@ export const getCreditHistory = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to get credit history', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -387,7 +387,7 @@ export const getCreditHistory = async (req: Request, res: Response) => {
  */
 export const checkFreeCreditsEligibility = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -586,7 +586,7 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
   } catch (error) {
     logger.error('Failed to check free credits eligibility', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -602,7 +602,7 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
  */
 export const claimFreeCredits = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -961,7 +961,7 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to claim free credits', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -977,7 +977,7 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
  */
 export const sendSmsOtp = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -1339,7 +1339,7 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to send SMS OTP', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -1355,7 +1355,7 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
  */
 export const verifySmsOtp = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -1671,7 +1671,7 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to verify SMS OTP', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -1687,7 +1687,7 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
  */
 export const sendVoiceOtp = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -2048,7 +2048,7 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to send voice OTP', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors
@@ -2064,7 +2064,7 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
  */
 export const verifyVoiceOtp = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
@@ -2296,7 +2296,7 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Failed to verify voice OTP', {
       error: error instanceof Error ? error.message : String(error),
-      userId: req.auth()?.userId,
+      userId: req.user?.userId,
     });
 
     // Security: Don't expose internal errors

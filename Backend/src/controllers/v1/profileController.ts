@@ -51,7 +51,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
       });
     }
 
-    const auth = req.auth();
+    const auth = req.user;
     const viewerUserId = auth?.userId;
 
     const readOnlyPrisma = getReadOnlyPrisma();
@@ -311,7 +311,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 // Get own profile (authenticated)
 export const getOwnProfile = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
     if (!userId) {
       return res.status(401).json({
@@ -409,7 +409,7 @@ export const getOwnProfile = async (req: Request, res: Response) => {
 // Update profile (authenticated)
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const auth = req.auth();
+    const auth = req.user;
     const userId = auth?.userId;
 
     if (!userId) {
