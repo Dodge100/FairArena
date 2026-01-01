@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuthState } from '@/lib/auth';
 import { useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AIButton } from '../components/AIButton';
 import { AISidebar } from '../components/AISidebar';
 import { AppSidebar } from '../components/AppSidebar';
@@ -13,6 +13,7 @@ export default function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useAuthState();
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [aiButtonHidden, setAiButtonHidden] = useState(false);
+  const location = useLocation();
 
   if (!isLoaded) {
     return (
@@ -23,7 +24,7 @@ export default function ProtectedLayout() {
   }
 
   if (!isSignedIn) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 
   return (

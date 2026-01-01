@@ -62,6 +62,11 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
+  sendMFAEnabledEmail,
+  sendMFADisabledEmail,
+  sendBackupCodesRegeneratedEmail,
+  sendMfaOtpEmail,
+  sendNewDeviceLoginEmail,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -312,6 +317,11 @@ app.use(
       sendLoginNotification,
       sendPasswordChangedEmail,
       sendPasswordResetEmail,
+      sendMFAEnabledEmail,
+      sendMFADisabledEmail,
+      sendBackupCodesRegeneratedEmail,
+      sendMfaOtpEmail,
+      sendNewDeviceLoginEmail,
     ],
   }),
 );

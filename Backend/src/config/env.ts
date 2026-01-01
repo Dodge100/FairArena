@@ -152,6 +152,10 @@ export const ENV = {
   GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID', ''),
   GOOGLE_CLIENT_SECRET: getEnv('GOOGLE_CLIENT_SECRET', ''),
   GOOGLE_CALLBACK_URL: getEnv('GOOGLE_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/google/callback'),
+  // GitHub OAuth
+  GITHUB_CLIENT_ID: getEnv('GITHUB_CLIENT_ID', ''),
+  GITHUB_CLIENT_SECRET: getEnv('GITHUB_CLIENT_SECRET', ''),
+  GITHUB_CALLBACK_URL: getEnv('GITHUB_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/github/callback'),
   ARCJET_KEY: getEnv('ARCJET_KEY'),
   DATABASE_URL: getEnv('DATABASE_URL'),
   DATABASE_URL_READ_ONLY_1: getEnv('DATABASE_URL_READ_ONLY_1'),

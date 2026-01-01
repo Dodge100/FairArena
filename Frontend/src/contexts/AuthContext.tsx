@@ -16,7 +16,7 @@ export interface AuthContextType {
     accessToken: string | null;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<AuthResponse>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     loginWithGoogle: (credential: string) => Promise<void>;
@@ -25,6 +25,7 @@ export interface AuthContextType {
     forgotPassword: (email: string) => Promise<void>;
     resetPassword: (token: string, password: string) => Promise<void>;
     verifyEmail: (token: string) => Promise<void>;
+    verifyLoginMFA: (code: string, isBackupCode?: boolean) => Promise<void>;
 }
 
 export interface RegisterData {
@@ -34,7 +35,7 @@ export interface RegisterData {
     lastName: string;
 }
 
-interface AuthResponse {
+export interface AuthResponse {
     success: boolean;
     message?: string;
     data?: {
@@ -44,6 +45,7 @@ interface AuthResponse {
     };
     errors?: Record<string, string[]>;
     code?: string;
+    mfaRequired?: boolean;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -177,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [fetchCurrentUser, refreshToken, updateToken]);
 
     // Login with email/password
-    const login = useCallback(async (email: string, password: string): Promise<void> => {
+    const login = useCallback(async (email: string, password: string): Promise<AuthResponse> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
             method: 'POST',
             credentials: 'include',
@@ -191,6 +193,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!response.ok || !data.success) {
             throw new Error(data.message || 'Login failed');
+        }
+
+        if (data.data?.accessToken && data.data?.user) {
+            updateToken(data.data.accessToken);
+            setUser(data.data.user);
+        }
+
+        return data; // Return full response for MFA handling
+    }, [updateToken]);
+
+    const verifyLoginMFA = useCallback(async (code: string, isBackupCode?: boolean): Promise<void> => {
+        const response = await fetch(`${API_BASE}/api/v1/auth/verify-mfa`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies
+            body: JSON.stringify({ code, isBackupCode }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            // Handle specific error cases
+            if (response.status === 401) {
+                throw new Error('Your session has expired. Please sign in again.');
+            } else if (response.status === 429) {
+                throw new Error(data.message || 'Too many attempts. Please try again later.');
+            } else {
+                throw new Error(data.message || 'MFA verification failed');
+            }
         }
 
         if (data.data?.accessToken && data.data?.user) {
@@ -335,11 +368,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         forgotPassword,
         resetPassword,
         verifyEmail,
+        verifyLoginMFA,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export function useAuth(): AuthContextType {
     const context = useContext(AuthContext);
     if (!context) {
@@ -349,6 +384,7 @@ export function useAuth(): AuthContextType {
 }
 
 // Hook for compatibility with existing useAuthState
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function useAuthState() {
     const { user, isLoading, isAuthenticated, getToken, logout } = useAuth();
 

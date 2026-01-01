@@ -5,7 +5,6 @@ import { inngest } from '../../inngest/v1/client.js';
 import { verifyPassword } from '../../services/auth.service.js';
 import {
     generateMFASetup,
-    hashBackupCodes,
     verifyBackupCode,
     verifyTOTPCode,
 } from '../../services/mfa.service.js';
@@ -17,7 +16,7 @@ const verifySetupSchema = z.object({
 });
 
 const verifyMFASchema = z.object({
-    code: z.string().min(6).max(8),
+    code: z.string().min(6).max(10),
     isBackupCode: z.boolean().optional(),
 });
 
@@ -158,6 +157,39 @@ export const verifyMFASetup = async (req: Request, res: Response) => {
             },
         });
 
+        // Get device info for notification
+        const userAgent = req.headers['user-agent'];
+        const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+
+        // Send in-app notification
+        await inngest.send({
+            name: 'notification/send',
+            data: {
+                userId,
+                title: 'Two-Factor Authentication Enabled',
+                message: 'Two-factor authentication has been successfully enabled on your account',
+                description: 'Your account is now more secure. You\'ll need your authenticator app when signing in.',
+                actionUrl: '/dashboard/account-settings',
+                actionLabel: 'View Security Settings',
+                metadata: {
+                    type: 'security',
+                    action: 'mfa_enabled',
+                    ipAddress,
+                    userAgent: userAgent?.substring(0, 200),
+                },
+            },
+        });
+
+        // Send email notification
+        await inngest.send({
+            name: 'email/mfa-enabled',
+            data: {
+                userId,
+                ipAddress,
+                userAgent,
+            },
+        });
+
         // Log activity
         await inngest.send({
             name: 'log.create',
@@ -166,6 +198,8 @@ export const verifyMFASetup = async (req: Request, res: Response) => {
                 action: 'mfa-enabled',
                 level: 'INFO',
                 metadata: {
+                    ipAddress,
+                    userAgent: userAgent?.substring(0, 200),
                     timestamp: new Date().toISOString(),
                 },
             },
@@ -229,7 +263,7 @@ export const verifyMFA = async (req: Request, res: Response) => {
 
         if (isBackupCode) {
             // Verify backup code
-            const codeIndex = verifyBackupCode(code.replace('-', ''), user.mfaBackupCodes);
+            const codeIndex = verifyBackupCode(code.replace(/[^A-Z0-9]/g, '').toUpperCase(), user.mfaBackupCodes);
             if (codeIndex >= 0) {
                 isValid = true;
                 // Remove used backup code
@@ -348,6 +382,39 @@ export const disableMFA = async (req: Request, res: Response) => {
             },
         });
 
+        // Get device info for notification
+        const userAgent = req.headers['user-agent'];
+        const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+
+        // Send in-app notification
+        await inngest.send({
+            name: 'notification/send',
+            data: {
+                userId,
+                title: 'Two-Factor Authentication Disabled',
+                message: 'Two-factor authentication has been disabled on your account',
+                description: 'Your account security level has been reduced. We strongly recommend re-enabling 2FA.',
+                actionUrl: '/dashboard/account-settings',
+                actionLabel: 'Re-enable 2FA',
+                metadata: {
+                    type: 'security',
+                    action: 'mfa_disabled',
+                    ipAddress,
+                    userAgent: userAgent?.substring(0, 200),
+                },
+            },
+        });
+
+        // Send email notification
+        await inngest.send({
+            name: 'email/mfa-disabled',
+            data: {
+                userId,
+                ipAddress,
+                userAgent,
+            },
+        });
+
         // Log activity
         await inngest.send({
             name: 'log.create',
@@ -356,6 +423,8 @@ export const disableMFA = async (req: Request, res: Response) => {
                 action: 'mfa-disabled',
                 level: 'WARN',
                 metadata: {
+                    ipAddress,
+                    userAgent: userAgent?.substring(0, 200),
                     timestamp: new Date().toISOString(),
                 },
             },
@@ -472,14 +541,9 @@ export const regenerateBackupCodes = async (req: Request, res: Response) => {
             });
         }
 
-        // Generate new backup codes
-        const crypto = await import('crypto');
-        const newCodes: string[] = [];
-        for (let i = 0; i < 10; i++) {
-            const code = crypto.randomBytes(4).toString('hex').toUpperCase();
-            newCodes.push(code);
-        }
-
+        // Generate new backup codes using the service
+        const { generateBackupCodes, hashBackupCodes } = await import('../../services/mfa.service.js');
+        const newCodes = generateBackupCodes(10);
         const hashedCodes = hashBackupCodes(newCodes);
 
         await prisma.user.update({
@@ -487,14 +551,49 @@ export const regenerateBackupCodes = async (req: Request, res: Response) => {
             data: { mfaBackupCodes: hashedCodes },
         });
 
-        // Format codes for display
-        const formattedCodes = newCodes.map(c => `${c.slice(0, 4)}-${c.slice(4)}`);
+        // Format codes for display (4-4-2 pattern for 10 char codes)
+        const formattedCodes = newCodes.map(c => `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}`);
 
-        logger.info('Backup codes regenerated', { userId });
+        logger.info('Backup codes regenerated', { userId, count: newCodes.length });
+
+        // Get device info for notification
+        const userAgent = req.headers['user-agent'];
+        const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+
+        // Send in-app notification
+        await inngest.send({
+            name: 'notification/send',
+            data: {
+                userId,
+                title: 'Backup Codes Regenerated',
+                message: 'Your MFA backup codes have been regenerated',
+                description: `You now have ${newCodes.length} new backup codes. All previous codes have been invalidated.`,
+                actionUrl: '/dashboard/account-settings',
+                actionLabel: 'View Security Settings',
+                metadata: {
+                    type: 'security',
+                    action: 'backup_codes_regenerated',
+                    codeCount: newCodes.length,
+                    ipAddress,
+                    userAgent: userAgent?.substring(0, 200),
+                },
+            },
+        });
+
+        // Send email notification
+        await inngest.send({
+            name: 'email/backup-codes-regenerated',
+            data: {
+                userId,
+                codeCount: newCodes.length,
+                ipAddress,
+                userAgent,
+            },
+        });
 
         return res.status(200).json({
             success: true,
-            message: 'New backup codes generated successfully.',
+            message: 'New backup codes generated successfully. Save them in a secure location.',
             data: {
                 backupCodes: formattedCodes,
             },

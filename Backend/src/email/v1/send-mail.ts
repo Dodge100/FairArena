@@ -7,11 +7,16 @@ import { accountDeletionFailedEmailTemplate } from '../templates/accountDeletion
 import { accountDeletionWarningEmailTemplate } from '../templates/accountDeletionWarning.js';
 import { accountPermanentDeletionEmailTemplate } from '../templates/accountPermanentDeletion.js';
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
+import { backupCodesRegeneratedTemplate } from '../templates/backupCodesRegenerated.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
 import { emailVerificationTemplate } from '../templates/emailVerification.js';
 import { freeCreditsClaimedEmailTemplate } from '../templates/freeCreditsClaimed.js';
 import { loginNotificationTemplate } from '../templates/loginNotification.js';
+import { mfaDisabledTemplate } from '../templates/mfaDisabled.js';
+import { mfaEnabledTemplate } from '../templates/mfaEnabled.js';
+import { mfaOtpTemplate } from '../templates/mfaOtp.js';
+import { newDeviceLoginTemplate } from '../templates/newDeviceLogin.js';
 import { otpEmailTemplate } from '../templates/otp.js';
 import { passwordChangedTemplate } from '../templates/passwordChanged.js';
 import { passwordResetTemplate } from '../templates/passwordReset.js';
@@ -146,10 +151,56 @@ type TeamInviteEmailParams = {
 // New Auth Email Params
 type EmailVerificationParams = { firstName: string; verificationUrl: string; expiryHours: number };
 type PasswordResetParams = { firstName: string; resetUrl: string; expiryMinutes: number };
-type LoginNotificationParams = { firstName: string; ipAddress: string; deviceName: string; location: string; loginTime: string; securityUrl: string };
+type LoginNotificationParams = {
+  firstName: string;
+  ipAddress: string;
+  deviceName: string;
+  location: string;
+  loginTime: string;
+  securityUrl: string;
+};
 type PasswordChangedParams = { firstName: string; supportUrl: string; changeTime: string };
 type WaitlistConfirmationParams = { name: string; position: number };
 
+// Security Email Params
+type MFAEnabledParams = {
+  firstName: string;
+  enabledAt: string;
+  deviceName: string;
+  ipAddress: string;
+  location: string;
+  securityUrl: string;
+};
+type MFADisabledParams = {
+  firstName: string;
+  disabledAt: string;
+  deviceName: string;
+  ipAddress: string;
+  location: string;
+  securityUrl: string;
+};
+type BackupCodesRegeneratedParams = {
+  firstName: string;
+  regeneratedAt: string;
+  deviceName: string;
+  ipAddress: string;
+  location: string;
+  remainingCodes: number;
+  securityUrl: string;
+};
+type NewDeviceLoginParams = {
+  firstName: string;
+  loginTime: string;
+  deviceName: string;
+  browser: string;
+  ipAddress: string;
+  location: string;
+  securityUrl: string;
+};type MfaOtpParams = {
+  firstName: string;
+  otp: string;
+  expiryMinutes: number;
+};
 // Collect all templates with correct types
 export const emailTemplates = {
   welcome: welcomeEmailTemplate as (params: WelcomeEmailParams) => string,
@@ -196,7 +247,17 @@ export const emailTemplates = {
   PASSWORD_RESET: passwordResetTemplate as (params: PasswordResetParams) => string,
   LOGIN_NOTIFICATION: loginNotificationTemplate as (params: LoginNotificationParams) => string,
   PASSWORD_CHANGED: passwordChangedTemplate as (params: PasswordChangedParams) => string,
-  'waitlist-confirmation': waitlistConfirmationTemplate as (params: WaitlistConfirmationParams) => string,
+  'waitlist-confirmation': waitlistConfirmationTemplate as (
+    params: WaitlistConfirmationParams,
+  ) => string,
+  // Security templates
+  MFA_ENABLED: mfaEnabledTemplate as (params: MFAEnabledParams) => string,
+  MFA_DISABLED: mfaDisabledTemplate as (params: MFADisabledParams) => string,
+  BACKUP_CODES_REGENERATED: backupCodesRegeneratedTemplate as (
+    params: BackupCodesRegeneratedParams,
+  ) => string,
+  NEW_DEVICE_LOGIN: newDeviceLoginTemplate as (params: NewDeviceLoginParams) => string,
+  MFA_OTP: mfaOtpTemplate as unknown as (params: MfaOtpParams) => string,
 };
 
 type TemplateType = keyof typeof emailTemplates;
@@ -210,7 +271,9 @@ interface SendEmailOptions<T extends TemplateType> {
   attachments?: { filename: string; content: Buffer | string; contentType?: string }[];
 }
 
-export async function sendEmail<T extends TemplateType>(options: SendEmailOptions<T>): Promise<unknown> {
+export async function sendEmail<T extends TemplateType>(
+  options: SendEmailOptions<T>,
+): Promise<unknown> {
   const { to, subject, templateType, templateData, headers, attachments } = options;
 
   // Get HTML from template
@@ -257,11 +320,16 @@ export async function sendEmail<T extends TemplateType>(options: SendEmailOption
           email: {
             fromAddress: ENV.FROM_EMAIL_ADDRESS,
             fromName: 'FairArena',
-            attachments: attachments && attachments.length > 0 ? attachments.map(att => ({
-              filename: att.filename,
-              content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
-              contentType: att.contentType || 'application/octet-stream',
-            })) : undefined,
+            attachments:
+              attachments && attachments.length > 0
+                ? attachments.map((att) => ({
+                    filename: att.filename,
+                    content: Buffer.isBuffer(att.content)
+                      ? att.content.toString('base64')
+                      : att.content,
+                    contentType: att.contentType || 'application/octet-stream',
+                  }))
+                : undefined,
           },
         },
       });
@@ -314,7 +382,7 @@ export const sendWelcomeEmail = async (to: string, userName: string): Promise<un
     to,
     subject: 'Welcome to FairArena',
     templateType: 'welcome',
-    templateData: { userName }
+    templateData: { userName },
   });
 };
 
@@ -333,7 +401,7 @@ export const sendOtpEmail = async (
     to,
     subject: 'Account Verification - FairArena',
     templateType: 'otp',
-    templateData: { otp, location }
+    templateData: { otp, location },
   });
 };
 
@@ -365,7 +433,7 @@ export const sendAccountDeletionWarningEmail = async (
     templateData: {
       recoveryInstructions,
       deadline,
-    }
+    },
   });
 };
 
@@ -374,7 +442,7 @@ export const sendAccountRecoveryEmail = async (to: string, userName?: string): P
     to,
     subject: 'Your Account Has Been Recovered',
     templateType: 'account-recovery',
-    templateData: { userName }
+    templateData: { userName },
   });
 };
 
@@ -431,7 +499,7 @@ export const sendDataExportErrorEmail = async (
     templateData: {
       userName,
       errorMessage,
-    }
+    },
   });
 };
 
@@ -463,7 +531,7 @@ export const sendPaymentSuccessEmail = async (
       paymentMethod,
       transactionDate,
       invoiceUrl,
-    }
+    },
   });
 };
 
@@ -491,7 +559,7 @@ export const sendPaymentFailedEmail = async (
       paymentId,
       failureReason,
       transactionDate,
-    }
+    },
   });
 };
 
@@ -525,7 +593,7 @@ export const sendRefundInitiatedEmail = async (
       refundId,
       refundDate,
       estimatedDays,
-    }
+    },
   });
 };
 
@@ -555,7 +623,7 @@ export const sendRefundCompletedEmail = async (
       refundId,
       completedDate,
       paymentMethod,
-    }
+    },
   });
 };
 
@@ -585,7 +653,7 @@ export const sendRefundFailedEmail = async (
       refundId,
       failureReason,
       failureDate,
-    }
+    },
   });
 };
 
@@ -603,7 +671,7 @@ export const sendFreeCreditsClaimedEmail = async (
       userName,
       creditsAdded,
       newBalance,
-    }
+    },
   });
 };
 
@@ -619,6 +687,6 @@ export const sendPhoneNumberAddedEmail = async (
     templateData: {
       userName,
       phoneNumber,
-    }
+    },
   });
 };

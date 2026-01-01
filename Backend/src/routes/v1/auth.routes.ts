@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import {
     changePassword,
+    checkMfaSession,
+    checkPushStatus,
     forgotPassword,
     getCurrentUser,
+    invalidateMfaSession,
     listSessions,
     login,
     logout,
@@ -11,8 +14,14 @@ import {
     register,
     resendVerificationEmail,
     resetPassword,
+    respondToPush,
     revokeSession,
+    sendEmailOtp,
+    sendNotificationOtp,
+    sendPushApproval,
     verifyEmail,
+    verifyLoginMFA,
+    verifyMfaOtp
 } from '../../controllers/v1/authController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
@@ -114,6 +123,107 @@ router.post('/register', registerLimiter, register);
  *         description: Account locked
  */
 router.post('/login', loginLimiter, login);
+
+/**
+ * @swagger
+ * /api/v1/auth/verify-mfa:
+ *   post:
+ *     summary: Verify MFA during login
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code, tempToken]
+ *             properties:
+ *               code:
+ *                 type: string
+ *               tempToken:
+ *                 type: string
+ *               isBackupCode:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Invalid code
+ *       401:
+ *         description: Invalid session
+ */
+/**
+ * @swagger
+ * /api/v1/auth/verify-mfa:
+ *   post:
+ *     summary: Verify MFA code during login
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code, tempToken]
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 8
+ *                 description: MFA code or backup code
+ *               isBackupCode:
+ *                 type: boolean
+ *                 description: Whether the code is a backup code
+ *               tempToken:
+ *                 type: string
+ *                 description: Temporary token from MFA-required login
+ *     responses:
+ *       200:
+ *         description: MFA verification successful
+ *       400:
+ *         description: Invalid code or validation error
+ *       401:
+ *         description: Invalid or expired token
+ *       429:
+ *         description: Too many failed attempts
+ */
+router.post('/verify-mfa', loginLimiter, verifyLoginMFA);
+
+/**
+ * @swagger
+ * /api/v1/auth/check-mfa-session:
+ *   get:
+ *     summary: Check MFA session status
+ *     tags: [Authentication]
+ *     description: Check if there's an active MFA session and retrieve UX state (HTTP-only cookie based)
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: MFA session status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mfaActive:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     mfaCode:
+ *                       type: string
+ *                     isBackupCode:
+ *                       type: boolean
+ *                     attempts:
+ *                       type: number
+ *       401:
+ *         description: Session security validation failed
+ */
+router.get('/check-mfa-session', checkMfaSession);
 
 /**
  * @swagger
@@ -338,12 +448,187 @@ router.get('/sessions', protectRoute, listSessions);
  */
 router.delete('/sessions/:sessionId', protectRoute, revokeSession);
 
+/**
+ * @swagger
+ * /api/v1/auth/mfa/check-session:
+ *   get:
+ *     summary: Check if MFA session is active
+ *     tags: [Authentication, MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: MFA session status
+ */
+router.get('/mfa/check-session', checkMfaSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/invalidate:
+ *   post:
+ *     summary: Invalidate MFA session (back to sign in)
+ *     tags: [Authentication, MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: MFA session invalidated
+ */
+router.post('/mfa/invalidate', loginLimiter, invalidateMfaSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/send-email-otp:
+ *   post:
+ *     summary: Send OTP via email for MFA verification
+ *     tags: [Authentication, MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       401:
+ *         description: No active MFA session
+ *       429:
+ *         description: Too many OTP requests
+ */
+router.post('/mfa/send-email-otp', loginLimiter, sendEmailOtp);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/send-notification-otp:
+ *   post:
+ *     summary: Send OTP via in-app notification for MFA verification
+ *     tags: [Authentication, MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       401:
+ *         description: No active MFA session
+ *       429:
+ *         description: Too many OTP requests
+ */
+router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/verify-otp:
+ *   post:
+ *     summary: Verify OTP from email or notification
+ *     tags: [Authentication, MFA]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code]
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 6
+ *               method:
+ *                 type: string
+ *                 enum: [email, notification]
+ *     responses:
+ *       200:
+ *         description: Verification successful
+ *       401:
+ *         description: Invalid OTP
+ */
+router.post('/mfa/verify-otp', loginLimiter, verifyMfaOtp);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/send-push-approval:
+ *   post:
+ *     summary: Send push approval request to logged-in devices
+ *     tags: [MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Push request sent successfully
+ *       401:
+ *         description: No active MFA session
+ */
+router.post('/mfa/send-push-approval', loginLimiter, sendPushApproval);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/check-push-status:
+ *   get:
+ *     summary: Check push approval status
+ *     tags: [MFA]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Push status retrieved
+ */
+router.get('/mfa/check-push-status', checkPushStatus);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/respond-push:
+ *   post:
+ *     summary: Approve or deny a push login request (requires authentication)
+ *     tags: [MFA]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [requestId, action]
+ *             properties:
+ *               requestId:
+ *                 type: string
+ *               action:
+ *                 type: string
+ *                 enum: [approve, deny]
+ *     responses:
+ *       200:
+ *         description: Response recorded
+ *       401:
+ *         description: Authentication required
+ */
+router.post('/mfa/respond-push', protectRoute, respondToPush);
+
 // OAuth Routes
 import {
+    getGithubAuthUrl,
     getGoogleAuthUrl,
+    handleGithubCallback,
     handleGoogleCallback,
     handleGoogleToken,
 } from '../../controllers/v1/oauthController.js';
+
+/**
+ * @swagger
+ * /api/v1/auth/github:
+ *   get:
+ *     summary: Get GitHub OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: GitHub OAuth URL
+ */
+router.get('/github', getGithubAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/github/callback:
+ *   get:
+ *     summary: GitHub OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/github/callback', handleGithubCallback);
 
 /**
  * @swagger

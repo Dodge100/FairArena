@@ -8,6 +8,8 @@ import {
   Check,
   Chrome,
   Clock,
+  Copy,
+  Download,
   Globe,
   Laptop,
   Loader2,
@@ -99,6 +101,12 @@ function Profile() {
   const [showDisableMfa, setShowDisableMfa] = useState(false);
   const [disablePassword, setDisablePassword] = useState('');
   const [disableCode, setDisableCode] = useState('');
+
+  // Backup Code Regeneration State
+  const [showRegenerateMfa, setShowRegenerateMfa] = useState(false);
+  const [regenerateCode, setRegenerateCode] = useState('');
+  const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
+  const [copiedCodes, setCopiedCodes] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -273,6 +281,62 @@ function Profile() {
     }
   };
 
+  const handleRegenerateBackupCodes = async () => {
+    if (!regenerateCode) {
+      toast.error('Please enter a verification code');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/regenerate-backup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: regenerateCode
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Backup codes regenerated successfully');
+        setNewBackupCodes(data.data.backupCodes);
+        setRegenerateCode('');
+        // Don't close modal yet, need to show codes
+        fetchMfaStatus();
+      } else {
+        toast.error(data.message || 'Failed to regenerate backup codes');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyBackupCodes = () => {
+    navigator.clipboard.writeText(newBackupCodes.join('\n'));
+    setCopiedCodes(true);
+    setTimeout(() => setCopiedCodes(false), 2000);
+    toast.success('Backup codes copied to clipboard');
+  };
+
+  const downloadBackupCodes = () => {
+    const element = document.createElement('a');
+    const file = new Blob([newBackupCodes.join('\n')], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'fairarena-backup-codes.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const closeRegenerateModal = () => {
+    setShowRegenerateMfa(false);
+    setNewBackupCodes([]);
+    setRegenerateCode('');
+  };
+
   const getDeviceIcon = (deviceType: string) => {
     const iconClass = "w-5 h-5";
     switch (deviceType?.toLowerCase()) {
@@ -296,6 +360,7 @@ function Profile() {
       'session-revoked': 'Session ended',
       'mfa-enabled': 'Two-factor auth enabled',
       'mfa-disabled': 'Two-factor auth disabled',
+      'backup-codes-regenerated': 'Backup codes regenerated',
     };
     return labels[action] || action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
   };
@@ -309,6 +374,7 @@ function Profile() {
       case 'password-changed': return <Lock className={iconClass} />;
       case 'mfa-enabled':
       case 'mfa-disabled': return <Shield className={iconClass} />;
+      case 'backup-codes-regenerated': return <RefreshCw className={iconClass} />;
       default: return <Clock className={iconClass} />;
     }
   };
@@ -379,10 +445,10 @@ function Profile() {
           <button
             onClick={() => setActiveTab('overview')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
-                ? isDark
-                  ? 'border-[#DDEF00] text-[#DDEF00]'
-                  : 'border-black text-black'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? isDark
+                ? 'border-[#DDEF00] text-[#DDEF00]'
+                : 'border-black text-black'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             Overview
@@ -390,10 +456,10 @@ function Profile() {
           <button
             onClick={() => setActiveTab('security')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'security'
-                ? isDark
-                  ? 'border-[#DDEF00] text-[#DDEF00]'
-                  : 'border-black text-black'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? isDark
+                ? 'border-[#DDEF00] text-[#DDEF00]'
+                : 'border-black text-black'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             Security
@@ -624,38 +690,110 @@ function Profile() {
                     }}
                     onCancel={() => setShowMfaSetup(false)}
                   />
+                ) : showRegenerateMfa ? (
+                  <div className="max-w-md mx-auto space-y-4 p-6 border rounded-xl bg-muted/20">
+                    <h4 className="font-semibold text-center text-lg">Regenerate Backup Codes</h4>
+
+                    {newBackupCodes.length > 0 ? (
+                      <div className="space-y-6">
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-lg text-sm text-center">
+                          Save these codes now. They will not be shown again.
+                          Previous codes have been invalidated.
+                        </div>
+                        <div className="bg-background border rounded-lg p-4 grid grid-cols-2 gap-4 font-mono text-sm text-center">
+                          {newBackupCodes.map((code) => (
+                            <div key={code} className="p-1">{code}</div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={copyBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
+                            {copiedCodes ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            Copy
+                          </button>
+                          <button onClick={downloadBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
+                            <Download className="w-4 h-4" />
+                            Download
+                          </button>
+                        </div>
+                        <button
+                          onClick={closeRegenerateModal}
+                          className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground text-center">
+                          Generate a new set of backup codes. This will invalidate any unused backup codes you previously generated.
+                          <br /><br />
+                          Enter a current 6-digit code from your authenticator app to confirm.
+                        </p>
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium">Verification Code</label>
+                          <input
+                            type="text"
+                            placeholder="000 000"
+                            value={regenerateCode}
+                            onChange={e => setRegenerateCode(e.target.value.replace(/[^0-9]/g, ''))}
+                            maxLength={6}
+                            className="w-full px-3 py-2.5 rounded-lg border bg-background text-center text-xl tracking-widest font-mono"
+                          />
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                          <button
+                            onClick={closeRegenerateModal}
+                            className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors font-medium"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleRegenerateBackupCodes}
+                            disabled={isLoading || regenerateCode.length !== 6}
+                            className="flex-1 px-4 py-2 rounded-lg bg-[#DDEF00] text-black hover:bg-[#c7db00] transition-colors disabled:opacity-50 font-semibold"
+                          >
+                            {isLoading ? 'Generating...' : 'Regenerate'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ) : showDisableMfa ? (
-                  <div className="max-w-md mx-auto space-y-4 p-4 border rounded-lg bg-muted/20">
-                    <h4 className="font-medium text-center">Disable Two-Factor Authentication</h4>
+                  <div className="max-w-md mx-auto space-y-4 p-6 border rounded-xl bg-muted/20">
+                    <h4 className="font-semibold text-center text-lg">Disable Two-Factor Authentication</h4>
                     <p className="text-sm text-muted-foreground text-center">
+                      Are you sure? This will remove the extra layer of security from your account.
+                      <br />
                       Enter your password and a current 2FA code to confirm.
                     </p>
-                    <input
-                      type="password"
-                      placeholder="Current Password"
-                      value={disablePassword}
-                      onChange={e => setDisablePassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-md border bg-background"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Verification Code (6 digits)"
-                      value={disableCode}
-                      maxLength={6}
-                      onChange={e => setDisableCode(e.target.value)}
-                      className="w-full px-3 py-2 rounded-md border bg-background"
-                    />
-                    <div className="flex gap-2">
+                    <div className="space-y-3">
+                      <input
+                        type="password"
+                        placeholder="Current Password"
+                        value={disablePassword}
+                        onChange={e => setDisablePassword(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border bg-background"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Verification Code (6 digits)"
+                        value={disableCode}
+                        maxLength={6}
+                        onChange={e => setDisableCode(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border bg-background"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
                       <button
                         onClick={() => setShowDisableMfa(false)}
-                        className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors"
+                        className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors font-medium"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleDisableMfa}
                         disabled={isLoading}
-                        className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                        className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 font-semibold"
                       >
                         {isLoading ? 'Disabling...' : 'Disable MFA'}
                       </button>
@@ -677,20 +815,26 @@ function Profile() {
                             </p>
                             <p className="text-sm text-green-700 dark:text-green-400">
                               Your account is protected.
+                              {mfaStatus.backupCodesRemaining < 5 && (
+                                <span className="block mt-1 font-medium text-orange-600 dark:text-orange-400">
+                                  {mfaStatus.backupCodesRemaining} backup codes remaining.
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex flex-wrap gap-3">
                           <button
                             onClick={() => setShowDisableMfa(true)}
-                            className="text-red-600 hover:text-red-700 text-sm font-medium"
+                            className="px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-200 transition-colors text-sm font-medium"
                           >
                             Disable 2FA
                           </button>
                           <button
-                            className="text-muted-foreground hover:text-foreground text-sm font-medium"
-                            onClick={() => toast.info('To regenerate backup codes, please use the API directly for now.')}
+                            className="px-4 py-2 rounded-lg text-foreground hover:bg-muted border border-border transition-colors text-sm font-medium flex items-center gap-2"
+                            onClick={() => setShowRegenerateMfa(true)}
                           >
+                            <RefreshCw className="w-3.5 h-3.5" />
                             Regenerate Backup Codes
                           </button>
                         </div>
@@ -721,11 +865,13 @@ function Profile() {
                   <h3 className="text-lg font-semibold text-foreground">Password</h3>
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Manage your password and recovery settings in Account Settings.
+                  Manage your password and recovery settings.
                 </p>
-                <button className="text-sm font-medium text-primary hover:underline">
-                  Manage in Settings &rarr;
-                </button>
+                <div className="flex items-center gap-4">
+                  <button className="px-4 py-2 text-sm font-medium rounded-lg bg-muted hover:bg-muted/80 transition-colors" onClick={() => toast.info('Password change is managed via email flow')}>
+                    Change Password
+                  </button>
+                </div>
               </div>
             </>
           )}
