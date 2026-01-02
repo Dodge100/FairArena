@@ -42,9 +42,14 @@ import {
   processTeamInviteAcceptance,
   recordProfileView,
   resetSettingsFunction,
+  sendBackupCodesRegeneratedEmail,
   sendEmailHandler,
   sendEmailVerification,
   sendLoginNotification,
+  sendMFADisabledEmail,
+  sendMFAEnabledEmail,
+  sendMfaOtpEmail,
+  sendNewDeviceLoginEmail,
   sendNotification,
   sendOtpForAccountSettings,
   sendPasswordChangedEmail,
@@ -62,11 +67,9 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  sendMFAEnabledEmail,
-  sendMFADisabledEmail,
-  sendBackupCodesRegeneratedEmail,
-  sendMfaOtpEmail,
-  sendNewDeviceLoginEmail,
+  sendBackupCodeUsedHandler,
+  sendPasskeyAddedHandler,
+  sendPasskeyRemovedHandler,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -76,9 +79,11 @@ import aiRouter from './routes/v1/ai.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
+import mfaRouter from './routes/v1/mfa.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import organizationRouter from './routes/v1/organization.js';
+import passkeyRouter from './routes/v1/passkey.routes.js';
 import paymentsRouter from './routes/v1/payments.js';
 import plansRouter from './routes/v1/plans.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
@@ -89,7 +94,6 @@ import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
-import mfaRouter from './routes/v1/mfa.routes.js';
 import webhookRouter from './routes/v1/webhook.js';
 import logger from './utils/logger.js';
 
@@ -221,6 +225,9 @@ app.use('/api/v1/waitlist', waitlistRouter);
 // MFA routes (authenticated)
 app.use('/api/v1/mfa', mfaRouter);
 
+// Passkey routes (WebAuthn - mixed auth)
+app.use('/api/v1/passkeys', passkeyRouter);
+
 // Platform invite routes
 app.use('/api/v1/platform', platformInviteRouter);
 
@@ -322,6 +329,9 @@ app.use(
       sendBackupCodesRegeneratedEmail,
       sendMfaOtpEmail,
       sendNewDeviceLoginEmail,
+      sendPasskeyAddedHandler,
+      sendPasskeyRemovedHandler,
+      sendBackupCodeUsedHandler,
     ],
   }),
 );

@@ -29,6 +29,8 @@ export interface SessionData {
     createdAt: Date;
     lastActiveAt: Date;
     expiresAt: Date;
+    isBanned?: boolean;
+    banReason?: string;
 }
 
 export interface DeviceInfo {
@@ -173,6 +175,7 @@ export async function createSession(
     userId: string,
     refreshToken: string,
     deviceInfo: DeviceInfo = {},
+    banInfo: { isBanned: boolean; banReason?: string | null } = { isBanned: false },
 ): Promise<string> {
     const sessionId = generateSecureToken(16);
     const refreshTokenHash = hashToken(refreshToken);
@@ -189,6 +192,8 @@ export async function createSession(
         createdAt: now,
         lastActiveAt: now,
         expiresAt,
+        isBanned: banInfo.isBanned,
+        banReason: banInfo.banReason || undefined,
     };
 
     // Store session in Redis
@@ -206,6 +211,36 @@ export async function createSession(
     logger.info('Session created', { userId, sessionId, deviceType: deviceInfo.deviceType });
 
     return sessionId;
+}
+
+/**
+ * Update ban status for all user sessions
+ * Used to immediately enforce a ban without waiting for session expiry
+ */
+export async function updateUserBanStatus(
+    userId: string,
+    isBanned: boolean,
+    banReason?: string,
+): Promise<void> {
+    const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
+    const sessionIds = await redis.smembers(userSessionsKey);
+
+    for (const sessionId of sessionIds) {
+        const session = await getSession(sessionId);
+        if (session) {
+            session.isBanned = isBanned;
+            session.banReason = banReason;
+
+            const sessionKey = `${SESSION_PREFIX}${sessionId}`;
+            const ttl = await redis.ttl(sessionKey);
+
+            if (ttl > 0) {
+                await redis.setex(sessionKey, ttl, JSON.stringify(session));
+            }
+        }
+    }
+
+    logger.info('User ban status updated in sessions', { userId, isBanned, sessionCount: sessionIds.length });
 }
 
 /**
@@ -265,6 +300,11 @@ export async function validateRefreshToken(
         return null;
     }
 
+    // Check if banned
+    if (session.isBanned) {
+        return session; // Return session so caller can handle ban check
+    }
+
     // Verify refresh token hash
     const tokenHash = hashToken(refreshToken);
     if (tokenHash !== session.refreshTokenHash) {
@@ -302,7 +342,11 @@ export async function rotateRefreshToken(
     const session = await validateRefreshToken(sessionId, oldRefreshToken);
 
     if (!session) {
-        return null;
+        return null; // Invalid session or token
+    }
+
+    if (session.isBanned) {
+        return null; // Don't rotate tokens for banned users
     }
 
     // Generate new tokens

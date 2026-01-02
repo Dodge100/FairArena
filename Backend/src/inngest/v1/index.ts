@@ -15,7 +15,7 @@ export {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
-  sendNotification,
+  sendNotification
 } from './notificationOperations.js';
 export { paymentOrderCreated } from './payment-order-created.js';
 export { paymentVerified } from './payment-verified.js';
@@ -29,7 +29,7 @@ export { sendWeeklyFeedbackEmail } from './sendWeeklyFeedbackEmail.js';
 export {
   createUserSettingsFunction,
   resetSettingsFunction,
-  updateSettingsFunction,
+  updateSettingsFunction
 } from './settingsOperations.js';
 export { supportRequestCreated } from './supportRequest.js';
 export { createTeamAuditLog, sendTeamInviteEmail } from './teamInvite.js';
@@ -47,9 +47,9 @@ export { updateUser } from './userUpdate.js';
 
 // Auth email functions
 export {
-  sendEmailVerification,
-  sendLoginNotification,
-  sendPasswordChangedEmail,
+  sendBackupCodeUsedHandler, sendEmailVerification,
+  sendLoginNotification, sendPasskeyAddedHandler,
+  sendPasskeyRemovedHandler, sendPasswordChangedEmail,
   sendPasswordResetEmail,
 } from './authEmails.js';
 
@@ -61,3 +61,4 @@ export {
   sendMfaOtpEmail,
   sendNewDeviceLoginEmail,
 } from './securityEmails.js';
+

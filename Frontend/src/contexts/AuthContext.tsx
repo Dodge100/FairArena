@@ -1,3 +1,4 @@
+import { registerBanHandler } from '@/lib/apiClient';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Types
@@ -16,6 +17,8 @@ export interface AuthContextType {
     accessToken: string | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    isBanned: boolean; // New prop
+    banReason: string | null; // New prop
     login: (email: string, password: string) => Promise<AuthResponse>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
@@ -61,6 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isBanned, setIsBanned] = useState(false);
+    const [banReason, setBanReason] = useState<string | null>(null);
+
+    // Register ban handler
+    useEffect(() => {
+        registerBanHandler((reason) => {
+            setIsBanned(true);
+            setBanReason(reason || null);
+            // Optionally clear user/token if you want to force a "logged out" state visually,
+            // but keeping them might be useful for showing "Banned as [User]".
+            // For now, let's keep the user data but the UI will block access.
+        });
+    }, []);
 
     // Update both state and memory token
     const updateToken = useCallback((token: string | null) => {
@@ -131,6 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     if (newToken) {
                         return fetchCurrentUser(newToken);
                     }
+                } else if (response.status === 403) {
+                    const errorData = await response.json();
+                    if (errorData.code === 'USER_BANNED') {
+                        setIsBanned(true);
+                        setBanReason(errorData.message?.replace('Your account has been suspended. Reason: ', '') || null);
+                        return null;
+                    }
                 }
                 return null;
             }
@@ -192,6 +215,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data: AuthResponse = await response.json();
 
         if (!response.ok || !data.success) {
+            if (response.status === 403 && data.code === 'USER_BANNED') {
+                setIsBanned(true);
+                setBanReason(data.message?.replace('Your account has been suspended. Reason: ', '') || null);
+                // Don't throw error, let the UI handle the state change
+                return data;
+            }
             throw new Error(data.message || 'Login failed');
         }
 
@@ -221,6 +250,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error('Your session has expired. Please sign in again.');
             } else if (response.status === 429) {
                 throw new Error(data.message || 'Too many attempts. Please try again later.');
+            } else if (response.status === 403 && data.code === 'USER_BANNED') {
+                setIsBanned(true);
+                setBanReason(data.message?.replace('Your account has been suspended. Reason: ', '') || null);
+                return;
             } else {
                 throw new Error(data.message || 'MFA verification failed');
             }
@@ -292,6 +325,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
             updateToken(null);
             setUser(null);
+            setIsBanned(false); // Reset ban state on logout
+            setBanReason(null);
         }
     }, [updateToken]);
 
@@ -359,6 +394,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         isLoading,
         isAuthenticated: !!user,
+        isBanned,
+        banReason,
         login,
         register,
         logout,

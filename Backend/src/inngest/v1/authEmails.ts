@@ -1,5 +1,10 @@
 import { ENV } from '../../config/env.js';
-import { sendEmail } from '../../email/v1/index.js';
+import {
+    sendBackupCodeUsedEmail,
+    sendEmail,
+    sendPasskeyAddedEmail,
+    sendPasskeyRemovedEmail
+} from '../../email/v1/index.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
@@ -169,6 +174,98 @@ export const sendPasswordChangedEmail = inngest.createFunction(
                     error: error instanceof Error ? error.message : String(error),
                 });
                 // Don't throw - this is not critical
+            }
+        });
+    },
+);
+/**
+ * Send passkey added email
+ */
+export const sendPasskeyAddedHandler = inngest.createFunction(
+    {
+        id: 'email-passkey-added',
+        retries: 3,
+        concurrency: {
+            limit: 10,
+        },
+    },
+    { event: 'email/passkey-added' },
+    async ({ event, step }) => {
+        const { userId, email, firstName, passkeyName } = event.data;
+
+        await step.run('send-passkey-added-email', async () => {
+            try {
+                await sendPasskeyAddedEmail(email, firstName, passkeyName);
+                logger.info('Passkey added email sent', { userId, email });
+            } catch (error) {
+                logger.error('Failed to send passkey added email', {
+                    userId,
+                    email,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+                throw error;
+            }
+        });
+    },
+);
+
+/**
+ * Send passkey removed email
+ */
+export const sendPasskeyRemovedHandler = inngest.createFunction(
+    {
+        id: 'email-passkey-removed',
+        retries: 3,
+        concurrency: {
+            limit: 10,
+        },
+    },
+    { event: 'email/passkey-removed' },
+    async ({ event, step }) => {
+        const { userId, email, firstName, passkeyName } = event.data;
+
+        await step.run('send-passkey-removed-email', async () => {
+            try {
+                await sendPasskeyRemovedEmail(email, firstName, passkeyName);
+                logger.info('Passkey removed email sent', { userId, email });
+            } catch (error) {
+                logger.error('Failed to send passkey removed email', {
+                    userId,
+                    email,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+                throw error;
+            }
+        });
+    },
+);
+
+/**
+ * Send backup code used alert email
+ */
+export const sendBackupCodeUsedHandler = inngest.createFunction(
+    {
+        id: 'email-backup-code-used',
+        retries: 3,
+        concurrency: {
+            limit: 10,
+        },
+    },
+    { event: 'email/backup-code-used' },
+    async ({ event, step }) => {
+        const { userId, email, firstName, remainingCodes, ipAddress, deviceName } = event.data;
+
+        await step.run('send-backup-code-used-email', async () => {
+            try {
+                await sendBackupCodeUsedEmail(email, firstName, ipAddress, deviceName, remainingCodes);
+                logger.info('Backup code used email sent', { userId, email });
+            } catch (error) {
+                logger.error('Failed to send backup code used email', {
+                    userId,
+                    email,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+                throw error;
             }
         });
     },

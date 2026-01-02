@@ -8,6 +8,7 @@ import { accountDeletionWarningEmailTemplate } from '../templates/accountDeletio
 import { accountPermanentDeletionEmailTemplate } from '../templates/accountPermanentDeletion.js';
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { backupCodesRegeneratedTemplate } from '../templates/backupCodesRegenerated.js';
+import { backupCodeUsedTemplate } from '../templates/backupCodeUsed.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
 import { emailVerificationTemplate } from '../templates/emailVerification.js';
@@ -18,6 +19,8 @@ import { mfaEnabledTemplate } from '../templates/mfaEnabled.js';
 import { mfaOtpTemplate } from '../templates/mfaOtp.js';
 import { newDeviceLoginTemplate } from '../templates/newDeviceLogin.js';
 import { otpEmailTemplate } from '../templates/otp.js';
+import { passkeyAddedTemplate } from '../templates/passkeyAdded.js';
+import { passkeyRemovedTemplate } from '../templates/passkeyRemoved.js';
 import { passwordChangedTemplate } from '../templates/passwordChanged.js';
 import { passwordResetTemplate } from '../templates/passwordReset.js';
 import { paymentFailedEmailTemplate } from '../templates/paymentFailed.js';
@@ -196,10 +199,27 @@ type NewDeviceLoginParams = {
   ipAddress: string;
   location: string;
   securityUrl: string;
-};type MfaOtpParams = {
+}; type MfaOtpParams = {
   firstName: string;
   otp: string;
   expiryMinutes: number;
+};
+type PasskeyAddedParams = {
+  firstName: string;
+  passkeyName: string;
+  securityUrl: string;
+};
+type PasskeyRemovedParams = {
+  firstName: string;
+  passkeyName: string;
+  securityUrl: string;
+};
+type BackupCodeUsedParams = {
+  firstName: string;
+  ipAddress: string;
+  deviceName: string;
+  remainingCodes: number;
+  securityUrl: string;
 };
 // Collect all templates with correct types
 export const emailTemplates = {
@@ -258,6 +278,9 @@ export const emailTemplates = {
   ) => string,
   NEW_DEVICE_LOGIN: newDeviceLoginTemplate as (params: NewDeviceLoginParams) => string,
   MFA_OTP: mfaOtpTemplate as unknown as (params: MfaOtpParams) => string,
+  'passkey-added': passkeyAddedTemplate as (params: PasskeyAddedParams) => string,
+  'passkey-removed': passkeyRemovedTemplate as (params: PasskeyRemovedParams) => string,
+  'backup-code-used': backupCodeUsedTemplate as (params: BackupCodeUsedParams) => string,
 };
 
 type TemplateType = keyof typeof emailTemplates;
@@ -323,12 +346,12 @@ export async function sendEmail<T extends TemplateType>(
             attachments:
               attachments && attachments.length > 0
                 ? attachments.map((att) => ({
-                    filename: att.filename,
-                    content: Buffer.isBuffer(att.content)
-                      ? att.content.toString('base64')
-                      : att.content,
-                    contentType: att.contentType || 'application/octet-stream',
-                  }))
+                  filename: att.filename,
+                  content: Buffer.isBuffer(att.content)
+                    ? att.content.toString('base64')
+                    : att.content,
+                  contentType: att.contentType || 'application/octet-stream',
+                }))
                 : undefined,
           },
         },
@@ -687,6 +710,61 @@ export const sendPhoneNumberAddedEmail = async (
     templateData: {
       userName,
       phoneNumber,
+    },
+  });
+};
+
+export const sendPasskeyAddedEmail = async (
+  to: string,
+  firstName: string,
+  passkeyName: string,
+): Promise<unknown> => {
+  return sendEmail({
+    to,
+    subject: 'New Passkey Added - FairArena',
+    templateType: 'passkey-added',
+    templateData: {
+      firstName,
+      passkeyName,
+      securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
+    },
+  });
+};
+
+export const sendPasskeyRemovedEmail = async (
+  to: string,
+  firstName: string,
+  passkeyName: string,
+): Promise<unknown> => {
+  return sendEmail({
+    to,
+    subject: 'Passkey Removed - FairArena',
+    templateType: 'passkey-removed',
+    templateData: {
+      firstName,
+      passkeyName,
+      securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
+    },
+  });
+};
+
+export const sendBackupCodeUsedEmail = async (
+  to: string,
+  firstName: string,
+  ipAddress: string,
+  deviceName: string,
+  remainingCodes: number,
+): Promise<unknown> => {
+  return sendEmail({
+    to,
+    subject: 'Security Alert: Backup Code Used - FairArena',
+    templateType: 'backup-code-used',
+    templateData: {
+      firstName,
+      ipAddress,
+      deviceName,
+      remainingCodes,
+      securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
     },
   });
 };

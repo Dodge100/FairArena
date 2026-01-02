@@ -1,4 +1,4 @@
-export { useAuthState, useToken } from '../contexts/AuthContext';
+export { useAuth, useAuthState, useToken } from '../contexts/AuthContext';
 
 
 export interface AuthState {

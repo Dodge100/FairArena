@@ -4,6 +4,7 @@ import {
     checkMfaSession,
     forgotPassword,
     getCurrentUser,
+    getMfaPreferences,
     getRecentActivity,
     invalidateMfaSession,
     listSessions,
@@ -17,6 +18,7 @@ import {
     revokeSession,
     sendEmailOtp,
     sendNotificationOtp,
+    updateMfaPreferences,
     verifyEmail,
     verifyLoginMFA,
     verifyMfaOtp
@@ -635,5 +637,122 @@ router.get('/google/callback', handleGoogleCallback);
  *         description: Invalid token
  */
 router.post('/google/token', handleGoogleToken);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/preferences:
+ *   get:
+ *     summary: Get MFA preferences
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: MFA preferences
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/mfa/preferences', protectRoute, getMfaPreferences);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/preferences:
+ *   put:
+ *     summary: Update MFA preferences
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               emailMfaEnabled:
+ *                 type: boolean
+ *               notificationMfaEnabled:
+ *                 type: boolean
+ *               acknowledgeSecurityRisk:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Preferences updated
+ *       400:
+ *         description: Security risk not acknowledged
+ *       401:
+ *         description: Unauthorized
+ */
+router.put('/mfa/preferences', protectRoute, updateMfaPreferences);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/send-email-otp:
+ *   post:
+ *     summary: Send email OTP for MFA verification
+ *     tags: [Authentication]
+ *     security: []
+ *     description: Sends a 6-digit OTP to the user's email for MFA verification. Requires active MFA session.
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       400:
+ *         description: Email MFA not enabled
+ *       401:
+ *         description: No MFA session
+ */
+router.post('/mfa/send-email-otp', loginLimiter, sendEmailOtp);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/send-notification-otp:
+ *   post:
+ *     summary: Send notification OTP for MFA verification
+ *     tags: [Authentication]
+ *     security: []
+ *     description: Sends a 6-digit OTP via in-app notification for MFA verification. Requires active MFA session.
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       400:
+ *         description: Notification MFA not enabled
+ *       401:
+ *         description: No MFA session
+ */
+router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
+
+/**
+ * @swagger
+ * /api/v1/auth/mfa/verify-otp:
+ *   post:
+ *     summary: Verify email/notification OTP for MFA
+ *     tags: [Authentication]
+ *     security: []
+ *     description: Verifies the OTP sent via email or notification and completes MFA login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *               - method
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: The 6-digit OTP
+ *               method:
+ *                 type: string
+ *                 enum: [email, notification]
+ *     responses:
+ *       200:
+ *         description: MFA verification successful
+ *       400:
+ *         description: Invalid or expired code
+ *       401:
+ *         description: No MFA session
+ */
+router.post('/mfa/verify-otp', loginLimiter, verifyMfaOtp);
 
 export default router;

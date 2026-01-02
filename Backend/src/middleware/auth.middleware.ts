@@ -78,6 +78,16 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
+    // Check if user is banned
+    if (session.isBanned) {
+      logger.warn('Banned user attempted access', { userId: session.userId });
+      return res.status(403).json({
+        success: false,
+        message: `Your account has been suspended. Reason: ${session.banReason || 'Violation of terms'}`,
+        code: 'USER_BANNED',
+      });
+    }
+
     // Update session activity (non-blocking)
     updateSessionActivity(payload.sessionId).catch((err) => {
       logger.error('Failed to update session activity', { error: err.message });

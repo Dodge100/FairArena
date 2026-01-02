@@ -1,5 +1,6 @@
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
+import { PasskeyManager } from '@/components/PasskeyManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { apiFetch } from '@/lib/apiClient';
@@ -109,6 +110,14 @@ function Profile() {
   const [copiedCodes, setCopiedCodes] = useState(false);
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
 
+  // MFA Preferences State
+  const [mfaPreferences, setMfaPreferences] = useState<{
+    emailMfaEnabled: boolean;
+    notificationMfaEnabled: boolean;
+  } | null>(null);
+  const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
+  const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
+
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
   // Fetch sessions
@@ -171,6 +180,47 @@ function Profile() {
     }
   };
 
+  // Fetch MFA Preferences
+  const fetchMfaPreferences = async () => {
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`);
+      const data = await res.json();
+      if (data.success) {
+        setMfaPreferences(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch MFA preferences', error);
+    }
+  };
+
+  // Update MFA Preferences
+  const updateMfaPreference = async (type: 'email' | 'notification', enabled: boolean) => {
+    setUpdatingMfaPrefs(true);
+    try {
+      const body = type === 'email'
+        ? { emailMfaEnabled: enabled, acknowledgeSecurityRisk: enabled }
+        : { notificationMfaEnabled: enabled, acknowledgeSecurityRisk: enabled };
+
+      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMfaPreferences(data.data);
+        toast.success(`${type === 'email' ? 'Email' : 'Notification'} MFA ${enabled ? 'enabled' : 'disabled'}`);
+      } else {
+        toast.error(data.message || 'Failed to update preferences');
+      }
+    } catch (error) {
+      toast.error('Failed to update MFA preferences');
+    } finally {
+      setUpdatingMfaPrefs(false);
+      setShowSecurityWarning(null);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchSessions();
@@ -181,6 +231,7 @@ function Profile() {
   useEffect(() => {
     if (activeTab === 'security' && isSecurityVerified) {
       fetchMfaStatus();
+      fetchMfaPreferences();
     }
   }, [activeTab, isSecurityVerified]);
 
@@ -885,6 +936,110 @@ function Profile() {
                   </div>
                 )}
               </div>
+
+              {/* Passkeys Section */}
+              <PasskeyManager />
+
+              {/* MFA Preferences Section */}
+              {mfaStatus?.enabled && (
+                <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Shield className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
+                    <h3 className="text-lg font-semibold text-foreground">Alternative MFA Methods</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Enable additional ways to verify your identity. Note: These methods are less secure than authenticator apps or passkeys.
+                  </p>
+
+                  <div className="space-y-4">
+                    {/* Email OTP Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                      <div>
+                        <p className="font-medium text-foreground">Email OTP</p>
+                        <p className="text-sm text-muted-foreground">Receive verification codes via email</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!mfaPreferences?.emailMfaEnabled) {
+                            setShowSecurityWarning('email');
+                          } else {
+                            updateMfaPreference('email', false);
+                          }
+                        }}
+                        disabled={updatingMfaPrefs}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.emailMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                          } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.emailMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Notification OTP Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                      <div>
+                        <p className="font-medium text-foreground">Push Notification OTP</p>
+                        <p className="text-sm text-muted-foreground">Receive verification codes via push notifications</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!mfaPreferences?.notificationMfaEnabled) {
+                            setShowSecurityWarning('notification');
+                          } else {
+                            updateMfaPreference('notification', false);
+                          }
+                        }}
+                        disabled={updatingMfaPrefs}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.notificationMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                          } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.notificationMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Security Warning Modal */}
+                  {showSecurityWarning && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      <div className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}>
+                        <div className="flex items-center gap-3 mb-4">
+                          <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                          <h3 className="text-lg font-semibold">Security Warning</h3>
+                        </div>
+                        <p className="text-muted-foreground mb-4">
+                          {showSecurityWarning === 'email'
+                            ? 'Email-based MFA is less secure than authenticator apps because emails can be intercepted or your email account could be compromised.'
+                            : 'Push notification MFA is less secure than authenticator apps because notifications can be intercepted or your device could be compromised.'
+                          }
+                        </p>
+                        <p className="text-muted-foreground mb-6">
+                          We recommend using an authenticator app (TOTP) or passkeys for maximum security. Are you sure you want to enable this method?
+                        </p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setShowSecurityWarning(null)}
+                            className="flex-1 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => updateMfaPreference(showSecurityWarning, true)}
+                            disabled={updatingMfaPrefs}
+                            className="flex-1 px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                          >
+                            {updatingMfaPrefs ? 'Enabling...' : 'I Understand, Enable'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Password Change Info */}
               <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>

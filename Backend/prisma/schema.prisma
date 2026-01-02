@@ -27,6 +27,11 @@ model User {
   // Authentication fields
   passwordHash          String?
   emailVerified         Boolean                 @default(false)
+
+  // Ban fields
+  isBanned              Boolean                 @default(false)
+  banReason             String?
+
   googleId              String?                 @unique
   lastLoginAt           DateTime?
   lastLoginIp           String?
@@ -36,6 +41,8 @@ model User {
   mfaSecret             String?                 // Encrypted TOTP secret
   mfaBackupCodes        String[]                // Encrypted backup codes
   mfaEnabledAt          DateTime?
+  emailMfaEnabled       Boolean                 @default(false)  // Email OTP as MFA method
+  notificationMfaEnabled Boolean                @default(false)  // Push notification as MFA method
 
   // Relations
   creditTransactions    CreditTransaction[]
@@ -44,6 +51,7 @@ model User {
   organizationFollowers OrganizationFollowers[]
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
+  passkeys              Passkey[]
   payments              Payment[]
   profile               Profile?
   profileStars          ProfileStars[]
@@ -56,7 +64,10 @@ model User {
   projectMemberships    UserProject[]
   teamMemberships       UserTeam[]
 
+
   @@index([userId])
+  @@index([isBanned])
+  @@index([userId, isBanned])
   @@index([email])
   @@index([phoneNumber])
   @@index([isPhoneVerified])
@@ -906,7 +917,12 @@ model Waitlist {
   source     String?        // Where they came from (homepage, referral, etc.)
   status     WaitlistStatus @default(PENDING)
   notifiedAt DateTime?
-  createdAt  DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  ipAddress        String?
+  userAgent        String?
+  country          String?
+  city             String?
+  marketingConsent Boolean        @default(false)
 
   @@index([email])
   @@index([status])
@@ -917,4 +933,22 @@ enum WaitlistStatus {
   PENDING
   INVITED
   REGISTERED
+}
+
+// Passkey (WebAuthn) credentials for passwordless authentication
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique // Base64URL encoded credential ID
+  publicKey    String             // Base64URL encoded public key
+  counter      BigInt    @default(0) // Signature counter for replay protection
+  deviceType   String?            // "platform" | "cross-platform"
+  name         String?            // User-friendly name like "MacBook Pro"
+  transports   String[]           // Transports the credential supports
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
 }

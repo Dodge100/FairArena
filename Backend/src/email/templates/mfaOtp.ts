@@ -128,7 +128,7 @@ export const mfaOtpTemplate = (params: {
 
       <div class="code-box">
         <div class="code-label">Your one-time code</div>
-        <div class="code">${params.otp || '123456'}</div>
+        <div class="code">${params.otp}</div>
         <p class="expiry">
           This code will expire in <strong>${params.expiryMinutes ?? 5} minutes</strong>.
         </p>

@@ -19,6 +19,10 @@ const teamInviteRowSchema = z.object({
     .string()
     .email('Invalid email format')
     .max(255, 'Email too long')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    )
     .transform((val) => val.toLowerCase().trim()),
   roleId: z
     .string()

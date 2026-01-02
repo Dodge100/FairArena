@@ -19,7 +19,14 @@ const createSupportRequestSchema = z.object({
     .string()
     .min(10, 'Message must be at least 10 characters')
     .max(5000, 'Message must be less than 5000 characters'),
-  email: z.string().email('Valid email address is required for non-authenticated users').optional(),
+  email: z
+    .string()
+    .email('Valid email address is required for non-authenticated users')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    )
+    .optional(),
 });
 
 export class SupportController {

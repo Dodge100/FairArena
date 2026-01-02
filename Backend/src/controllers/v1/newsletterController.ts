@@ -5,7 +5,13 @@ import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 const newsletterSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    ),
 });
 
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour

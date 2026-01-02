@@ -25,6 +25,7 @@ function WaitList() {
   const { isSignedIn } = useAuthState();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [position, setPosition] = useState<number | null>(null);
@@ -80,6 +81,7 @@ function WaitList() {
           email: email.trim(),
           name: name.trim() || undefined,
           source: 'website',
+          marketingConsent,
         }),
       });
 
@@ -207,7 +209,25 @@ function WaitList() {
                           ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-[#777]'
                           : 'bg-white text-neutral-900 border-neutral-300'}
                       `}
-                    />
+                      />
+                    <label className="flex items-start gap-3 px-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={marketingConsent}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          setMarketingConsent(newValue);
+                        }}
+                        className={`
+                        mt-1 w-4 h-4 rounded border outline-none cursor-pointer
+                        ${isDark ? 'border-neutral-600 bg-neutral-800' : 'border-neutral-300 bg-white'}
+                        accent-[#DDEF00]
+                      `}
+                      />
+                      <span className={`text-sm select-none ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                        I agree to receive updates about FairArena.
+                      </span>
+                    </label>
                     <button
                       type="submit"
                       disabled={isLoading}

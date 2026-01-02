@@ -7,7 +7,13 @@ import logger from '../../../utils/logger.js';
 
 // Validation schemas
 const singleInviteSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z
+    .string()
+    .email('Invalid email format')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    ),
   roleId: z.string().min(1, 'Role ID is required'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -18,7 +24,13 @@ const bulkInviteSchema = z.object({
   invites: z
     .array(
       z.object({
-        email: z.string().email(),
+        email: z
+          .string()
+          .email()
+          .regex(
+            /^[^+=.#]+@/,
+            'Email subaddresses and special characters (+, =, ., #) are not allowed',
+          ),
         roleId: z.string().min(1),
         firstName: z.string().optional(),
         lastName: z.string().optional(),
@@ -52,7 +64,13 @@ function parseJSONInvites(jsonContent: string): { valid: BulkInviteInput[]; inva
     invites.forEach((item: any, index: number) => {
       const result = z
         .object({
-          email: z.string().email(),
+          email: z
+            .string()
+            .email()
+            .regex(
+              /^[^+=.#]+@/,
+              'Email subaddresses and special characters (+, =, ., #) are not allowed',
+            ),
           roleId: z.string().min(1),
           firstName: z.string().optional(),
           lastName: z.string().optional(),
@@ -78,7 +96,7 @@ function parseJSONInvites(jsonContent: string): { valid: BulkInviteInput[]; inva
 export const sendTeamInvite = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
 
     if (!userId) {
@@ -193,7 +211,7 @@ export const sendTeamInvite = async (req: Request, res: Response) => {
 export const sendBulkTeamInvites = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
 
     if (!userId) {
@@ -325,7 +343,7 @@ export const sendBulkTeamInvites = async (req: Request, res: Response) => {
 export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
 
     if (!userId) {
@@ -398,7 +416,7 @@ export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
 export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
 
     if (!userId) {
@@ -487,7 +505,7 @@ export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
 export const getTeamInvitations = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
     const { status = 'pending', page = 1, limit = 20 } = req.query;
 
@@ -594,7 +612,7 @@ export const getTeamInvitations = async (req: Request, res: Response) => {
 export const revokeTeamInvitation = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug, inviteId } = req.params;
 
     if (!userId) {

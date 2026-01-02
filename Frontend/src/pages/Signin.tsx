@@ -1,3 +1,4 @@
+import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,8 +41,14 @@ export default function Signin() {
   const [showMfaHelp, setShowMfaHelp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [showAlternatives, setShowAlternatives] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [mfaPreferences, setMfaPreferences] = useState<{
+    emailMfaEnabled: boolean;
+    notificationMfaEnabled: boolean;
+  }>({ emailMfaEnabled: false, notificationMfaEnabled: false });
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  const passkeySupported = usePasskeySupport();
 
   // Helper to get cookie value
   const getCookie = (name: string): string | null => {
@@ -125,6 +132,13 @@ export default function Signin() {
               expiresAt: Date.now() + (result.data?.ttl || 300) * 1000,
               attemptsRemaining: result.data?.attemptsRemaining || 5,
             });
+            // Also fetch MFA preferences
+            if (result.data?.mfaPreferences) {
+              setMfaPreferences({
+                emailMfaEnabled: result.data.mfaPreferences.emailMfaEnabled || false,
+                notificationMfaEnabled: result.data.mfaPreferences.notificationMfaEnabled || false,
+              });
+            }
           }
         }
       } catch (err) {
@@ -372,6 +386,40 @@ export default function Signin() {
     }
   };
 
+  // Passkey login
+  const handlePasskeyLogin = async () => {
+    if (!passkeySupported) {
+      toast.error('Passkeys are not supported in this browser');
+      return;
+    }
+
+    setPasskeyLoading(true);
+    setError('');
+
+    try {
+      const result = await initiatePasskeyLogin(apiUrl);
+
+      if (result.success && result.user && result.accessToken) {
+        toast.success('Welcome back!');
+        // Full page reload to properly set auth state from cookies
+        const redirectPath = getRedirectPath();
+        window.location.href = redirectPath;
+      } else if (result.error === 'cancelled') {
+        // User cancelled - do nothing
+      } else {
+        setError(result.error || 'Passkey authentication failed');
+        toast.error(result.error || 'Passkey authentication failed');
+      }
+    } catch (err) {
+      console.error('Passkey login error:', err);
+      const message = err instanceof Error ? err.message : 'Passkey authentication failed';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
+
   // Format time remaining display
   const formatTimeRemaining = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -562,7 +610,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaMethod !== 'email' && !otpSent && (
+                  {mfaPreferences.emailMfaEnabled && mfaMethod !== 'email' && !otpSent && (
                     <button
                       type="button"
                       onClick={() => {
@@ -581,7 +629,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaMethod !== 'notification' && !otpSent && (
+                  {mfaPreferences.notificationMfaEnabled && mfaMethod !== 'notification' && !otpSent && (
                     <button
                       type="button"
                       onClick={() => {
@@ -664,6 +712,31 @@ export default function Signin() {
           </svg>
           Continue with GitHub
         </button>
+
+        {/* Passkey login button - only show if supported */}
+        {passkeySupported && (
+          <button
+            type="button"
+            onClick={handlePasskeyLogin}
+            disabled={isLoading || passkeyLoading}
+            className={`w-full mb-4 py-3 px-4 flex items-center justify-center gap-3 rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-white border border-neutral-700' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-900 border border-neutral-200'}`}
+          >
+            {passkeyLoading ? (
+              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
+                <path d="M10 11V8a4 4 0 118 0v3" />
+                <path d="M4 21a8 8 0 0116 0" />
+                <path d="M4 21v-2a2 2 0 012-2h12a2 2 0 012 2v2" />
+              </svg>
+            )}
+            Sign in with Passkey
+          </button>
+        )}
 
         {/* Divider */}
         <div className="relative my-4">

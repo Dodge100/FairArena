@@ -9,10 +9,11 @@ import { useCookieConsent } from './contexts/CookieConsentContext';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
 import { registerAuth } from './lib/apiClient';
-import { useToken } from './lib/auth';
+import { useAuth, useToken } from './lib/auth'; // Updated import
 import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
+import BannedAccount from './pages/BannedAccount'; // Import BannedAccount
 import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
 import CreditsVerificationPage from './pages/CreditsVerificationPage';
@@ -48,6 +49,7 @@ function App() {
   const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
   const token = useToken();
+  const { isBanned } = useAuth(); // Get ban state
 
   useEffect(() => {
     registerAuth(token);
@@ -83,6 +85,16 @@ function App() {
   // Prevent access to maintenance page when not in maintenance mode
   if (!isMaintenanceMode && location.pathname === '/maintenance') {
     return <Navigate to="/" replace />;
+  }
+
+  // Show banned screen if user is banned
+  if (isBanned) {
+    return (
+      <>
+        <Toaster richColors position="top-right" />
+        <BannedAccount />
+      </>
+    );
   }
 
   return (

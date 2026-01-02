@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
+import { redis } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import { verifyPassword } from '../../services/auth.service.js';
 import {
@@ -157,6 +158,11 @@ export const verifyMFASetup = async (req: Request, res: Response) => {
             },
         });
 
+        // Invalidate MFA status cache
+        await redis.del(`mfa:status:${userId}`);
+        // Invalidate MFA preferences cache
+        await redis.del(`mfa:prefs:${userId}`);
+
         // Get device info for notification
         const userAgent = req.headers['user-agent'];
         const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
@@ -274,6 +280,9 @@ export const verifyMFA = async (req: Request, res: Response) => {
                     data: { mfaBackupCodes: updatedCodes },
                 });
 
+                // Invalidate MFA status cache since backup codes changed
+                await redis.del(`mfa:status:${userId}`);
+
                 logger.info('Backup code used', { userId, remainingCodes: updatedCodes.length });
             }
         } else {
@@ -382,6 +391,10 @@ export const disableMFA = async (req: Request, res: Response) => {
             },
         });
 
+        // Invalidate MFA status and prefs cache
+        await redis.del(`mfa:status:${userId}`);
+        await redis.del(`mfa:prefs:${userId}`);
+
         // Get device info for notification
         const userAgent = req.headers['user-agent'];
         const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
@@ -461,6 +474,16 @@ export const getMFAStatus = async (req: Request, res: Response) => {
             });
         }
 
+        const cacheKey = `mfa:status:${userId}`;
+        const cachedStatus = await redis.get(cacheKey);
+
+        if (cachedStatus) {
+            return res.status(200).json({
+                success: true,
+                data: typeof cachedStatus === 'string' ? JSON.parse(cachedStatus) : cachedStatus,
+            });
+        }
+
         const user = await prisma.user.findUnique({
             where: { userId },
             select: {
@@ -477,13 +500,18 @@ export const getMFAStatus = async (req: Request, res: Response) => {
             });
         }
 
+        const statusData = {
+            enabled: user.mfaEnabled,
+            enabledAt: user.mfaEnabledAt,
+            backupCodesRemaining: user.mfaBackupCodes?.length || 0,
+        };
+
+        // Cache for 1 hour
+        await redis.setex(cacheKey, 3600, JSON.stringify(statusData));
+
         return res.status(200).json({
             success: true,
-            data: {
-                enabled: user.mfaEnabled,
-                enabledAt: user.mfaEnabledAt,
-                backupCodesRemaining: user.mfaBackupCodes?.length || 0,
-            },
+            data: statusData,
         });
     } catch (error) {
         logger.error('Get MFA status error', {
@@ -550,6 +578,9 @@ export const regenerateBackupCodes = async (req: Request, res: Response) => {
             where: { userId },
             data: { mfaBackupCodes: hashedCodes },
         });
+
+        // Invalidate MFA status cache
+        await redis.del(`mfa:status:${userId}`);
 
         // Format codes for display (4-4-2 pattern for 10 char codes)
         const formattedCodes = newCodes.map(c => `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}`);

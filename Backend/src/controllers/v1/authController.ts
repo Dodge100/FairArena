@@ -46,7 +46,13 @@ interface MFAPendingPayload {
 
 // Validation Schemas
 const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    ),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
@@ -291,6 +297,8 @@ export const login = async (req: Request, res: Response) => {
         emailVerified: true,
         isDeleted: true,
         mfaEnabled: true,
+        isBanned: true,
+        banReason: true,
       },
     });
 
@@ -299,6 +307,15 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
+      });
+    }
+
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        message: `Your account has been suspended. Reason: ${user.banReason || 'Violation of terms'}`,
+        code: 'USER_BANNED',
       });
     }
 
@@ -383,12 +400,17 @@ export const login = async (req: Request, res: Response) => {
 
     // Generate tokens
     const refreshToken = generateRefreshToken();
-    const sessionId = await createSession(user.userId, refreshToken, {
-      deviceName,
-      deviceType,
-      userAgent,
-      ipAddress,
-    });
+    const sessionId = await createSession(
+      user.userId,
+      refreshToken,
+      {
+        deviceName,
+        deviceType,
+        userAgent,
+        ipAddress,
+      },
+      { isBanned: user.isBanned, banReason: user.banReason },
+    );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
     // Update last login
@@ -640,6 +662,8 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
         mfaSecret: true,
         mfaBackupCodes: true,
         mfaEnabled: true,
+        isBanned: true,
+        banReason: true,
       },
     });
 
@@ -692,6 +716,46 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
             },
           });
         }
+
+        // CRITICAL: Send security alert for backup code usage
+        const backupIpAddress = req.ip || req.socket.remoteAddress || 'unknown';
+        const backupUserAgent = req.headers['user-agent'] || 'unknown';
+        const { deviceName: backupDeviceName } = parseUserAgent(backupUserAgent);
+
+        // In-app notification for backup code usage
+        await inngest.send({
+          name: 'notification/send',
+          data: {
+            userId: user.userId,
+            title: '⚠️ Backup Code Used for Login',
+            message: `A backup code was used to sign in to your account`,
+            description: `A backup code was just used to verify your identity from ${backupDeviceName}. If this wasn't you, your account may be compromised. Please invalidate all sessions and regenerate your backup codes immediately.`,
+            actionUrl: '/dashboard/profile',
+            actionLabel: 'Secure Account',
+            metadata: {
+              type: 'security',
+              priority: 'high',
+              action: 'backup_code_used',
+              remainingCodes: updatedCodes.length,
+              ipAddress: backupIpAddress,
+            },
+          },
+        });
+
+        // Email alert for backup code usage
+        await inngest.send({
+          name: 'email/backup-code-used',
+          data: {
+            userId: user.userId,
+            email: user.email,
+            firstName: user.firstName,
+            remainingCodes: updatedCodes.length,
+            ipAddress: backupIpAddress,
+            deviceName: backupDeviceName,
+          },
+        });
+
+        logger.info('Backup code usage alert sent', { userId, remainingCodes: updatedCodes.length });
       }
     } else {
       isValid = verifyTOTPCode(code, user.mfaSecret);
@@ -725,12 +789,17 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
 
     // Generate tokens
     const refreshToken = generateRefreshToken();
-    const sessionId = await createSession(user.userId, refreshToken, {
-      deviceName,
-      deviceType,
-      userAgent,
-      ipAddress,
-    });
+    const sessionId = await createSession(
+      user.userId,
+      refreshToken,
+      {
+        deviceName,
+        deviceType,
+        userAgent,
+        ipAddress,
+      },
+      { isBanned: user.isBanned, banReason: user.banReason },
+    );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
     // Update last login
@@ -1523,6 +1592,12 @@ export const checkMfaSession = async (req: Request, res: Response) => {
     const attemptCount = attemptsData ? parseInt(attemptsData, 10) : 0;
     const attemptsRemaining = Math.max(0, 5 - attemptCount);
 
+    // Fetch user's MFA preferences
+    const user = await prisma.user.findUnique({
+      where: { userId: payload.userId },
+      select: { emailMfaEnabled: true, notificationMfaEnabled: true },
+    });
+
     return res.status(200).json({
       success: true,
       hasMfaSession: true,
@@ -1530,8 +1605,10 @@ export const checkMfaSession = async (req: Request, res: Response) => {
         userId: payload.userId,
         ttl,
         attemptsRemaining,
-        canUseEmail: true,
-        canUseNotification: true,
+        mfaPreferences: {
+          emailMfaEnabled: user?.emailMfaEnabled || false,
+          notificationMfaEnabled: user?.notificationMfaEnabled || false,
+        },
       },
     });
   } catch (error) {
@@ -1591,415 +1668,6 @@ export const invalidateMfaSession = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: 'MFA session cleared',
-    });
-  }
-};
-
-/**
- * Send OTP via email
- * POST /api/v1/auth/mfa/send-email-otp
- */
-export const sendEmailOtp = async (req: Request, res: Response) => {
-  try {
-    const mfaToken = req.cookies?.mfa_session;
-
-    if (!mfaToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'No active MFA session. Please sign in again.',
-      });
-    }
-
-    // Verify JWT token
-    let payload: MFAPendingPayload;
-    try {
-      const jwt = await import('jsonwebtoken');
-      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
-        issuer: 'fairarena',
-      }) as MFAPendingPayload;
-
-      if (payload.type !== 'mfa_pending') {
-        throw new Error('Invalid token type');
-      }
-    } catch {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Your session has expired. Please sign in again.',
-      });
-    }
-
-    // Validate IP and device
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
-
-    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentDevice) {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Security validation failed. Please sign in again.',
-      });
-    }
-
-    // Check rate limit for OTP sends (max 3 per session)
-    const otpRateLimitKey = `mfa_otp_rate:${payload.userId}`;
-    const otpSendCount = await redis.get<string>(otpRateLimitKey);
-    const currentCount = otpSendCount ? parseInt(otpSendCount, 10) : 0;
-
-    if (currentCount >= 3) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many verification code requests. Please try again later.',
-      });
-    }
-
-    // Generate and store hashed OTP
-    const otp = generateOTP();
-    const otpHash = hashOTP(otp);
-    const otpKey = `mfa_email_otp:${payload.userId}`;
-
-    // Store hashed OTP with 5 minute expiry (never store plain text OTP)
-    await redis.setex(otpKey, 300, otpHash);
-
-    // Increment rate limit counter (expires with the MFA session)
-    const sessionTtl = Math.max(0, (payload.exp || 0) - Math.floor(Date.now() / 1000));
-    await redis.setex(otpRateLimitKey, Math.max(sessionTtl, 60), (currentCount + 1).toString());
-
-    // Get user for email
-    const user = await prisma.user.findUnique({
-      where: { userId: payload.userId },
-      select: { email: true, profile: { select: { firstName: true } } },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-    }
-
-    // Send OTP via Inngest
-    await inngest.send({
-      name: 'email/mfa-otp',
-      data: {
-        email: user.email,
-        firstName: user.profile?.firstName || 'User',
-        otp,
-        expiryMinutes: 5,
-      },
-    });
-
-    logger.info('Email OTP sent', { userId: payload.userId });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Verification code sent to your email',
-      expiresIn: 300,
-    });
-  } catch (error) {
-    logger.error('Send email OTP error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to send verification code',
-    });
-  }
-};
-
-/**
- * Send OTP via notification
- * POST /api/v1/auth/mfa/send-notification-otp
- */
-export const sendNotificationOtp = async (req: Request, res: Response) => {
-  try {
-    const mfaToken = req.cookies?.mfa_session;
-
-    if (!mfaToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'No active MFA session. Please sign in again.',
-      });
-    }
-
-    // Verify JWT token
-    let payload: MFAPendingPayload;
-    try {
-      const jwt = await import('jsonwebtoken');
-      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
-        issuer: 'fairarena',
-      }) as MFAPendingPayload;
-
-      if (payload.type !== 'mfa_pending') {
-        throw new Error('Invalid token type');
-      }
-    } catch {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Your session has expired. Please sign in again.',
-      });
-    }
-
-    // Validate IP and device
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
-
-    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentDevice) {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Security validation failed. Please sign in again.',
-      });
-    }
-
-    // Check rate limit for OTP sends (max 3 per session)
-    const otpRateLimitKey = `mfa_otp_rate:${payload.userId}`;
-    const otpSendCount = await redis.get<string>(otpRateLimitKey);
-    const currentCount = otpSendCount ? parseInt(otpSendCount, 10) : 0;
-
-    if (currentCount >= 3) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many verification code requests. Please try again later.',
-      });
-    }
-
-    // Generate and store hashed OTP
-    const otp = generateOTP();
-    const otpHash = hashOTP(otp);
-    const otpKey = `mfa_notification_otp:${payload.userId}`;
-    const otpExpiry = Date.now() + 5 * 60 * 1000;
-
-    // Store hashed OTP with 5 minute expiry (never store plain text OTP)
-    await redis.setex(otpKey, 300, otpHash);
-
-    // Increment rate limit counter
-    const sessionTtl = Math.max(0, (payload.exp || 0) - Math.floor(Date.now() / 1000));
-    await redis.setex(otpRateLimitKey, Math.max(sessionTtl, 60), (currentCount + 1).toString());
-
-    // Create in-app notification (OTP is shown to user, not stored)
-    await inngest.send({
-      name: 'notification/send',
-      data: {
-        userId: payload.userId,
-        type: 'MFA_OTP',
-        title: 'Your 2FA Verification Code',
-        message: `Your verification code is: ${otp}. This code expires in 5 minutes.`,
-        data: { expiresAt: otpExpiry }, // Don't include OTP in stored notification data
-        expiresAt: new Date(otpExpiry),
-      },
-    });
-
-    logger.info('Notification OTP sent', { userId: payload.userId });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Verification code sent to your notifications',
-      expiresIn: 300,
-    });
-  } catch (error) {
-    logger.error('Send notification OTP error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to send verification code',
-    });
-  }
-};
-
-
-
-export const verifyMfaOtp = async (req: Request, res: Response) => {
-  try {
-    const validation = verifyMfaOtpSchema.safeParse(req.body);
-
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: validation.error.issues,
-      });
-    }
-
-    const { code, method = 'email' } = validation.data;
-    const mfaToken = req.cookies?.mfa_session;
-
-    if (!mfaToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'No active MFA session. Please sign in again.',
-      });
-    }
-
-    // Verify JWT token
-    let payload: MFAPendingPayload;
-    try {
-      const jwt = await import('jsonwebtoken');
-      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
-        issuer: 'fairarena',
-      }) as MFAPendingPayload;
-
-      if (payload.type !== 'mfa_pending') {
-        throw new Error('Invalid token type');
-      }
-    } catch {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Your session has expired. Please sign in again.',
-      });
-    }
-
-    // Validate IP and device
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
-
-    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentDevice) {
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(401).json({
-        success: false,
-        message: 'Security validation failed. Please sign in again.',
-      });
-    }
-
-    // Check MFA attempts rate limit
-    const mfaAttemptsKey = `mfa_attempts:${payload.userId}`;
-    const attemptsData = await redis.get<string>(mfaAttemptsKey);
-    const attemptCount = attemptsData ? parseInt(attemptsData, 10) : 0;
-
-    if (attemptCount >= 5) {
-      const ttl = await redis.ttl(mfaAttemptsKey);
-      res.clearCookie('mfa_session', { path: '/' });
-      return res.status(429).json({
-        success: false,
-        message: `Too many failed attempts. Please try again in ${Math.ceil(ttl / 60)} minute(s).`,
-      });
-    }
-
-    // Handle OTP verification (email or notification)
-    const otpKey = method === 'email'
-      ? `mfa_email_otp:${payload.userId}`
-      : `mfa_notification_otp:${payload.userId}`;
-    const storedOtpHash = await redis.get<string>(otpKey);
-
-    if (!storedOtpHash) {
-      return res.status(400).json({
-        success: false,
-        message: 'No verification code found. Please request a new code.',
-      });
-    }
-
-    // Verify OTP against stored hash (timing-safe comparison)
-    const isValidOtp = verifyOTPHash(code, storedOtpHash);
-
-    if (!isValidOtp) {
-      // Increment failed attempts
-      const remainingAttempts = 5 - (attemptCount + 1);
-      await redis.setex(mfaAttemptsKey, 900, (attemptCount + 1).toString());
-
-      return res.status(401).json({
-        success: false,
-        message: remainingAttempts > 0
-          ? `Invalid verification code. ${remainingAttempts} attempt(s) remaining.`
-          : 'Too many failed attempts. Please try again in 15 minutes.',
-        attemptsRemaining: remainingAttempts,
-      });
-    }
-
-    // OTP is valid - clear it from Redis
-    await redis.del(otpKey);
-    await redis.del(mfaAttemptsKey);
-
-    // Complete login - get user
-    const user = await prisma.user.findUnique({
-      where: { userId: payload.userId },
-      include: {
-        profile: true,
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-    }
-
-    // Parse user agent
-    const userAgent = req.headers['user-agent'] || '';
-    const { deviceType, deviceName } = parseUserAgent(userAgent);
-
-    // Generate tokens
-    const refreshToken = generateRefreshToken();
-    const sessionId = await createSession(payload.userId, refreshToken, {
-      deviceName,
-      deviceType,
-      userAgent,
-      ipAddress: clientIp,
-    });
-    const accessToken = generateAccessToken(payload.userId, sessionId);
-
-    // Update last login
-    await prisma.user.update({
-      where: { userId: payload.userId },
-      data: {
-        lastLoginAt: new Date(),
-        lastLoginIp: clientIp,
-      },
-    });
-
-    // Set auth cookies
-    res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-    res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
-
-    // Clear MFA session cookie
-    res.clearCookie('mfa_session', { path: '/' });
-
-    // Clear failed login attempts
-    await clearFailedLogins(user.email);
-
-    logger.info('Login with OTP successful', {
-      userId: payload.userId,
-      method,
-      sessionId,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        accessToken,
-        user: {
-          userId: user.userId,
-          email: user.email,
-          emailVerified: user.emailVerified,
-          firstName: user.profile?.firstName || user.firstName,
-          lastName: user.profile?.lastName || user.lastName,
-          profileImageUrl: user.profileImageUrl,
-        },
-      },
-    });
-  } catch (error) {
-    logger.error('Verify MFA OTP error', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred during verification',
     });
   }
 };
@@ -2074,6 +1742,520 @@ export const getRecentActivity = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch activity',
+    });
+  }
+};
+
+// MFA Preferences validation schema
+const updateMfaPreferencesSchema = z.object({
+  emailMfaEnabled: z.boolean().optional(),
+  notificationMfaEnabled: z.boolean().optional(),
+  acknowledgeSecurityRisk: z.boolean().optional(),
+});
+
+// Update MFA preferences (email/notification OTP toggles)
+// PUT /api/v1/auth/mfa/preferences
+export const updateMfaPreferences = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    const validation = updateMfaPreferencesSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request body',
+        errors: validation.error.issues,
+      });
+    }
+
+    const { emailMfaEnabled, notificationMfaEnabled, acknowledgeSecurityRisk } = validation.data;
+
+    // If enabling email or notification MFA, require user to acknowledge security risk
+    const isEnablingLessSecure =
+      (emailMfaEnabled === true) || (notificationMfaEnabled === true);
+
+    if (isEnablingLessSecure && !acknowledgeSecurityRisk) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must acknowledge the security risk before enabling email or notification-based MFA. These methods are less secure than TOTP or passkeys.',
+        code: 'SECURITY_RISK_NOT_ACKNOWLEDGED',
+      });
+    }
+
+    // Get current user to check MFA status
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        mfaEnabled: true,
+        emailMfaEnabled: true,
+        notificationMfaEnabled: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Build update object
+    const updateData: { emailMfaEnabled?: boolean; notificationMfaEnabled?: boolean } = {};
+    if (typeof emailMfaEnabled === 'boolean') {
+      updateData.emailMfaEnabled = emailMfaEnabled;
+    }
+    if (typeof notificationMfaEnabled === 'boolean') {
+      updateData.notificationMfaEnabled = notificationMfaEnabled;
+    }
+
+    // Update user preferences
+    const updatedUser = await prisma.user.update({
+      where: { userId },
+      data: updateData,
+      select: {
+        emailMfaEnabled: true,
+        notificationMfaEnabled: true,
+        mfaEnabled: true,
+      },
+    });
+
+    // Invalidate MFA preferences cache
+    await redis.del(`mfa:prefs:${userId}`);
+
+    logger.info('MFA preferences updated', {
+      userId,
+      emailMfaEnabled: updatedUser.emailMfaEnabled,
+      notificationMfaEnabled: updatedUser.notificationMfaEnabled,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'MFA preferences updated successfully',
+      data: {
+        emailMfaEnabled: updatedUser.emailMfaEnabled,
+        notificationMfaEnabled: updatedUser.notificationMfaEnabled,
+        mfaEnabled: updatedUser.mfaEnabled,
+      },
+    });
+  } catch (error) {
+    logger.error('Update MFA preferences error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update MFA preferences',
+    });
+  }
+};
+
+// Get MFA preferences
+// GET /api/v1/auth/mfa/preferences
+export const getMfaPreferences = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+
+
+    const cacheKey = `mfa:prefs:${userId}`;
+    const cachedPrefs = await redis.get(cacheKey);
+
+    if (cachedPrefs) {
+      return res.status(200).json({
+        success: true,
+        data: typeof cachedPrefs === 'string' ? JSON.parse(cachedPrefs) : cachedPrefs,
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        mfaEnabled: true,
+        emailMfaEnabled: true,
+        notificationMfaEnabled: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const prefsData = {
+      mfaEnabled: user.mfaEnabled,
+      emailMfaEnabled: user.emailMfaEnabled,
+      notificationMfaEnabled: user.notificationMfaEnabled,
+    };
+
+    // Cache for 1 hour
+    await redis.setex(cacheKey, 3600, JSON.stringify(prefsData));
+
+    return res.status(200).json({
+      success: true,
+      data: prefsData,
+    });
+  } catch (error) {
+    logger.error('Get MFA preferences error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get MFA preferences',
+    });
+  }
+};
+
+// MFA OTP Keys
+const MFA_OTP_PREFIX = 'mfa:otp:';
+const MFA_OTP_EXPIRY = 300; // 5 minutes
+
+// Generate a 6-digit OTP
+function generateOtp(): string {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+// Send Email OTP for MFA verification
+// POST /api/v1/auth/mfa/send-email-otp
+export const sendEmailOtp = async (req: Request, res: Response) => {
+  try {
+    // Get user from MFA session JWT cookie
+    const mfaToken = req.cookies?.mfa_session;
+    if (!mfaToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'No MFA session found. Please login again.',
+      });
+    }
+
+    // Verify the JWT token
+    let payload: MFAPendingPayload;
+    try {
+      const jwt = await import('jsonwebtoken');
+      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
+        issuer: 'fairarena',
+      }) as MFAPendingPayload;
+
+      if (payload.type !== 'mfa_pending') {
+        throw new Error('Invalid token type');
+      }
+    } catch {
+      res.clearCookie('mfa_session', { path: '/' });
+      return res.status(401).json({
+        success: false,
+        message: 'MFA session expired. Please login again.',
+      });
+    }
+
+    const userId = payload.userId;
+
+    // Check if user has email MFA enabled
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: { email: true, firstName: true, emailMfaEnabled: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (!user.emailMfaEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email MFA is not enabled for your account. Enable it in security settings.',
+      });
+    }
+
+    // Generate OTP and hash for secure storage
+    const otp = generateOtp();
+    const otpHash = hashOTP(otp);
+    await redis.setex(`${MFA_OTP_PREFIX}email:${userId}`, MFA_OTP_EXPIRY, otpHash);
+
+    // Send OTP via email (pass plain OTP to email, Inngest handler expects these fields)
+    await inngest.send({
+      name: 'email/mfa-otp',
+      data: {
+        email: user.email,
+        firstName: user.firstName || 'User',
+        otp,
+        expiryMinutes: 5,
+      },
+    });
+
+    logger.info('Email OTP sent for MFA', { userId });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification code sent to your email',
+    });
+  } catch (error) {
+    logger.error('Send email OTP error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send verification code',
+    });
+  }
+};
+
+// Send Notification OTP for MFA verification
+// POST /api/v1/auth/mfa/send-notification-otp
+export const sendNotificationOtp = async (req: Request, res: Response) => {
+  try {
+    // Get user from MFA session JWT cookie
+    const mfaToken = req.cookies?.mfa_session;
+    if (!mfaToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'No MFA session found. Please login again.',
+      });
+    }
+
+    // Verify the JWT token
+    let payload: MFAPendingPayload;
+    try {
+      const jwt = await import('jsonwebtoken');
+      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
+        issuer: 'fairarena',
+      }) as MFAPendingPayload;
+
+      if (payload.type !== 'mfa_pending') {
+        throw new Error('Invalid token type');
+      }
+    } catch {
+      res.clearCookie('mfa_session', { path: '/' });
+      return res.status(401).json({
+        success: false,
+        message: 'MFA session expired. Please login again.',
+      });
+    }
+
+    const userId = payload.userId;
+
+    // Check if user has notification MFA enabled
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: { notificationMfaEnabled: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (!user.notificationMfaEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Notification MFA is not enabled for your account. Enable it in security settings.',
+      });
+    }
+
+    // Generate OTP and hash for secure storage
+    const otp = generateOtp();
+    const otpHash = hashOTP(otp);
+    await redis.setex(`${MFA_OTP_PREFIX}notification:${userId}`, MFA_OTP_EXPIRY, otpHash);
+
+    // Send OTP via in-app notification
+    await inngest.send({
+      name: 'notification/send',
+      data: {
+        userId,
+        title: '🔐 MFA Verification Code',
+        message: `Your verification code is: ${otp}`,
+        description: 'This code will expire in 5 minutes. Do not share it with anyone.',
+        metadata: {
+          type: 'security',
+          priority: 'high',
+          action: 'mfa_otp',
+          code: otp, // Include code in metadata for easy access
+        },
+      },
+    });
+
+    logger.info('Notification OTP sent for MFA', { userId });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification code sent to your notifications',
+    });
+  } catch (error) {
+    logger.error('Send notification OTP error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send verification code',
+    });
+  }
+};
+
+// Verify OTP for email/notification MFA
+// POST /api/v1/auth/mfa/verify-otp
+export const verifyMfaOtp = async (req: Request, res: Response) => {
+  try {
+    const { code, method } = req.body;
+
+    if (!code || !method || !['email', 'notification'].includes(method)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request. Code and method are required.',
+      });
+    }
+
+    // Get user from MFA session JWT cookie
+    const mfaToken = req.cookies?.mfa_session;
+    if (!mfaToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'No MFA session found. Please login again.',
+      });
+    }
+
+    // Verify the JWT token
+    let payload: MFAPendingPayload;
+    try {
+      const jwt = await import('jsonwebtoken');
+      payload = jwt.default.verify(mfaToken, ENV.JWT_SECRET, {
+        issuer: 'fairarena',
+      }) as MFAPendingPayload;
+
+      if (payload.type !== 'mfa_pending') {
+        throw new Error('Invalid token type');
+      }
+    } catch {
+      res.clearCookie('mfa_session', { path: '/' });
+      return res.status(401).json({
+        success: false,
+        message: 'MFA session expired. Please login again.',
+      });
+    }
+
+    const userId = payload.userId;
+
+    // Get stored OTP hash
+    const storedOtpHash = await redis.get(`${MFA_OTP_PREFIX}${method}:${userId}`);
+    if (!storedOtpHash) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code expired. Please request a new one.',
+      });
+    }
+
+    // Verify OTP using secure hash comparison
+    if (!verifyOTPHash(code, storedOtpHash as string)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code.',
+      });
+    }
+
+    // OTP is valid - delete it (one-time use) and clear MFA session
+    await redis.del(`${MFA_OTP_PREFIX}${method}:${userId}`);
+
+    // Get user data for session creation
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        profileImageUrl: true,
+        emailVerified: true,
+        mfaEnabled: true,
+        isBanned: true,
+        banReason: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Create session and tokens
+    const refreshToken = generateRefreshToken();
+    const sessionId = await createSession(
+      user.userId,
+      refreshToken,
+      parseUserAgent(req.headers['user-agent']),
+      { isBanned: user.isBanned, banReason: user.banReason }
+    );
+    const accessToken = generateAccessToken(user.userId, sessionId);
+
+    // Update last login
+    await prisma.user.update({
+      where: { userId },
+      data: {
+        lastLoginAt: new Date(),
+        lastLoginIp: req.ip,
+      },
+    });
+
+    // Clear MFA session cookie
+    res.clearCookie('mfa_session', { path: '/' });
+
+    // Set auth cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    res.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    logger.info('MFA OTP verified successfully', { userId, method });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification successful',
+      data: {
+        user: {
+          userId: user.userId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+          emailVerified: user.emailVerified,
+          mfaEnabled: user.mfaEnabled,
+        },
+        accessToken,
+      },
+    });
+  } catch (error) {
+    logger.error('Verify MFA OTP error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify code',
     });
   }
 };

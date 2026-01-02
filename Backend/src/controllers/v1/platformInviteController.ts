@@ -6,7 +6,13 @@ import logger from '../../utils/logger.js';
 import { getCachedUserInfo, getUserDisplayName } from '../../utils/userCache.js';
 
 const newsletterSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .regex(
+      /^[^+=.#]+@/,
+      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+    ),
 });
 
 export async function inviteToPlatform(req: Request, res: Response) {
@@ -15,7 +21,7 @@ export async function inviteToPlatform(req: Request, res: Response) {
 
     // Get current user info
     const auth = req.user;
-    if (!auth?.isAuthenticated) {
+    if (!auth?.userId) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized - you must be logged in',

@@ -1,0 +1,79 @@
+
+export const backupCodeUsedTemplate = (params: {
+    firstName: string;
+    ipAddress: string;
+    deviceName: string;
+    remainingCodes: number;
+    securityUrl: string;
+}): string => {
+    const currentYear = new Date().getFullYear();
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup Code Used</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f7; }
+    .container { max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin: 40px auto; overflow: hidden; }
+    .header { padding: 32px 40px; background-color: #D69E2E; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; }
+    .content { padding: 40px; color: #333333; line-height: 1.6; }
+    .alert-box { background-color: #FFFFF0; border: 1px solid #FAF089; border-radius: 6px; padding: 20px; margin: 24px 0; }
+    .detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .detail-label { color: #718096; font-weight: 500; }
+    .detail-value { color: #2D3748; font-weight: 600; text-align: right; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #2D3748; color: #ffffff; font-weight: 600; text-decoration: none; border-radius: 6px; margin: 24px 0; font-size: 14px; }
+    .footer { padding: 24px; background-color: #f9fafb; text-align: center; color: #6b7280; font-size: 13px; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
+      <h1>Backup Code Used</h1>
+    </div>
+    <div class="content">
+      <p>Hi <strong>${params.firstName}</strong>,</p>
+      <p>A backup code was just used to access your FairArena account.</p>
+
+      <div class="alert-box">
+        <div class="detail-row">
+          <span class="detail-label">Remaining Codes</span>
+          <span class="detail-value">${params.remainingCodes}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Device</span>
+          <span class="detail-value">${params.deviceName}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">IP Address</span>
+          <span class="detail-value">${params.ipAddress}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Time</span>
+          <span class="detail-value">${new Date().toLocaleString()}</span>
+        </div>
+      </div>
+
+      <p><strong>Was this you?</strong> If so, you may want to generate new backup codes if you're running low.</p>
+
+      <p><strong>If this wasn't you, your account is compromised.</strong> Please click the button below to secure your account immediately, invalidate all sessions, and regenerate your backup codes.</p>
+
+      <div style="text-align: center;">
+        <a href="${params.securityUrl}" class="button">Secure Account</a>
+      </div>
+
+      <p style="margin-top: 24px;">Best regards,<br><strong>The FairArena Team</strong></p>
+    </div>
+    <div class="footer">
+      <p>&copy; ${currentYear} FairArena. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+};

@@ -1,14 +1,21 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
+import { ENV } from '../../config/env.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 // Validation schemas
-const joinWaitlistSchema = z.object({
-    email: z.string().email('Invalid email address'),
+const joinWaitlistSchema: z.ZodType<any> = z.object({
+    email: z.string()
+        .email('Invalid email address')
+        .regex(
+            /^[^+=.#]+@/,
+            'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+        ),
     name: z.string().max(100).optional(),
     source: z.string().max(50).optional(),
+    marketingConsent: z.boolean().optional().default(false),
 });
 
 /**
@@ -34,7 +41,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
             });
         }
 
-        const { email, name, source } = validation.data;
+        const { email, name, source, marketingConsent } = validation.data;
         const normalizedEmail = email.toLowerCase().trim();
 
         // Check if email already exists in waitlist
@@ -69,12 +76,58 @@ export const joinWaitlist = async (req: Request, res: Response) => {
             });
         }
 
+        // Check for disposable email
+        try {
+            const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(normalizedEmail)}`;
+            const response = await fetch(disposableCheckUrl, {
+                method: 'GET',
+                signal: AbortSignal.timeout(5000), // 5 second timeout
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.tempmail) {
+                    logger.warn('Disposable email detected, rejecting waitlist join', { email: normalizedEmail });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Disposable email addresses are not allowed',
+                    });
+                }
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                if (
+                    errorData.error &&
+                    (errorData.error.includes('Invalid email format') ||
+                        errorData.error.includes('Email domain has no mail server'))
+                ) {
+                    logger.warn('Invalid email format or domain detected', { email: normalizedEmail, error: errorData.error });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Invalid email address or domain',
+                    });
+                }
+            }
+        } catch (error) {
+            // Fail open: If validation service is down, allow the user to join
+            logger.warn('Disposable email check failed, allowing waitlist join', {
+                email: normalizedEmail,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+
+        // Capture Request Metadata
+        const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress;
+        const userAgent = req.headers['user-agent'];
+
         // Create waitlist entry
         const waitlistEntry = await prisma.waitlist.create({
             data: {
                 email: normalizedEmail,
                 name,
                 source: source || 'website',
+                marketingConsent,
+                ipAddress,
+                userAgent,
             },
         });
 
