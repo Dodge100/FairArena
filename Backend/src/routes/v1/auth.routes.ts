@@ -461,7 +461,7 @@ router.delete('/sessions/:sessionId', protectRoute, requireSettingsVerification,
  *       200:
  *         description: List of recent activity logs
  */
-router.get('/recent-activity', protectRoute,requireSettingsVerification, getRecentActivity);
+router.get('/recent-activity', protectRoute, requireSettingsVerification, getRecentActivity);
 
 /**
  * @swagger
@@ -555,11 +555,21 @@ router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
 
 // OAuth Routes
 import {
+    getDiscordAuthUrl,
     getGithubAuthUrl,
+    getGitLabAuthUrl,
     getGoogleAuthUrl,
+    getHuggingFaceAuthUrl,
+    getMicrosoftAuthUrl,
+    getSlackAuthUrl,
+    handleDiscordCallback,
     handleGithubCallback,
+    handleGitLabCallback,
     handleGoogleCallback,
     handleGoogleToken,
+    handleHuggingFaceCallback,
+    handleMicrosoftCallback,
+    handleSlackCallback,
 } from '../../controllers/v1/oauthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
@@ -614,6 +624,136 @@ router.get('/google', getGoogleAuthUrl);
  *         description: Redirect to frontend
  */
 router.get('/google/callback', handleGoogleCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/microsoft:
+ *   get:
+ *     summary: Get Microsoft OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Microsoft OAuth URL
+ */
+router.get('/microsoft', getMicrosoftAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/microsoft/callback:
+ *   get:
+ *     summary: Microsoft OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/microsoft/callback', handleMicrosoftCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/discord:
+ *   get:
+ *     summary: Get Discord OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Discord OAuth URL
+ */
+router.get('/discord', getDiscordAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/discord/callback:
+ *   get:
+ *     summary: Discord OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/discord/callback', handleDiscordCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/huggingface:
+ *   get:
+ *     summary: Get Hugging Face OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Hugging Face OAuth URL
+ */
+router.get('/huggingface', getHuggingFaceAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/huggingface/callback:
+ *   get:
+ *     summary: Hugging Face OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/huggingface/callback', handleHuggingFaceCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/gitlab:
+ *   get:
+ *     summary: Get GitLab OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: GitLab OAuth URL
+ */
+router.get('/gitlab', getGitLabAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/gitlab/callback:
+ *   get:
+ *     summary: GitLab OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/gitlab/callback', handleGitLabCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/slack:
+ *   get:
+ *     summary: Get Slack OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Slack OAuth URL
+ */
+router.get('/slack', getSlackAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/slack/callback:
+ *   get:
+ *     summary: Slack OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/slack/callback', handleSlackCallback);
 
 /**
  * @swagger
