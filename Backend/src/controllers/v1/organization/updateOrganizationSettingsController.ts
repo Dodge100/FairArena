@@ -53,7 +53,7 @@ interface UpdateOrganizationSettingsRequest {
 export const UpdateOrganizationSettings = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { slug } = req.params;
     const { name, isPublic, joinEnabled }: UpdateOrganizationSettingsRequest = req.body;
 

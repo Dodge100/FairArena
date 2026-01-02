@@ -1,5 +1,7 @@
 import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCallback, useEffect, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,6 +48,7 @@ export default function Signin() {
     emailMfaEnabled: boolean;
     notificationMfaEnabled: boolean;
   }>({ emailMfaEnabled: false, notificationMfaEnabled: false });
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   const passkeySupported = usePasskeySupport();
@@ -177,110 +180,117 @@ export default function Signin() {
     }
   }, [authLoading, isAuthenticated, navigate, getRedirectPath]);
 
-  // Handle credential submission
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+  // Trigger Captcha on submit
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowCaptcha(true);
+  };
+
+  // Perform action after Captcha
+  const handleCaptchaVerify = async (token: string | null) => {
+    if (!token) return;
+
+    setShowCaptcha(false);
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      if (authStep === 'credentials') {
+        // Login logic
+        const result = await login(email, password, token);
 
-      if (result.mfaRequired) {
-        // MFA is required - transition to MFA step
-        setAuthStep('mfa');
-        setMfaSession({
-          active: true,
-          expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
-          attemptsRemaining: 5,
-        });
-        toast.info('Two-factor authentication required', {
-          description: 'Please enter the 6-digit code from your authenticator app',
-        });
+        if (result.mfaRequired) {
+          setAuthStep('mfa');
+          if (result.mfaPreferences) {
+            setMfaPreferences({
+              emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
+              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled
+            });
+          }
+          setMfaSession({
+            active: true,
+            expiresAt: Date.now() + 5 * 60 * 1000,
+            attemptsRemaining: 5,
+          });
+          toast.info('Two-factor authentication required', {
+            description: 'Please enter the 6-digit code from your authenticator app',
+          });
+        } else {
+          toast.success('Welcome back!');
+          const redirectPath = getRedirectPath();
+          navigate(redirectPath, { replace: true });
+        }
       } else {
-        // Login successful without MFA
+        // MFA logic
+        const isBackupCode = mfaMethod === 'backup';
+        const isOtpMethod = mfaMethod === 'email' || mfaMethod === 'notification';
+
+        let endpoint = `${apiUrl}/api/v1/auth/verify-mfa`;
+        let body: Record<string, unknown> = {
+          code: mfaCode.replace(/\s/g, ''),
+          isBackupCode,
+        };
+
+        if (isOtpMethod) {
+          endpoint = `${apiUrl}/api/v1/auth/mfa/verify-otp`;
+          body = {
+            code: mfaCode.replace(/\s/g, ''),
+            method: mfaMethod,
+          };
+        }
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Recaptcha-Token': token
+          },
+          credentials: 'include',
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Verification failed');
+        }
+
         toast.success('Welcome back!');
         const redirectPath = getRedirectPath();
-        navigate(redirectPath, { replace: true });
+        window.location.href = redirectPath;
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      const message = err instanceof Error ? err.message : 'Operation failed';
       setError(message);
+
+      if (authStep === 'mfa') {
+        if (message.toLowerCase().includes('expired') || message.toLowerCase().includes('session')) {
+          handleResetToCredentials();
+          return;
+        }
+
+        setMfaSession(prev => ({
+          ...prev,
+          attemptsRemaining: Math.max(0, prev.attemptsRemaining - 1),
+        }));
+
+        if (mfaSession.attemptsRemaining <= 3) {
+          setShowMfaHelp(true);
+        }
+        setMfaCode('');
+      }
+
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle MFA verification
-  const handleMfaSubmit = async (e: React.FormEvent) => {
+  // Trigger Captcha on MFA submit
+  const handleMfaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
-
-    try {
-      const isBackupCode = mfaMethod === 'backup';
-      const isOtpMethod = mfaMethod === 'email' || mfaMethod === 'notification';
-
-      let endpoint = `${apiUrl}/api/v1/auth/verify-mfa`;
-      let body: Record<string, unknown> = {
-        code: mfaCode.replace(/\s/g, ''),
-        isBackupCode,
-      };
-
-      if (isOtpMethod) {
-        endpoint = `${apiUrl}/api/v1/auth/mfa/verify-otp`;
-        body = {
-          code: mfaCode.replace(/\s/g, ''),
-          method: mfaMethod,
-        };
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Verification failed');
-      }
-
-      // Successful MFA verification
-      toast.success('Welcome back!');
-
-      // Full page reload to properly set auth state from cookies
-      const redirectPath = getRedirectPath();
-      window.location.href = redirectPath;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Verification failed';
-      setError(message);
-
-      // Check for session expiry
-      if (message.toLowerCase().includes('expired') || message.toLowerCase().includes('session')) {
-        handleResetToCredentials();
-        return;
-      }
-
-      // Update attempts remaining
-      setMfaSession(prev => ({
-        ...prev,
-        attemptsRemaining: Math.max(0, prev.attemptsRemaining - 1),
-      }));
-
-      // Show help after failed attempts
-      if (mfaSession.attemptsRemaining <= 3) {
-        setShowMfaHelp(true);
-      }
-
-      toast.error(message);
-      setMfaCode('');
-    } finally {
-      setIsLoading(false);
-    }
+    setShowCaptcha(true);
   };
 
   // Send OTP for alternative MFA methods
@@ -887,6 +897,22 @@ export default function Signin() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Captcha Modal */}
+      <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle>Security Verification</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+              theme={isDark ? 'dark' : 'light'}
+              onChange={handleCaptchaVerify}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

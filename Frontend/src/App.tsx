@@ -26,7 +26,6 @@ import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profile from './pages/Profile';
 import ProfileStars from './pages/ProfileStars';
 import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
@@ -131,7 +130,6 @@ function App() {
           <Route path="/dashboard/credits/verify" element={<CreditsVerificationPage />} />
           <Route path="/dashboard/inbox" element={<Inbox />} />
           <Route path="/dashboard/teams" element={<TeamsPage />} />
-          <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/profile/edit" element={<EditProfile />} />
           <Route path="/dashboard/profile/views" element={<ProfileViews />} />
           <Route path="/dashboard/public-profile" element={<MyProfile />} />

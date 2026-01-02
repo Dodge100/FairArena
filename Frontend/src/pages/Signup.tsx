@@ -3,6 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
+import ReCAPTCHA from 'react-google-recaptcha';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Signup() {
   const { theme } = useTheme();
@@ -21,6 +28,7 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   // Redirect if already authenticated or if signup is disabled
   useEffect(() => {
@@ -69,6 +77,12 @@ export default function Signup() {
       return;
     }
 
+    setShowCaptcha(true);
+  };
+
+  const handleCaptchaVerify = async (token: string | null) => {
+    if (!token) return;
+    setShowCaptcha(false);
     setIsLoading(true);
 
     try {
@@ -77,7 +91,7 @@ export default function Signup() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
-      });
+      }, token);
       setSuccess(true);
       toast.success('Registration successful! Please check your email to verify your account.');
     } catch (err) {
@@ -339,6 +353,22 @@ export default function Signup() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Captcha Modal */}
+      <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle>Security Verification</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+              theme={isDark ? 'dark' : 'light'}
+              onChange={handleCaptchaVerify}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

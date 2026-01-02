@@ -49,7 +49,7 @@ const CACHE_TTL = 300; // 5 minutes
 export const GetOrganizationAuditLogs = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { slug } = req.params;
     const { page = 1, limit = 20 } = req.query;
 

@@ -1,955 +1,1069 @@
-import { ItemListModal } from '@/components/ItemListModal';
+import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
-import { SidebarCustomizationModal } from '@/components/SidebarCustomizationModal';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { PasskeyManager } from '@/components/PasskeyManager';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
 import { apiFetch } from '@/lib/apiClient';
 import {
-  Activity,
-  Bell,
-  ChevronDown,
-  ChevronUp,
-  Cookie,
+  AlertTriangle,
+  Check,
+  Chrome,
+  Clock,
+  Copy,
   Download,
-  Layout,
+  Globe,
+  Laptop,
   Loader2,
-  Search,
-  Settings,
+  Lock,
+  LogOut,
+  Monitor,
+  RefreshCw,
   Shield,
-  Smartphone
+  Smartphone,
+  Tablet,
+  User,
+  X
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { CookieConsentModal } from '../components/CookieConsentModal';
-import { useCookieConsent } from '../contexts/CookieConsentContext';
-import { useDataSaver } from '../contexts/DataSaverContext';
-import { useSidebarCustomization } from '../contexts/SidebarCustomizationContext';
+import AccountSettingsComponent from '../components/AccountSettings';
 
-interface Report {
+interface Session {
   id: string;
-  title?: string;
-  description: string;
-  status: string;
+  deviceName: string;
+  deviceType: string;
+  ipAddress: string;
+  lastActiveAt: string;
   createdAt: string;
-  updatedAt?: string;
+  isCurrent: boolean;
 }
 
-interface SupportTicket {
+interface ActivityLog {
   id: string;
-  title: string;
-  description: string;
-  fullMessage?: string;
-  status: string;
-  type?: string;
-  severity?: string;
+  action: string;
+  level: string;
+  metadata?: {
+    deviceName?: string;
+    deviceType?: string;
+    ipAddress?: string;
+    timestamp?: string;
+  };
   createdAt: string;
-  updatedAt: string;
 }
 
-interface UserSettings {
-  wantToGetFeedbackMail?: boolean;
-  wantFeedbackNotifications?: boolean;
+interface MFAStatus {
+  enabled: boolean;
+  enabledAt?: string;
+  backupCodesRemaining: number;
 }
 
-export default function AccountSettings() {
-  const navigate = useNavigate();
-  const { dataSaverSettings, updateDataSaverSetting } = useDataSaver();
-  const { consentSettings, acceptAll, rejectAll, updateConsent } = useCookieConsent();
-  const { customization, resetToDefault } = useSidebarCustomization();
-  const [showCookieModal, setShowCookieModal] = useState(false);
+// function to format time ago
+const formatTimeAgo = (date: Date) => {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 30) return 'just now';
+  if (diffInSeconds < 60) return 'less than a minute ago';
+
+  const minutes = Math.floor(diffInSeconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} year${years > 1 ? 's' : ''} ago`;
+};
+
+function AccountSettings() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState<'overview' | 'security' | 'settings'>('overview');
+
+  // Data State
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [revokingSession, setRevokingSession] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
-  const [isExportingData, setIsExportingData] = useState(false);
-  const [exportMessage, setExportMessage] = useState('');
-  const [confirmationText, setConfirmationText] = useState('');
-  const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [disableHomePage, setDisableHomePage] = useState(() => localStorage.getItem('disableHomePage') === 'true');
 
-  const toggleDisableHomePage = (checked: boolean) => {
-    setDisableHomePage(checked);
-    localStorage.setItem('disableHomePage', String(checked));
-    toast.success(`Home page ${checked ? 'disabled' : 'enabled'}`);
-  };
+  // Security State
+  const [mfaStatus, setMfaStatus] = useState<MFAStatus | null>(null);
+  const [loadingMfa, setLoadingMfa] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [showDisableMfa, setShowDisableMfa] = useState(false);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableCode, setDisableCode] = useState('');
 
-  const fetchSettings = useCallback(async () => {
-    setIsLoadingSettings(true);
+  // Backup Code Regeneration State
+  const [showRegenerateMfa, setShowRegenerateMfa] = useState(false);
+  const [regenerateCode, setRegenerateCode] = useState('');
+  const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
+  const [copiedCodes, setCopiedCodes] = useState(false);
+  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+
+  // MFA Preferences State
+  const [mfaPreferences, setMfaPreferences] = useState<{
+    emailMfaEnabled: boolean;
+    notificationMfaEnabled: boolean;
+  } | null>(null);
+  const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
+  const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+  // Fetch sessions
+  const fetchSessions = async () => {
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`);
-      const data = await res.json();
-      if (data.success) {
-        setSettings(data.data);
-      } else {
-        toast.error('Failed to load settings');
+      const response = await apiFetch(`${API_BASE}/api/v1/auth/sessions`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
-      toast.error('Failed to load settings');
+      console.error('Failed to fetch sessions:', error);
     } finally {
-      setIsLoadingSettings(false);
+      setLoadingSessions(false);
     }
-  }, []);
+  };
 
-  const updateSettingsValue = async (key: keyof UserSettings, value: boolean) => {
-    if (!settings) return;
-
-    const originalSettings = settings;
-    const updatedSettings = { ...settings, [key]: value };
-    setSettings(updatedSettings);
-
-    setIsSavingSettings(true);
+  // Fetch activity logs
+  const fetchActivityLogs = async () => {
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+      const response = await apiFetch(`${API_BASE}/api/v1/auth/recent-activity`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setActivityLogs(data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  // Fetch MFA Status
+  const fetchMfaStatus = async () => {
+    setLoadingMfa(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/status`);
+      const data = await res.json();
+      if (data.success) {
+        setMfaStatus(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch MFA status', error);
+    } finally {
+      setLoadingMfa(false);
+    }
+  };
+
+  // Fetch MFA Preferences
+  const fetchMfaPreferences = async () => {
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`);
+      const data = await res.json();
+      if (data.success) {
+        setMfaPreferences(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch MFA preferences', error);
+    }
+  };
+
+  // Update MFA Preferences
+  const updateMfaPreference = async (type: 'email' | 'notification', enabled: boolean) => {
+    setUpdatingMfaPrefs(true);
+    try {
+      const body = type === 'email'
+        ? { emailMfaEnabled: enabled, acknowledgeSecurityRisk: enabled }
+        : { notificationMfaEnabled: enabled, acknowledgeSecurityRisk: enabled };
+
+      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ [key]: value }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.success) {
-        // Refetch settings to get the latest data
-        toast.success('Settings updated successfully');
+        setMfaPreferences(data.data);
+        toast.success(`${type === 'email' ? 'Email' : 'Notification'} MFA ${enabled ? 'enabled' : 'disabled'}`);
       } else {
-        toast.error(data.message || 'Failed to update settings');
-        setSettings(originalSettings);
+        toast.error(data.message || 'Failed to update preferences');
       }
     } catch (error) {
-      console.error('Error updating settings:', error);
-      toast.error('Failed to update settings');
-      // Revert on failure
-      setSettings(originalSettings);
+      toast.error('Failed to update MFA preferences');
     } finally {
-      setIsSavingSettings(false);
+      setUpdatingMfaPrefs(false);
+      setShowSecurityWarning(null);
     }
   };
 
-  const resetSettings = async () => {
-    setIsSavingSettings(true);
+  useEffect(() => {
+    if (user && isVerified) {
+      fetchSessions();
+      fetchActivityLogs();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'security' && isVerified) {
+      fetchMfaStatus();
+      fetchMfaPreferences();
+    }
+  }, [activeTab]);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, {
-        method: 'POST',
+      await logout();
+      toast.success('Logged out successfully');
+    } catch (error) {
+      toast.error('Failed to logout');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    setRevokingSession(sessionId);
+    try {
+      const response = await apiFetch(`${API_BASE}/api/v1/auth/sessions/${sessionId}`, {
+        method: 'DELETE',
       });
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Settings reset to default successfully');
-        // Refetch settings to get the latest data
-        await fetchSettings();
+
+      if (response.ok) {
+        toast.success('Session revoked successfully');
+        setSessions(sessions.filter(s => s.id !== sessionId));
       } else {
-        toast.error(data.message || 'Failed to reset settings');
+        throw new Error('Failed to revoke session');
       }
     } catch (error) {
-      console.error('Error resetting settings:', error);
-      toast.error('Failed to reset settings');
+      toast.error('Failed to revoke session');
     } finally {
-      setIsSavingSettings(false);
+      setRevokingSession(null);
     }
   };
 
-  const fetchReports = useCallback(async (): Promise<Report[]> => {
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`);
-      const data = await res.json();
-      if (data.success) {
-        return data.reports || [];
-      } else {
-        console.error('Failed to fetch reports:', data.message);
-        return [];
-      }
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-      return [];
-    }
-  }, []);
-
-  const fetchSupportTickets = useCallback(async (): Promise<SupportTicket[]> => {
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`);
-      const data = await res.json();
-      if (data.success) {
-        return data.supportTickets || [];
-      } else {
-        console.error('Failed to fetch support tickets:', data.message);
-        return [];
-      }
-    } catch (error) {
-      console.error('Error fetching support tickets:', error);
-      return [];
-    }
-  }, []);
-
-  const exportUserData = useCallback(async () => {
-    // Validate confirmation text
-    if (confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA') {
-      setExportMessage('Please type "CONFIRM EXPORT MY DATA" to proceed.');
+  const handleRevokeAllOtherSessions = async () => {
+    const otherSessions = sessions.filter(s => !s.isCurrent);
+    if (otherSessions.length === 0) {
+      toast.info('No other sessions to revoke');
       return;
     }
 
-    setIsExportingData(true);
-    setExportMessage('');
+    setIsLoading(true);
     try {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`,
-        {
-          method: 'POST',
-        },
-      );
-      const data = await res.json();
-      if (data.success) {
-        setExportMessage(
-          'Data export initiated! Check your email for the download link. You will recieve an email Soon...',
-        );
-        setConfirmationText(''); // Reset confirmation text
-      } else {
-        setExportMessage(data.message || 'Failed to initiate data export');
+      for (const session of otherSessions) {
+        await apiFetch(`${API_BASE}/api/v1/auth/sessions/${session.id}`, {
+          method: 'DELETE',
+        });
       }
+      toast.success(`Revoked ${otherSessions.length} session(s)`);
+      setSessions(sessions.filter(s => s.isCurrent));
     } catch (error) {
-      console.error('Error exporting data:', error);
-      setExportMessage('Failed to initiate data export. Please try again.');
+      toast.error('Failed to revoke some sessions');
+      fetchSessions();
     } finally {
-      setIsExportingData(false);
+      setIsLoading(false);
     }
-  }, [confirmationText]);
-
-  // Fetch settings when verified
-  useEffect(() => {
-    if (isVerified) {
-      fetchSettings();
-    }
-  }, [isVerified, fetchSettings]);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [openSections, setOpenSections] = useState<string[]>(['activity', 'preferences', 'data', 'privacy']);
-
-  const toggleSection = (sectionId: string) => {
-    setOpenSections((prev) =>
-      prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId],
-    );
   };
 
-  useEffect(() => {
-    if (searchQuery) {
-      setOpenSections(['activity', 'communication', 'preferences', 'data', 'privacy']);
+  const handleDisableMfa = async () => {
+    if (!disablePassword || !disableCode) {
+      toast.error('Please enter your password and a verification code');
+      return;
     }
-  }, [searchQuery]);
 
-  const sections = [
-    {
-      id: 'activity',
-      title: 'Activity & Support',
-      icon: Activity,
-      description: 'View your logs, reports, and support tickets',
-      keywords: ['logs', 'history', 'report', 'ticket', 'support', 'help', 'status'],
-      content: (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Logs</CardTitle>
-              <CardDescription>View your account activity logs.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/dashboard/account-settings/logs')}>
-                View Account Logs
-              </Button>
-            </CardContent>
-          </Card>
+    setIsLoading(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/disable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: disablePassword,
+          code: disableCode
+        })
+      });
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Reports</CardTitle>
-              <CardDescription>View the status of reports you've submitted.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ItemListModal
-                title="Your Reports"
-                description="View the status of reports you've submitted."
-                fetchItems={fetchReports}
-                triggerText="View Reports"
-                statusVariants={{
-                  resolved: 'default',
-                  dismissed: 'secondary',
-                  escalated: 'destructive',
-                  in_review: 'outline',
-                }}
-                statusLabels={{
-                  queued: 'Queued',
-                  in_review: 'In Review',
-                  resolved: 'Resolved',
-                  dismissed: 'Dismissed',
-                  escalated: 'Escalated',
-                }}
+      const data = await res.json();
+      if (data.success) {
+        toast.success('MFA disabled successfully');
+        setShowDisableMfa(false);
+        setDisablePassword('');
+        setDisableCode('');
+        fetchMfaStatus();
+      } else {
+        toast.error(data.message || 'Failed to disable MFA');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegenerateBackupCodes = async () => {
+    if (!regenerateCode) {
+      toast.error('Please enter a verification code');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await apiFetch(`${API_BASE}/api/v1/mfa/regenerate-backup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: regenerateCode
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Backup codes regenerated successfully');
+        setNewBackupCodes(data.data.backupCodes);
+        setRegenerateCode('');
+        // Don't close modal yet, need to show codes
+        fetchMfaStatus();
+      } else {
+        toast.error(data.message || 'Failed to regenerate backup codes');
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyBackupCodes = () => {
+    navigator.clipboard.writeText(newBackupCodes.join('\n'));
+    setCopiedCodes(true);
+    setTimeout(() => setCopiedCodes(false), 2000);
+    toast.success('Backup codes copied to clipboard');
+  };
+
+  const downloadBackupCodes = () => {
+    const element = document.createElement('a');
+    const file = new Blob([newBackupCodes.join('\n')], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'fairarena-backup-codes.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const closeRegenerateModal = () => {
+    setShowRegenerateMfa(false);
+    setNewBackupCodes([]);
+    setRegenerateCode('');
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user?.email) {
+      toast.error('Unable to send password reset email');
+      return;
+    }
+
+    setSendingPasswordReset(true);
+    try {
+      const response = await apiFetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Password reset email sent! Check your inbox.');
+      } else {
+        toast.error(data.message || 'Failed to send password reset email');
+      }
+    } catch (error) {
+      toast.error('An error occurred while sending the password reset email');
+    } finally {
+      setSendingPasswordReset(false);
+    }
+  };
+
+  const getDeviceIcon = (deviceType: string) => {
+    const iconClass = "w-5 h-5";
+    switch (deviceType?.toLowerCase()) {
+      case 'mobile':
+      case 'phone': return <Smartphone className={iconClass} />;
+      case 'tablet': return <Tablet className={iconClass} />;
+      case 'desktop': return <Monitor className={iconClass} />;
+      case 'browser': return <Chrome className={iconClass} />;
+      default: return <Laptop className={iconClass} />;
+    }
+  };
+
+  const getActionLabel = (action: string) => {
+    const labels: Record<string, string> = {
+      'login': 'Signed in',
+      'logout': 'Signed out',
+      'register': 'Account created',
+      'password-changed': 'Password changed',
+      'email-verified': 'Email verified',
+      'profile-updated': 'Profile updated',
+      'session-revoked': 'Session ended',
+      'mfa-enabled': 'Two-factor auth enabled',
+      'mfa-disabled': 'Two-factor auth disabled',
+      'backup-codes-regenerated': 'Backup codes regenerated',
+    };
+    return labels[action] || action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  };
+
+  const getActionIcon = (action: string) => {
+    const iconClass = "w-4 h-4";
+    switch (action) {
+      case 'login': return <LogOut className={iconClass} style={{ transform: 'rotate(180deg)' }} />;
+      case 'logout': return <LogOut className={iconClass} />;
+      case 'register': return <User className={iconClass} />;
+      case 'password-changed': return <Lock className={iconClass} />;
+      case 'mfa-enabled':
+      case 'mfa-disabled': return <Shield className={iconClass} />;
+      case 'backup-codes-regenerated': return <RefreshCw className={iconClass} />;
+      default: return <Clock className={iconClass} />;
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Security Verification Check
+  if (!isVerified) {
+    return (
+      <OTPVerification
+        onVerified={() => setIsVerified(true)}
+        fullScreen={true}
+        title="Security Verification"
+        description="Please verify your identity to access account settings."
+      />
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Profile Header Card */}
+      <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+        <div className={`p-6 ${isDark ? 'bg-gradient-to-r from-[#DDEF00]/10 to-transparent' : 'bg-gradient-to-r from-primary/10 to-transparent'}`}>
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            {user.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover border-4 border-background shadow-md"
               />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Support Tickets</CardTitle>
-              <CardDescription>View the status of support requests you've submitted.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ItemListModal
-                title="Your Support Tickets"
-                description="View the status of support requests you've submitted."
-                fetchItems={fetchSupportTickets}
-                triggerText="View Support Tickets"
-                statusVariants={{
-                  resolved: 'default',
-                  closed: 'secondary',
-                  in_progress: 'outline',
-                }}
-                statusLabels={{
-                  queued: 'Queued',
-                  in_progress: 'In Progress',
-                  resolved: 'Resolved',
-                  closed: 'Closed',
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-    {
-      id: 'communication',
-      title: 'Communication',
-      icon: Bell,
-      description: 'Manage your messages and notification preferences',
-      keywords: ['email', 'feedback', 'notification', 'message', 'alert', 'communication'],
-      content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Messages Preferences</CardTitle>
-            <CardDescription>Control how you receive and interact with messages</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isLoadingSettings ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Loading settings...</span>
-              </div>
-            ) : settings ? (
-              <div className="space-y-8">
-                {/* Feedback Preferences */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex-1">
-                      <Label htmlFor="feedback-emails" className="text-sm font-medium">
-                        Weekly Feedback Emails
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Receive a weekly email asking for your feedback to help us improve
-                      </p>
-                    </div>
-                    <Switch
-                      id="feedback-emails"
-                      checked={settings.wantToGetFeedbackMail || false}
-                      onCheckedChange={(checked) =>
-                        updateSettingsValue('wantToGetFeedbackMail', checked)
-                      }
-                      disabled={isSavingSettings}
-                    />
-                  </div>
-
-                  {/* Feedback Notifications */}
-                  <div className="flex items-center justify-between space-x-4">
-                    <div className="flex-1">
-                      <Label htmlFor="feedback-notifications" className="text-sm font-medium">
-                        Weekly Feedback in-app Notifications
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Get in app notification when new feedback is available
-                      </p>
-                    </div>
-                    <Switch
-                      id="feedback-notifications"
-                      checked={settings.wantFeedbackNotifications || false}
-                      onCheckedChange={(checked) =>
-                        updateSettingsValue('wantFeedbackNotifications', checked)
-                      }
-                      disabled={isSavingSettings}
-                    />
-                  </div>
-
-                  {/* Reset Settings Button */}
-                  <div className="flex items-center justify-between space-x-4 pt-4 border-t">
-                    <div className="flex-1">
-                      <Label className="text-sm font-medium text-destructive">
-                        Reset All Settings
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Reset all your preferences back to the default values
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={resetSettings}
-                      disabled={isSavingSettings}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      {isSavingSettings ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Resetting...
-                        </>
-                      ) : (
-                        'Reset Settings'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Failed to load settings</p>
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ${isDark ? 'bg-[#DDEF00] text-black' : 'bg-primary text-primary-foreground'}`}>
+                {user.firstName?.[0] || user.email[0].toUpperCase()}
+              </div>
             )}
-          </CardContent>
-        </Card>
-      ),
-    },
-    {
-      id: 'preferences',
-      title: 'General Preferences',
-      icon: Layout,
-      description: 'Customize layout, homepage, and navigation',
-      keywords: ['home', 'page', 'sidebar', 'menu', 'layout', 'navigation', 'general', 'customize'],
-      content: (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>General Settings</span>
-              </CardTitle>
-              <CardDescription>
-                Manage your general application preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex-1">
-                    <Label htmlFor="disable-home-page" className="text-sm font-medium">
-                      Disable Home Page
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      If enabled, you will be redirected to the dashboard when visiting the home page
-                    </p>
-                  </div>
-                  <Switch
-                    id="disable-home-page"
-                    checked={disableHomePage}
-                    onCheckedChange={toggleDisableHomePage}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Sidebar Customization</span>
-              </CardTitle>
-              <CardDescription>
-                Customize your navigation sidebar by reordering and hiding menu items
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                {/* Quick Stats */}
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <h4 className="text-sm font-medium mb-2">Current Configuration</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Visible Main Items:</span>
-                      <span className="ml-2 font-medium">
-                        {customization.mainItems.filter(item => item.visible).length}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Visible Tools:</span>
-                      <span className="ml-2 font-medium">
-                        {customization.secondaryItems.filter(item => item.visible).length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Customize Button */}
-                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium">
-                      Customize Sidebar Layout
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Reorder menu items, hide unwanted sections, and personalize your navigation experience
-                    </p>
-                  </div>
-                  <SidebarCustomizationModal>
-                    <Button variant="outline" className="shrink-0">
-                      Customize Sidebar
-                    </Button>
-                  </SidebarCustomizationModal>
-                </div>
-
-                {/* Reset Option */}
-                <div className="text-center">
-                  <Button
-                    variant="link"
-                    onClick={() => {
-                      resetToDefault();
-                      toast.success('Sidebar customization reset to default');
-                    }}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    Reset to Default Layout
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-    {
-      id: 'data',
-      title: 'Data & Performance',
-      icon: Smartphone,
-      description: 'Manage data usage, battery settings, and exports',
-      keywords: ['data', 'saver', 'battery', 'performance', 'bandwidth', 'export', 'download', 'animations', 'dark mode'],
-      content: (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Download className="h-5 w-5" />
-                <span>Data Saver Mode</span>
-              </CardTitle>
-              <CardDescription>
-                Reduce data usage, battery consumption, and improve performance by enabling data saver features
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-6">
-                {/* Enable Data Saver */}
-                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <Label htmlFor="data-saver-enabled" className="text-sm font-medium">
-                      Enable Data Saver
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Activate data saving features to reduce bandwidth and battery usage
-                    </p>
-                  </div>
-                  <Switch
-                    id="data-saver-enabled"
-                    checked={dataSaverSettings.enabled}
-                    onCheckedChange={(checked) => updateDataSaverSetting('enabled', checked)}
-                  />
-                </div>
-
-                {dataSaverSettings.enabled && (
-                  <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-                    {/* Disable Notifications */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="disable-notifications" className="text-sm font-medium">
-                          Disable Notification Polling
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Stop automatic fetching of unread notification counts
-                        </p>
-                      </div>
-                      <Switch
-                        id="disable-notifications"
-                        checked={dataSaverSettings.disableNotifications}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableNotifications', checked)}
-                      />
-                    </div>
-
-                    {/* Disable Images */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="disable-images" className="text-sm font-medium">
-                          Disable Image Loading
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Prevent loading of profile pictures and other images to save bandwidth
-                        </p>
-                      </div>
-                      <Switch
-                        id="disable-images"
-                        checked={dataSaverSettings.disableImages}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableImages', checked)}
-                      />
-                    </div>
-
-                    {/* Reduce Animations */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="reduce-animations" className="text-sm font-medium">
-                          Reduce Animations
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Minimize motion and transitions for better performance
-                        </p>
-                      </div>
-                      <Switch
-                        id="reduce-animations"
-                        checked={dataSaverSettings.reduceAnimations}
-                        onCheckedChange={(checked) => updateDataSaverSetting('reduceAnimations', checked)}
-                      />
-                    </div>
-
-                    {/* Disable Auto Refresh */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="disable-auto-refresh" className="text-sm font-medium">
-                          Disable Auto Refresh
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Stop automatic refreshing of data and feeds
-                        </p>
-                      </div>
-                      <Switch
-                        id="disable-auto-refresh"
-                        checked={dataSaverSettings.disableAutoRefresh}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableAutoRefresh', checked)}
-                      />
-                    </div>
-
-                    {/* Force Dark Theme */}
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex-1">
-                        <Label htmlFor="force-dark-theme" className="text-sm font-medium">
-                          Force Dark Theme
-                        </Label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Switch to dark theme to save battery on OLED displays
-                        </p>
-                      </div>
-                      <Switch
-                        id="force-dark-theme"
-                        checked={dataSaverSettings.forceDarkTheme}
-                        onCheckedChange={(checked) => updateDataSaverSetting('forceDarkTheme', checked)}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Export</CardTitle>
-              <CardDescription>Download all your personal data from FairArena.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                <p>You can request a complete export of all your personal data, including:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Your profile information and settings</li>
-                  <li>Account activity logs and notifications</li>
-                  <li>Organization and team memberships</li>
-                  <li>Project participations and roles</li>
-                  <li>Social interactions (stars, follows)</li>
-                  <li>Reports and feedback submitted</li>
-                </ul>
-                <p className="mt-2">The export will be sent to your registered email address.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="confirmation" className="text-sm font-medium">
-                    Confirmation Required
-                  </Label>
-                  <Input
-                    id="confirmation"
-                    type="text"
-                    placeholder='Type "CONFIRM EXPORT MY DATA" to proceed'
-                    value={confirmationText}
-                    onChange={(e) => setConfirmationText(e.target.value)}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Please type the exact confirmation text above to proceed with the data export.
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                onClick={exportUserData}
-                disabled={
-                  isExportingData ||
-                  confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA'
-                }
-                className="w-full"
-              >
-                {isExportingData ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-2xl font-bold text-foreground">
+                {user.firstName} {user.lastName}
+              </h1>
+              <p className="text-muted-foreground">{user.email}</p>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
+                {user.emailVerified ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-500/20 text-green-600">
+                    <Check className="w-3 h-3" /> Email verified
+                  </span>
                 ) : (
-                  <Download className="h-4 w-4 mr-2" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600">
+                    <AlertTriangle className="w-3 h-3" /> Email not verified
+                  </span>
                 )}
-                {isExportingData
-                  ? 'Initiating Export...'
-                  : confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA'
-                    ? 'Type Confirmation Text'
-                    : 'Export My Data'}
-              </Button>
-
-              {exportMessage && (
-                <div
-                  className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
-                    ? 'text-green-600 bg-green-50 border border-green-200'
-                    : 'text-red-600 bg-red-50 border border-red-200'
-                    }`}
-                >
-                  {exportMessage}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-    {
-      id: 'privacy',
-      title: 'Privacy & Legal',
-      icon: Shield,
-      description: 'Manage cookie consents and privacy settings',
-      keywords: ['cookie', 'privacy', 'consent', 'legal', 'tracking', 'security'],
-      content: (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="h-5 w-5" />
-                <span>Legal Documents</span>
-              </CardTitle>
-              <CardDescription>
-                Review our terms, policies, and legal information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/privacy-policy')}>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="font-semibold">Privacy Policy</span>
-                    <span className="text-xs text-muted-foreground">How we handle your data</span>
-                  </div>
-                </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/terms-and-conditions')}>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="font-semibold">Terms of Service</span>
-                    <span className="text-xs text-muted-foreground">Rules and regulations</span>
-                  </div>
-                </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/cookie-policy')}>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="font-semibold">Cookie Policy</span>
-                    <span className="text-xs text-muted-foreground">Cookie usage and tracking</span>
-                  </div>
-                </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/refund')}>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="font-semibold">Refund Policy</span>
-                    <span className="text-xs text-muted-foreground">Returns and refunds</span>
-                  </div>
-                </Button>
+                {mfaStatus?.enabled && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-600">
+                    <Shield className="w-3 h-3" /> 2FA Enabled
+                  </span>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <button
+              onClick={handleLogout}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isDark
+                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                : 'bg-red-100 text-red-600 hover:bg-red-200'
+                } disabled:opacity-50`}
+            >
+              <LogOut className="w-4 h-4" />
+              {isLoading ? 'Signing out...' : 'Sign Out'}
+            </button>
+          </div>
+        </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Cookie className="h-5 w-5" />
-                <span>Cookie Preferences</span>
-              </CardTitle>
-              <CardDescription>
-                Manage your cookie consent preferences and privacy settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                {/* Current Consent Status */}
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <h4 className="text-sm font-medium mb-2">Current Consent Status</h4>
-                  {consentSettings ? (
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Necessary Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.necessary ? 'text-green-600' : 'text-red-600'}`}>
-                          {consentSettings.necessary ? '✓ Accepted' : '✗ Rejected'}
+        {/* Tab Navigation */}
+        <div className={`flex border-b ${isDark ? 'border-neutral-800' : 'border-neutral-200'}`}>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
+              ? isDark
+                ? 'border-[#DDEF00] text-[#DDEF00]'
+                : 'border-black text-black'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'security'
+              ? isDark
+                ? 'border-[#DDEF00] text-[#DDEF00]'
+                : 'border-black text-black'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Security
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'settings'
+              ? isDark
+                ? 'border-[#DDEF00] text-[#DDEF00]'
+                : 'border-black text-black'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Settings
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'overview' && (
+        <>
+          {/* Active Sessions Card */}
+          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
+                <h2 className="text-lg font-semibold text-foreground">Active Sessions</h2>
+                <span className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
+                  {sessions.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchSessions}
+                  disabled={loadingSessions}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                  title="Refresh sessions"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSessions ? 'animate-spin' : ''}`} />
+                </button>
+                {sessions.length > 1 && (
+                  <button
+                    onClick={handleRevokeAllOtherSessions}
+                    disabled={isLoading}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                      } disabled:opacity-50`}
+                  >
+                    Sign out all other devices
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingSessions ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading sessions...</p>
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No active sessions found
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`p-4 flex items-center gap-4 ${session.isCurrent ? (isDark ? 'bg-[#DDEF00]/5' : 'bg-primary/5') : ''}`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                      {getDeviceIcon(session.deviceType)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground truncate">
+                          {session.deviceName || 'Unknown Device'}
+                        </span>
+                        {session.isCurrent && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${isDark ? 'bg-[#DDEF00]/20 text-[#DDEF00]' : 'bg-green-100 text-green-700'}`}>
+                            This device
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          {session.ipAddress || 'Unknown IP'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {session.lastActiveAt
+                            ? formatTimeAgo(new Date(session.lastActiveAt))
+                            : 'Unknown'}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Analytics Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.analytics ? 'text-green-600' : 'text-red-600'}`}>
-                          {consentSettings.analytics ? '✓ Accepted' : '✗ Rejected'}
+                    </div>
+                    {!session.isCurrent && (
+                      <button
+                        onClick={() => handleRevokeSession(session.id)}
+                        disabled={revokingSession === session.id}
+                        className={`p-2 rounded-lg transition-colors ${isDark
+                          ? 'hover:bg-red-500/20 text-red-400'
+                          : 'hover:bg-red-100 text-red-600'
+                          } disabled:opacity-50`}
+                        title="Revoke session"
+                      >
+                        {revokingSession === session.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Recent Activity Card */}
+          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
+                <h2 className="text-lg font-semibold text-foreground">Recent Security Activity</h2>
+              </div>
+              <button
+                onClick={fetchActivityLogs}
+                disabled={loadingLogs}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                title="Refresh activity"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingLogs ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading activity...</p>
+                </div>
+              ) : activityLogs.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No recent activity
+                </div>
+              ) : (
+                activityLogs.map((log) => (
+                  <div key={log.id} className="p-4 flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                      {getActionIcon(log.action)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground">
+                        {getActionLabel(log.action)}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        {log.metadata?.deviceName && (
+                          <span className="flex items-center gap-1">
+                            {getDeviceIcon(log.metadata.deviceType || 'unknown')}
+                            {log.metadata.deviceName}
+                          </span>
+                        )}
+                        {log.metadata?.ipAddress && (
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            {log.metadata.ipAddress}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatTimeAgo(new Date(log.createdAt))}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Functional Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.functional ? 'text-green-600' : 'text-red-600'}`}>
-                          {consentSettings.functional ? '✓ Accepted' : '✗ Rejected'}
-                        </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Security Tips */}
+          <div className={`rounded-xl border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'} p-4`}>
+            <div className="flex items-start gap-3">
+              <Shield className={`w-5 h-5 mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+              <div>
+                <h3 className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Security Tip</h3>
+                <p className={`text-sm mt-1 ${isDark ? 'text-blue-200/80' : 'text-blue-700'}`}>
+                  Review your active sessions regularly. If you see any device you don't recognize,
+                  revoke that session immediately and consider changing your password.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'security' && (
+        <div className="space-y-6">
+          <>
+            {/* MFA Section */}
+            <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-lg ${isDark ? 'bg-[#DDEF00]/10 text-[#DDEF00]' : 'bg-primary/10 text-primary'}`}>
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Two-Factor Authentication</h3>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
+                  </div>
+                </div>
+                {mfaStatus?.enabled ? (
+                  <span className="bg-green-500/10 text-green-600 px-3 py-1 rounded-full text-sm font-medium border border-green-200">
+                    Enabled
+                  </span>
+                ) : (
+                  <span className="bg-yellow-500/10 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium border border-yellow-200">
+                    Disabled
+                  </span>
+                )}
+              </div>
+
+              {showMfaSetup ? (
+                <MFASetup
+                  onComplete={() => {
+                    setShowMfaSetup(false);
+                    fetchMfaStatus();
+                  }}
+                  onCancel={() => setShowMfaSetup(false)}
+                />
+              ) : showRegenerateMfa ? (
+                <div className="max-w-md mx-auto space-y-4 p-6 border rounded-xl bg-muted/20">
+                  <h4 className="font-semibold text-center text-lg">Regenerate Backup Codes</h4>
+
+                  {newBackupCodes.length > 0 ? (
+                    <div className="space-y-6">
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-lg text-sm text-center">
+                        Save these codes now. They will not be shown again.
+                        Previous codes have been invalidated.
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Marketing Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.marketing ? 'text-green-600' : 'text-red-600'}`}>
-                          {consentSettings.marketing ? '✓ Accepted' : '✗ Rejected'}
-                        </span>
+                      <div className="bg-background border rounded-lg p-4 grid grid-cols-2 gap-4 font-mono text-sm text-center">
+                        {newBackupCodes.map((code) => (
+                          <div key={code} className="p-1">{code}</div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={copyBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
+                          {copiedCodes ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          Copy
+                        </button>
+                        <button onClick={downloadBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
+                          <Download className="w-4 h-4" />
+                          Download
+                        </button>
+                      </div>
+                      <button
+                        onClick={closeRegenerateModal}
+                        className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground text-center">
+                        Generate a new set of backup codes. This will invalidate any unused backup codes you previously generated.
+                        <br /><br />
+                        Enter a current 6-digit code from your authenticator app to confirm.
+                      </p>
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium">Verification Code</label>
+                        <input
+                          type="text"
+                          placeholder="000 000"
+                          value={regenerateCode}
+                          onChange={e => setRegenerateCode(e.target.value.replace(/[^0-9]/g, ''))}
+                          maxLength={6}
+                          className="w-full px-3 py-2.5 rounded-lg border bg-background text-center text-xl tracking-widest font-mono"
+                        />
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={closeRegenerateModal}
+                          className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleRegenerateBackupCodes}
+                          disabled={isLoading || regenerateCode.length !== 6}
+                          className="flex-1 px-4 py-2 rounded-lg bg-[#DDEF00] text-black hover:bg-[#c7db00] transition-colors disabled:opacity-50 font-semibold"
+                        >
+                          {isLoading ? 'Generating...' : 'Regenerate'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : showDisableMfa ? (
+                <div className="max-w-md mx-auto space-y-4 p-6 border rounded-xl bg-muted/20">
+                  <h4 className="font-semibold text-center text-lg">Disable Two-Factor Authentication</h4>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Are you sure? This will remove the extra layer of security from your account.
+                    <br />
+                    Enter your password and a current 2FA code to confirm.
+                  </p>
+                  <div className="space-y-3">
+                    <input
+                      type="password"
+                      placeholder="Current Password"
+                      value={disablePassword}
+                      onChange={e => setDisablePassword(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-lg border bg-background"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Verification Code (6 digits)"
+                      value={disableCode}
+                      maxLength={6}
+                      onChange={e => setDisableCode(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-lg border bg-background"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setShowDisableMfa(false)}
+                      className="flex-1 px-4 py-2 rounded-lg border hover:bg-muted transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDisableMfa}
+                      disabled={isLoading}
+                      className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 font-semibold"
+                    >
+                      {isLoading ? 'Disabling...' : 'Disable MFA'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {loadingMfa ? (
+                    <div className="py-4 flex justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : mfaStatus?.enabled ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 p-4 rounded-lg bg-green-50/50 border border-green-100 dark:bg-green-950/20 dark:border-green-800">
+                        <Check className="w-5 h-5 text-green-600" />
+                        <div className="flex-1">
+                          <p className="font-medium text-green-800 dark:text-green-300">
+                            MFA is active since {new Date(mfaStatus.enabledAt || '').toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-green-700 dark:text-green-400">
+                            Your account is protected.
+                            {mfaStatus.backupCodesRemaining < 5 && (
+                              <span className="block mt-1 font-medium text-orange-600 dark:text-orange-400">
+                                {mfaStatus.backupCodesRemaining} backup codes remaining.
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => setShowDisableMfa(true)}
+                          className="px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-200 transition-colors text-sm font-medium"
+                        >
+                          Disable 2FA
+                        </button>
+                        <button
+                          className="px-4 py-2 rounded-lg text-foreground hover:bg-muted border border-border transition-colors text-sm font-medium flex items-center gap-2"
+                          onClick={() => setShowRegenerateMfa(true)}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Regenerate Backup Codes
+                        </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No cookie preferences set yet. Click "Manage Preferences" to configure your cookie settings.
-                    </p>
-                  )}
-                </div>
-
-                {/* Manage Preferences Button */}
-                <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium">
-                      Modify Cookie Preferences
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Review and update your cookie consent choices at any time
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => setShowCookieModal(true)}
-                    variant="outline"
-                    className="shrink-0"
-                  >
-                    Manage Preferences
-                  </Button>
-                </div>
-
-                {/* Cookie Policy Link */}
-                <div className="text-center">
-                  <Button
-                    variant="link"
-                    onClick={() => navigate('/cookie-policy')}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    View Detailed Cookie Policy
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-  ];
-
-  const filteredSections = sections.filter((section) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      section.title.toLowerCase().includes(query) ||
-      section.description.toLowerCase().includes(query) ||
-      section.keywords.some((k) => k.toLowerCase().includes(query))
-    );
-  });
-
-  return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col gap-4 mb-6">
-        <h1 className="text-3xl font-bold flex items-center space-x-2">
-          <span>Account Settings</span>
-        </h1>
-        <p className="text-muted-foreground">Manage your account preferences, security, and personal data.</p>
-      </div>
-
-      <OTPVerification onVerified={() => setIsVerified(true)} />
-
-      {isVerified && (
-        <div className="space-y-6 mt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search settings..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-4">
-            {filteredSections.map((section) => {
-              const Icon = section.icon;
-              const isOpen = openSections.includes(section.id);
-              return (
-                <div key={section.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="flex items-center justify-between w-full p-6 text-left"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-full bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">{section.title}</h3>
-                        <p className="text-sm text-muted-foreground">{section.description}</p>
-                      </div>
-                    </div>
-                    {isOpen ? (
-                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-6 pt-0 border-t animate-in slide-in-from-top-2 duration-200">
-                      <div className="mt-6">{section.content}</div>
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground">
+                        Protect your account from unauthorized access mainly by enabling Two-Factor Authentication.
+                        You'll need a mobile authenticator app.
+                      </p>
+                      <button
+                        onClick={() => setShowMfaSetup(true)}
+                        className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 ${isDark ? 'bg-[#DDEF00] text-black hover:bg-[#DDEF00]/90' : 'bg-black text-white hover:bg-black/90'}`}
+                      >
+                        <Shield className="w-4 h-4" />
+                        Enable MFA
+                      </button>
                     </div>
                   )}
                 </div>
-              );
-            })}
+              )}
+            </div>
 
-            {filteredSections.length === 0 && (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                <h3 className="text-lg font-medium">No settings found</h3>
-                <p className="text-muted-foreground">
-                  Try searching for a different keyword or browse the categories.
+            {/* Passkeys Section */}
+            <PasskeyManager />
+
+            {/* MFA Preferences Section */}
+            {mfaStatus?.enabled && (
+              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Shield className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
+                  <h3 className="text-lg font-semibold text-foreground">Alternative MFA Methods</h3>
+                </div>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Enable additional ways to verify your identity. Note: These methods are less secure than authenticator apps or passkeys.
                 </p>
+
+                <div className="space-y-4">
+                  {/* Email Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div>
+                      <p className="font-medium text-foreground">Email OTP</p>
+                      <p className="text-sm text-muted-foreground">Receive verification codes via email</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!mfaPreferences?.emailMfaEnabled) {
+                          setShowSecurityWarning('email');
+                        } else {
+                          updateMfaPreference('email', false);
+                        }
+                      }}
+                      disabled={updatingMfaPrefs}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.emailMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                        } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.emailMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Notification OTP Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div>
+                      <p className="font-medium text-foreground">Push Notification OTP</p>
+                      <p className="text-sm text-muted-foreground">Receive verification codes via push notifications</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!mfaPreferences?.notificationMfaEnabled) {
+                          setShowSecurityWarning('notification');
+                        } else {
+                          updateMfaPreference('notification', false);
+                        }
+                      }}
+                      disabled={updatingMfaPrefs}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.notificationMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                        } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.notificationMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Security Warning Modal */}
+                {showSecurityWarning && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                        <h3 className="text-lg font-semibold">Security Warning</h3>
+                      </div>
+                      <p className="text-muted-foreground mb-4">
+                        {showSecurityWarning === 'email'
+                          ? 'Email-based MFA is less secure than authenticator apps because emails can be intercepted or your email account could be compromised.'
+                          : 'Push notification MFA is less secure than authenticator apps because notifications can be intercepted or your device could be compromised.'
+                        }
+                      </p>
+                      <p className="text-muted-foreground mb-6">
+                        We recommend using an authenticator app (TOTP) or passkeys for maximum security. Are you sure you want to enable this method?
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowSecurityWarning(null)}
+                          className="flex-1 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => updateMfaPreference(showSecurityWarning, true)}
+                          disabled={updatingMfaPrefs}
+                          className="flex-1 px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                        >
+                          {updatingMfaPrefs ? 'Enabling...' : 'I Understand, Enable'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+
+            {/* Password Change Info */}
+            <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+              <div className="flex items-center gap-3 mb-4">
+                <Lock className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
+                <h3 className="text-lg font-semibold text-foreground">Password</h3>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Manage your password and recovery settings.
+              </p>
+              <div className="flex items-center gap-4">
+                <button
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  onClick={handlePasswordChange}
+                  disabled={sendingPasswordReset}
+                >
+                  {sendingPasswordReset && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {sendingPasswordReset ? 'Sending...' : 'Change Password'}
+                </button>
+              </div>
+            </div>
+          </>
         </div>
       )}
 
+      {activeTab === 'settings' && <AccountSettingsComponent />}
 
-      {/* Cookie Consent Modal */}
-      <CookieConsentModal
-        isOpen={showCookieModal}
-        onClose={(settings) => {
-          updateConsent(settings);
-          setShowCookieModal(false);
-        }}
-        onAcceptAll={() => {
-          acceptAll();
-          setShowCookieModal(false);
-        }}
-        onRejectAll={() => {
-          rejectAll();
-          setShowCookieModal(false);
-        }}
-      />
-    </div >
+    </div>
   );
 }
+
+export default AccountSettings;

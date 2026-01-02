@@ -121,7 +121,7 @@ export function generateAccessToken(userId: string, sessionId: string): string {
     };
 
     return jwt.sign(payload, ENV.JWT_SECRET, {
-        expiresIn: ACCESS_TOKEN_EXPIRY,
+        expiresIn: ACCESS_TOKEN_EXPIRY as any,
         issuer: 'fairarena',
         audience: 'fairarena-api',
     });

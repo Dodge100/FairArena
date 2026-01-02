@@ -19,16 +19,16 @@ export interface AuthContextType {
     isAuthenticated: boolean;
     isBanned: boolean; // New prop
     banReason: string | null; // New prop
-    login: (email: string, password: string) => Promise<AuthResponse>;
-    register: (data: RegisterData) => Promise<void>;
+    login: (email: string, password: string, recaptchaToken?: string) => Promise<AuthResponse>;
+    register: (data: RegisterData, recaptchaToken?: string) => Promise<void>;
     logout: () => Promise<void>;
     loginWithGoogle: (credential: string) => Promise<void>;
     getToken: () => Promise<string | null>;
     refreshToken: () => Promise<string | null>;
-    forgotPassword: (email: string) => Promise<void>;
-    resetPassword: (token: string, password: string) => Promise<void>;
+    forgotPassword: (email: string, recaptchaToken?: string) => Promise<void>;
+    resetPassword: (token: string, password: string, recaptchaToken?: string) => Promise<void>;
     verifyEmail: (token: string) => Promise<void>;
-    verifyLoginMFA: (code: string, isBackupCode?: boolean) => Promise<void>;
+    verifyLoginMFA: (code: string, isBackupCode?: boolean, recaptchaToken?: string) => Promise<void>;
 }
 
 export interface RegisterData {
@@ -49,6 +49,10 @@ export interface AuthResponse {
     errors?: Record<string, string[]>;
     code?: string;
     mfaRequired?: boolean;
+    mfaPreferences?: {
+        emailMfaEnabled: boolean;
+        notificationMfaEnabled: boolean;
+    };
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -202,12 +206,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [fetchCurrentUser, refreshToken, updateToken]);
 
     // Login with email/password
-    const login = useCallback(async (email: string, password: string): Promise<AuthResponse> => {
+    const login = useCallback(async (email: string, password: string, recaptchaToken?: string): Promise<AuthResponse> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
             method: 'POST',
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
             body: JSON.stringify({ email, password }),
         });
@@ -232,11 +237,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return data; // Return full response for MFA handling
     }, [updateToken]);
 
-    const verifyLoginMFA = useCallback(async (code: string, isBackupCode?: boolean): Promise<void> => {
+    const verifyLoginMFA = useCallback(async (code: string, isBackupCode?: boolean, recaptchaToken?: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/verify-mfa`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
             credentials: 'include', // Include cookies
             body: JSON.stringify({ code, isBackupCode }),
@@ -266,12 +272,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [updateToken]);
 
     // Register new user
-    const register = useCallback(async (registerData: RegisterData): Promise<void> => {
+    const register = useCallback(async (registerData: RegisterData, recaptchaToken?: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
             method: 'POST',
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
             body: JSON.stringify(registerData),
         });
@@ -339,11 +346,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [refreshToken]);
 
     // Forgot password
-    const forgotPassword = useCallback(async (email: string): Promise<void> => {
+    const forgotPassword = useCallback(async (email: string, recaptchaToken?: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
             body: JSON.stringify({ email }),
         });
@@ -356,11 +364,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Reset password
-    const resetPassword = useCallback(async (token: string, password: string): Promise<void> => {
+    const resetPassword = useCallback(async (token: string, password: string, recaptchaToken?: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
             body: JSON.stringify({ token, password }),
         });

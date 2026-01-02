@@ -25,6 +25,7 @@ import {
 } from '../../controllers/v1/authController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
@@ -92,7 +93,7 @@ const resendVerificationLimiter = createAuthRateLimiter({
  *       409:
  *         description: Email already exists
  */
-router.post('/register', registerLimiter, register);
+router.post('/register', registerLimiter, verifyRecaptcha, register);
 
 /**
  * @swagger
@@ -122,7 +123,7 @@ router.post('/register', registerLimiter, register);
  *       429:
  *         description: Account locked
  */
-router.post('/login', loginLimiter, login);
+router.post('/login', loginLimiter, verifyRecaptcha, login);
 
 /**
  * @swagger
@@ -189,7 +190,7 @@ router.post('/login', loginLimiter, login);
  *       429:
  *         description: Too many failed attempts
  */
-router.post('/verify-mfa', loginLimiter, verifyLoginMFA);
+router.post('/verify-mfa', loginLimiter, verifyRecaptcha, verifyLoginMFA);
 
 /**
  * @swagger
@@ -304,7 +305,7 @@ router.get('/me', protectRoute, getCurrentUser);
  *       200:
  *         description: Reset email sent (if account exists)
  */
-router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/forgot-password', passwordResetLimiter, verifyRecaptcha, forgotPassword);
 
 /**
  * @swagger
@@ -332,7 +333,7 @@ router.post('/forgot-password', passwordResetLimiter, forgotPassword);
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password', passwordResetLimiter, resetPassword);
+router.post('/reset-password', passwordResetLimiter, verifyRecaptcha, resetPassword);
 
 /**
  * @swagger
@@ -424,7 +425,7 @@ router.post('/change-password', protectRoute, changePassword);
  *       200:
  *         description: List of active sessions
  */
-router.get('/sessions', protectRoute, listSessions);
+router.get('/sessions', protectRoute, requireSettingsVerification, listSessions);
 
 /**
  * @swagger
@@ -446,7 +447,7 @@ router.get('/sessions', protectRoute, listSessions);
  *       404:
  *         description: Session not found
  */
-router.delete('/sessions/:sessionId', protectRoute, revokeSession);
+router.delete('/sessions/:sessionId', protectRoute, requireSettingsVerification, revokeSession);
 
 /**
  * @swagger
@@ -460,7 +461,7 @@ router.delete('/sessions/:sessionId', protectRoute, revokeSession);
  *       200:
  *         description: List of recent activity logs
  */
-router.get('/recent-activity', protectRoute, getRecentActivity);
+router.get('/recent-activity', protectRoute,requireSettingsVerification, getRecentActivity);
 
 /**
  * @swagger
@@ -550,7 +551,7 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
  *       401:
  *         description: Invalid OTP
  */
-router.post('/mfa/verify-otp', loginLimiter, verifyMfaOtp);
+router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
 
 // OAuth Routes
 import {
@@ -560,6 +561,7 @@ import {
     handleGoogleCallback,
     handleGoogleToken,
 } from '../../controllers/v1/oauthController.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 /**
  * @swagger

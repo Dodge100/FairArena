@@ -40,11 +40,11 @@ export const sendTeamInviteEmail = inngest.createFunction(
         const inviteLink = `${ENV.FRONTEND_URL}/invite/team/${inviteCode}`;
 
         // Send email
-        await sendEmail(
-          recipientEmail,
-          `You've been invited to join ${teamName} on FairArena`,
-          'team-invite',
-          {
+        await sendEmail({
+          to: recipientEmail,
+          subject: `You've been invited to join ${teamName} on FairArena`,
+          templateType: 'team-invite',
+          templateData: {
             recipientEmail,
             inviterName,
             teamName,
@@ -53,7 +53,7 @@ export const sendTeamInviteEmail = inngest.createFunction(
             inviteLink,
             expiresAt,
           },
-        );
+        });
 
         logger.info('Team invite email sent successfully', {
           inviteId,

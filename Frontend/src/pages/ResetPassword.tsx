@@ -1,4 +1,11 @@
-import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { useEffect, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,11 +18,20 @@ export default function ResetPassword() {
     const navigate = useNavigate();
     const { resetPassword } = useAuth();
 
+    // Validate token on mount
+    useEffect(() => {
+        if (!token) {
+            toast.error('Invalid password reset link');
+            navigate('/', { replace: true });
+        }
+    }, [token, navigate]);
+
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [showCaptcha, setShowCaptcha] = useState(false);
 
     const validatePassword = (pwd: string): string[] => {
         const errors: string[] = [];
@@ -26,7 +42,7 @@ export default function ResetPassword() {
         return errors;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -46,10 +62,16 @@ export default function ResetPassword() {
             return;
         }
 
+        setShowCaptcha(true);
+    };
+
+    const handleCaptchaVerify = async (captchaToken: string | null) => {
+        if (!captchaToken || !token) return;
+        setShowCaptcha(false);
         setIsLoading(true);
 
         try {
-            await resetPassword(token, password);
+            await resetPassword(token, password, captchaToken);
             setSuccess(true);
             toast.success('Password reset successfully!');
         } catch (err) {
@@ -132,6 +154,21 @@ export default function ResetPassword() {
                     </button>
                 </form>
             </div>
+            {/* Captcha Modal */}
+            <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+                <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+                    <DialogHeader>
+                        <DialogTitle>Security Verification</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex justify-center p-4">
+                        <ReCAPTCHA
+                            sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+                            theme={isDark ? 'dark' : 'light'}
+                            onChange={handleCaptchaVerify}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

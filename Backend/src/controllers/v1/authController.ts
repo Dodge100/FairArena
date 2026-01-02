@@ -297,6 +297,8 @@ export const login = async (req: Request, res: Response) => {
         emailVerified: true,
         isDeleted: true,
         mfaEnabled: true,
+        emailMfaEnabled: true,
+        notificationMfaEnabled: true,
         isBanned: true,
         banReason: true,
       },
@@ -387,6 +389,10 @@ export const login = async (req: Request, res: Response) => {
         success: true,
         message: 'MFA verification required',
         mfaRequired: true,
+        mfaPreferences: {
+          emailMfaEnabled: user.emailMfaEnabled,
+          notificationMfaEnabled: user.notificationMfaEnabled,
+        },
       });
     }
 
@@ -1592,11 +1598,39 @@ export const checkMfaSession = async (req: Request, res: Response) => {
     const attemptCount = attemptsData ? parseInt(attemptsData, 10) : 0;
     const attemptsRemaining = Math.max(0, 5 - attemptCount);
 
-    // Fetch user's MFA preferences
-    const user = await prisma.user.findUnique({
-      where: { userId: payload.userId },
-      select: { emailMfaEnabled: true, notificationMfaEnabled: true },
-    });
+    // Fetch user's MFA preferences (try cache first)
+    const prefsCacheKey = `mfa:prefs:${payload.userId}`;
+    const cachedPrefs = await redis.get(prefsCacheKey);
+
+    let emailMfaEnabled = false;
+    let notificationMfaEnabled = false;
+
+    if (cachedPrefs) {
+      const prefs = typeof cachedPrefs === 'string' ? JSON.parse(cachedPrefs) : cachedPrefs;
+      emailMfaEnabled = prefs.emailMfaEnabled || false;
+      notificationMfaEnabled = prefs.notificationMfaEnabled || false;
+    } else {
+      const user = await prisma.user.findUnique({
+        where: { userId: payload.userId },
+        select: {
+          mfaEnabled: true,
+          emailMfaEnabled: true,
+          notificationMfaEnabled: true
+        },
+      });
+
+      emailMfaEnabled = user?.emailMfaEnabled || false;
+      notificationMfaEnabled = user?.notificationMfaEnabled || false;
+
+      // Cache for 1 hour to match getMfaPreferences
+      if (user) {
+        await redis.setex(prefsCacheKey, 3600, JSON.stringify({
+          mfaEnabled: user.mfaEnabled,
+          emailMfaEnabled,
+          notificationMfaEnabled
+        }));
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -1606,8 +1640,8 @@ export const checkMfaSession = async (req: Request, res: Response) => {
         ttl,
         attemptsRemaining,
         mfaPreferences: {
-          emailMfaEnabled: user?.emailMfaEnabled || false,
-          notificationMfaEnabled: user?.notificationMfaEnabled || false,
+          emailMfaEnabled,
+          notificationMfaEnabled,
         },
       },
     });

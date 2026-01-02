@@ -4,6 +4,13 @@ import { toast } from 'sonner';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
 import { Spotlight } from './ui/Spotlight';
+import ReCAPTCHA from 'react-google-recaptcha';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -30,6 +37,7 @@ function WaitList() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [position, setPosition] = useState<number | null>(null);
   const [totalWaitlist, setTotalWaitlist] = useState<number | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   useEffect(() => {
     const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
@@ -66,16 +74,23 @@ function WaitList() {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+    setShowCaptcha(true);
+  };
 
+  const handleCaptchaVerify = async (token: string | null) => {
+    if (!token) return;
+    setShowCaptcha(false);
     setIsLoading(true);
+
     try {
       const response = await fetch(`${API_BASE}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Recaptcha-Token': token,
         },
         body: JSON.stringify({
           email: email.trim(),
@@ -209,7 +224,7 @@ function WaitList() {
                           ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-[#777]'
                           : 'bg-white text-neutral-900 border-neutral-300'}
                       `}
-                      />
+                    />
                     <label className="flex items-start gap-3 px-1 cursor-pointer">
                       <input
                         type="checkbox"
@@ -280,7 +295,23 @@ function WaitList() {
           </button>
         </p>
       </div>
-    </div>
+
+      {/* Captcha Modal */}
+      <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle>Security Verification</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+              theme={isDark ? 'dark' : 'light'}
+              onChange={handleCaptchaVerify}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }
 

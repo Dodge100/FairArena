@@ -321,3 +321,8 @@ body {
   display: none;
   /* Chrome, Safari and Opera */
 }
+
+/* Fix ReCAPTCHA interaction issues (unresponsive image modal) when opened inside a Radix UI Dialog */
+body > div[style*="z-index"][style*="position: absolute"] {
+  pointer-events: auto !important;
+}

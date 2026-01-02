@@ -53,7 +53,7 @@ const PERMISSION_CACHE_TTL = 3600; // 1 hour - permissions don't change frequent
 export const teamPermissionMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { organizationSlug, teamSlug } = req.params;
 
     if (!userId) {

@@ -214,7 +214,7 @@ const createOrganizationSchema = z.object({
 export const CreateOrganization = async (req: Request, res: Response) => {
   const auth = req.user;
   try {
-    const userId = auth.userId;
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -369,7 +369,7 @@ export const CreateOrganization = async (req: Request, res: Response) => {
     logger.error('Error creating organization', {
       error: err.message,
       stack: err.stack,
-      userId: auth.userId,
+      userId: auth?.userId,
     });
     res.status(500).json({ error: 'Internal server error' });
   }

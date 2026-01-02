@@ -74,7 +74,7 @@ export const loadOrganizationPermissions = async (
 ) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { organizationSlug, slug } = req.params;
     const orgSlug = organizationSlug || slug;
 

@@ -8,7 +8,7 @@ const CACHE_TTL = 3600;
 export const GetUserOrganizations = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

@@ -9,7 +9,7 @@ const CACHE_KEY = (teamId: string) => `team:roles:${teamId}`;
 export const getTeamRoles = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { teamSlug, organizationSlug } = req.params;
 
     if (!userId) {

@@ -84,7 +84,7 @@ export const getInvitationDetails = async (req: Request, res: Response) => {
 export const acceptTeamInvitation = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { inviteCode } = req.params;
 
     if (!userId) {
@@ -223,7 +223,7 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
 export const declineTeamInvitation = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
     const { inviteCode } = req.params;
 
     if (!userId) {

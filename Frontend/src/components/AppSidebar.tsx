@@ -24,8 +24,7 @@ import { useAuthState } from '@/lib/auth';
 import {
   BarChart3,
   Calendar,
-  ChevronDown,
-  ChevronRight,
+
   CreditCard,
   FileText,
   HelpCircle,
@@ -69,7 +68,7 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
   const { customization } = useSidebarCustomization();
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationSoundEnabled');
@@ -292,8 +291,9 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              onClick={() => navigate('/dashboard/public-profile')}
               className="h-auto py-2 cursor-pointer w-full"
+              isActive={location.pathname === '/dashboard/public-profile'}
               tooltip="Profile"
             >
               <div className="flex items-center justify-between w-full">
@@ -315,41 +315,8 @@ export function AppSidebar() {
                     </span>
                   </div>
                 </div>
-                {profileMenuOpen ? (
-                  <ChevronDown className="h-4 w-4 shrink-0" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0" />
-                )}
               </div>
             </SidebarMenuButton>
-            {profileMenuOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    onClick={() => {
-                      navigate('/dashboard/profile');
-                      setProfileMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                    isActive={location.pathname === '/dashboard/profile'}
-                  >
-                    <span>Main Profile</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    onClick={() => {
-                      navigate('/dashboard/public-profile');
-                      setProfileMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                    isActive={location.pathname === '/dashboard/public-profile'}
-                  >
-                    <span>My Profile</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <div className="px-2 py-2">

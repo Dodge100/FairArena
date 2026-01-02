@@ -2,11 +2,11 @@ import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
+import { ENV } from '../../config/env.js';
 import { razorpay } from '../../config/razorpay.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
-import { ENV } from '../../config/env.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
 
 interface RazorpayOrderOptions {
@@ -203,7 +203,7 @@ export const createOrder = async (req: Request, res: Response) => {
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
-    const userId = auth.userId;
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });

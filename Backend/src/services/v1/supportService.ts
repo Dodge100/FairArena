@@ -3,8 +3,8 @@ import { ReportSeverity, ReportState, ReportType } from '../../generated/enums.j
 import logger from '../../utils/logger.js';
 
 export interface CreateSupportRequestData {
+  emailId: string;
   userId?: string;
-  emailId?: string;
   subject: string;
   message: string;
   type?: ReportType;
@@ -20,7 +20,7 @@ export class SupportService {
     try {
       const supportRequest = await prisma.support.create({
         data: {
-          userId: data.userId,
+          userId: data.userId || null,
           emailId: data.emailId,
           subject: data.subject,
           message: data.message,

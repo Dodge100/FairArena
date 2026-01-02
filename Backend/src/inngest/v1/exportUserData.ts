@@ -408,9 +408,14 @@ export const exportUserDataHandler = inngest.createFunction(
 
         if (user) {
           // Send error email
-          await sendEmail(user.email, 'Data Export Failed', 'data-export-error', {
-            userName: user.profile?.firstName || user.email.split('@')[0],
-            errorMessage: 'Data export failed. Please try again later.',
+          await sendEmail({
+            to: user.email,
+            subject: 'Data Export Failed',
+            templateType: 'data-export-error',
+            templateData: {
+              userName: user.profile?.firstName || user.email.split('@')[0],
+              errorMessage: 'Data export failed. Please try again later.',
+            },
           });
 
           // Send error notification

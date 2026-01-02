@@ -99,18 +99,18 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
 
               const unsubscribeUrl = `${process.env.FRONTEND_URL}/dashboard/account-settings`;
 
-              await sendEmail(
-                user.email,
-                "We'd love your feedback!",
-                'weekly-feedback',
-                {
+              await sendEmail({
+                to: user.email,
+                subject: "We'd love your feedback!",
+                templateType: 'weekly-feedback',
+                templateData: {
                   name,
                   feedbackUrl: `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`,
                 },
-                {
+                headers: {
                   'List-Unsubscribe': `<${unsubscribeUrl}>`,
                 },
-              );
+              });
 
               logger.info(`Sent feedback email to user ${user.userId}`);
             } catch (error) {

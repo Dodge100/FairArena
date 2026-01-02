@@ -5,6 +5,7 @@ import {
     joinWaitlist,
 } from '../../controllers/v1/waitlistController.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
+import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.post(
         max: 5, // 5 requests per hour per IP
         message: 'Too many waitlist requests. Please try again later.',
     }),
+    verifyRecaptcha,
     joinWaitlist,
 );
 
