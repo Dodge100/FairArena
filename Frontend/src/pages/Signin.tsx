@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
 type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification';
-type AuthStep = 'credentials' | 'mfa';
+type AuthStep = 'credentials' | 'mfa' | 'new_device';
 
 interface MfaSessionState {
   active: boolean;
@@ -49,6 +49,7 @@ export default function Signin() {
     notificationMfaEnabled: boolean;
   }>({ emailMfaEnabled: false, notificationMfaEnabled: false });
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   const passkeySupported = usePasskeySupport();
@@ -119,9 +120,15 @@ export default function Signin() {
 
   // Check for existing MFA session on mount
   useEffect(() => {
+    if (authLoading) return;
+    if (isAuthenticated) {
+      setIsCheckingSession(false);
+      return;
+    }
+
     const checkExistingMfaSession = async () => {
       try {
-        const response = await fetch(`${apiUrl}/api/v1/auth/mfa/check-session`, {
+        const response = await fetch(`${apiUrl}/api/v1/auth/check-mfa-session`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -129,7 +136,9 @@ export default function Signin() {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.hasMfaSession) {
-            setAuthStep('mfa');
+            const isNewDevice = result.data?.type === 'new_device_pending';
+            setAuthStep(isNewDevice ? 'new_device' : 'mfa');
+
             setMfaSession({
               active: true,
               expiresAt: Date.now() + (result.data?.ttl || 300) * 1000,
@@ -141,17 +150,26 @@ export default function Signin() {
                 emailMfaEnabled: result.data.mfaPreferences.emailMfaEnabled || false,
                 notificationMfaEnabled: result.data.mfaPreferences.notificationMfaEnabled || false,
               });
+
+              if (isNewDevice) {
+                if (result.data.activeOtpMethod) {
+                  setMfaMethod(result.data.activeOtpMethod);
+                  setOtpSent(true);
+                } else {
+                  setMfaMethod(result.data.mfaPreferences.emailMfaEnabled ? 'email' : 'notification');
+                }
+              }
             }
           }
         }
       } catch (err) {
         console.error('Failed to check MFA session:', err);
+      } finally {
+        setIsCheckingSession(false);
       }
     };
 
-    if (!authLoading && !isAuthenticated) {
-      checkExistingMfaSession();
-    }
+    checkExistingMfaSession();
   }, [apiUrl, authLoading, isAuthenticated]);
 
   // MFA session expiry timer
@@ -214,6 +232,28 @@ export default function Signin() {
           });
           toast.info('Two-factor authentication required', {
             description: 'Please enter the 6-digit code from your authenticator app',
+          });
+        } else if (result.newDeviceVerificationRequired) {
+          // New device detected - require OTP verification
+          setAuthStep('new_device');
+          if (result.mfaPreferences) {
+            setMfaPreferences({
+              emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
+              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled
+            });
+            // Auto-select email if available, otherwise notification
+            setMfaMethod(result.mfaPreferences.emailMfaEnabled ? 'email' : 'notification');
+          } else {
+            // Default to email if no preferences available
+            setMfaMethod('email');
+          }
+          setMfaSession({
+            active: true,
+            expiresAt: Date.now() + 5 * 60 * 1000,
+            attemptsRemaining: 5,
+          });
+          toast.info('New device detected', {
+            description: 'Please verify your identity via email or notification code',
           });
         } else {
           toast.success('Welcome back!');
@@ -294,7 +334,7 @@ export default function Signin() {
   };
 
   // Send OTP for alternative MFA methods
-  const handleSendOtp = async (method: 'email' | 'notification') => {
+  const handleSendOtp = useCallback(async (method: 'email' | 'notification') => {
     setIsLoading(true);
     setError('');
 
@@ -324,7 +364,20 @@ export default function Signin() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiUrl]);
+
+  // Auto-send OTP for new device flow
+  useEffect(() => {
+    if (authStep === 'new_device' && !otpSent && !isLoading) {
+      if (mfaMethod === 'email' || mfaMethod === 'notification') {
+        // Debounce slightly to allow render to settle
+        const timer = setTimeout(() => {
+          handleSendOtp(mfaMethod);
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [authStep, otpSent, mfaMethod, isLoading, handleSendOtp]);
 
   // Reset to credentials step
   const handleResetToCredentials = async () => {
@@ -731,7 +784,7 @@ export default function Signin() {
                     </button>
                   </div>
 
-                  {mfaMethod !== 'authenticator' && (
+                  {mfaMethod !== 'authenticator' && authStep !== 'new_device' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -752,7 +805,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaMethod !== 'backup' && (
+                  {mfaMethod !== 'backup' && authStep !== 'new_device' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -774,7 +827,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaPreferences.emailMfaEnabled && mfaMethod !== 'email' && !otpSent && (
+                  {mfaPreferences.emailMfaEnabled && mfaMethod !== 'email' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -793,7 +846,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaPreferences.notificationMfaEnabled && mfaMethod !== 'notification' && !otpSent && (
+                  {mfaPreferences.notificationMfaEnabled && mfaMethod !== 'notification' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1134,7 +1187,11 @@ export default function Signin() {
         <div className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
           {/* Logo was moved inside forms to better handle MFA view vs Credentials view spacing */}
           {/* Render appropriate form based on auth step */}
-          {authStep === 'mfa' ? renderMfaForm() : renderCredentialsForm()}
+          {isCheckingSession ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
+            </div>
+          ) : (authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
         </div>
 
         {/* Right side - Illustration */}

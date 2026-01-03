@@ -382,7 +382,7 @@ router.post('/verify-email', verifyEmail);
  *       200:
  *         description: Verification email sent (if account exists and unverified)
  */
-router.post('/resend-verification', resendVerificationLimiter, resendVerificationEmail);
+router.post('/resend-verification', resendVerificationLimiter, verifyRecaptcha, resendVerificationEmail);
 
 /**
  * @swagger

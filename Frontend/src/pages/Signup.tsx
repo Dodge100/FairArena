@@ -420,6 +420,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
                 />
                 <p className={`text-xs mt-1 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
@@ -439,6 +440,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
                 />
               </div>

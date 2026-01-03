@@ -29,6 +29,7 @@ export interface AuthContextType {
     resetPassword: (token: string, password: string, recaptchaToken?: string) => Promise<void>;
     verifyEmail: (token: string) => Promise<void>;
     verifyLoginMFA: (code: string, isBackupCode?: boolean, recaptchaToken?: string) => Promise<void>;
+    resendVerificationEmail: (email: string, recaptchaToken?: string) => Promise<void>;
 }
 
 export interface RegisterData {
@@ -49,6 +50,7 @@ export interface AuthResponse {
     errors?: Record<string, string[]>;
     code?: string;
     mfaRequired?: boolean;
+    newDeviceVerificationRequired?: boolean;
     mfaPreferences?: {
         emailMfaEnabled: boolean;
         notificationMfaEnabled: boolean;
@@ -398,6 +400,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    // Resend verification email
+    const resendVerificationEmail = useCallback(async (email: string, recaptchaToken?: string): Promise<void> => {
+        const response = await fetch(`${API_BASE}/api/v1/auth/resend-verification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        const data: AuthResponse = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Failed to resend verification email');
+        }
+    }, []);
+
     const value: AuthContextType = {
         user,
         accessToken,
@@ -415,6 +435,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         verifyEmail,
         verifyLoginMFA,
+        resendVerificationEmail,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

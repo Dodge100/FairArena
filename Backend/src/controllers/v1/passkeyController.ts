@@ -84,7 +84,7 @@ const renamePasskeySchema = z.object({
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
 };
@@ -92,7 +92,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
 };

@@ -372,7 +372,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     res.cookie('account-settings-token', token, {
       httpOnly: true,
       secure: ENV.NODE_ENV === 'production',
-      sameSite: ENV.NODE_ENV === 'production' ? 'none' : 'strict',
+      sameSite: 'strict' as const,
       maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000, // 10 minutes
     });
 

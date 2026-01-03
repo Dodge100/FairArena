@@ -32,7 +32,7 @@ import logger from '../../utils/logger.js';
 // Types
 interface MFAPendingPayload {
   userId: string;
-  type: 'mfa_pending';
+  type: 'mfa_pending' | 'new_device_pending';
   iat: number;
   exp: number;
   // UX state for persistence across page refreshes
@@ -43,6 +43,10 @@ interface MFAPendingPayload {
   ipAddress?: string;
   deviceFingerprint?: string;
 }
+
+// MFA OTP Keys
+const MFA_OTP_PREFIX = 'mfa:otp:';
+const MFA_OTP_EXPIRY = 300; // 5 minutes
 
 // Validation Schemas
 const registerSchema = z.object({
@@ -117,7 +121,7 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
 };
@@ -125,7 +129,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
 };
@@ -373,7 +377,7 @@ export const login = async (req: Request, res: Response) => {
             type: 'mfa_pending',
             ipAddress,
             deviceFingerprint,
-          } as MFAPendingPayload,
+          } as Omit<MFAPendingPayload, 'iat' | 'exp'>,
           ENV.JWT_SECRET,
           {
             expiresIn: '5m',
@@ -404,6 +408,49 @@ export const login = async (req: Request, res: Response) => {
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
     const { deviceType, deviceName } = parseUserAgent(userAgent);
 
+    // Check for new device if MFA is NOT enabled
+    const newDeviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
+    const newDeviceRecentDeviceKey = `recent_device:${user.userId}:${newDeviceFingerprint}`;
+    const isKnownDevice = await redis.exists(newDeviceRecentDeviceKey as string);
+
+    if (!isKnownDevice) {
+
+      const jwt = await import('jsonwebtoken');
+      const tempToken = jwt.default.sign(
+        {
+          userId: user.userId,
+          type: 'new_device_pending',
+          ipAddress,
+          deviceFingerprint: newDeviceFingerprint,
+        } as Omit<MFAPendingPayload, 'iat' | 'exp'>,
+        ENV.JWT_SECRET,
+        {
+          expiresIn: '5m',
+          issuer: 'fairarena',
+        },
+      );
+
+      // Set HTTP-only cookie (secure in production)
+      res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+
+      logger.info('New device verification required', {
+        userId: user.userId,
+        deviceType,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'New device verification required',
+        newDeviceVerificationRequired: true,
+        mfaPreferences: {
+          // Always enable both methods for new device verification
+          emailMfaEnabled: true,
+          notificationMfaEnabled: true,
+        },
+      });
+    }
+
+    // Known device - proceed with normal login
     // Generate tokens
     const refreshToken = generateRefreshToken();
     const sessionId = await createSession(
@@ -1553,7 +1600,7 @@ export const checkMfaSession = async (req: Request, res: Response) => {
         issuer: 'fairarena',
       }) as MFAPendingPayload;
 
-      if (payload.type !== 'mfa_pending') {
+      if (payload.type !== 'mfa_pending' && payload.type !== 'new_device_pending') {
         throw new Error('Invalid token type');
       }
     } catch {
@@ -1566,15 +1613,15 @@ export const checkMfaSession = async (req: Request, res: Response) => {
     }
 
     // Validate IP and device fingerprint for security
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
+    // Validate IP and device fingerprint for security
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const { deviceType } = parseUserAgent(userAgent);
+    const currentFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
     // Security check: IP and device must match what was used during login
-    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentDevice) {
+    if (payload.ipAddress !== clientIp || payload.deviceFingerprint !== currentFingerprint) {
       res.clearCookie('mfa_session', { path: '/' });
       logger.warn('MFA session security violation during check', {
         userId: payload.userId,
@@ -1597,6 +1644,18 @@ export const checkMfaSession = async (req: Request, res: Response) => {
     const attemptsData = await redis.get<string>(mfaAttemptsKey);
     const attemptCount = attemptsData ? parseInt(attemptsData, 10) : 0;
     const attemptsRemaining = Math.max(0, 5 - attemptCount);
+
+    // Check for active OTPs to prevent spam on refresh
+    const emailOtpKey = `${MFA_OTP_PREFIX}email:${payload.userId}`;
+    const notificationOtpKey = `${MFA_OTP_PREFIX}notification:${payload.userId}`;
+    const [emailExists, notificationExists] = await Promise.all([
+      redis.exists(emailOtpKey),
+      redis.exists(notificationOtpKey),
+    ]);
+
+    let activeOtpMethod: 'email' | 'notification' | null = null;
+    if (emailExists === 1) activeOtpMethod = 'email';
+    else if (notificationExists === 1) activeOtpMethod = 'notification';
 
     // Fetch user's MFA preferences (try cache first)
     const prefsCacheKey = `mfa:prefs:${payload.userId}`;
@@ -1632,11 +1691,20 @@ export const checkMfaSession = async (req: Request, res: Response) => {
       }
     }
 
+    // Force enable capabilities for new device flow
+    // (Apply this override regardless of whether prefs came from cache or DB)
+    if (payload.type === 'new_device_pending') {
+      emailMfaEnabled = true;
+      notificationMfaEnabled = true;
+    }
+
     return res.status(200).json({
       success: true,
       hasMfaSession: true,
       data: {
         userId: payload.userId,
+        type: payload.type,
+        activeOtpMethod,
         ttl,
         attemptsRemaining,
         mfaPreferences: {
@@ -1952,10 +2020,6 @@ export const getMfaPreferences = async (req: Request, res: Response) => {
   }
 };
 
-// MFA OTP Keys
-const MFA_OTP_PREFIX = 'mfa:otp:';
-const MFA_OTP_EXPIRY = 300; // 5 minutes
-
 // Generate a 6-digit OTP
 function generateOtp(): string {
   return crypto.randomInt(100000, 999999).toString();
@@ -1982,7 +2046,7 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
         issuer: 'fairarena',
       }) as MFAPendingPayload;
 
-      if (payload.type !== 'mfa_pending') {
+      if (payload.type !== 'mfa_pending' && payload.type !== 'new_device_pending') {
         throw new Error('Invalid token type');
       }
     } catch {
@@ -2008,7 +2072,9 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
       });
     }
 
-    if (!user.emailMfaEnabled) {
+    // For new device verification, allow email OTP even without explicit setting
+    // For regular MFA, require emailMfaEnabled to be true
+    if (payload.type === 'mfa_pending' && !user.emailMfaEnabled) {
       return res.status(400).json({
         success: false,
         message: 'Email MFA is not enabled for your account. Enable it in security settings.',
@@ -2069,7 +2135,7 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
         issuer: 'fairarena',
       }) as MFAPendingPayload;
 
-      if (payload.type !== 'mfa_pending') {
+      if (payload.type !== 'mfa_pending' && payload.type !== 'new_device_pending') {
         throw new Error('Invalid token type');
       }
     } catch {
@@ -2095,7 +2161,9 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
       });
     }
 
-    if (!user.notificationMfaEnabled) {
+    // For new device verification, allow notification OTP even without explicit setting
+    // For regular MFA, require notificationMfaEnabled to be true
+    if (payload.type === 'mfa_pending' && !user.notificationMfaEnabled) {
       return res.status(400).json({
         success: false,
         message: 'Notification MFA is not enabled for your account. Enable it in security settings.',
@@ -2171,7 +2239,7 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
         issuer: 'fairarena',
       }) as MFAPendingPayload;
 
-      if (payload.type !== 'mfa_pending') {
+      if (payload.type !== 'mfa_pending' && payload.type !== 'new_device_pending') {
         throw new Error('Invalid token type');
       }
     } catch {
@@ -2253,17 +2321,24 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: ENV.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
     });
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
       secure: ENV.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
     });
+
+    // For new device verification, mark the device as known
+    if (payload.type === 'new_device_pending' && payload.deviceFingerprint) {
+      const recentDeviceKey = `recent_device:${userId}:${payload.deviceFingerprint}`;
+      await redis.setex(recentDeviceKey, 7 * 24 * 60 * 60, '1'); // 7 days
+      logger.info('New device verified and registered', { userId, deviceFingerprint: payload.deviceFingerprint });
+    }
 
     logger.info('MFA OTP verified successfully', { userId, method });
 

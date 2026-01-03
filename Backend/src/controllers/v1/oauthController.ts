@@ -22,7 +22,7 @@ const googleClient = new OAuth2Client(
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
 };
@@ -30,7 +30,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
 };
@@ -188,7 +188,7 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false, // Frontend needs to read this
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
             });
@@ -600,7 +600,7 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false, // Frontend needs to read this
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
             });
@@ -817,7 +817,7 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false, // Frontend needs to read this
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
             });
@@ -1029,7 +1029,7 @@ export const handleDiscordCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
@@ -1220,7 +1220,7 @@ export const handleHuggingFaceCallback = async (req: Request, res: Response) => 
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
@@ -1411,7 +1411,7 @@ export const handleGitLabCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
@@ -1611,7 +1611,7 @@ export const handleSlackCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
@@ -1798,7 +1798,7 @@ export const handleNotionCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
@@ -1995,7 +1995,7 @@ export const handleXCallback = async (req: Request, res: Response) => {
             res.cookie('mfa_redirect', redirectTarget, {
                 httpOnly: false,
                 secure: ENV.NODE_ENV === 'production',
-                sameSite: 'lax' as const,
+                sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
             });
