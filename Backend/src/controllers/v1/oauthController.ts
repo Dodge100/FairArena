@@ -1648,3 +1648,387 @@ export const handleSlackCallback = async (req: Request, res: Response) => {
         return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
     }
 };
+
+// =====================================================
+// NOTION OAUTH
+// =====================================================
+
+/**
+ * Generate Notion OAuth URL
+ * GET /api/v1/auth/notion
+ */
+export const getNotionAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const rootUrl = 'https://api.notion.com/v1/oauth/authorize';
+        const options = {
+            client_id: ENV.NOTION_CLIENT_ID,
+            redirect_uri: ENV.NOTION_CALLBACK_URL || '',
+            response_type: 'code',
+            owner: 'user',
+            state: req.query.redirect as string || '/dashboard',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate Notion auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate Notion authentication',
+        });
+    }
+};
+
+interface NotionUser {
+    object: 'user';
+    id: string;
+    name: string | null;
+    avatar_url: string | null;
+    type: 'person' | 'bot';
+    person?: {
+        email: string;
+    };
+}
+
+/**
+ * Handle Notion OAuth callback
+ * GET /api/v1/auth/notion/callback
+ */
+export const handleNotionCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state } = req.query;
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=notion_auth_failed`);
+        }
+
+        // Exchange code for access token
+        const authString = Buffer.from(`${ENV.NOTION_CLIENT_ID}:${ENV.NOTION_CLIENT_SECRET}`).toString('base64');
+        const tokenResponse = await fetch('https://api.notion.com/v1/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                Authorization: `Basic ${authString}`,
+            },
+            body: JSON.stringify({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: ENV.NOTION_CALLBACK_URL || '',
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as {
+            access_token?: string;
+            owner?: NotionUser;
+            error?: string;
+        };
+
+        if (!tokenResponse.ok || !tokenData.access_token || !tokenData.owner) {
+            logger.error('Failed to retrieve Notion access token', { error: tokenData.error });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=notion_token_failed`);
+        }
+
+        const notionUser = tokenData.owner;
+        const email = notionUser.person?.email;
+
+        if (!email) {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=notion_email_missing`);
+        }
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                const nameParts = notionUser.name?.split(' ') || [];
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: notionUser.avatar_url,
+                        firstName: nameParts[0] || null,
+                        lastName: nameParts.slice(1).join(' ') || null,
+                        emailVerified: true,
+                    },
+                });
+            } else if (!user.profileImageUrl && notionUser.avatar_url) {
+                await tx.user.update({
+                    where: { userId: user.userId },
+                    data: { profileImageUrl: notionUser.avatar_url },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'lax' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('Notion auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};
+
+// =====================================================
+// X (TWITTER) OAUTH
+// =====================================================
+
+/**
+ * Generate X OAuth URL
+ * GET /api/v1/auth/x
+ */
+export const getXAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const rootUrl = 'https://twitter.com/i/oauth2/authorize';
+        const options = {
+            client_id: ENV.X_CLIENT_ID,
+            redirect_uri: ENV.X_CALLBACK_URL || '',
+            response_type: 'code',
+            scope: 'tweet.read users.read offline.access',
+            state: req.query.redirect as string || '/dashboard',
+            code_challenge: 'challenge',
+            code_challenge_method: 'plain',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate X auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate X authentication',
+        });
+    }
+};
+
+interface XUser {
+    data: {
+        id: string;
+        name: string;
+        username: string;
+        profile_image_url?: string;
+    };
+}
+
+/**
+ * Handle X OAuth callback
+ * GET /api/v1/auth/x/callback
+ */
+export const handleXCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state } = req.query;
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=x_auth_failed`);
+        }
+
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                Authorization: `Basic ${Buffer.from(`${ENV.X_CLIENT_ID}:${ENV.X_CLIENT_SECRET}`).toString('base64')}`,
+            },
+            body: new URLSearchParams({
+                code,
+                grant_type: 'authorization_code',
+                redirect_uri: ENV.X_CALLBACK_URL || '',
+                code_verifier: 'challenge',
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as {
+            access_token?: string;
+            error?: string;
+        };
+
+        if (!tokenResponse.ok || !tokenData.access_token) {
+            logger.error('Failed to retrieve X access token', { error: tokenData.error });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=x_token_failed`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // Get user profile
+        const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        const userData = await userResponse.json() as XUser;
+
+        if (!userResponse.ok || !userData.data) {
+            throw new Error('Failed to fetch X user');
+        }
+
+        const xUser = userData.data;
+        // X API v2 doesn't provide email by default - use username@twitter.placeholder
+        const email = `${xUser.username}@x.placeholder.local`;
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                const nameParts = xUser.name?.split(' ') || [];
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: xUser.profile_image_url,
+                        firstName: nameParts[0] || xUser.username,
+                        lastName: nameParts.slice(1).join(' ') || null,
+                        emailVerified: false, // X doesn't provide verified email
+                    },
+                });
+            } else if (!user.profileImageUrl && xUser.profile_image_url) {
+                await tx.user.update({
+                    where: { userId: user.userId },
+                    data: { profileImageUrl: xUser.profile_image_url },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'lax' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('X auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};

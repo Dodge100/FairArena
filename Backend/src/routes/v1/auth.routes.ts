@@ -561,7 +561,9 @@ import {
     getGoogleAuthUrl,
     getHuggingFaceAuthUrl,
     getMicrosoftAuthUrl,
+    getNotionAuthUrl,
     getSlackAuthUrl,
+    getXAuthUrl,
     handleDiscordCallback,
     handleGithubCallback,
     handleGitLabCallback,
@@ -569,7 +571,9 @@ import {
     handleGoogleToken,
     handleHuggingFaceCallback,
     handleMicrosoftCallback,
+    handleNotionCallback,
     handleSlackCallback,
+    handleXCallback
 } from '../../controllers/v1/oauthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
@@ -754,6 +758,58 @@ router.get('/slack', getSlackAuthUrl);
  *         description: Redirect to frontend
  */
 router.get('/slack/callback', handleSlackCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/notion:
+ *   get:
+ *     summary: Get Notion OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Notion OAuth URL
+ */
+router.get('/notion', getNotionAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/notion/callback:
+ *   get:
+ *     summary: Notion OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/notion/callback', handleNotionCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/x:
+ *   get:
+ *     summary: Get X (Twitter) OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: X OAuth URL
+ */
+router.get('/x', getXAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/x/callback:
+ *   get:
+ *     summary: X (Twitter) OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/x/callback', handleXCallback);
 
 /**
  * @swagger
