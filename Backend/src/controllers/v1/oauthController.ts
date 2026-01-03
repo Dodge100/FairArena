@@ -165,7 +165,9 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
                 req.ip ||
                 req.socket.remoteAddress ||
                 'unknown';
-            const deviceFingerprint = req.headers['user-agent'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            const { deviceType } = parseUserAgent(userAgent);
+            const deviceFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
             const tempToken = await import('jsonwebtoken').then(jwt =>
                 jwt.default.sign(
@@ -339,7 +341,9 @@ export const handleGoogleToken = async (req: Request, res: Response) => {
                 req.ip ||
                 req.socket.remoteAddress ||
                 'unknown';
-            const deviceFingerprint = req.headers['user-agent'] || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            const { deviceType } = parseUserAgent(userAgent);
+            const deviceFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
             const tempToken = await import('jsonwebtoken').then(jwt =>
                 jwt.default.sign(
@@ -580,13 +584,17 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
             const mfaType = 'mfa_pending';
             const jwt = await import('jsonwebtoken');
 
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            const { deviceType } = parseUserAgent(userAgent);
+            const deviceFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
+
             // Create temporary MFA session token
             const tempToken = jwt.default.sign(
                 {
                     userId: transaction.userId,
                     type: mfaType,
                     ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
-                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                    deviceFingerprint,
                 },
                 ENV.JWT_SECRET,
                 { expiresIn: '5m', issuer: 'fairarena' }
@@ -797,13 +805,17 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
             const mfaType = 'mfa_pending';
             const jwt = await import('jsonwebtoken');
 
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            const { deviceType } = parseUserAgent(userAgent);
+            const deviceFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
+
             // Create temporary MFA session token
             const tempToken = jwt.default.sign(
                 {
                     userId: transaction.userId,
                     type: mfaType,
                     ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
-                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                    deviceFingerprint,
                 },
                 ENV.JWT_SECRET,
                 { expiresIn: '5m', issuer: 'fairarena' }

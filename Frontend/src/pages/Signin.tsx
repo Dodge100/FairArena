@@ -1,5 +1,6 @@
 import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 import { useCallback, useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -22,6 +23,25 @@ export default function Signin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedMethod = localStorage.getItem('lastUsedAuthMethod');
+    if (savedMethod) {
+      setLastUsedMethod(savedMethod);
+    }
+  }, []);
+
+  const saveLastUsedMethod = (method: string) => {
+    localStorage.setItem('lastUsedAuthMethod', method);
+    setLastUsedMethod(method);
+  };
+
+  const LastUsedBadge = () => (
+    <span className="absolute -top-2.5 -right-2 bg-[#DDEF00] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm border border-black/10 animate-in zoom-in duration-200">
+      Last Used
+    </span>
+  );
 
   // Form state
   const [email, setEmail] = useState('');
@@ -47,7 +67,8 @@ export default function Signin() {
   const [mfaPreferences, setMfaPreferences] = useState<{
     emailMfaEnabled: boolean;
     notificationMfaEnabled: boolean;
-  }>({ emailMfaEnabled: false, notificationMfaEnabled: false });
+    webauthnMfaAvailable?: boolean;
+  }>({ emailMfaEnabled: false, notificationMfaEnabled: false, webauthnMfaAvailable: false });
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
@@ -149,6 +170,7 @@ export default function Signin() {
               setMfaPreferences({
                 emailMfaEnabled: result.data.mfaPreferences.emailMfaEnabled || false,
                 notificationMfaEnabled: result.data.mfaPreferences.notificationMfaEnabled || false,
+                webauthnMfaAvailable: result.data.mfaPreferences.webauthnMfaAvailable || false,
               });
 
               if (isNewDevice) {
@@ -215,6 +237,7 @@ export default function Signin() {
     try {
       if (authStep === 'credentials') {
         // Login logic
+        saveLastUsedMethod('email');
         const result = await login(email, password, token);
 
         if (result.mfaRequired) {
@@ -222,7 +245,8 @@ export default function Signin() {
           if (result.mfaPreferences) {
             setMfaPreferences({
               emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
-              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled
+              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled,
+              webauthnMfaAvailable: result.mfaPreferences.webauthnMfaAvailable,
             });
           }
           setMfaSession({
@@ -234,13 +258,33 @@ export default function Signin() {
             description: 'Please enter the 6-digit code from your authenticator app',
           });
         } else if (result.newDeviceVerificationRequired) {
-          // New device detected - require OTP verification
+          // New device detected - require verification
           setAuthStep('new_device');
           if (result.mfaPreferences) {
             setMfaPreferences({
               emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
-              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled
+              notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled,
+              webauthnMfaAvailable: result.mfaPreferences.webauthnMfaAvailable,
             });
+
+            // Check if only WebAuthn is available (no email/notification fallback)
+            const onlyWebAuthn = result.mfaPreferences.webauthnMfaAvailable &&
+              !result.mfaPreferences.emailMfaEnabled &&
+              !result.mfaPreferences.notificationMfaEnabled;
+
+            if (onlyWebAuthn) {
+              // Don't set any OTP method - WebAuthn will be triggered automatically
+              setMfaSession({
+                active: true,
+                expiresAt: Date.now() + 5 * 60 * 1000,
+                attemptsRemaining: 5,
+              });
+              toast.info('Security key required', {
+                description: 'Use your security key to verify this device',
+              });
+              return; // Early return - WebAuthn will be triggered by useEffect
+            }
+
             // Auto-select email if available, otherwise notification
             setMfaMethod(result.mfaPreferences.emailMfaEnabled ? 'email' : 'notification');
           } else {
@@ -366,18 +410,32 @@ export default function Signin() {
     }
   }, [apiUrl]);
 
-  // Auto-send OTP for new device flow
+  // Auto-send OTP for new device flow (only if email/notification is available)
+  // Also auto-trigger WebAuthn if that's the only option
   useEffect(() => {
-    if (authStep === 'new_device' && !otpSent && !isLoading) {
-      if (mfaMethod === 'email' || mfaMethod === 'notification') {
-        // Debounce slightly to allow render to settle
+    if (authStep === 'new_device' && !isLoading) {
+      // Check if only WebAuthn is available
+      const onlyWebAuthn = mfaPreferences.webauthnMfaAvailable &&
+        !mfaPreferences.emailMfaEnabled &&
+        !mfaPreferences.notificationMfaEnabled;
+
+      if (onlyWebAuthn) {
+        // Auto-trigger WebAuthn authentication
+        const timer = setTimeout(() => {
+          handleWebAuthnMfaVerification();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+
+      // Otherwise, send OTP if not already sent
+      if (!otpSent && (mfaMethod === 'email' || mfaMethod === 'notification')) {
         const timer = setTimeout(() => {
           handleSendOtp(mfaMethod);
         }, 100);
         return () => clearTimeout(timer);
       }
     }
-  }, [authStep, otpSent, mfaMethod, isLoading, handleSendOtp]);
+  }, [authStep, otpSent, mfaMethod, mfaPreferences, isLoading, handleSendOtp]);
 
   // Reset to credentials step
   const handleResetToCredentials = async () => {
@@ -408,6 +466,7 @@ export default function Signin() {
   // Google OAuth login
   const handleGoogleLogin = async () => {
     try {
+      saveLastUsedMethod('google');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -430,6 +489,7 @@ export default function Signin() {
   // GitHub OAuth login
   const handleGithubLogin = async () => {
     try {
+      saveLastUsedMethod('github');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -452,6 +512,7 @@ export default function Signin() {
   // Microsoft OAuth login
   const handleMicrosoftLogin = async () => {
     try {
+      saveLastUsedMethod('microsoft');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -474,6 +535,7 @@ export default function Signin() {
   // Discord OAuth login
   const handleDiscordLogin = async () => {
     try {
+      saveLastUsedMethod('discord');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -496,6 +558,7 @@ export default function Signin() {
   // Hugging Face OAuth login
   const handleHuggingFaceLogin = async () => {
     try {
+      saveLastUsedMethod('huggingface');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -518,6 +581,7 @@ export default function Signin() {
   // GitLab OAuth login
   const handleGitLabLogin = async () => {
     try {
+      saveLastUsedMethod('gitlab');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -540,6 +604,7 @@ export default function Signin() {
   // Slack OAuth login
   const handleSlackLogin = async () => {
     try {
+      saveLastUsedMethod('slack');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -562,6 +627,7 @@ export default function Signin() {
   // Notion OAuth login
   const handleNotionLogin = async () => {
     try {
+      saveLastUsedMethod('notion');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -584,6 +650,7 @@ export default function Signin() {
   // X (Twitter) OAuth login
   const handleXLogin = async () => {
     try {
+      saveLastUsedMethod('x');
       setIsLoading(true);
       const redirectPath = getRedirectPath();
       const response = await fetch(
@@ -614,6 +681,7 @@ export default function Signin() {
     setError('');
 
     try {
+      saveLastUsedMethod('passkey');
       const result = await initiatePasskeyLogin(apiUrl);
 
       if (result.success && result.user && result.accessToken) {
@@ -642,6 +710,71 @@ export default function Signin() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // WebAuthn MFA Verification
+  const handleWebAuthnMfaVerification = async () => {
+    try {
+      if (!browserSupportsWebAuthn()) {
+        toast.error('WebAuthn is not supported in this browser');
+        return;
+      }
+
+      setIsLoading(true);
+
+      // Step 1: Get authentication options
+      const optionsRes = await fetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/options`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const optionsData = await optionsRes.json();
+
+      if (!optionsData.success) {
+        throw new Error(optionsData.message || 'Failed to initialize security key request');
+      }
+
+      // Step 2: Authenticate with browser
+      const credential = await startAuthentication({
+        optionsJSON: optionsData.data,
+      });
+
+      // Step 3: Verify with server
+      const verifyRes = await fetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ response: credential }),
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.success) {
+        throw new Error(verifyData.message || 'Security key verification failed');
+      }
+
+      // Success
+      const { user, accessToken } = verifyData.data;
+      login(user, accessToken); // Use context login
+
+      // Handle redirect
+      const statePath = location.state?.from?.pathname;
+      const redirectPath = statePath || '/dashboard';
+      navigate(redirectPath, { replace: true });
+      toast.success('Signed in successfully');
+
+    } catch (error) {
+      console.error('WebAuthn MFA error:', error);
+      const message = error instanceof Error ? error.message : 'Authentication failed';
+
+      if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
+        // User cancelled, just stop loading
+      } else {
+        setError(message);
+        toast.error(message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Render MFA verification form
@@ -827,6 +960,26 @@ export default function Signin() {
                     </button>
                   )}
 
+                  {/* Security Key Option */}
+                  {mfaPreferences.webauthnMfaAvailable && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleWebAuthnMfaVerification();
+                        setShowAlternatives(false);
+                      }}
+                      disabled={isLoading}
+                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                    >
+                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      Use Security Key
+                    </button>
+                  )}
+
                   {mfaPreferences.emailMfaEnabled && mfaMethod !== 'email' && (
                     <button
                       type="button"
@@ -906,8 +1059,9 @@ export default function Signin() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50"
+          className="relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50"
         >
+          {lastUsedMethod === 'google' && <LastUsedBadge />}
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
             <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -923,8 +1077,9 @@ export default function Signin() {
             type="button"
             onClick={handlePasskeyLogin}
             disabled={isLoading || passkeyLoading}
-            className={`w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'}`}
+            className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'}`}
           >
+            {lastUsedMethod === 'passkey' && <LastUsedBadge />}
             {passkeyLoading ? (
               <>
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -954,8 +1109,9 @@ export default function Signin() {
             onClick={handleGithubLogin}
             disabled={isLoading}
             title="GitHub"
-            className={`p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900'}`}
+            className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900'}`}
           >
+            {lastUsedMethod === 'github' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
@@ -967,8 +1123,9 @@ export default function Signin() {
             onClick={handleMicrosoftLogin}
             disabled={isLoading}
             title="Microsoft"
-            className={`p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200'}`}
+            className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200'}`}
           >
+            {lastUsedMethod === 'microsoft' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 23 23">
               <path fill="#f35325" d="M1 1h10v10H1z" />
               <path fill="#81bc06" d="M12 1h10v10H12z" />
@@ -983,8 +1140,9 @@ export default function Signin() {
             onClick={handleDiscordLogin}
             disabled={isLoading}
             title="Discord"
-            className="p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#5865F2] hover:bg-[#4752C4] text-white"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#5865F2] hover:bg-[#4752C4] text-white"
           >
+            {lastUsedMethod === 'discord' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.373-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
             </svg>
@@ -996,8 +1154,9 @@ export default function Signin() {
             onClick={handleGitLabLogin}
             disabled={isLoading}
             title="GitLab"
-            className="p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#FC6D26] hover:bg-[#E24329] text-white"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#FC6D26] hover:bg-[#E24329] text-white"
           >
+            {lastUsedMethod === 'gitlab' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="m23.6 9.593-.033-.086L20.3.98a.851.851 0 0 0-.336-.405.874.874 0 0 0-.992.062.858.858 0 0 0-.285.473l-2.212 6.775H7.534L5.322 1.11a.857.857 0 0 0-.285-.474.868.868 0 0 0-.992-.061.852.852 0 0 0-.336.405L.433 9.507l-.033.086a6.066 6.066 0 0 0 2.012 7.01l.011.008.027.02 4.973 3.727 2.462 1.863 1.5 1.133a1.007 1.007 0 0 0 1.22 0l1.5-1.133 2.462-1.863 4.999-3.745.014-.01a6.068 6.068 0 0 0 2.012-7.01z" />
             </svg>
@@ -1012,8 +1171,9 @@ export default function Signin() {
             onClick={handleXLogin}
             disabled={isLoading}
             title="X (Twitter)"
-            className={`p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900'}`}
+            className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900'}`}
           >
+            {lastUsedMethod === 'x' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
@@ -1025,8 +1185,9 @@ export default function Signin() {
             onClick={handleNotionLogin}
             disabled={isLoading}
             title="Notion"
-            className={`p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-neutral-800 text-white'}`}
+            className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-neutral-800 text-white'}`}
           >
+            {lastUsedMethod === 'notion' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z" />
             </svg>
@@ -1037,8 +1198,9 @@ export default function Signin() {
             onClick={handleHuggingFaceLogin}
             disabled={isLoading}
             title="Hugging Face"
-            className="p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#FFD21E] hover:bg-[#E5BD1B] text-black"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#FFD21E] hover:bg-[#E5BD1B] text-black"
           >
+            {lastUsedMethod === 'huggingface' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12.025 1.13c-5.77 0-10.449 4.647-10.449 10.378 0 1.112.178 2.181.503 3.185.064-.222.203-.444.416-.577a.96.96 0 0 1 .524-.15c.293 0 .584.124.84.284.278.173.48.408.71.694.226.282.458.611.684.951v-.014c.017-.324.106-.622.264-.874s.403-.487.762-.543c.3-.047.596.06.787.203s.31.313.4.467c.15.257.212.468.233.542.01.026.653 1.552 1.657 2.54.616.605 1.01 1.223 1.082 1.912.055.537-.096 1.059-.38 1.572.637.121 1.294.187 1.967.187.657 0 1.298-.063 1.921-.178-.287-.517-.44-1.041-.384-1.581.07-.69.465-1.307 1.081-1.913 1.004-.987 1.647-2.513 1.657-2.539.021-.074.083-.285.233-.542.09-.154.208-.323.4-.467a1.08 1.08 0 0 1 .787-.203c.359.056.604.29.762.543s.247.55.265.874v.015c.225-.34.457-.67.683-.952.23-.286.432-.52.71-.694.257-.16.547-.284.84-.285a.97.97 0 0 1 .524.151c.228.143.373.388.43.625l.006.04a10.3 10.3 0 0 0 .534-3.273c0-5.731-4.678-10.378-10.449-10.378M8.327 6.583a1.5 1.5 0 0 1 .713.174 1.487 1.487 0 0 1 .617 2.013c-.183.343-.762-.214-1.102-.094-.38.134-.532.914-.917.71a1.487 1.487 0 0 1 .69-2.803m7.486 0a1.487 1.487 0 0 1 .689 2.803c-.385.204-.536-.576-.916-.71-.34-.12-.92.437-1.103.094a1.487 1.487 0 0 1 .617-2.013 1.5 1.5 0 0 1 .713-.174m-10.68 1.55a.96.96 0 1 1 0 1.921.96.96 0 0 1 0-1.92m13.838 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92M8.489 11.458c.588.01 1.965 1.157 3.572 1.164 1.607-.007 2.984-1.155 3.572-1.164.196-.003.305.12.305.454 0 .886-.424 2.328-1.563 3.202-.22-.756-1.396-1.366-1.63-1.32q-.011.001-.02.006l-.044.026-.01.008-.03.024q-.018.017-.035.036l-.032.04a1 1 0 0 0-.058.09l-.014.025q-.049.088-.11.19a1 1 0 0 1-.083.116 1.2 1.2 0 0 1-.173.18q-.035.029-.075.058a1.3 1.3 0 0 1-.251-.243 1 1 0 0 1-.076-.107c-.124-.193-.177-.363-.337-.444-.034-.016-.104-.008-.2.022q-.094.03-.216.087-.06.028-.125.063l-.13.074q-.067.04-.136.086a3 3 0 0 0-.135.096 3 3 0 0 0-.26.219 2 2 0 0 0-.12.121 2 2 0 0 0-.106.128l-.002.002a2 2 0 0 0-.09.132l-.001.001a1.2 1.2 0 0 0-.105.212q-.013.036-.024.073c-1.139-.875-1.563-2.317-1.563-3.203 0-.334.109-.457.305-.454m.836 10.354c.824-1.19.766-2.082-.365-3.194-1.13-1.112-1.789-2.738-1.789-2.738s-.246-.945-.806-.858-.97 1.499.202 2.362c1.173.864-.233 1.45-.685.64-.45-.812-1.683-2.896-2.322-3.295s-1.089-.175-.938.647 2.822 2.813 2.562 3.244-1.176-.506-1.176-.506-2.866-2.567-3.49-1.898.473 1.23 2.037 2.16c1.564.932 1.686 1.178 1.464 1.53s-3.675-2.511-4-1.297c-.323 1.214 3.524 1.567 3.287 2.405-.238.839-2.71-1.587-3.216-.642-.506.946 3.49 2.056 3.522 2.064 1.29.33 4.568 1.028 5.713-.624m5.349 0c-.824-1.19-.766-2.082.365-3.194 1.13-1.112-1.789-2.738 1.789-2.738s.246-.945.806-.858.97 1.499-.202 2.362c-1.173.864.233 1.45.685.64.451-.812 1.683-2.896 2.322-3.295s1.089-.175.938.647-2.822 2.813-2.562 3.244 1.176-.506 1.176-.506 2.866-2.567 3.49-1.898-.473 1.23-2.037 2.16c-1.564.932-1.686 1.178-1.464 1.53s3.675-2.511 4-1.297c.323 1.214-3.524 1.567-3.287 2.405.238.839 2.71-1.587 3.216-.642.506.946-3.49 2.056-3.522 2.064-1.29.33-4.568 1.028-5.713-.624" />
             </svg>
@@ -1050,8 +1212,9 @@ export default function Signin() {
             onClick={handleSlackLogin}
             disabled={isLoading}
             title="Slack"
-            className="p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#4A154B] hover:bg-[#3a1039] text-white"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#4A154B] hover:bg-[#3a1039] text-white"
           >
+            {lastUsedMethod === 'slack' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.272 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.835 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.835 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.835 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.835zm0 1.272a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.835a2.528 2.528 0 0 1 2.522-2.521h6.313zm10.123 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 24 8.835a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.835zm-1.271 0a2.528 2.528 0 0 1-2.522 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.165 0a2.528 2.528 0 0 1 2.522 2.522v6.313zm-2.522 10.123a2.528 2.528 0 0 1 2.522 2.52A2.528 2.528 0 0 1 15.165 24a2.528 2.528 0 0 1-2.521-2.522v-2.52h2.521zm0-1.272a2.528 2.528 0 0 1-2.521-2.521 2.528 2.528 0 0 1 2.521-2.521h6.313A2.528 2.528 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.521h-6.313z" />
             </svg>
@@ -1141,8 +1304,9 @@ export default function Signin() {
           <button
             type="submit"
             disabled={isLoading || !email || !password}
-            className="w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+            className="relative w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
           >
+            {lastUsedMethod === 'email' && <LastUsedBadge />}
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">

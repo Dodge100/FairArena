@@ -60,5 +60,7 @@ export {
   sendMFAEnabledEmail,
   sendMfaOtpEmail,
   sendNewDeviceLoginEmail,
+  sendSecurityKeyAddedEmail,
+  sendSecurityKeyRemovedEmail,
 } from './securityEmails.js';
 

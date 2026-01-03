@@ -293,3 +293,109 @@ export const sendMfaOtpEmail = inngest.createFunction(
     });
   },
 );
+
+/**
+ * Send email when a security key is added
+ */
+export const sendSecurityKeyAddedEmail = inngest.createFunction(
+  {
+    id: 'email/security-key-added',
+    name: 'Send Security Key Added Email',
+    retries: 3,
+  },
+  { event: 'security/key-added' },
+  async ({ event, step }) => {
+    const { userId, keyName, addedAt, ipAddress, userAgent } = event.data;
+
+    return await step.run('send-security-key-added-email', async () => {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: { email: true, firstName: true },
+        });
+
+        if (!user || !user.email) {
+          logger.warn('User not found for security key added email', { userId });
+          return { success: false, reason: 'User not found' };
+        }
+
+        const { deviceName } = parseUserAgent(userAgent);
+        const location = getLocationFromIP(ipAddress || 'unknown');
+
+        await sendEmail({
+          to: user.email,
+          subject: 'Security Key Added',
+          templateType: 'security-key-added',
+          templateData: {
+            firstName: user.firstName || 'there',
+            keyName,
+            addedAt: addedAt || new Date().toLocaleString(),
+            deviceName,
+            ipAddress,
+            location,
+            securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
+          },
+        });
+
+        logger.info('Security key added email sent', { userId, email: user.email });
+        return { success: true };
+      } catch (error) {
+        logger.error('Failed to send security key added email', { error, userId });
+        throw error;
+      }
+    });
+  },
+);
+
+/**
+ * Send email when a security key is removed
+ */
+export const sendSecurityKeyRemovedEmail = inngest.createFunction(
+  {
+    id: 'email/security-key-removed',
+    name: 'Send Security Key Removed Email',
+    retries: 3,
+  },
+  { event: 'security/key-removed' },
+  async ({ event, step }) => {
+    const { userId, keyName, removedAt, ipAddress, userAgent } = event.data;
+
+    return await step.run('send-security-key-removed-email', async () => {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: { email: true, firstName: true },
+        });
+
+        if (!user || !user.email) {
+          logger.warn('User not found for security key removed email', { userId });
+          return { success: false, reason: 'User not found' };
+        }
+
+        const { deviceName } = parseUserAgent(userAgent);
+        const location = getLocationFromIP(ipAddress || 'unknown');
+
+        await sendEmail({
+          to: user.email,
+          subject: 'Security Key Removed',
+          templateType: 'security-key-removed',
+          templateData: {
+            firstName: user.firstName || 'there',
+            keyName,
+            removedAt: removedAt || new Date().toLocaleString(),
+            deviceName,
+            ipAddress,
+            location,
+            securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
+          },
+        });
+
+        logger.info('Security key removed email sent', { userId, email: user.email });
+        return { success: true };
+      } catch (error) {
+        logger.error('Failed to send security key removed email', { error, userId });
+        throw error;
+      }
+    });
+  },
+);

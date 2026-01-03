@@ -52,6 +52,7 @@ model User {
   organizationStars     OrganizationStars[]
   OrganizationUserRole  OrganizationUserRole[]
   passkeys              Passkey[]
+  securityKeys          SecurityKey[]
   payments              Payment[]
   profile               Profile?
   profileStars          ProfileStars[]
@@ -944,6 +945,24 @@ model Passkey {
   counter      BigInt    @default(0) // Signature counter for replay protection
   deviceType   String?            // "platform" | "cross-platform"
   name         String?            // User-friendly name like "MacBook Pro"
+  transports   String[]           // Transports the credential supports
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+// WebAuthn Security Keys for MFA (distinct from Passkeys used for login)
+model SecurityKey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique // Base64URL encoded credential ID
+  publicKey    String             // Base64URL encoded public key
+  counter      BigInt    @default(0) // Signature counter for replay protection
+  deviceType   String?            // "platform" | "cross-platform"
+  name         String?            // User-friendly name like "YubiKey 5"
   transports   String[]           // Transports the credential supports
   lastUsedAt   DateTime?
   createdAt    DateTime  @default(now())

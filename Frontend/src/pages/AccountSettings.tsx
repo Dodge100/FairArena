@@ -1,6 +1,7 @@
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
+import { SecurityKeyManager } from '@/components/SecurityKeyManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { apiFetch } from '@/lib/apiClient';
@@ -215,7 +216,7 @@ function AccountSettings() {
       fetchSessions();
       fetchActivityLogs();
     }
-  }, [user]);
+  }, [user, isVerified]);
 
   useEffect(() => {
     if (activeTab === 'security' && isVerified) {
@@ -934,6 +935,7 @@ function AccountSettings() {
 
             {/* Passkeys Section */}
             <PasskeyManager />
+            <SecurityKeyManager />
 
             {/* MFA Preferences Section */}
             {mfaStatus?.enabled && (

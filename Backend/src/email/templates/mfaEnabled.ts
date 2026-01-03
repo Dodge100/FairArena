@@ -36,12 +36,6 @@ export const mfaEnabledTemplate = (params: {
   <div class="container">
     <div class="header">
       <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
-      <div class="header-icon">
-        <svg width="32" height="32" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 12l2 2 4-4"/>
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
-      </div>
       <h1>Two-Factor Authentication Enabled</h1>
     </div>
     <div class="content">

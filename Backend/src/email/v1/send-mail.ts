@@ -30,6 +30,8 @@ import { platformInviteEmailTemplate } from '../templates/platformInvite.js';
 import { refundCompletedEmailTemplate } from '../templates/refundCompleted.js';
 import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
 import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
+import { securityKeyAddedTemplate } from '../templates/securityKeyAdded.js';
+import { securityKeyRemovedTemplate } from '../templates/securityKeyRemoved.js';
 import { supportConfirmationEmailTemplate } from '../templates/support-confirmation.js';
 import { teamInviteEmailTemplate } from '../templates/teamInvite.js';
 import { waitlistConfirmationTemplate } from '../templates/waitlistConfirmation.js';
@@ -209,6 +211,24 @@ type PasskeyAddedParams = {
   passkeyName: string;
   securityUrl: string;
 };
+type SecurityKeyAddedParams = {
+  firstName: string;
+  keyName: string;
+  addedAt: string;
+  securityUrl: string;
+  ipAddress?: string;
+  location?: string;
+  deviceName?: string;
+};
+type SecurityKeyRemovedParams = {
+  firstName: string;
+  keyName: string;
+  removedAt: string;
+  securityUrl: string;
+  ipAddress?: string;
+  location?: string;
+  deviceName?: string;
+};
 type PasskeyRemovedParams = {
   firstName: string;
   passkeyName: string;
@@ -280,6 +300,8 @@ export const emailTemplates = {
   MFA_OTP: mfaOtpTemplate as unknown as (params: MfaOtpParams) => string,
   'passkey-added': passkeyAddedTemplate as (params: PasskeyAddedParams) => string,
   'passkey-removed': passkeyRemovedTemplate as (params: PasskeyRemovedParams) => string,
+  'security-key-added': securityKeyAddedTemplate as (params: SecurityKeyAddedParams) => string,
+  'security-key-removed': securityKeyRemovedTemplate as (params: SecurityKeyRemovedParams) => string,
   'backup-code-used': backupCodeUsedTemplate as (params: BackupCodeUsedParams) => string,
 };
 

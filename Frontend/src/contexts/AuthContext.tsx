@@ -54,6 +54,7 @@ export interface AuthResponse {
     mfaPreferences?: {
         emailMfaEnabled: boolean;
         notificationMfaEnabled: boolean;
+        webauthnMfaAvailable?: boolean;
     };
 }
 

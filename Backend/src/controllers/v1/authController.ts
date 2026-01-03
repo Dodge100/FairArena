@@ -157,15 +157,21 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    if (!ENV.NEW_SIGNUP_ENABLED) {
-      return res.status(403).json({
-        success: false,
-        message: 'Signups are currently disabled. Please join our waitlist.',
-        code: 'SIGNUP_DISABLED',
-      });
-    }
-
     const { email, password, firstName, lastName } = validation.data;
+
+    // Check if email domain is allowed (if ALLOWED_SIGNUP_DOMAINS is set)
+    if (ENV.ALLOWED_SIGNUP_DOMAINS && ENV.ALLOWED_SIGNUP_DOMAINS.trim() !== '') {
+      const allowedDomains = ENV.ALLOWED_SIGNUP_DOMAINS.split(',').map(d => d.trim().toLowerCase());
+      const emailDomain = email.toLowerCase().split('@')[1];
+
+      if (!allowedDomains.includes(emailDomain) && !ENV.NEW_SIGNUP_ENABLED) {
+        return res.status(403).json({
+          success: false,
+          message: 'Registration is currently restricted to authorized organizations.',
+          code: 'EMAIL_DOMAIN_NOT_ALLOWED',
+        });
+      }
+    }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
@@ -288,7 +294,6 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Find user
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: {
@@ -305,6 +310,10 @@ export const login = async (req: Request, res: Response) => {
         notificationMfaEnabled: true,
         isBanned: true,
         banReason: true,
+        // Check if user has any registered security keys
+        _count: {
+          select: { securityKeys: true }
+        }
       },
     });
 
@@ -367,7 +376,9 @@ export const login = async (req: Request, res: Response) => {
         req.ip ||
         req.socket.remoteAddress ||
         'unknown';
-      const deviceFingerprint = req.headers['user-agent'] || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+      const { deviceType } = parseUserAgent(userAgent);
+      const deviceFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
       // Generate temporary token for MFA verification
       const tempToken = await import('jsonwebtoken').then((jwt) =>
@@ -396,6 +407,8 @@ export const login = async (req: Request, res: Response) => {
         mfaPreferences: {
           emailMfaEnabled: user.emailMfaEnabled,
           notificationMfaEnabled: user.notificationMfaEnabled,
+          // Has WebAuthn MFA if at least one security key is registered
+          webauthnMfaAvailable: user._count.securityKeys > 0,
         },
       });
     }
@@ -443,9 +456,11 @@ export const login = async (req: Request, res: Response) => {
         message: 'New device verification required',
         newDeviceVerificationRequired: true,
         mfaPreferences: {
-          // Always enable both methods for new device verification
-          emailMfaEnabled: true,
-          notificationMfaEnabled: true,
+          // If user has security keys, force WebAuthn only (highest security)
+          // Otherwise, allow email/notification fallback
+          emailMfaEnabled: user._count.securityKeys === 0,
+          notificationMfaEnabled: user._count.securityKeys === 0,
+          webauthnMfaAvailable: user._count.securityKeys > 0,
         },
       });
     }
@@ -671,9 +686,11 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
       req.ip ||
       req.socket.remoteAddress ||
       'unknown';
-    const currentDevice = req.headers['user-agent'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const { deviceType, deviceName } = parseUserAgent(userAgent);
+    const currentFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
-    if (payload.ipAddress !== currentIp || payload.deviceFingerprint !== currentDevice) {
+    if (payload.ipAddress !== currentIp || payload.deviceFingerprint !== currentFingerprint) {
       res.clearCookie('mfa_session', { path: '/' });
       logger.warn('MFA session hijacking attempt detected during verification', {
         userId: payload.userId,
@@ -836,9 +853,7 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     await clearFailedLogins(user.email);
 
     // Get device info
-    const userAgent = req.headers['user-agent'];
-    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
-    const { deviceType, deviceName } = parseUserAgent(userAgent);
+    const ipAddress = currentIp;
 
     // Generate tokens
     const refreshToken = generateRefreshToken();
@@ -1627,6 +1642,8 @@ export const checkMfaSession = async (req: Request, res: Response) => {
         userId: payload.userId,
         expectedIp: payload.ipAddress,
         actualIp: clientIp,
+        expectedFingerprint: payload.deviceFingerprint,
+        actualFingerprint: currentFingerprint,
       });
       return res.status(200).json({
         success: true,
@@ -1663,39 +1680,56 @@ export const checkMfaSession = async (req: Request, res: Response) => {
 
     let emailMfaEnabled = false;
     let notificationMfaEnabled = false;
+    let webauthnMfaAvailable = false;
 
     if (cachedPrefs) {
       const prefs = typeof cachedPrefs === 'string' ? JSON.parse(cachedPrefs) : cachedPrefs;
       emailMfaEnabled = prefs.emailMfaEnabled || false;
       notificationMfaEnabled = prefs.notificationMfaEnabled || false;
+      webauthnMfaAvailable = prefs.webauthnMfaAvailable || false;
     } else {
       const user = await prisma.user.findUnique({
         where: { userId: payload.userId },
         select: {
           mfaEnabled: true,
           emailMfaEnabled: true,
-          notificationMfaEnabled: true
+          notificationMfaEnabled: true,
+          _count: {
+            select: { securityKeys: true }
+          }
         },
       });
 
       emailMfaEnabled = user?.emailMfaEnabled || false;
       notificationMfaEnabled = user?.notificationMfaEnabled || false;
+      webauthnMfaAvailable = (user?._count?.securityKeys || 0) > 0;
 
       // Cache for 1 hour to match getMfaPreferences
       if (user) {
         await redis.setex(prefsCacheKey, 3600, JSON.stringify({
           mfaEnabled: user.mfaEnabled,
           emailMfaEnabled,
-          notificationMfaEnabled
+          notificationMfaEnabled,
+          webauthnMfaAvailable
         }));
       }
     }
 
-    // Force enable capabilities for new device flow
-    // (Apply this override regardless of whether prefs came from cache or DB)
+    // For new device flow, enforce security key only if user has registered security keys
+    // This is a critical security measure - users with security keys MUST use them
     if (payload.type === 'new_device_pending') {
-      emailMfaEnabled = true;
-      notificationMfaEnabled = true;
+      if (webauthnMfaAvailable) {
+        // User has security keys - force WebAuthn only
+        emailMfaEnabled = false;
+        notificationMfaEnabled = false;
+        logger.info('New device verification: enforcing security key only', {
+          userId: payload.userId,
+        });
+      } else {
+        // No security keys - allow email/notification fallback
+        emailMfaEnabled = true;
+        notificationMfaEnabled = true;
+      }
     }
 
     return res.status(200).json({
@@ -1710,6 +1744,7 @@ export const checkMfaSession = async (req: Request, res: Response) => {
         mfaPreferences: {
           emailMfaEnabled,
           notificationMfaEnabled,
+          webauthnMfaAvailable,
         },
       },
     });
@@ -2059,10 +2094,15 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
 
     const userId = payload.userId;
 
-    // Check if user has email MFA enabled
+    // Check if user has email MFA enabled and security keys
     const user = await prisma.user.findUnique({
       where: { userId },
-      select: { email: true, firstName: true, emailMfaEnabled: true },
+      select: {
+        email: true,
+        firstName: true,
+        emailMfaEnabled: true,
+        _count: { select: { securityKeys: true } }
+      },
     });
 
     if (!user) {
@@ -2072,7 +2112,20 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
       });
     }
 
-    // For new device verification, allow email OTP even without explicit setting
+    // SECURITY: For new device verification, if user has security keys, they MUST use WebAuthn
+    // This prevents attackers from bypassing security keys by using email OTP
+    if (payload.type === 'new_device_pending' && user._count.securityKeys > 0) {
+      logger.warn('Blocked email OTP attempt for user with security keys', {
+        userId,
+        securityKeyCount: user._count.securityKeys,
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'Security key verification required. Email verification is not available for accounts with security keys.',
+        code: 'SECURITY_KEY_REQUIRED',
+      });
+    }
+
     // For regular MFA, require emailMfaEnabled to be true
     if (payload.type === 'mfa_pending' && !user.emailMfaEnabled) {
       return res.status(400).json({
@@ -2148,10 +2201,13 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
 
     const userId = payload.userId;
 
-    // Check if user has notification MFA enabled
+    // Check if user has notification MFA enabled and security keys
     const user = await prisma.user.findUnique({
       where: { userId },
-      select: { notificationMfaEnabled: true },
+      select: {
+        notificationMfaEnabled: true,
+        _count: { select: { securityKeys: true } }
+      },
     });
 
     if (!user) {
@@ -2161,7 +2217,20 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
       });
     }
 
-    // For new device verification, allow notification OTP even without explicit setting
+    // SECURITY: For new device verification, if user has security keys, they MUST use WebAuthn
+    // This prevents attackers from bypassing security keys by using notification OTP
+    if (payload.type === 'new_device_pending' && user._count.securityKeys > 0) {
+      logger.warn('Blocked notification OTP attempt for user with security keys', {
+        userId,
+        securityKeyCount: user._count.securityKeys,
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'Security key verification required. Notification verification is not available for accounts with security keys.',
+        code: 'SECURITY_KEY_REQUIRED',
+      });
+    }
+
     // For regular MFA, require notificationMfaEnabled to be true
     if (payload.type === 'mfa_pending' && !user.notificationMfaEnabled) {
       return res.status(400).json({
@@ -2252,6 +2321,48 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
 
     const userId = payload.userId;
 
+    // Fetch user with MFA preferences
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        profileImageUrl: true,
+        emailVerified: true,
+        mfaEnabled: true,
+        emailMfaEnabled: true,
+        notificationMfaEnabled: true,
+        isBanned: true,
+        banReason: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Security check: Ensure the requested MFA method is actually enabled for this user
+    // We skip this check for 'new_device_pending' sessions as they force these methods on
+    if (payload.type === 'mfa_pending') {
+      if (method === 'email' && !user.emailMfaEnabled) {
+        return res.status(403).json({
+          success: false,
+          message: 'Email MFA is not enabled for this account',
+        });
+      }
+      if (method === 'notification' && !user.notificationMfaEnabled) {
+        return res.status(403).json({
+          success: false,
+          message: 'Notification MFA is not enabled for this account',
+        });
+      }
+    }
+
     // Get stored OTP hash
     const storedOtpHash = await redis.get(`${MFA_OTP_PREFIX}${method}:${userId}`);
     if (!storedOtpHash) {
@@ -2269,38 +2380,27 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
       });
     }
 
-    // OTP is valid - delete it (one-time use) and clear MFA session
+    // OTP is valid - delete it (one-time use)
     await redis.del(`${MFA_OTP_PREFIX}${method}:${userId}`);
 
-    // Get user data for session creation
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      select: {
-        userId: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        profileImageUrl: true,
-        emailVerified: true,
-        mfaEnabled: true,
-        isBanned: true,
-        banReason: true,
-      },
-    });
+    // --- SUCCESSFUL LOGIN LOGIC ---
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-    }
+    // Get device info
+    const userAgentRaw = req.headers['user-agent'] || 'unknown';
+    const uaInfo = parseUserAgent(userAgentRaw);
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
     // Create session and tokens
     const refreshToken = generateRefreshToken();
     const sessionId = await createSession(
       user.userId,
       refreshToken,
-      parseUserAgent(req.headers['user-agent']),
+      {
+        deviceName: uaInfo.deviceName,
+        deviceType: uaInfo.deviceType,
+        userAgent: userAgentRaw,
+        ipAddress,
+      },
       { isBanned: user.isBanned, banReason: user.banReason }
     );
     const accessToken = generateAccessToken(user.userId, sessionId);
@@ -2310,7 +2410,7 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
       where: { userId },
       data: {
         lastLoginAt: new Date(),
-        lastLoginIp: req.ip,
+        lastLoginIp: ipAddress,
       },
     });
 

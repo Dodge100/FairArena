@@ -1,9 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, Loader2, Mail, Shield, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, ChevronRight, Clock, Loader2, Lock, Mail, Shield, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useTheme } from '../hooks/useTheme';
 import { apiFetch } from '../lib/apiClient';
 
 interface OTPVerificationProps {
@@ -21,15 +23,18 @@ export function OTPVerification({
   className = '',
   fullScreen = true,
 }: OTPVerificationProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showCaptchaModal, setShowCaptchaModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'send' | 'verify' | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   // Cooldown state
@@ -41,6 +46,7 @@ export function OTPVerification({
       const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`
       );
+
       const data = await res.json();
       if (data.success && data.verified) {
         setIsVerified(true);
@@ -96,164 +102,148 @@ export function OTPVerification({
   }, [otpCooldown]);
 
   const onCaptchaChange = useCallback((token: string | null) => {
-    setCaptchaToken(token);
-  }, []);
+    if (token && pendingAction) {
+      setShowCaptchaModal(false);
+      if (pendingAction === 'send') {
+        executeSendOtp(token);
+      } else if (pendingAction === 'verify') {
+        executeVerifyOtp(token);
+      }
+      setPendingAction(null);
+    }
+  }, [pendingAction]);
 
   const onCaptchaExpired = useCallback(() => {
-    setCaptchaToken(null);
+    // No-op
   }, []);
 
   const onCaptchaError = useCallback(() => {
-    setCaptchaToken(null);
-    setMessage('CAPTCHA verification failed. Please try again.');
+    setMessage({ type: 'error', text: 'CAPTCHA verification failed. Please try again.' });
   }, []);
-  const getRecaptchaToken = async () => {
-    if (!captchaToken) {
-      setMessage('Please complete the CAPTCHA');
-      return '';
-    }
-    return captchaToken;
-  };
 
-  const sendOtp = async () => {
-    // Check if cooldown is active
+  const handleSendClick = () => {
+    // Check cooldowns first
     const now = Date.now();
     const timeSinceLastRequest = (now - lastOtpRequestTime) / 1000;
-
     if (timeSinceLastRequest < 60 && lastOtpRequestTime > 0) {
       const remaining = Math.ceil(60 - timeSinceLastRequest);
       setOtpCooldown(remaining);
-      setMessage(`Please wait ${remaining} seconds before requesting another OTP.`);
+      setMessage({ type: 'error', text: `Please wait ${remaining} seconds before requesting another OTP.` });
       return;
     }
 
+    setPendingAction('send');
+    setShowCaptchaModal(true);
+  };
+
+  const handleVerifyClick = () => {
+    if (!otp.trim() || otp.length < 6) {
+      setMessage({ type: 'error', text: 'Please enter at least 6 characters for the OTP' });
+      return;
+    }
+    setPendingAction('verify');
+    setShowCaptchaModal(true);
+  };
+
+  const executeSendOtp = async (token: string) => {
     setIsSendingOtp(true);
-    setMessage('');
+    setMessage(null);
     setIsRateLimited(false);
     setRetryAfter(0);
 
     try {
-      const captcha = await getRecaptchaToken();
-      if (!captcha) {
-        setIsSendingOtp(false);
-        return;
-      }
       const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
         {
           method: 'POST',
           headers: {
-            'X-Recaptcha-Token': captcha,
+            'X-Recaptcha-Token': token,
           },
         },
       );
+
       const data = await res.json();
 
       if (res.status === 429) {
         setIsRateLimited(true);
         setRetryAfter(data.retryAfter || 1800);
-        setMessage(data.message || 'Too many OTP requests. Please try again later.');
+        setMessage({ type: 'error', text: data.message || 'Too many OTP requests. Please try again later.' });
       } else if (data.success) {
-        setMessage('OTP sent to your email successfully!');
+        setMessage({ type: 'success', text: 'OTP sent to your email successfully!' });
         setIsRateLimited(false);
         setRetryAfter(0);
-        setLastOtpRequestTime(now);
+        setLastOtpRequestTime(Date.now());
         setOtpCooldown(60);
-        // Reset CAPTCHA to require re-verification for next request
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      } else if (res.status === 400 && data?.message?.toLowerCase().includes('captcha')) {
-        setMessage(data.message || 'Captcha verification failed. Please retry.');
-        // Reset CAPTCHA on captcha failure
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
       } else {
-        setMessage(data.message || 'Failed to send OTP');
-        // Reset CAPTCHA on send failure
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
+        setMessage({ type: 'error', text: data.message || 'Failed to send OTP' });
       }
     } catch (error) {
       console.error('Send OTP failed:', error);
-      setMessage('Failed to send OTP');
+      setMessage({ type: 'error', text: 'Failed to send OTP' });
     } finally {
       setIsSendingOtp(false);
+      if (recaptchaRef.current) recaptchaRef.current.reset();
     }
   };
 
-  const verifyOtp = async () => {
-    if (!otp.trim() || otp.length < 6) {
-      setMessage('Please enter at least 6 characters for the OTP');
-      return;
-    }
+  const executeVerifyOtp = async (token: string) => {
     setIsVerifyingOtp(true);
-    setMessage('');
+    setMessage(null);
     setIsRateLimited(false);
     setRetryAfter(0);
 
     try {
-      const captcha = await getRecaptchaToken();
-      if (!captcha) {
-        setIsVerifyingOtp(false);
-        return;
-      }
       const res = await apiFetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Recaptcha-Token': captcha,
+            'X-Recaptcha-Token': token,
           },
           body: JSON.stringify({ otp }),
           credentials: 'include',
         },
       );
+
       const data = await res.json();
 
       if (res.status === 429) {
         setIsRateLimited(true);
         setRetryAfter(data.retryAfter || 900);
-        setMessage(data.message || 'Too many attempts. Please try again later.');
+        setMessage({ type: 'error', text: data.message || 'Too many attempts. Please try again later.' });
       } else if (data.success) {
         setIsVerified(true);
-        setMessage('Verification successful!');
+        setMessage({ type: 'success', text: 'Verification successful!' });
         setOtp('');
         setIsRateLimited(false);
         setRetryAfter(0);
         onVerified();
-        // Reset CAPTCHA after successful verify
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      } else if (res.status === 400 && data?.message?.toLowerCase().includes('captcha')) {
-        setMessage(data.message || 'Captcha verification failed. Please retry.');
-        // Reset CAPTCHA on captcha failure
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
       } else {
-        setMessage(data.message || 'Verification failed');
-        // Reset CAPTCHA on verification failure
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
+        setMessage({ type: 'error', text: data.message || 'Verification failed' });
       }
     } catch (error) {
       console.error('Verify OTP failed:', error);
-      setMessage('Verification failed');
+      setMessage({ type: 'error', text: 'Verification failed' });
     } finally {
       setIsVerifyingOtp(false);
+      if (recaptchaRef.current) recaptchaRef.current.reset();
     }
   };
 
   if (isVerifying) {
     return (
-      <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-linear-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
-        <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
+      <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' : ''} p-4 ${className}`}>
+        <Card className="w-full max-w-md shadow-lg border border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16 px-8">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center relative z-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Verifying Account</h3>
-            <p className="text-muted-foreground text-center">Please wait while we check your verification status...</p>
+            <h3 className="text-xl font-semibold mt-6 mb-2">Verifying Status</h3>
+            <p className="text-muted-foreground text-center">Please wait...</p>
           </CardContent>
         </Card>
       </div>
@@ -265,38 +255,47 @@ export function OTPVerification({
   }
 
   return (
-    <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-linear-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
-      <Card className="w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6 pt-8">
-          <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Shield className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            {title}
-          </CardTitle>
-          <CardDescription className="text-center mt-2 text-muted-foreground">
-            {description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 px-8 pb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-muted/30 rounded-xl border">
-            <span className="text-sm font-medium">Verification Status:</span>
-            <Badge variant={isVerified ? 'default' : 'destructive'} className="w-fit font-medium">
-              {isVerified ? 'Verified' : 'Not Verified'}
+    <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-gradient-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
+      <Card className="w-full max-w-md shadow-2xl border-border/50 bg-card overflow-hidden">
+        {/* Header Section */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+          <CardHeader className="text-center pb-6 pt-8 relative z-10">
+            <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl flex items-center justify-center ring-1 ring-primary/20 shadow-lg shadow-primary/5">
+              <Shield className="h-10 w-10 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {title}
+            </CardTitle>
+            <CardDescription className="text-center mt-3 text-muted-foreground text-base max-w-[85%] mx-auto leading-relaxed">
+              {description}
+            </CardDescription>
+          </CardHeader>
+        </div>
+
+        <CardContent className="space-y-8 px-8 pb-8">
+          {/* Status Badge */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50">
+            <span className="text-sm font-medium text-muted-foreground">Status</span>
+            <Badge
+              variant={isVerified ? 'default' : 'secondary'}
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider ${isVerified ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25 border-green-500/20' : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25 border-red-500/20'
+                }`}
+            >
+              {isVerified ? 'Verified' : 'Unverified'}
             </Badge>
           </div>
 
           {!isVerified && (
-            <>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <label className="text-sm font-medium flex items-center justify-center space-x-2 text-muted-foreground">
-                    <Shield className="h-4 w-4" />
-                    <span>Enter OTP Code</span>
-                  </label>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-muted-foreground/50" />
+                  </div>
                   <input
                     type="text"
-                    placeholder="Enter 6-12 alphanumeric characters"
+                    placeholder="Enter code"
                     value={otp}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
@@ -304,122 +303,105 @@ export function OTPVerification({
                     }}
                     maxLength={12}
                     disabled={isRateLimited}
-                    className="w-full h-14 text-center text-xl font-bold border-2 border-input rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all duration-200 bg-background hover:border-primary/50 disabled:opacity-50 tracking-widest"
+                    className="w-full h-14 pl-12 pr-4 text-center text-xl font-bold tracking-[0.2em] border-2 border-input rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200 bg-background/50 hover:border-primary/50 disabled:opacity-50 placeholder:text-muted-foreground/30 placeholder:tracking-normal placeholder:font-normal"
                   />
-                  <p className="text-xs text-muted-foreground text-center">
-                    {otp.length}/12 characters (minimum 6)
-                  </p>
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <span className="text-xs text-muted-foreground/50 font-medium font-mono">
+                      {otp.length}/12
+                    </span>
+                  </div>
                 </div>
-                {/* Visible reCAPTCHA v2 checkbox */}
-                <div className="flex justify-center">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
-                    onChange={onCaptchaChange}
-                    onExpired={onCaptchaExpired}
-                    onError={onCaptchaError}
-                  />
-                </div>
+
                 {isRateLimited && retryAfter > 0 && (
-                  <div className="text-sm text-orange-600 bg-orange-50 dark:bg-orange-950/30 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5" />
-                      <span>Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.</span>
-                    </div>
+                  <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                    <Clock className="h-5 w-5 shrink-0 mt-0.5" />
+                    <span>Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.</span>
                   </div>
                 )}
-                {otpCooldown > 0 && !isRateLimited && (
-                  <div className="text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5" />
-                      <span>Next OTP request available in {otpCooldown} seconds</span>
-                    </div>
+
+                {message && (
+                  <div
+                    className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
+                      ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
+                      : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
+                      }`}
+                  >
+                    {message.type === 'success' ? (
+                      <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    )}
+                    <span className="font-medium">{message.text}</span>
                   </div>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row gap-4">
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <Button
-                  onClick={sendOtp}
-                  disabled={
-                    isSendingOtp ||
-                    isRateLimited ||
-                    otpCooldown > 0 ||
-                    !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ||
-                    !captchaToken
-                  }
+                  onClick={handleSendClick}
+                  disabled={isSendingOtp || isRateLimited || otpCooldown > 0}
                   variant="outline"
-                  className="flex-1 h-12 font-semibold border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  className="h-12 border-2 hover:bg-primary/5 hover:border-primary/50 text-base transition-all duration-200 relative overflow-hidden group"
                 >
-                  {isSendingOtp ? (
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  ) : isRateLimited ? (
-                    <XCircle className="h-5 w-5 mr-2" />
-                  ) : otpCooldown > 0 ? (
-                    <Clock className="h-5 w-5 mr-2" />
-                  ) : (
-                    <Mail className="h-5 w-5 mr-2" />
-                  )}
-                  {isSendingOtp
-                    ? 'Sending...'
-                    : isRateLimited
-                      ? 'Rate Limited'
-                      : otpCooldown > 0
-                        ? `Wait ${otpCooldown}s`
-                        : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY
-                          ? 'Captcha not configured'
-                          : !captchaToken
-                            ? 'Complete CAPTCHA'
-                            : 'Send OTP'}
+                  <span className="relative z-10 flex items-center gap-2">
+                    {isSendingOtp ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : otpCooldown > 0 ? (
+                      <Clock className="h-4 w-4" />
+                    ) : (
+                      <Mail className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    )}
+                    {isSendingOtp ? 'Sending...' : otpCooldown > 0 ? `${otpCooldown}s` : 'Send Code'}
+                  </span>
                 </Button>
+
                 <Button
-                  onClick={verifyOtp}
-                  disabled={
-                    isVerifyingOtp ||
-                    isRateLimited ||
-                    !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ||
-                    !captchaToken ||
-                    otp.length < 6
-                  }
-                  className="flex-1 h-12 font-semibold bg-linear-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 shadow-lg"
+                  onClick={handleVerifyClick}
+                  disabled={isVerifyingOtp || isRateLimited || otp.length < 6}
+                  className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 text-base font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
                 >
                   {isVerifyingOtp ? (
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
-                    <Shield className="h-5 w-5 mr-2" />
+                    <ChevronRight className="h-4 w-4 mr-2" />
                   )}
-                  {isVerifyingOtp
-                    ? 'Verifying...'
-                    : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY
-                      ? 'Captcha not configured'
-                      : !captchaToken
-                        ? 'Complete CAPTCHA'
-                        : otp.length < 6
-                          ? 'Enter 6+ chars'
-                          : 'Verify'}
+                  {isVerifyingOtp ? 'Verifying...' : 'Verify'}
                 </Button>
-              </div>
-            </>
-          )}
-
-          {message && (
-            <div
-              className={`text-sm p-4 rounded-xl border-2 ${message.includes('success')
-                ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-                }`}
-            >
-              <div className="flex items-center space-x-2">
-                {message.includes('success') ? (
-                  <CheckCircle className="h-5 w-5" />
-                ) : (
-                  <XCircle className="h-5 w-5" />
-                )}
-                <span className="font-medium">{message}</span>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* ReCAPTCHA Modal */}
+      <Dialog open={showCaptchaModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowCaptchaModal(false);
+          setPendingAction(null);
+          // recaptchaRef.current?.reset(); // Optional: reset on close? No, might want to keep if solved but just closed?
+        }
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Security Check</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+            <p className="text-sm text-center text-muted-foreground">
+              Please complete the security check to proceed.
+            </p>
+            <div className="transform scale-90 sm:scale-100">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
+                onChange={onCaptchaChange}
+                onExpired={onCaptchaExpired}
+                onError={onCaptchaError}
+                theme={isDark ? 'dark' : 'light'}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

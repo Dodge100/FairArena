@@ -43,6 +43,7 @@ import {
   recordProfileView,
   resetSettingsFunction,
   sendBackupCodesRegeneratedEmail,
+  sendBackupCodeUsedHandler,
   sendEmailHandler,
   sendEmailVerification,
   sendLoginNotification,
@@ -52,6 +53,8 @@ import {
   sendNewDeviceLoginEmail,
   sendNotification,
   sendOtpForAccountSettings,
+  sendPasskeyAddedHandler,
+  sendPasskeyRemovedHandler,
   sendPasswordChangedEmail,
   sendPasswordResetEmail,
   sendTeamInviteEmail,
@@ -67,9 +70,8 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  sendBackupCodeUsedHandler,
-  sendPasskeyAddedHandler,
-  sendPasskeyRemovedHandler,
+  sendSecurityKeyAddedEmail,
+  sendSecurityKeyRemovedEmail,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -94,6 +96,7 @@ import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
+import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
 import webhookRouter from './routes/v1/webhook.js';
 import logger from './utils/logger.js';
 
@@ -222,6 +225,9 @@ app.use('/api/v1/newsletter', newsletterRouter);
 // Waitlist routes (public)
 app.use('/api/v1/waitlist', waitlistRouter);
 
+// WebAuthn routes (must be before mfaRouter to avoid global protection)
+app.use('/api/v1/mfa/webauthn', webauthnMfaRouter);
+
 // MFA routes (authenticated)
 app.use('/api/v1/mfa', mfaRouter);
 
@@ -332,6 +338,8 @@ app.use(
       sendPasskeyAddedHandler,
       sendPasskeyRemovedHandler,
       sendBackupCodeUsedHandler,
+      sendSecurityKeyAddedEmail,
+      sendSecurityKeyRemovedEmail,
     ],
   }),
 );
