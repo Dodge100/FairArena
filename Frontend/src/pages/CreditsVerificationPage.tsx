@@ -57,7 +57,6 @@ const CreditsVerificationPage = () => {
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isCheckingEligibility, setIsCheckingEligibility] = useState(true);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [otpSentAt, setOtpSentAt] = useState<number | null>(null);
   const [resendTimer, setResendTimer] = useState<number>(0);
   const [verificationMethod, setVerificationMethod] = useState<'sms' | 'voice'>('sms');
   const recaptchaRef = useRef<ReCAPTCHA>(null);
@@ -188,7 +187,6 @@ const CreditsVerificationPage = () => {
         const methodText = method === 'voice' ? 'voice call' : 'SMS';
         toast.success(`OTP sent via ${methodText} to your phone number`);
         setStep('otp');
-        setOtpSentAt(Date.now());
         setResendTimer(120); // 2 minutes
         setCaptchaToken(null);
         recaptchaRef.current?.reset();
@@ -271,7 +269,6 @@ const CreditsVerificationPage = () => {
         const methodText = method === 'voice' ? 'voice call' : 'SMS';
         toast.success(`New OTP sent via ${methodText} to your phone number`);
         setOtp(''); // Clear existing OTP input
-        setOtpSentAt(Date.now());
         setResendTimer(120); // Reset to 2 minutes
         setCaptchaToken(null);
         recaptchaRef.current?.reset();
@@ -692,6 +689,7 @@ const CreditsVerificationPage = () => {
                   onChange={(e) => setOtp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12))}
                   className="bg-white/15 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/50 text-center text-3xl tracking-[0.5em] font-bold h-16 focus:bg-white/20 transition-all shadow-lg"
                   maxLength={12}
+                  autoComplete="one-time-code"
                   autoFocus
                 />
                 <div className="flex items-start gap-2 bg-purple-500/30 backdrop-blur-sm border border-purple-300/30 rounded-lg p-3 mt-3">

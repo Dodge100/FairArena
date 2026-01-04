@@ -17,7 +17,6 @@ import {
   Loader2,
   Lock,
   LogOut,
-  Monitor,
   RefreshCw,
   Shield,
   Smartphone,
@@ -402,11 +401,21 @@ function AccountSettings() {
     const iconClass = "w-5 h-5";
     switch (deviceType?.toLowerCase()) {
       case 'mobile':
-      case 'phone': return <Smartphone className={iconClass} />;
-      case 'tablet': return <Tablet className={iconClass} />;
-      case 'desktop': return <Monitor className={iconClass} />;
-      case 'browser': return <Chrome className={iconClass} />;
-      default: return <Laptop className={iconClass} />;
+      case 'phone':
+      case 'android':
+      case 'iphone':
+        return <Smartphone className={iconClass} />;
+      case 'tablet':
+      case 'ipad':
+        return <Tablet className={iconClass} />;
+      case 'desktop':
+      case 'laptop':
+      case 'computer':
+        return <Laptop className={iconClass} />;
+      case 'browser':
+        return <Chrome className={iconClass} />;
+      default:
+        return <Laptop className={iconClass} />;
     }
   };
 

@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
@@ -99,6 +101,8 @@ function App() {
   return (
     <>
       <Toaster richColors position="top-right" />
+      <Analytics />
+      <SpeedInsights />
       <PricingModal
         isOpen={showPricingModal}
         onClose={() => {

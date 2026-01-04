@@ -556,24 +556,32 @@ router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
 // OAuth Routes
 import {
     getDiscordAuthUrl,
+    getDropboxAuthUrl,
     getGithubAuthUrl,
     getGitLabAuthUrl,
     getGoogleAuthUrl,
     getHuggingFaceAuthUrl,
+    getLinearAuthUrl,
+    getLinkedInAuthUrl,
     getMicrosoftAuthUrl,
     getNotionAuthUrl,
     getSlackAuthUrl,
     getXAuthUrl,
+    getZohoAuthUrl,
     handleDiscordCallback,
+    handleDropboxCallback,
     handleGithubCallback,
     handleGitLabCallback,
     handleGoogleCallback,
     handleGoogleToken,
     handleHuggingFaceCallback,
+    handleLinearCallback,
+    handleLinkedInCallback,
     handleMicrosoftCallback,
     handleNotionCallback,
     handleSlackCallback,
-    handleXCallback
+    handleXCallback,
+    handleZohoCallback
 } from '../../controllers/v1/oauthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
@@ -810,6 +818,110 @@ router.get('/x', getXAuthUrl);
  *         description: Redirect to frontend
  */
 router.get('/x/callback', handleXCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/zoho:
+ *   get:
+ *     summary: Get Zoho OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Zoho OAuth URL
+ */
+router.get('/zoho', getZohoAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/zoho/callback:
+ *   get:
+ *     summary: Zoho OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/zoho/callback', handleZohoCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/linear:
+ *   get:
+ *     summary: Get Linear OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Linear OAuth URL
+ */
+router.get('/linear', getLinearAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/linear/callback:
+ *   get:
+ *     summary: Linear OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/linear/callback', handleLinearCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/dropbox:
+ *   get:
+ *     summary: Get Dropbox OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Dropbox OAuth URL
+ */
+router.get('/dropbox', getDropboxAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/dropbox/callback:
+ *   get:
+ *     summary: Dropbox OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/dropbox/callback', handleDropboxCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/linkedin:
+ *   get:
+ *     summary: Get LinkedIn OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: LinkedIn OAuth URL
+ */
+router.get('/linkedin', getLinkedInAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/linkedin/callback:
+ *   get:
+ *     summary: LinkedIn OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/linkedin/callback', handleLinkedInCallback);
 
 /**
  * @swagger

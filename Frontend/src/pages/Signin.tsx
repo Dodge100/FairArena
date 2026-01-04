@@ -670,6 +670,98 @@ export default function Signin() {
     }
   };
 
+  // Zoho OAuth login
+  const handleZohoLogin = async () => {
+    try {
+      saveLastUsedMethod('zoho');
+      setIsLoading(true);
+      const redirectPath = getRedirectPath();
+      const response = await fetch(
+        `${apiUrl}/api/v1/auth/zoho?redirect=${encodeURIComponent(redirectPath)}`
+      );
+      const result = await response.json();
+
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+      } else {
+        throw new Error('Failed to get Zoho sign-in URL');
+      }
+    } catch (err) {
+      console.error('Zoho login error:', err);
+      toast.error('Failed to initiate Zoho sign-in');
+      setIsLoading(false);
+    }
+  };
+
+  // Linear OAuth login
+  const handleLinearLogin = async () => {
+    try {
+      saveLastUsedMethod('linear');
+      setIsLoading(true);
+      const redirectPath = getRedirectPath();
+      const response = await fetch(
+        `${apiUrl}/api/v1/auth/linear?redirect=${encodeURIComponent(redirectPath)}`
+      );
+      const result = await response.json();
+
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+      } else {
+        throw new Error('Failed to get Linear sign-in URL');
+      }
+    } catch (err) {
+      console.error('Linear login error:', err);
+      toast.error('Failed to initiate Linear sign-in');
+      setIsLoading(false);
+    }
+  };
+
+  // Dropbox OAuth login
+  const handleDropboxLogin = async () => {
+    try {
+      saveLastUsedMethod('dropbox');
+      setIsLoading(true);
+      const redirectPath = getRedirectPath();
+      const response = await fetch(
+        `${apiUrl}/api/v1/auth/dropbox?redirect=${encodeURIComponent(redirectPath)}`
+      );
+      const result = await response.json();
+
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+      } else {
+        throw new Error('Failed to get Dropbox sign-in URL');
+      }
+    } catch (err) {
+      console.error('Dropbox login error:', err);
+      toast.error('Failed to initiate Dropbox sign-in');
+      setIsLoading(false);
+    }
+  };
+
+  // LinkedIn OAuth login (OpenID Connect)
+  const handleLinkedInLogin = async () => {
+    try {
+      saveLastUsedMethod('linkedin');
+      setIsLoading(true);
+      const redirectPath = getRedirectPath();
+      const response = await fetch(
+        `${apiUrl}/api/v1/auth/linkedin?redirect=${encodeURIComponent(redirectPath)}`
+      );
+      const result = await response.json();
+
+      if (result.success && result.data?.url) {
+        window.location.href = result.data.url;
+      } else {
+        throw new Error('Failed to get LinkedIn sign-in URL');
+      }
+    } catch (err) {
+      console.error('LinkedIn login error:', err);
+      toast.error('Failed to initiate LinkedIn sign-in');
+      setIsLoading(false);
+    }
+  };
+
   // Passkey login
   const handlePasskeyLogin = async () => {
     if (!passkeySupported) {
@@ -1217,6 +1309,65 @@ export default function Signin() {
             {lastUsedMethod === 'slack' && <LastUsedBadge />}
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.272 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.835 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.835 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.835 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.835zm0 1.272a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.835a2.528 2.528 0 0 1 2.522-2.521h6.313zm10.123 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 24 8.835a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.835zm-1.271 0a2.528 2.528 0 0 1-2.522 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.165 0a2.528 2.528 0 0 1 2.522 2.522v6.313zm-2.522 10.123a2.528 2.528 0 0 1 2.522 2.52A2.528 2.528 0 0 1 15.165 24a2.528 2.528 0 0 1-2.521-2.522v-2.52h2.521zm0-1.272a2.528 2.528 0 0 1-2.521-2.521 2.528 2.528 0 0 1 2.521-2.521h6.313A2.528 2.528 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.521h-6.313z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Third OAuth Row - Additional Providers */}
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {/* Zoho */}
+          <button
+            type="button"
+            onClick={handleZohoLogin}
+            disabled={isLoading}
+            title="Zoho"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#C8262A] hover:bg-[#A81E21] text-white"
+          >
+            {lastUsedMethod === 'zoho' && <LastUsedBadge />}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.66 6.897a1.299 1.299 0 0 0-1.205.765l-.642 1.44-.062-.385A1.291 1.291 0 0 0 5.27 7.648l-4.185.678A1.291 1.291 0 0 0 .016 9.807l.678 4.18a1.293 1.293 0 0 0 1.27 1.087c.074 0 .143-.01.216-.017l4.18-.678c.436-.07.784-.351.96-.723l2.933 1.307a1.304 1.304 0 0 0 .988.026c.321-.12.575-.365.716-.678l.28-.629.038.276a1.297 1.297 0 0 0 1.455 1.103l3.712-.501a1.29 1.29 0 0 0 1.03.514h4.236c.713 0 1.29-.58 1.291-1.291V9.545c0-.712-.58-1.291-1.291-1.291h-4.236c-.079 0-.155.008-.23.022a1.309 1.309 0 0 0-.275-.288c-.275-.21-.614-.3-.958-.253l-4.197.571c-.155.021-.3.07-.432.14L9.159 7.01a1.27 1.27 0 0 0-.499-.113zm-.025.705c.077 0 .159.013.24.052l2.971 1.324c-.128.238-.18.508-.142.782l.357 2.596h.002l-.745 1.672a.59.59 0 0 1-.777.296l-3.107-1.385-.004-.041-.41-2.526L8.1 7.95a.589.589 0 0 1 .536-.348zm-3.159.733c.125 0 .245.039.343.112.13.09.21.227.237.382l.234 1.446-.56 1.259a1.27 1.27 0 0 0-.026.987c.12.322.364.575.678.717l.295.131a.585.585 0 0 1-.428.314l-4.185.678a.59.59 0 0 1-.674-.485l-.678-4.18a.588.588 0 0 1 .485-.674l4.185-.678c.03-.004.064-.01.094-.01zm11.705.09a.59.59 0 0 1 .415.173 1.287 1.287 0 0 0-.416.947v4.237c0 .033.003.065.005.097l-3.55.482a.586.586 0 0 1-.66-.502l-.191-1.403.899-2.017a1.29 1.29 0 0 0-.333-1.5l3.754-.51c.026-.004.051-.004.077-.004zm1.3.532h4.227c.326 0 .588.266.588.588v4.237a.589.589 0 0 1-.588.588h-4.237a.564.564 0 0 1-.12-.013c.47-.246.758-.765.684-1.318zm-5.988.309.254.113c.296.133.43.48.296.777l-.432.97-.207-1.465a.58.58 0 0 1 .09-.395zm5.39.538.453 3.325a.583.583 0 0 1-.453.65zM6.496 11.545l.17 1.052a.588.588 0 0 1-.293-.776zm3.985 4.344a.588.588 0 0 0-.612.603c0 .358.244.61.601.61a.582.582 0 0 0 .607-.608c0-.35-.242-.605-.596-.605zm5.545 0a.588.588 0 0 0-.612.603c0 .358.245.61.602.61a.582.582 0 0 0 .606-.608c0-.35-.24-.605-.596-.605zm-8.537.018a.047.047 0 0 0-.048.047v.085c0 .026.021.047.048.047h.52l-.623.9a.052.052 0 0 0-.009.027v.027c0 .026.021.047.048.047h.815a.047.047 0 0 0 .047-.047v-.085a.047.047 0 0 0-.047-.047h-.55l.606-.9a.05.05 0 0 0 .008-.026v-.028a.047.047 0 0 0-.047-.047zm5.303 0a.047.047 0 0 0-.047.047v1.086c0 .026.02.047.047.047h.135a.047.047 0 0 0 .047-.047v-.454h.545v.454c0 .026.02.047.047.047h.134a.047.047 0 0 0 .047-.047v-1.086a.047.047 0 0 0-.047-.047h-.134a.047.047 0 0 0-.047.047v.453h-.545v-.453a.047.047 0 0 0-.047-.047zm-2.324.164c.25 0 .372.194.372.425 0 .219-.109.425-.358.426-.242 0-.375-.197-.375-.419 0-.235.108-.432.36-.432zm5.545 0c.25 0 .372.194.372.425 0 .219-.108.425-.358.426-.242 0-.374-.197-.374-.419 0-.235.108-.432.36-.432z" />
+            </svg>
+          </button>
+
+          {/* Linear */}
+          <button
+            type="button"
+            onClick={handleLinearLogin}
+            disabled={isLoading}
+            title="Linear"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#5E6AD2] hover:bg-[#4B55B8] text-white"
+          >
+            {lastUsedMethod === 'linear' && <LastUsedBadge />}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.77 14.45a9.456 9.456 0 0 0 6.78 6.78l-6.78-6.78zm-.705-2.14l9.63 9.628a9.458 9.458 0 0 0 2.074-.492L2.557 10.236a9.458 9.458 0 0 0-.492 2.074zm.491-4.073L14.31 19.99a9.502 9.502 0 0 0 1.654-.995L3.55 6.583A9.502 9.502 0 0 0 2.556 8.237zm2.325-3.293l13.175 13.175a9.5 9.5 0 0 0 1.168-1.336L5.213 3.772a9.5 9.5 0 0 0-1.336 1.168zm2.698-2.15l12.131 12.132a9.5 9.5 0 0 0 .712-1.648L6.227 2.082a9.5 9.5 0 0 0-1.648.712zM9.55 2.065l12.385 12.385a9.458 9.458 0 0 0-.492-2.074L11.69 2.557a9.458 9.458 0 0 0-2.14-.492zm4.45.155a9.456 9.456 0 0 0-2.22.544l7.006 7.006a9.456 9.456 0 0 0 .544-2.22c-.084-.84-.34-1.694-.656-2.408a4.61 4.61 0 0 0-1.192-1.537 4.614 4.614 0 0 0-1.537-1.192c-.714-.316-1.568-.572-2.408-.656l.463.463z" />
+            </svg>
+          </button>
+
+          {/* Dropbox */}
+          <button
+            type="button"
+            onClick={handleDropboxLogin}
+            disabled={isLoading}
+            title="Dropbox"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#0061FF] hover:bg-[#004FD1] text-white"
+          >
+            {lastUsedMethod === 'dropbox' && <LastUsedBadge />}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 2L0 6.09l6 4.08L12 6.09 6 2zm12 0l-6 4.09 6 4.08 6-4.08L18 2zM0 14.18l6 4.08 6-4.08-6-4.08-6 4.08zm18-4.08l-6 4.08 6 4.08 6-4.08-6-4.08zM6 19.91l6 4.09 6-4.09-6-4.08-6 4.08z" />
+            </svg>
+          </button>
+
+          {/* LinkedIn */}
+          <button
+            type="button"
+            onClick={handleLinkedInLogin}
+            disabled={isLoading}
+            title="LinkedIn"
+            className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#0A66C2] hover:bg-[#004182] text-white"
+          >
+            {lastUsedMethod === 'linkedin' && <LastUsedBadge />}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
             </svg>
           </button>
         </div>

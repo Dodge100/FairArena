@@ -2044,3 +2044,869 @@ export const handleXCallback = async (req: Request, res: Response) => {
         return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
     }
 };
+
+// =====================================================
+// ZOHO OAUTH (Multi-Datacenter Support)
+// =====================================================
+
+// Zoho datacenter mapping
+const ZOHO_DC_ENDPOINTS: Record<string, { accounts: string; api: string }> = {
+    'us': { accounts: 'https://accounts.zoho.com', api: 'https://www.zohoapis.com' },
+    'eu': { accounts: 'https://accounts.zoho.eu', api: 'https://www.zohoapis.eu' },
+    'in': { accounts: 'https://accounts.zoho.in', api: 'https://www.zohoapis.in' },
+    'au': { accounts: 'https://accounts.zoho.com.au', api: 'https://www.zohoapis.com.au' },
+    'jp': { accounts: 'https://accounts.zoho.jp', api: 'https://www.zohoapis.jp' },
+    'ca': { accounts: 'https://accounts.zohocloud.ca', api: 'https://www.zohoapis.ca' },
+};
+
+/**
+ * Generate Zoho OAuth URL
+ * Uses global accounts.zoho.com - Zoho will handle DC routing
+ * GET /api/v1/auth/zoho
+ */
+export const getZohoAuthUrl = async (req: Request, res: Response) => {
+    try {
+        // Always use global endpoint - Zoho routes to correct DC
+        const rootUrl = 'https://accounts.zoho.com/oauth/v2/auth';
+        const options = {
+            client_id: ENV.ZOHO_CLIENT_ID,
+            redirect_uri: ENV.ZOHO_CALLBACK_URL || '',
+            response_type: 'code',
+            scope: 'aaaserver.profile.READ',
+            access_type: 'offline',
+            state: req.query.redirect as string || '/dashboard',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate Zoho auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate Zoho authentication',
+        });
+    }
+};
+
+interface ZohoUser {
+    ZUID: string;
+    Email: string;
+    First_Name?: string;
+    Last_Name?: string;
+    Display_Name?: string;
+}
+
+interface ZohoTokenResponse {
+    access_token?: string;
+    refresh_token?: string;
+    api_domain?: string;  // e.g., "https://www.zohoapis.in"
+    token_type?: string;
+    expires_in?: number;
+    error?: string;
+}
+
+/**
+ * Handle Zoho OAuth callback
+ * Detects user's datacenter from callback location param or api_domain in token
+ * GET /api/v1/auth/zoho/callback
+ */
+export const handleZohoCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state, location: locationParam, 'accounts-server': accountsServer } = req.query;
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=zoho_auth_failed`);
+        }
+
+        let dc = 'in'; // Default fallback
+        if (locationParam && typeof locationParam === 'string') {
+            dc = locationParam.toLowerCase();
+        } else if (accountsServer && typeof accountsServer === 'string') {
+            // Parse DC from accounts-server URL like "https://accounts.zoho.in"
+            const match = accountsServer.match(/accounts\.zoho\.(\w+)/);
+            if (match) {
+                const tld = match[1];
+                if (tld === 'com') dc = 'us';
+                else if (tld === 'eu') dc = 'eu';
+                else if (tld === 'in') dc = 'in';
+                else if (tld === 'jp') dc = 'jp';
+                else if (tld === 'ca') dc = 'ca';
+                else if (tld === 'com.au' || accountsServer.includes('.com.au')) dc = 'au';
+            }
+        }
+
+        // Get the correct endpoints for detected DC
+        const dcEndpoints = ZOHO_DC_ENDPOINTS[dc] || ZOHO_DC_ENDPOINTS['us'];
+
+        logger.info('Zoho OAuth callback - detected DC', { dc, locationParam, accountsServer });
+
+        // Exchange code for access token using DC-specific endpoint
+        const tokenResponse = await fetch(`${dcEndpoints.accounts}/oauth/v2/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: ENV.ZOHO_CLIENT_ID,
+                client_secret: ENV.ZOHO_CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: ENV.ZOHO_CALLBACK_URL || '',
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as ZohoTokenResponse;
+
+        if (!tokenResponse.ok || !tokenData.access_token) {
+            logger.error('Failed to retrieve Zoho access token', { error: tokenData.error, dc });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=zoho_token_failed`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // Update DC if api_domain is available (most reliable source)
+        if (tokenData.api_domain) {
+            const apiMatch = tokenData.api_domain.match(/zohoapis\.(\w+)/);
+            if (apiMatch) {
+                const apiTld = apiMatch[1];
+                if (apiTld === 'com') dc = 'us';
+                else if (apiTld === 'eu') dc = 'eu';
+                else if (apiTld === 'in') dc = 'in';
+                else if (apiTld === 'jp') dc = 'jp';
+                else if (apiTld === 'ca') dc = 'ca';
+                else if (apiTld === 'com.au' || tokenData.api_domain.includes('.com.au')) dc = 'au';
+            }
+        }
+
+        // Get user profile using DC-specific endpoint
+        const userResponse = await fetch(`${dcEndpoints.accounts}/oauth/user/info`, {
+            headers: {
+                Authorization: `Zoho-oauthtoken ${accessToken}`,
+            },
+        });
+
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch Zoho user');
+        }
+
+        const zohoUser = await userResponse.json() as ZohoUser;
+        const email = zohoUser.Email;
+
+        if (!email) {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=zoho_email_missing`);
+        }
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: null,
+                        firstName: zohoUser.First_Name || zohoUser.Display_Name?.split(' ')[0] || null,
+                        lastName: zohoUser.Last_Name || zohoUser.Display_Name?.split(' ').slice(1).join(' ') || null,
+                        emailVerified: true,
+                    },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('Zoho auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};
+
+// =====================================================
+// LINEAR OAUTH
+// =====================================================
+
+/**
+ * Generate Linear OAuth URL
+ * GET /api/v1/auth/linear
+ */
+export const getLinearAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const rootUrl = 'https://linear.app/oauth/authorize';
+        const options = {
+            client_id: ENV.LINEAR_CLIENT_ID,
+            redirect_uri: ENV.LINEAR_CALLBACK_URL || '',
+            response_type: 'code',
+            scope: 'read',
+            state: req.query.redirect as string || '/dashboard',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate Linear auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate Linear authentication',
+        });
+    }
+};
+
+interface LinearUser {
+    data: {
+        viewer: {
+            id: string;
+            email: string;
+            name: string;
+            displayName?: string;
+            avatarUrl?: string;
+        };
+    };
+}
+
+/**
+ * Handle Linear OAuth callback
+ * GET /api/v1/auth/linear/callback
+ */
+export const handleLinearCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state } = req.query;
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linear_auth_failed`);
+        }
+
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://api.linear.app/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: ENV.LINEAR_CLIENT_ID,
+                client_secret: ENV.LINEAR_CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: ENV.LINEAR_CALLBACK_URL || '',
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as { access_token?: string; error?: string };
+
+        if (!tokenResponse.ok || !tokenData.access_token) {
+            logger.error('Failed to retrieve Linear access token', { error: tokenData.error });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linear_token_failed`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // Get user profile via GraphQL API
+        const userResponse = await fetch('https://api.linear.app/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: accessToken,
+            },
+            body: JSON.stringify({
+                query: `
+                    query {
+                        viewer {
+                            id
+                            email
+                            name
+                            displayName
+                            avatarUrl
+                        }
+                    }
+                `,
+            }),
+        });
+
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch Linear user');
+        }
+
+        const linearData = await userResponse.json() as LinearUser;
+        const linearUser = linearData.data?.viewer;
+        const email = linearUser?.email;
+
+        if (!email) {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linear_email_missing`);
+        }
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                const nameParts = (linearUser.displayName || linearUser.name)?.split(' ') || [];
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: linearUser.avatarUrl || null,
+                        firstName: nameParts[0] || null,
+                        lastName: nameParts.slice(1).join(' ') || null,
+                        emailVerified: true,
+                    },
+                });
+            } else if (!user.profileImageUrl && linearUser.avatarUrl) {
+                await tx.user.update({
+                    where: { userId: user.userId },
+                    data: { profileImageUrl: linearUser.avatarUrl },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('Linear auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};
+
+// =====================================================
+// DROPBOX OAUTH
+// =====================================================
+
+/**
+ * Generate Dropbox OAuth URL
+ * GET /api/v1/auth/dropbox
+ */
+export const getDropboxAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const rootUrl = 'https://www.dropbox.com/oauth2/authorize';
+        const options = {
+            client_id: ENV.DROPBOX_CLIENT_ID,
+            redirect_uri: ENV.DROPBOX_CALLBACK_URL || '',
+            response_type: 'code',
+            token_access_type: 'offline',
+            state: req.query.redirect as string || '/dashboard',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate Dropbox auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate Dropbox authentication',
+        });
+    }
+};
+
+interface DropboxUser {
+    account_id: string;
+    email: string;
+    email_verified: boolean;
+    name: {
+        given_name: string;
+        surname: string;
+        familiar_name: string;
+        display_name: string;
+    };
+    profile_photo_url?: string;
+}
+
+/**
+ * Handle Dropbox OAuth callback
+ * GET /api/v1/auth/dropbox/callback
+ */
+export const handleDropboxCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state } = req.query;
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=dropbox_auth_failed`);
+        }
+
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://api.dropboxapi.com/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: ENV.DROPBOX_CLIENT_ID,
+                client_secret: ENV.DROPBOX_CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: ENV.DROPBOX_CALLBACK_URL || '',
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as { access_token?: string; error?: string };
+
+        if (!tokenResponse.ok || !tokenData.access_token) {
+            logger.error('Failed to retrieve Dropbox access token', { error: tokenData.error });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=dropbox_token_failed`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // Get user profile
+        const userResponse = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch Dropbox user');
+        }
+
+        const dropboxUser = await userResponse.json() as DropboxUser;
+        const email = dropboxUser.email;
+
+        if (!email) {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=dropbox_email_missing`);
+        }
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: dropboxUser.profile_photo_url || null,
+                        firstName: dropboxUser.name?.given_name || dropboxUser.name?.familiar_name || null,
+                        lastName: dropboxUser.name?.surname || null,
+                        emailVerified: dropboxUser.email_verified,
+                    },
+                });
+            } else if (!user.profileImageUrl && dropboxUser.profile_photo_url) {
+                await tx.user.update({
+                    where: { userId: user.userId },
+                    data: { profileImageUrl: dropboxUser.profile_photo_url },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('Dropbox auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};
+
+// =====================================================
+// LINKEDIN OAUTH (OpenID Connect)
+// =====================================================
+
+/**
+ * Generate LinkedIn OAuth URL
+ * Uses OpenID Connect with scopes: openid, profile, email
+ * GET /api/v1/auth/linkedin
+ */
+export const getLinkedInAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const rootUrl = 'https://www.linkedin.com/oauth/v2/authorization';
+        const options = {
+            client_id: ENV.LINKEDIN_CLIENT_ID,
+            redirect_uri: ENV.LINKEDIN_CALLBACK_URL || '',
+            response_type: 'code',
+            scope: 'openid profile email',
+            state: req.query.redirect as string || '/dashboard',
+        };
+
+        const qs = new URLSearchParams(options).toString();
+        const authUrl = `${rootUrl}?${qs}`;
+
+        return res.status(200).json({
+            success: true,
+            data: { url: authUrl },
+        });
+    } catch (error) {
+        logger.error('Failed to generate LinkedIn auth URL', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to initiate LinkedIn authentication',
+        });
+    }
+};
+
+interface LinkedInTokenResponse {
+    access_token?: string;
+    expires_in?: number;
+    scope?: string;
+    token_type?: string;
+    id_token?: string;
+    error?: string;
+    error_description?: string;
+}
+
+interface LinkedInUserInfo {
+    sub: string;           // Unique LinkedIn member ID
+    name?: string;         // Full name
+    given_name?: string;   // First name
+    family_name?: string;  // Last name
+    picture?: string;      // Profile picture URL
+    email?: string;        // Email address
+    email_verified?: boolean;
+    locale?: {
+        country: string;
+        language: string;
+    };
+}
+
+/**
+ * Handle LinkedIn OAuth callback
+ * GET /api/v1/auth/linkedin/callback
+ */
+export const handleLinkedInCallback = async (req: Request, res: Response) => {
+    try {
+        const { code, state, error: oauthError, error_description } = req.query;
+
+        if (oauthError) {
+            logger.error('LinkedIn OAuth error', { error: oauthError, description: error_description });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linkedin_auth_failed`);
+        }
+
+        if (!code || typeof code !== 'string') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linkedin_auth_failed`);
+        }
+
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: ENV.LINKEDIN_CALLBACK_URL || '',
+                client_id: ENV.LINKEDIN_CLIENT_ID,
+                client_secret: ENV.LINKEDIN_CLIENT_SECRET,
+            }),
+        });
+
+        const tokenData = await tokenResponse.json() as LinkedInTokenResponse;
+
+        if (!tokenResponse.ok || !tokenData.access_token) {
+            logger.error('Failed to retrieve LinkedIn access token', {
+                error: tokenData.error,
+                description: tokenData.error_description
+            });
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linkedin_token_failed`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // Get user info using OpenID Connect userinfo endpoint
+        const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch LinkedIn user');
+        }
+
+        const linkedInUser = await userResponse.json() as LinkedInUserInfo;
+        const email = linkedInUser.email;
+
+        if (!email) {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=linkedin_email_missing`);
+        }
+
+        // Find or create user
+        const transaction = await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+
+            if (!user) {
+                if (!ENV.NEW_SIGNUP_ENABLED) {
+                    throw new Error('SIGNUP_DISABLED');
+                }
+
+                const { createId } = await import('@paralleldrive/cuid2');
+                const userId = createId();
+
+                // Parse name from LinkedIn response
+                const firstName = linkedInUser.given_name || linkedInUser.name?.split(' ')[0] || null;
+                const lastName = linkedInUser.family_name || linkedInUser.name?.split(' ').slice(1).join(' ') || null;
+
+                user = await tx.user.create({
+                    data: {
+                        userId,
+                        email: email.toLowerCase(),
+                        profileImageUrl: linkedInUser.picture || null,
+                        firstName,
+                        lastName,
+                        emailVerified: linkedInUser.email_verified ?? true,
+                    },
+                });
+            }
+
+            return user;
+        }, { maxWait: 5000, timeout: 10000 });
+
+        // Handle MFA
+        if (transaction.mfaEnabled) {
+            const jwt = await import('jsonwebtoken');
+            const tempToken = jwt.default.sign(
+                {
+                    userId: transaction.userId,
+                    type: 'mfa_pending',
+                    ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown',
+                    deviceFingerprint: req.headers['user-agent'] || 'unknown',
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: '5m', issuer: 'fairarena' }
+            );
+
+            res.cookie('mfa_session', tempToken, MFA_SESSION_COOKIE_OPTIONS);
+            const redirectTarget = (state as string) || '/dashboard';
+            res.cookie('mfa_redirect', redirectTarget, {
+                httpOnly: false,
+                secure: ENV.NODE_ENV === 'production',
+                sameSite: 'strict' as const,
+                maxAge: 5 * 60 * 1000,
+                path: '/',
+            });
+
+            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+        }
+
+        // Generate tokens and create session
+        const refreshToken = generateRefreshToken();
+        const userAgentRaw = req.headers['user-agent'];
+        const userAgent = parseUserAgent(userAgentRaw);
+        const sessionId = await createSession(transaction.userId, refreshToken, {
+            deviceName: userAgent.deviceName,
+            deviceType: userAgent.deviceType,
+            userAgent: userAgentRaw,
+            ipAddress: req.ip || 'unknown'
+        });
+        const newAccessToken = generateAccessToken(transaction.userId, sessionId);
+
+        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        const redirectPath = (state as string) || '/dashboard';
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'SIGNUP_DISABLED') {
+            return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+        }
+        logger.error('LinkedIn auth error', { error: errorMessage });
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=auth_failed`);
+    }
+};
