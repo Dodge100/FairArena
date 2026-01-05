@@ -449,6 +449,9 @@ export async function verifyAuthentication(req: Request, res: Response) {
             sameSite: 'strict' as const,
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
+            ...(ENV.NODE_ENV === 'production' && {
+                domain: ENV.COOKIE_DOMAIN,
+            }),
         };
         const SESSION_COOKIE_OPTIONS = {
             httpOnly: true,
@@ -456,6 +459,9 @@ export async function verifyAuthentication(req: Request, res: Response) {
             sameSite: 'strict' as const,
             maxAge: 30 * 24 * 60 * 60 * 1000,
             path: '/',
+            ...(ENV.NODE_ENV === 'production' && {
+                domain: ENV.COOKIE_DOMAIN,
+            }),
         };
 
         res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);

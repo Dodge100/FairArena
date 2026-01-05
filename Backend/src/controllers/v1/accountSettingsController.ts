@@ -374,6 +374,9 @@ export const verifyOtp = async (req: Request, res: Response) => {
       secure: ENV.NODE_ENV === 'production',
       sameSite: 'strict' as const,
       maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000, // 10 minutes
+      ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+      }),
     });
 
     inngest.send({

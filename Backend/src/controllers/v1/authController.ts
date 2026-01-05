@@ -124,6 +124,9 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
   sameSite: 'strict' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
+  ...(ENV.NODE_ENV === 'production' && {
+    domain: ENV.COOKIE_DOMAIN,
+  }),
 };
 
 const SESSION_COOKIE_OPTIONS = {
@@ -132,6 +135,9 @@ const SESSION_COOKIE_OPTIONS = {
   sameSite: 'strict' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
+  ...(ENV.NODE_ENV === 'production' && {
+    domain: ENV.COOKIE_DOMAIN,
+  }),
 };
 
 const MFA_SESSION_COOKIE_OPTIONS = {
@@ -140,6 +146,9 @@ const MFA_SESSION_COOKIE_OPTIONS = {
   sameSite: 'strict' as const,
   maxAge: 5 * 60 * 1000, // 5 minutes
   path: '/',
+  ...(ENV.NODE_ENV === 'production' && {
+    domain: ENV.COOKIE_DOMAIN,
+  }),
 };
 
 /**
@@ -157,21 +166,15 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password, firstName, lastName } = validation.data;
-
-    // Check if email domain is allowed (if ALLOWED_SIGNUP_DOMAINS is set)
-    if (ENV.ALLOWED_SIGNUP_DOMAINS && ENV.ALLOWED_SIGNUP_DOMAINS.trim() !== '') {
-      const allowedDomains = ENV.ALLOWED_SIGNUP_DOMAINS.split(',').map(d => d.trim().toLowerCase());
-      const emailDomain = email.toLowerCase().split('@')[1];
-
-      if (!allowedDomains.includes(emailDomain) && !ENV.NEW_SIGNUP_ENABLED) {
-        return res.status(403).json({
-          success: false,
-          message: 'Registration is currently restricted to authorized organizations.',
-          code: 'EMAIL_DOMAIN_NOT_ALLOWED',
-        });
-      }
+    if (!ENV.NEW_SIGNUP_ENABLED) {
+      return res.status(403).json({
+        success: false,
+        message: 'New signups are currently disabled.',
+        code: 'NEW_SIGNUP_DISABLED',
+      });
     }
+
+    const { email, password, firstName, lastName } = validation.data;
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
@@ -1773,6 +1776,9 @@ export const invalidateMfaSession = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: ENV.NODE_ENV === 'production',
       sameSite: 'strict',
+      ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+      }),
     });
 
     // If there was a session, try to get userId for logging
@@ -2424,6 +2430,9 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
+      ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+      }),
     });
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
@@ -2431,6 +2440,9 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
+      ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+      }),
     });
 
     // For new device verification, mark the device as known

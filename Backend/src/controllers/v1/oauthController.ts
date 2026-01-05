@@ -25,6 +25,9 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
     sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
+    ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+    }),
 };
 
 const SESSION_COOKIE_OPTIONS = {
@@ -33,6 +36,9 @@ const SESSION_COOKIE_OPTIONS = {
     sameSite: 'strict' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
+    ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+    }),
 };
 
 const MFA_SESSION_COOKIE_OPTIONS = {
@@ -41,6 +47,9 @@ const MFA_SESSION_COOKIE_OPTIONS = {
     sameSite: 'strict' as const,
     maxAge: 5 * 60 * 1000, // 5 minutes
     path: '/',
+    ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+    }),
 };
 
 // Validation schema for Google token
@@ -193,6 +202,9 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
@@ -611,6 +623,9 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
@@ -832,6 +847,9 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000, // 5 minutes
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
@@ -1044,6 +1062,9 @@ export const handleDiscordCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -1235,6 +1256,9 @@ export const handleHuggingFaceCallback = async (req: Request, res: Response) => 
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -1426,6 +1450,9 @@ export const handleGitLabCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -1626,6 +1653,9 @@ export const handleSlackCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -1813,6 +1843,9 @@ export const handleNotionCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -2010,6 +2043,9 @@ export const handleXCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -2254,6 +2290,9 @@ export const handleZohoCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -2466,6 +2505,9 @@ export const handleLinearCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -2662,6 +2704,9 @@ export const handleDropboxCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);
@@ -2876,6 +2921,9 @@ export const handleLinkedInCallback = async (req: Request, res: Response) => {
                 sameSite: 'strict' as const,
                 maxAge: 5 * 60 * 1000,
                 path: '/',
+                ...(ENV.NODE_ENV === 'production' && {
+                    domain: ENV.COOKIE_DOMAIN,
+                }),
             });
 
             return res.redirect(`${ENV.FRONTEND_URL}/signin`);

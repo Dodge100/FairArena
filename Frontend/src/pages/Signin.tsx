@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
 type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification';
-type AuthStep = 'credentials' | 'mfa' | 'new_device';
+type AuthStep = 'credentials' | 'mfa' | 'new_device' | 'webauthn_unsupported';
 
 interface MfaSessionState {
   active: boolean;
@@ -420,6 +420,11 @@ export default function Signin() {
         !mfaPreferences.notificationMfaEnabled;
 
       if (onlyWebAuthn) {
+        if (!browserSupportsWebAuthn()) {
+          setAuthStep('webauthn_unsupported');
+          return;
+        }
+
         // Auto-trigger WebAuthn authentication
         const timer = setTimeout(() => {
           handleWebAuthnMfaVerification();
@@ -1130,6 +1135,48 @@ export default function Signin() {
     );
   };
 
+  // Render message when WebAuthn is required but not supported
+  const renderWebAuthnUnsupported = () => (
+    <>
+      <img
+        src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+        className="w-30 mb-8"
+        alt="FairArena Logo"
+      />
+      <div className="w-full max-w-sm px-4 text-center">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+
+        <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+          Device Not Supported
+        </h1>
+
+        <p className={`mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+          This account requires a security key for verification, but your current device or browser does not support WebAuthn.
+        </p>
+
+        <div className={`p-4 rounded-xl text-left text-sm mb-8 ${isDark ? 'bg-neutral-800/50 border border-neutral-700' : 'bg-neutral-100 border border-neutral-200'}`}>
+          <p className={`font-medium mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>
+            Recommended Action:
+          </p>
+          <p className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
+            Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a different device.
+          </p>
+        </div>
+
+        <button
+          onClick={handleResetToCredentials}
+          className={`w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] shadow-sm hover:shadow-md`}
+        >
+          Back to Sign In
+        </button>
+      </div>
+    </>
+  );
+
   // Render credentials form
   const renderCredentialsForm = () => (
     <>
@@ -1506,7 +1553,7 @@ export default function Signin() {
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
             </div>
-          ) : (authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
+          ) : (authStep === 'webauthn_unsupported' ? renderWebAuthnUnsupported() : authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
         </div>
 
         {/* Right side - Illustration */}

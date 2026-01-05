@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { CookieConsentModal } from './components/CookieConsentModal';
+import { GoogleOneTap } from './components/GoogleOneTap';
 import NotFound from './components/NotFound';
 import PricingModal from './components/PricingModal';
 import WaitList from './components/WaitList';
@@ -116,6 +117,7 @@ function App() {
         onAcceptAll={acceptAll}
         onRejectAll={rejectAll}
       />
+      <GoogleOneTap />
       <Routes>
         <Route path="/maintenance" element={<Maintenance />} />
         <Route element={<PublicLayout />}>

@@ -81,7 +81,6 @@ export const joinWaitlist = async (req: Request, res: Response) => {
             const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(normalizedEmail)}`;
             const response = await fetch(disposableCheckUrl, {
                 method: 'GET',
-                signal: AbortSignal.timeout(5000), // 5 second timeout
             });
 
             if (response.ok) {

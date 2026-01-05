@@ -24,7 +24,6 @@ export const supportRequestCreated = inngest.createFunction(
           const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(emailId)}`;
           const response = await fetch(disposableCheckUrl, {
             method: 'GET',
-            signal: AbortSignal.timeout(5000), // 5 second timeout
           });
 
           if (response.ok) {
