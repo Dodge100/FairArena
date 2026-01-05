@@ -42,7 +42,7 @@ function Header() {
 
           {/* Line 2 – highlighted text */}
           <span className="block text-[#d9ff00] [-webkit-text-stroke:1px_black]">
-            Fair Decision
+            Fair Decisions
           </span>
         </h1>
       ) : (
@@ -73,7 +73,7 @@ function Header() {
             transition={{ delay: 0.35, duration: 0.6, ease: 'easeOut' }}
             className="block text-[#d9ff00] [-webkit-text-stroke:1px_black]"
           >
-            Fair Decision
+            Fair Decisions
           </motion.span>
         </motion.h1>
       )}
@@ -85,7 +85,7 @@ function Header() {
     max-w-[90%] sm:max-w-[80%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%]
     mx-auto
   ">
-          Fair Arena Helps Hackathon Judges to Score Perfectly with Website Insights and Uniqueness.
+          Automate Fair Judging with AI-Powered Analysis and Real-Time Insights.
         </p>
       ) : (
         <motion.p
@@ -101,7 +101,7 @@ function Header() {
     mx-auto
   "
         >
-          Fair Arena Helps Hackathon Judges to Score Perfectly with Website Insights and Uniqueness.
+          Automate Fair Judging with AI-Powered Analysis and Real-Time Insights.
         </motion.p>
       )}
 

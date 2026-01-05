@@ -65,7 +65,7 @@ function WhyChooseUs() {
           ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
         `}
       >
-        Key Benefits Of Using <span className="text-neutral-500">Fair Arena</span>
+        Key Benefits Of Using <span className="text-neutral-500">FairArena</span>
       </p>
 
       {/* Cards Grid */}

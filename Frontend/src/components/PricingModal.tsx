@@ -336,8 +336,8 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       onClick={() => handlePayment(plan)}
                       disabled={!paymentsEnabled || loadingPlan === plan.id}
                       className={`w-full ${plan.planId === 'business_plan'
-                          ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
-                          : ''
+                        ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
+                        : ''
                         }`}
                       variant={plan.planId === 'business_plan' ? 'default' : 'outline'}
                     >
@@ -357,7 +357,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
                     {plan.credits > 0 && (
                       <p className="text-xs text-center text-muted-foreground mt-2">
-                        Includes {plan.credits} hackathon credits
+                        Includes {plan.credits} hackathon credit{plan.credits > 1 ? 's' : ''} (1 credit = 1 memeber in hackathon event)
                       </p>
                     )}
                   </CardContent>

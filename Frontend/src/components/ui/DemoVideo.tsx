@@ -29,6 +29,8 @@ function DemoVideo() {
           fluid: true,
           responsive: true,
           poster: 'https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview',
+          textTrackSettings: false, // Prevent settings UI from leaking into DOM
+          controlBar: false, // Disable control bar since we have custom controls
         });
 
         const player = playerRef.current;
@@ -83,11 +85,14 @@ function DemoVideo() {
               ref={videoRef}
               poster="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
               className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
+              aria-label="FairArena Dashboard Preview - Demo video showing the platform's features and interface"
+              title="FairArena Dashboard Demo"
             >
               <source
                 src="https://fairarena.blob.core.windows.net/fairarena/Dashboard%20Preview%20Video"
                 type="video/mp4"
               />
+              <p>Your browser doesn't support HTML5 video. Here is a <a href="https://fairarena.blob.core.windows.net/fairarena/Dashboard%20Preview%20Video">link to the video</a> instead.</p>
             </video>
 
             {/* Play Button Overlay when paused */}

@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../hooks/useTheme';
-import ReCAPTCHA from 'react-google-recaptcha';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 
 export default function ForgotPassword() {
     const { theme } = useTheme();
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
         <div className={`fixed inset-0 w-full min-h-screen flex items-center justify-center ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}>
             <div className={`w-full max-w-md p-8 rounded-2xl ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
                 <div className="text-center mb-6">
-                    <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-24 mx-auto mb-4" alt="Fair Arena Logo" />
+                    <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-24 mx-auto mb-4" alt="FairArena Logo" />
                     <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-neutral-900'}`}>Forgot Password?</h1>
                     <p className={`mt-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                         Enter your email and we'll send you a reset link.

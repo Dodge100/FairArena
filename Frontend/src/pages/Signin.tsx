@@ -1136,7 +1136,7 @@ export default function Signin() {
       <img
         src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
         className="w-30 mb-2"
-        alt="Fair Arena Logo"
+        alt="FairArena Logo"
       />
       <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
         Welcome Back

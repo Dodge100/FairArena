@@ -1,5 +1,5 @@
 import { useTheme } from '@/hooks/useTheme';
-import { Facebook, Instagram, Linkedin, Twitter, Github } from 'lucide-react';
+import { Linkedin, Github } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
@@ -41,6 +41,14 @@ function Footer() {
           <div className="flex items-center gap-4 mt-5">
             <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer">
               <Github
+                className={`
+                  w-5 h-5 cursor-pointer duration-200 hover:scale-110
+                  ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}
+                `}
+              />
+            </a>
+            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer">
+              <Linkedin
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
                   ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}

@@ -129,8 +129,8 @@ export default function VerifyEmail() {
                                         value={resendEmail}
                                         onChange={(e) => setResendEmail(e.target.value)}
                                         className={`w-full px-4 py-2 rounded-lg border text-sm outline-none transition-all ${isDark
-                                                ? 'bg-neutral-800 border-neutral-700 text-white focus:border-[#DDEF00]'
-                                                : 'bg-white border-neutral-300 text-neutral-900 focus:border-[#DDEF00]'
+                                            ? 'bg-neutral-800 border-neutral-700 text-white focus:border-[#DDEF00]'
+                                            : 'bg-white border-neutral-300 text-neutral-900 focus:border-[#DDEF00]'
                                             }`}
                                         required
                                     />
@@ -160,7 +160,7 @@ export default function VerifyEmail() {
     return (
         <div className={`fixed inset-0 w-full min-h-screen flex items-center justify-center ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}>
             <div className={`max-w-md p-8 rounded-2xl text-center ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
-                <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-24 mx-auto mb-6" alt="Fair Arena Logo" />
+                <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-24 mx-auto mb-6" alt="FairArena Logo" />
                 {renderContent()}
             </div>
 

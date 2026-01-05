@@ -121,7 +121,7 @@ function Newsletter() {
           ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
         `}
       >
-        Stay Updated With <span className="text-neutral-500">Fair Arena</span>
+        Stay Updated With <span className="text-neutral-500">FairArena</span>
       </p>
 
       {/* Description */}

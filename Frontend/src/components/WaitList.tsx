@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useTheme } from '../hooks/useTheme';
-import { useAuthState } from '../lib/auth';
-import { Spotlight } from './ui/Spotlight';
-import ReCAPTCHA from 'react-google-recaptcha';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useEffect, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useTheme } from '../hooks/useTheme';
+import { useAuthState } from '../lib/auth';
+import { Spotlight } from './ui/Spotlight';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -134,7 +134,7 @@ function WaitList() {
       {/* Content */}
       <div className="max-w-9xl flex flex-col items-center relative z-20 gap-6 px-4">
         {/* Logo */}
-        <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-40" alt="Fair Arena Logo" />
+        <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-40" alt="FairArena Logo" />
 
         {/* Heading */}
         <h2

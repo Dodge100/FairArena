@@ -6,7 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 function Faq() {
   const faqs = [
     {
-      q: 'What is Fair Arena?',
+      q: 'What is FairArena?',
       a: 'FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking.',
     },
     {
@@ -37,7 +37,7 @@ function Faq() {
 
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
   useEffect(() => {
     setIsDark(theme === 'dark');
   }, [theme]);
@@ -61,9 +61,8 @@ function Faq() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className={`px-4 py-1 rounded-full text-[#d9ff00] text-sm font-medium mb-6 ${
-          isDark ? 'bg-[#111]/90' : 'bg-black/90'
-        }`}
+        className={`px-4 py-1 rounded-full text-[#d9ff00] text-sm font-medium mb-6 ${isDark ? 'bg-[#111]/90' : 'bg-black/90'
+          }`}
       >
         Questions? We Have Answers
       </motion.div>
@@ -85,7 +84,7 @@ function Faq() {
         transition={{ delay: 0.4, duration: 0.5 }}
         className={`${textSecondary} text-center max-w-xl mt-4 text-lg`}
       >
-        Find quick answers to some of the most common questions about Increasy.
+        Find quick answers to some of the most common questions about FairArena.
       </motion.p>
 
       {/* FAQ List */}
