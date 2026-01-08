@@ -44,6 +44,10 @@ model User {
   emailMfaEnabled       Boolean                 @default(false)  // Email OTP as MFA method
   notificationMfaEnabled Boolean                @default(false)  // Push notification as MFA method
 
+  // Advanced Security Settings
+  disableOTPReverification    Boolean            @default(false)  // Disable OTP for account settings re-verification (WebAuthn only)
+  superSecureAccountEnabled   Boolean            @default(false)  // Maximum security mode (passkey/OAuth + WebAuthn only, no password)
+
   // Relations
   creditTransactions    CreditTransaction[]
   Logs                  Logs[]

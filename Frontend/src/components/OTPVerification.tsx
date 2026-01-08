@@ -2,7 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CheckCircle, ChevronRight, Clock, Loader2, Lock, Mail, Shield, XCircle } from 'lucide-react';
+import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+import { CheckCircle, ChevronRight, Clock, Key, Loader2, Lock, Mail, Shield, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useTheme } from '../hooks/useTheme';
@@ -41,6 +42,12 @@ export function OTPVerification({
   const [lastOtpRequestTime, setLastOtpRequestTime] = useState<number>(0);
   const [otpCooldown, setOtpCooldown] = useState<number>(0);
 
+  // WebAuthn state
+  const [webauthnAvailable, setWebauthnAvailable] = useState(false);
+  const [webauthnSupported, setWebauthnSupported] = useState(false);
+  const [otpDisabled, setOtpDisabled] = useState(false);
+  const [isWebAuthnVerifying, setIsWebAuthnVerifying] = useState(false);
+
   const checkVerificationStatus = useCallback(async () => {
     try {
       const res = await apiFetch(
@@ -62,9 +69,93 @@ export function OTPVerification({
     }
   }, [onVerified]);
 
+  // Check WebAuthn browser support
+  useEffect(() => {
+    setWebauthnSupported(browserSupportsWebAuthn());
+  }, []);
+
+  // Check if user has security keys and if OTP is disabled
+  useEffect(() => {
+    const checkWebAuthnAvailability = async () => {
+      try {
+        const res = await apiFetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/available`
+        );
+        const data = await res.json();
+        if (data.success && data.data) {
+          setWebauthnAvailable(data.data.webauthnAvailable);
+          setOtpDisabled(data.data.otpDisabled);
+        }
+      } catch (error) {
+        console.error('Failed to check WebAuthn availability:', error);
+      }
+    };
+
+    checkWebAuthnAvailability();
+  }, []);
+
   useEffect(() => {
     checkVerificationStatus();
   }, [checkVerificationStatus]);
+
+  // Handle WebAuthn verification
+  const handleWebAuthnVerify = async () => {
+    if (!webauthnSupported) {
+      setMessage({
+        type: 'error',
+        text: 'Your device or browser does not support security keys. Please use email verification instead.'
+      });
+      return;
+    }
+
+    setIsWebAuthnVerifying(true);
+    setMessage(null);
+
+    try {
+      // Step 1: Get authentication options
+      const optionsRes = await apiFetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/options`,
+        { method: 'POST' }
+      );
+      const optionsData = await optionsRes.json();
+
+      if (!optionsData.success) {
+        throw new Error(optionsData.message || 'Failed to get WebAuthn options');
+      }
+
+      // Step 2: Start authentication with security key
+      const credential = await startAuthentication({ optionsJSON: optionsData.data });
+
+      // Step 3: Verify with backend
+      const verifyRes = await apiFetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/verify`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ response: credential }),
+        }
+      );
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.success) {
+        throw new Error(verifyData.message || 'Security key verification failed');
+      }
+
+      setIsVerified(true);
+      setMessage({ type: 'success', text: 'Security key verification successful!' });
+      onVerified();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Security key verification failed';
+      // Handle user cancellation gracefully
+      if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
+        setMessage({ type: 'error', text: 'Security key verification was cancelled' });
+      } else {
+        setMessage({ type: 'error', text: message });
+      }
+    } finally {
+      setIsWebAuthnVerifying(false);
+    }
+  };
 
   // Countdown timer for rate limiting
   useEffect(() => {
@@ -288,86 +379,160 @@ export function OTPVerification({
 
           {!isVerified && (
             <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-muted-foreground/50" />
+              {/* Show WebAuthn-only mode when OTP is disabled */}
+              {otpDisabled && webauthnAvailable ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                    <p className="text-sm text-center text-muted-foreground">
+                      OTP verification is disabled for your account. Please use your security key to verify.
+                    </p>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Enter code"
-                    value={otp}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
-                      setOtp(value);
-                    }}
-                    maxLength={12}
-                    disabled={isRateLimited}
-                    className="w-full h-14 pl-12 pr-4 text-center text-xl font-bold tracking-[0.2em] border-2 border-input rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200 bg-background/50 hover:border-primary/50 disabled:opacity-50 placeholder:text-muted-foreground/30 placeholder:tracking-normal placeholder:font-normal"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <span className="text-xs text-muted-foreground/50 font-medium font-mono">
-                      {otp.length}/12
-                    </span>
-                  </div>
-                </div>
 
-                {isRateLimited && retryAfter > 0 && (
-                  <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                    <Clock className="h-5 w-5 shrink-0 mt-0.5" />
-                    <span>Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.</span>
-                  </div>
-                )}
-
-                {message && (
-                  <div
-                    className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
-                      ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
-                      : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
-                      }`}
-                  >
-                    {message.type === 'success' ? (
-                      <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                    ) : (
+                  {!webauthnSupported && (
+                    <div className="text-sm text-red-700 bg-red-50 dark:bg-red-950/30 p-4 rounded-xl border border-red-200 dark:border-red-800/50 flex items-start gap-3">
                       <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                    )}
-                    <span className="font-medium">{message.text}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <Button
-                  onClick={handleSendClick}
-                  disabled={isSendingOtp || isRateLimited || otpCooldown > 0}
-                  variant="outline"
-                  className="h-12 border-2 hover:bg-primary/5 hover:border-primary/50 text-base transition-all duration-200 relative overflow-hidden group"
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isSendingOtp ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : otpCooldown > 0 ? (
-                      <Clock className="h-4 w-4" />
-                    ) : (
-                      <Mail className="h-4 w-4 transition-transform group-hover:scale-110" />
-                    )}
-                    {isSendingOtp ? 'Sending...' : otpCooldown > 0 ? `${otpCooldown}s` : 'Send Code'}
-                  </span>
-                </Button>
-
-                <Button
-                  onClick={handleVerifyClick}
-                  disabled={isVerifyingOtp || isRateLimited || otp.length < 6}
-                  className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 text-base font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
-                >
-                  {isVerifyingOtp ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 mr-2" />
+                      <span className="font-medium">
+                        Your browser doesn't support security keys. Please use a compatible browser like Chrome, Firefox, Edge, or Safari to access your account settings.
+                      </span>
+                    </div>
                   )}
-                  {isVerifyingOtp ? 'Verifying...' : 'Verify'}
-                </Button>
-              </div>
+
+                  {message && (
+                    <div
+                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
+                        ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
+                        : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
+                        }`}
+                    >
+                      {message.type === 'success' ? (
+                        <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      )}
+                      <span className="font-medium">{message.text}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleWebAuthnVerify}
+                    disabled={isWebAuthnVerifying || !webauthnSupported}
+                    className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 text-lg font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
+                  >
+                    {isWebAuthnVerifying ? (
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    ) : (
+                      <Key className="h-5 w-5 mr-2" />
+                    )}
+                    {isWebAuthnVerifying ? 'Verifying...' : 'Verify with Security Key'}
+                  </Button>
+                </div>
+              ) : (
+                /* Standard OTP + WebAuthn mode */
+                <div className="space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-muted-foreground/50" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Enter code"
+                      value={otp}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+                        setOtp(value);
+                      }}
+                      maxLength={12}
+                      disabled={isRateLimited}
+                      className="w-full h-14 pl-12 pr-4 text-center text-xl font-bold tracking-[0.2em] border-2 border-input rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200 bg-background/50 hover:border-primary/50 disabled:opacity-50 placeholder:text-muted-foreground/30 placeholder:tracking-normal placeholder:font-normal"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <span className="text-xs text-muted-foreground/50 font-medium font-mono">
+                        {otp.length}/12
+                      </span>
+                    </div>
+                  </div>
+
+                  {isRateLimited && retryAfter > 0 && (
+                    <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                      <Clock className="h-5 w-5 shrink-0 mt-0.5" />
+                      <span>Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.</span>
+                    </div>
+                  )}
+
+                  {message && (
+                    <div
+                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
+                        ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
+                        : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
+                        }`}
+                    >
+                      {message.type === 'success' ? (
+                        <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      )}
+                      <span className="font-medium">{message.text}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <Button
+                      onClick={handleSendClick}
+                      disabled={isSendingOtp || isRateLimited || otpCooldown > 0}
+                      variant="outline"
+                      className="h-12 border-2 hover:bg-primary/5 hover:border-primary/50 text-base transition-all duration-200 relative overflow-hidden group"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        {isSendingOtp ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : otpCooldown > 0 ? (
+                          <Clock className="h-4 w-4" />
+                        ) : (
+                          <Mail className="h-4 w-4 transition-transform group-hover:scale-110" />
+                        )}
+                        {isSendingOtp ? 'Sending...' : otpCooldown > 0 ? `${otpCooldown}s` : 'Send Code'}
+                      </span>
+                    </Button>
+
+                    <Button
+                      onClick={handleVerifyClick}
+                      disabled={isVerifyingOtp || isRateLimited || otp.length < 6}
+                      className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 text-base font-semibold transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
+                    >
+                      {isVerifyingOtp ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                      )}
+                      {isVerifyingOtp ? 'Verifying...' : 'Verify'}
+                    </Button>
+                  </div>
+
+                  {/* WebAuthn option when security keys are available */}
+                  {webauthnAvailable && webauthnSupported && (
+                    <div className="pt-4">
+                      <div className="relative flex items-center">
+                        <div className="flex-grow border-t border-border"></div>
+                        <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">Or</span>
+                        <div className="flex-grow border-t border-border"></div>
+                      </div>
+                      <Button
+                        onClick={handleWebAuthnVerify}
+                        disabled={isWebAuthnVerifying}
+                        variant="outline"
+                        className="w-full h-12 mt-4 border-2 hover:bg-primary/5 hover:border-primary/50 text-base transition-all duration-200"
+                      >
+                        {isWebAuthnVerifying ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Key className="h-4 w-4 mr-2" />
+                        )}
+                        {isWebAuthnVerifying ? 'Verifying...' : 'Verify with Security Key'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

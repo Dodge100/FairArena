@@ -39,6 +39,13 @@ export default function Signup() {
       return;
     }
 
+    // Check for add_account flow - don't redirect in this case
+    const params = new URLSearchParams(window.location.search);
+    const flow = params.get('flow');
+    if (flow === 'add_account') {
+      return; // Allow user to add another account without redirecting
+    }
+
     if (!authLoading && isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }

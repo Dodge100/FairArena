@@ -68,7 +68,8 @@ export default function Signin() {
     emailMfaEnabled: boolean;
     notificationMfaEnabled: boolean;
     webauthnMfaAvailable?: boolean;
-  }>({ emailMfaEnabled: false, notificationMfaEnabled: false, webauthnMfaAvailable: false });
+    superSecureAccountEnabled?: boolean;
+  }>({ emailMfaEnabled: false, notificationMfaEnabled: false, webauthnMfaAvailable: false, superSecureAccountEnabled: false });
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
@@ -171,6 +172,7 @@ export default function Signin() {
                 emailMfaEnabled: result.data.mfaPreferences.emailMfaEnabled || false,
                 notificationMfaEnabled: result.data.mfaPreferences.notificationMfaEnabled || false,
                 webauthnMfaAvailable: result.data.mfaPreferences.webauthnMfaAvailable || false,
+                superSecureAccountEnabled: result.data.mfaPreferences.superSecureAccountEnabled || false,
               });
 
               if (isNewDevice) {
@@ -194,6 +196,23 @@ export default function Signin() {
     checkExistingMfaSession();
   }, [apiUrl, authLoading, isAuthenticated]);
 
+  // Auto-trigger WebAuthn for Super Secure Accounts
+  useEffect(() => {
+    const shouldAutoTrigger =
+      (authStep === 'mfa' || authStep === 'new_device') &&
+      mfaPreferences.superSecureAccountEnabled &&
+      !isLoading &&
+      !passkeyLoading;
+
+    if (shouldAutoTrigger) {
+      // Small timeout to allow UI to render first
+      const timer = setTimeout(() => {
+        handleWebAuthnMfaVerification();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [authStep, mfaPreferences.superSecureAccountEnabled, isLoading, passkeyLoading]);
+
   // MFA session expiry timer
   useEffect(() => {
     if (authStep !== 'mfa' || !mfaSession.active || !mfaSession.expiresAt) return;
@@ -212,8 +231,15 @@ export default function Signin() {
     return () => clearInterval(timer);
   }, [authStep, mfaSession, getTimeRemaining]);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (skip if adding another account)
   useEffect(() => {
+    // Check for add_account flow - don't redirect in this case
+    const params = new URLSearchParams(window.location.search);
+    const flow = params.get('flow');
+    if (flow === 'add_account') {
+      return; // Allow user to add another account without redirecting
+    }
+
     if (!authLoading && isAuthenticated) {
       const redirectPath = getRedirectPath();
       navigate(redirectPath, { replace: true });
@@ -247,6 +273,7 @@ export default function Signin() {
               emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
               notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled,
               webauthnMfaAvailable: result.mfaPreferences.webauthnMfaAvailable,
+              superSecureAccountEnabled: result.mfaPreferences.superSecureAccountEnabled,
             });
           }
           setMfaSession({
@@ -265,6 +292,7 @@ export default function Signin() {
               emailMfaEnabled: result.mfaPreferences.emailMfaEnabled,
               notificationMfaEnabled: result.mfaPreferences.notificationMfaEnabled,
               webauthnMfaAvailable: result.mfaPreferences.webauthnMfaAvailable,
+              superSecureAccountEnabled: result.mfaPreferences.superSecureAccountEnabled,
             });
 
             // Check if only WebAuthn is available (no email/notification fallback)
@@ -876,6 +904,45 @@ export default function Signin() {
 
   // Render MFA verification form
   const renderMfaForm = () => {
+    // Super Secure Account Enforcement UI
+    if (mfaPreferences.superSecureAccountEnabled) {
+      return (
+        <div className="text-center w-full px-4">
+          <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+            Security Check
+          </h1>
+          <p className={`mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+            Super Secure Account enabled. Only security keys are allowed.
+          </p>
+
+          <div className="flex justify-center mb-8">
+            <div className={`p-6 rounded-full ${isDark ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
+              <svg className={`w-12 h-12 ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleWebAuthnMfaVerification}
+            disabled={passkeyLoading || isLoading}
+            className={`w-full py-3.5 px-4 mb-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {passkeyLoading || isLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Verifying...
+              </>
+            ) : 'Use Security Key'}
+          </button>
+        </div>
+      );
+    }
+
     const isBackupCode = mfaMethod === 'backup';
     const isOtpMethod = mfaMethod === 'email' || mfaMethod === 'notification';
 
@@ -1014,7 +1081,7 @@ export default function Signin() {
                     </button>
                   </div>
 
-                  {mfaMethod !== 'authenticator' && authStep !== 'new_device' && (
+                  {mfaMethod !== 'authenticator' && authStep !== 'new_device' && !mfaPreferences.superSecureAccountEnabled && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1035,7 +1102,7 @@ export default function Signin() {
                     </button>
                   )}
 
-                  {mfaMethod !== 'backup' && authStep !== 'new_device' && (
+                  {mfaMethod !== 'backup' && authStep !== 'new_device' && !mfaPreferences.superSecureAccountEnabled && (
                     <button
                       type="button"
                       onClick={() => {

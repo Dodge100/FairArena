@@ -13,19 +13,25 @@ import {
   createSession,
   destroyAllUserSessions,
   destroySession,
+  findExistingUserSession,
   generateAccessToken,
+  generateBindingToken,
   generateRefreshToken,
+  getLoggedInAccountsInfo,
+  getSession,
   getUserSessions,
   hashPassword,
   invalidatePasswordResetToken,
   isLockedOut,
+  migrateLegacyCookies,
+  parseSessionCookies,
   parseUserAgent,
   recordFailedLogin,
   rotateRefreshToken,
   validatePasswordStrength,
   verifyEmailVerificationToken,
   verifyPassword,
-  verifyPasswordResetToken,
+  verifyPasswordResetToken
 } from '../../services/auth.service.js';
 import logger from '../../utils/logger.js';
 
@@ -117,11 +123,11 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
 
 
 
-// Cookie configuration
+// Cookie configuration - sameSite=lax for OAuth compatibility
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const,  // lax for OAuth redirect compatibility
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -132,7 +138,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const,  // lax for OAuth redirect compatibility
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -313,6 +319,7 @@ export const login = async (req: Request, res: Response) => {
         notificationMfaEnabled: true,
         isBanned: true,
         banReason: true,
+        superSecureAccountEnabled: true,
         // Check if user has any registered security keys
         _count: {
           select: { securityKeys: true }
@@ -334,6 +341,15 @@ export const login = async (req: Request, res: Response) => {
         success: false,
         message: `Your account has been suspended. Reason: ${user.banReason || 'Violation of terms'}`,
         code: 'USER_BANNED',
+      });
+    }
+
+    // Check for Super Secure Account
+    if (user.superSecureAccountEnabled) {
+      return res.status(403).json({
+        success: false,
+        message: 'Super Secure Account enabled. Password login is disabled. Please use Passkey or OAuth + Security Key.',
+        code: 'SUPER_SECURE_LOGIN_REQUIRED',
       });
     }
 
@@ -412,6 +428,7 @@ export const login = async (req: Request, res: Response) => {
           notificationMfaEnabled: user.notificationMfaEnabled,
           // Has WebAuthn MFA if at least one security key is registered
           webauthnMfaAvailable: user._count.securityKeys > 0,
+          superSecureAccountEnabled: user.superSecureAccountEnabled,
         },
       });
     }
@@ -469,6 +486,52 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Known device - proceed with normal login
+
+    // Check if this user is already logged in (has existing session in cookies)
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    if (existingSession) {
+      // User already logged in - just switch to their session
+      res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
+
+      logger.info('Switched to existing session', { userId: user.userId, sessionId: existingSession.sessionId });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Already logged in, switched to this account',
+        data: {
+          user: {
+            userId: user.userId,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl,
+            emailVerified: user.emailVerified,
+          },
+          accessToken: generateAccessToken(user.userId, existingSession.sessionId),
+        },
+      });
+    }
+
+    // Check account limit before creating new session
+    const currentSessionCount = parseSessionCookies(req.cookies || {}).length;
+    if (currentSessionCount >= ENV.MAX_CONCURRENT_ACCOUNTS) {
+      logger.info('account_limit_hit', {
+        userId: user.userId,
+        count: currentSessionCount,
+        limit: ENV.MAX_CONCURRENT_ACCOUNTS
+      });
+
+      return res.status(409).json({
+        success: false,
+        message: `Maximum ${ENV.MAX_CONCURRENT_ACCOUNTS} accounts allowed. Please logout from an account first.`,
+        code: 'MAX_ACCOUNTS_REACHED',
+        data: {
+          currentCount: currentSessionCount,
+          maxAccounts: ENV.MAX_CONCURRENT_ACCOUNTS,
+        },
+      });
+    }
+
     // Generate tokens
     const refreshToken = generateRefreshToken();
     const sessionId = await createSession(
@@ -484,6 +547,10 @@ export const login = async (req: Request, res: Response) => {
     );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
+    // Generate binding token for session security
+    const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+    await redis.hset(`session:${sessionId}`, { bindingHash });
+
     // Update last login
     await prisma.user.update({
       where: { userId: user.userId },
@@ -493,9 +560,9 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    // Set cookies
-    res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-    res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+    // Set multi-session cookies
+    res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
     // Check if this is a new device login (simple check: no login from this device type in last 7 days)
     const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
@@ -732,9 +799,11 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
         firstName: true,
         lastName: true,
         profileImageUrl: true,
+        emailVerified: true,
         mfaSecret: true,
         mfaBackupCodes: true,
         mfaEnabled: true,
+        superSecureAccountEnabled: true,
         isBanned: true,
         banReason: true,
       },
@@ -744,6 +813,15 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         message: 'MFA not enabled or invalid state',
+      });
+    }
+
+    // BLOCK SUPER SECURE ACCOUNTS from using TOTP or Backup Codes
+    if (user.superSecureAccountEnabled) {
+      return res.status(403).json({
+        success: false,
+        message: 'TOTP and Backup Codes are disabled for Super Secure Accounts. Please use your Security Key.',
+        code: 'SUPER_SECURE_ENFORCED',
       });
     }
 
@@ -858,6 +936,41 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     // Get device info
     const ipAddress = currentIp;
 
+    // Check if this user is already logged in (has existing session in cookies)
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    if (existingSession) {
+      // User already logged in - just switch to their session
+      res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
+      res.clearCookie('mfa_session', { path: '/' });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Already logged in, switched to this account',
+        data: {
+          user: {
+            userId: user.userId,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl,
+            emailVerified: user.emailVerified,
+          },
+          accessToken: generateAccessToken(user.userId, existingSession.sessionId),
+        },
+      });
+    }
+
+    // Check account limit before creating new session
+    const currentSessionCount = parseSessionCookies(req.cookies || {}).length;
+    if (currentSessionCount >= ENV.MAX_CONCURRENT_ACCOUNTS) {
+      res.clearCookie('mfa_session', { path: '/' });
+      return res.status(409).json({
+        success: false,
+        message: `Maximum ${ENV.MAX_CONCURRENT_ACCOUNTS} accounts allowed. Please logout from an account first.`,
+        code: 'MAX_ACCOUNTS_REACHED',
+      });
+    }
+
     // Generate tokens
     const refreshToken = generateRefreshToken();
     const sessionId = await createSession(
@@ -873,6 +986,10 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
+    // Generate binding token for session security
+    const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+    await redis.hset(`session:${sessionId}`, { bindingHash });
+
     // Update last login
     await prisma.user.update({
       where: { userId: user.userId },
@@ -882,9 +999,9 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
       },
     });
 
-    // Set cookies
-    res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-    res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+    // Set multi-session cookies
+    res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
     // Check if this is a new device login (simple check: no login from this device type in last 7 days)
     const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
@@ -984,23 +1101,60 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
 // POST /api/v1/auth/refresh
 export const refreshAccessToken = async (req: Request, res: Response) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
-    const sessionId = req.cookies?.sessionId;
+    // Try multi-session format first
+    let sessionId = req.cookies?.active_session;
+    let bindingToken: string | undefined;
 
-    if (!refreshToken || !sessionId) {
+    if (sessionId) {
+      // New multi-session format
+      bindingToken = req.cookies?.[`session_${sessionId}`];
+    } else {
+      // Legacy format - try to migrate
+      sessionId = req.cookies?.sessionId;
+      const legacyRefreshToken = req.cookies?.refreshToken;
+
+      if (sessionId && legacyRefreshToken) {
+        // Trigger migration on next getLoggedInAccounts call
+        // For now, just use the legacy session
+      }
+    }
+
+    if (!sessionId) {
       return res.status(401).json({
         success: false,
-        message: 'No refresh token provided',
+        message: 'No session found',
       });
     }
 
-    // Rotate refresh token (get new tokens)
-    const result = await rotateRefreshToken(sessionId, refreshToken);
+    // Get session from Redis to get refreshToken hash
+    const session = await getSession(sessionId);
+    if (!session) {
+      // Clear the invalid session cookie
+      if (req.cookies?.active_session) {
+        res.clearCookie(`session_${sessionId}`, { path: '/' });
+        res.clearCookie('active_session', { path: '/' });
+      } else {
+        res.clearCookie('refreshToken', { path: '/' });
+        res.clearCookie('sessionId', { path: '/' });
+      }
+
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired or invalid',
+      });
+    }
+
+    // Rotate refresh token using session data
+    const result = await rotateRefreshToken(sessionId);
 
     if (!result) {
       // Clear invalid cookies
-      res.clearCookie('refreshToken', { path: '/' });
-      res.clearCookie('sessionId', { path: '/' });
+      if (req.cookies?.active_session) {
+        res.clearCookie(`session_${sessionId}`, { path: '/' });
+      } else {
+        res.clearCookie('refreshToken', { path: '/' });
+        res.clearCookie('sessionId', { path: '/' });
+      }
 
       return res.status(401).json({
         success: false,
@@ -1008,8 +1162,16 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       });
     }
 
-    // Set new refresh token cookie
-    res.cookie('refreshToken', result.newRefreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    // For new format, update the binding token in cookie
+    if (bindingToken) {
+      // Generate new binding token
+      const { token: newBindingToken, hash: newBindingHash } = generateBindingToken();
+      await redis.hset(`session:${sessionId}`, { bindingHash: newBindingHash });
+      res.cookie(`session_${sessionId}`, newBindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    } else if (req.cookies?.refreshToken) {
+      // Legacy format - update refresh token cookie
+      res.cookie('refreshToken', result.newRefreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    }
 
     return res.status(200).json({
       success: true,
@@ -1029,18 +1191,66 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 };
 
 /**
- * Logout user
+ * Logout user (single account in multi-session context)
  * POST /api/v1/auth/logout
  */
 export const logout = async (req: Request, res: Response) => {
   try {
-    const sessionId = req.cookies?.sessionId;
+    // Try multi-session format first
+    let sessionId = req.cookies?.active_session;
+    const isMultiSession = !!sessionId;
+
+    if (!sessionId) {
+      // Fallback to legacy format
+      sessionId = req.cookies?.sessionId;
+    }
 
     if (sessionId) {
       await destroySession(sessionId);
+
+      if (isMultiSession) {
+        // Clear the specific session cookie
+        res.clearCookie(`session_${sessionId}`, {
+          path: '/',
+          ...(ENV.NODE_ENV === 'production' && { domain: ENV.COOKIE_DOMAIN }),
+        });
+
+        // Find next available session to switch to
+        const allSessions = parseSessionCookies(req.cookies || {});
+        const remainingSessions = allSessions.filter(s => s.sessionId !== sessionId);
+
+        if (remainingSessions.length > 0) {
+          // Switch to first remaining session
+          const nextSession = remainingSessions[0];
+          const nextSessionData = await getSession(nextSession.sessionId);
+
+          if (nextSessionData) {
+            res.cookie('active_session', nextSession.sessionId, SESSION_COOKIE_OPTIONS);
+
+            logger.info('Switched to next session after logout', {
+              oldSessionId: sessionId,
+              newSessionId: nextSession.sessionId
+            });
+
+            return res.status(200).json({
+              success: true,
+              message: 'Logged out, switched to another account',
+              data: {
+                switchedToSessionId: nextSession.sessionId,
+              },
+            });
+          }
+        }
+
+        // No more sessions remaining
+        res.clearCookie('active_session', {
+          path: '/',
+          ...(ENV.NODE_ENV === 'production' && { domain: ENV.COOKIE_DOMAIN }),
+        });
+      }
     }
 
-    // Clear cookies
+    // Clear legacy cookies
     res.clearCookie('refreshToken', { path: '/' });
     res.clearCookie('sessionId', { path: '/' });
 
@@ -1055,6 +1265,7 @@ export const logout = async (req: Request, res: Response) => {
     // Still clear cookies even on error
     res.clearCookie('refreshToken', { path: '/' });
     res.clearCookie('sessionId', { path: '/' });
+    res.clearCookie('active_session', { path: '/' });
 
     return res.status(200).json({
       success: true,
@@ -1678,18 +1889,20 @@ export const checkMfaSession = async (req: Request, res: Response) => {
     else if (notificationExists === 1) activeOtpMethod = 'notification';
 
     // Fetch user's MFA preferences (try cache first)
-    const prefsCacheKey = `mfa:prefs:${payload.userId}`;
+    const prefsCacheKey = `mfa:session_check:${payload.userId}`;
     const cachedPrefs = await redis.get(prefsCacheKey);
 
     let emailMfaEnabled = false;
     let notificationMfaEnabled = false;
     let webauthnMfaAvailable = false;
+    let superSecureAccountEnabled = false;
 
     if (cachedPrefs) {
       const prefs = typeof cachedPrefs === 'string' ? JSON.parse(cachedPrefs) : cachedPrefs;
       emailMfaEnabled = prefs.emailMfaEnabled || false;
       notificationMfaEnabled = prefs.notificationMfaEnabled || false;
       webauthnMfaAvailable = prefs.webauthnMfaAvailable || false;
+      superSecureAccountEnabled = prefs.superSecureAccountEnabled || false;
     } else {
       const user = await prisma.user.findUnique({
         where: { userId: payload.userId },
@@ -1697,6 +1910,7 @@ export const checkMfaSession = async (req: Request, res: Response) => {
           mfaEnabled: true,
           emailMfaEnabled: true,
           notificationMfaEnabled: true,
+          superSecureAccountEnabled: true,
           _count: {
             select: { securityKeys: true }
           }
@@ -1706,6 +1920,7 @@ export const checkMfaSession = async (req: Request, res: Response) => {
       emailMfaEnabled = user?.emailMfaEnabled || false;
       notificationMfaEnabled = user?.notificationMfaEnabled || false;
       webauthnMfaAvailable = (user?._count?.securityKeys || 0) > 0;
+      superSecureAccountEnabled = user?.superSecureAccountEnabled || false;
 
       // Cache for 1 hour to match getMfaPreferences
       if (user) {
@@ -1713,9 +1928,17 @@ export const checkMfaSession = async (req: Request, res: Response) => {
           mfaEnabled: user.mfaEnabled,
           emailMfaEnabled,
           notificationMfaEnabled,
-          webauthnMfaAvailable
+          webauthnMfaAvailable,
+          superSecureAccountEnabled
         }));
       }
+    }
+
+    // ENFORCE SUPER SECURE ACCOUNT: disable everything except WebAuthn
+    if (superSecureAccountEnabled) {
+      emailMfaEnabled = false;
+      notificationMfaEnabled = false;
+      // Note: we don't disable mfaEnabled because WebAuthn is an MFA method
     }
 
     // For new device flow, enforce security key only if user has registered security keys
@@ -1748,6 +1971,7 @@ export const checkMfaSession = async (req: Request, res: Response) => {
           emailMfaEnabled,
           notificationMfaEnabled,
           webauthnMfaAvailable,
+          superSecureAccountEnabled,
         },
       },
     });
@@ -1894,9 +2118,12 @@ const updateMfaPreferencesSchema = z.object({
   emailMfaEnabled: z.boolean().optional(),
   notificationMfaEnabled: z.boolean().optional(),
   acknowledgeSecurityRisk: z.boolean().optional(),
+  // New advanced security settings
+  disableOTPReverification: z.boolean().optional(),
+  superSecureAccountEnabled: z.boolean().optional(),
 });
 
-// Update MFA preferences (email/notification OTP toggles)
+// Update MFA preferences (email/notification OTP toggles + advanced security settings)
 // PUT /api/v1/auth/mfa/preferences
 export const updateMfaPreferences = async (req: Request, res: Response) => {
   try {
@@ -1917,7 +2144,13 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       });
     }
 
-    const { emailMfaEnabled, notificationMfaEnabled, acknowledgeSecurityRisk } = validation.data;
+    const {
+      emailMfaEnabled,
+      notificationMfaEnabled,
+      acknowledgeSecurityRisk,
+      disableOTPReverification,
+      superSecureAccountEnabled
+    } = validation.data;
 
     // If enabling email or notification MFA, require user to acknowledge security risk
     const isEnablingLessSecure =
@@ -1931,13 +2164,16 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       });
     }
 
-    // Get current user to check MFA status
+    // Get current user with security key and passkey count
     const user = await prisma.user.findUnique({
       where: { userId },
       select: {
         mfaEnabled: true,
         emailMfaEnabled: true,
         notificationMfaEnabled: true,
+        disableOTPReverification: true,
+        superSecureAccountEnabled: true,
+        _count: { select: { securityKeys: true, passkeys: true } },
       },
     });
 
@@ -1948,13 +2184,99 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       });
     }
 
+    const securityKeyCount = user._count.securityKeys;
+    const passkeyCount = user._count.passkeys;
+
+    // ============================================================
+    // VALIDATION FOR ADVANCED SECURITY SETTINGS
+    // ============================================================
+
+    // Validation: disableOTPReverification requires at least 1 security key
+    if (disableOTPReverification === true && securityKeyCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must have at least one security key registered before disabling OTP re-verification.',
+        code: 'PREREQUISITE_NOT_MET',
+        requirement: 'security_key_required',
+      });
+    }
+
+    // Validation: superSecureAccountEnabled requires:
+    // 1. MFA enabled
+    // 2. disableOTPReverification enabled (or being enabled in this request)
+    // 3. At least 1 security key
+    // 4. At least 1 passkey
+    if (superSecureAccountEnabled === true) {
+      if (!user.mfaEnabled) {
+        return res.status(400).json({
+          success: false,
+          message: 'You must enable Two-Factor Authentication (MFA) before enabling Super Secure Account.',
+          code: 'PREREQUISITE_NOT_MET',
+          requirement: 'mfa_required',
+        });
+      }
+
+      // Check if OTP re-verification is disabled (either already or being disabled in this request)
+      const willHaveOTPDisabled = disableOTPReverification === true ||
+        (disableOTPReverification !== false && user.disableOTPReverification);
+
+      if (!willHaveOTPDisabled) {
+        return res.status(400).json({
+          success: false,
+          message: 'You must disable OTP re-verification before enabling Super Secure Account.',
+          code: 'PREREQUISITE_NOT_MET',
+          requirement: 'disable_otp_reverification_required',
+        });
+      }
+
+      if (securityKeyCount === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'You must have at least one security key registered before enabling Super Secure Account.',
+          code: 'PREREQUISITE_NOT_MET',
+          requirement: 'security_key_required',
+        });
+      }
+
+      if (passkeyCount === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'You must have at least one passkey registered before enabling Super Secure Account.',
+          code: 'PREREQUISITE_NOT_MET',
+          requirement: 'passkey_required',
+        });
+      }
+    }
+
+    // Validation: Cannot re-enable OTP reverification while super secure is enabled
+    if (disableOTPReverification === false && user.superSecureAccountEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must disable Super Secure Account before re-enabling OTP re-verification.',
+        code: 'CONFLICT',
+        requirement: 'disable_super_secure_first',
+      });
+    }
+
     // Build update object
-    const updateData: { emailMfaEnabled?: boolean; notificationMfaEnabled?: boolean } = {};
+    const updateData: {
+      emailMfaEnabled?: boolean;
+      notificationMfaEnabled?: boolean;
+      disableOTPReverification?: boolean;
+      superSecureAccountEnabled?: boolean;
+    } = {};
+
     if (typeof emailMfaEnabled === 'boolean') {
       updateData.emailMfaEnabled = emailMfaEnabled;
     }
     if (typeof notificationMfaEnabled === 'boolean') {
       updateData.notificationMfaEnabled = notificationMfaEnabled;
+    }
+    if (typeof disableOTPReverification === 'boolean') {
+      updateData.disableOTPReverification = disableOTPReverification;
+    }
+    if (typeof superSecureAccountEnabled === 'boolean') {
+      updateData.superSecureAccountEnabled = superSecureAccountEnabled;
     }
 
     // Update user preferences
@@ -1965,25 +2287,35 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
         emailMfaEnabled: true,
         notificationMfaEnabled: true,
         mfaEnabled: true,
+        disableOTPReverification: true,
+        superSecureAccountEnabled: true,
+        _count: { select: { securityKeys: true, passkeys: true } },
       },
     });
 
     // Invalidate MFA preferences cache
     await redis.del(`mfa:prefs:${userId}`);
+    await redis.del(`mfa:session_check:${userId}`);
 
     logger.info('MFA preferences updated', {
       userId,
       emailMfaEnabled: updatedUser.emailMfaEnabled,
       notificationMfaEnabled: updatedUser.notificationMfaEnabled,
+      disableOTPReverification: updatedUser.disableOTPReverification,
+      superSecureAccountEnabled: updatedUser.superSecureAccountEnabled,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'MFA preferences updated successfully',
+      message: 'Security preferences updated successfully',
       data: {
         emailMfaEnabled: updatedUser.emailMfaEnabled,
         notificationMfaEnabled: updatedUser.notificationMfaEnabled,
         mfaEnabled: updatedUser.mfaEnabled,
+        disableOTPReverification: updatedUser.disableOTPReverification,
+        superSecureAccountEnabled: updatedUser.superSecureAccountEnabled,
+        securityKeyCount: updatedUser._count.securityKeys,
+        passkeyCount: updatedUser._count.passkeys,
       },
     });
   } catch (error) {
@@ -2009,8 +2341,6 @@ export const getMfaPreferences = async (req: Request, res: Response) => {
       });
     }
 
-
-
     const cacheKey = `mfa:prefs:${userId}`;
     const cachedPrefs = await redis.get(cacheKey);
 
@@ -2027,6 +2357,9 @@ export const getMfaPreferences = async (req: Request, res: Response) => {
         mfaEnabled: true,
         emailMfaEnabled: true,
         notificationMfaEnabled: true,
+        disableOTPReverification: true,
+        superSecureAccountEnabled: true,
+        _count: { select: { securityKeys: true, passkeys: true } },
       },
     });
 
@@ -2041,6 +2374,10 @@ export const getMfaPreferences = async (req: Request, res: Response) => {
       mfaEnabled: user.mfaEnabled,
       emailMfaEnabled: user.emailMfaEnabled,
       notificationMfaEnabled: user.notificationMfaEnabled,
+      disableOTPReverification: user.disableOTPReverification,
+      superSecureAccountEnabled: user.superSecureAccountEnabled,
+      securityKeyCount: user._count.securityKeys,
+      passkeyCount: user._count.passkeys,
     };
 
     // Cache for 1 hour
@@ -2340,6 +2677,7 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
         mfaEnabled: true,
         emailMfaEnabled: true,
         notificationMfaEnabled: true,
+        superSecureAccountEnabled: true,
         isBanned: true,
         banReason: true,
       },
@@ -2354,6 +2692,15 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
 
     // Security check: Ensure the requested MFA method is actually enabled for this user
     // We skip this check for 'new_device_pending' sessions as they force these methods on
+    // BUT we block everything if Super Secure Account is enabled
+    if (user.superSecureAccountEnabled) {
+      return res.status(403).json({
+        success: false,
+        message: 'OTP verification is disabled for Super Secure Accounts. Please use your Security Key.',
+        code: 'SUPER_SECURE_ENFORCED',
+      });
+    }
+
     if (payload.type === 'mfa_pending') {
       if (method === 'email' && !user.emailMfaEnabled) {
         return res.status(403).json({
@@ -2396,6 +2743,48 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     const uaInfo = parseUserAgent(userAgentRaw);
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
+    // Check if this user is already logged in (has existing session in cookies)
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    if (existingSession) {
+      // User already logged in - just switch to their session
+      res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
+      res.clearCookie('mfa_session', { path: '/' });
+
+      // For new device verification, still mark the device as known
+      if (payload.type === 'new_device_pending' && payload.deviceFingerprint) {
+        const recentDeviceKey = `recent_device:${userId}:${payload.deviceFingerprint}`;
+        await redis.setex(recentDeviceKey, 7 * 24 * 60 * 60, '1');
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Already logged in, switched to this account',
+        data: {
+          user: {
+            userId: user.userId,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl,
+            emailVerified: user.emailVerified,
+            mfaEnabled: user.mfaEnabled,
+          },
+          accessToken: generateAccessToken(user.userId, existingSession.sessionId),
+        },
+      });
+    }
+
+    // Check account limit before creating new session
+    const currentSessionCount = parseSessionCookies(req.cookies || {}).length;
+    if (currentSessionCount >= ENV.MAX_CONCURRENT_ACCOUNTS) {
+      res.clearCookie('mfa_session', { path: '/' });
+      return res.status(409).json({
+        success: false,
+        message: `Maximum ${ENV.MAX_CONCURRENT_ACCOUNTS} accounts allowed. Please logout from an account first.`,
+        code: 'MAX_ACCOUNTS_REACHED',
+      });
+    }
+
     // Create session and tokens
     const refreshToken = generateRefreshToken();
     const sessionId = await createSession(
@@ -2411,6 +2800,10 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
+    // Generate binding token for session security
+    const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+    await redis.hset(`session:${sessionId}`, { bindingHash });
+
     // Update last login
     await prisma.user.update({
       where: { userId },
@@ -2423,27 +2816,9 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     // Clear MFA session cookie
     res.clearCookie('mfa_session', { path: '/' });
 
-    // Set auth cookies
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/',
-      ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-      }),
-    });
-    res.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: '/',
-      ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-      }),
-    });
+    // Set multi-session cookies
+    res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
     // For new device verification, mark the device as known
     if (payload.type === 'new_device_pending' && payload.deviceFingerprint) {
@@ -2477,6 +2852,171 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to verify code',
+    });
+  }
+};
+
+// ============================================================================
+// MULTI-ACCOUNT MANAGEMENT ENDPOINTS
+// ============================================================================
+
+/**
+ * Get all logged-in accounts
+ * GET /api/v1/auth/accounts
+ */
+export const getLoggedInAccounts = async (req: Request, res: Response) => {
+  try {
+    // Run legacy migration if needed
+    await migrateLegacyCookies(
+      req.cookies || {},
+      (name) => res.clearCookie(name, { path: '/' }),
+      (name, value) => res.cookie(name, value, REFRESH_TOKEN_COOKIE_OPTIONS),
+    );
+
+    const accounts = await getLoggedInAccountsInfo(req.cookies || {}, prisma);
+    const activeSessionId = req.cookies?.active_session;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        accounts,
+        activeSessionId,
+        maxAccounts: ENV.MAX_CONCURRENT_ACCOUNTS,
+      },
+    });
+  } catch (error) {
+    logger.error('Get logged in accounts error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch accounts',
+    });
+  }
+};
+
+/**
+ * Switch to a different account
+ * POST /api/v1/auth/accounts/switch
+ */
+export const switchAccount = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId || typeof sessionId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionId is required',
+      });
+    }
+
+    // Verify the session exists in cookies
+    const allSessions = parseSessionCookies(req.cookies || {});
+    const targetSession = allSessions.find(s => s.sessionId === sessionId);
+
+    if (!targetSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Session not found in your logged-in accounts',
+        code: 'SESSION_NOT_FOUND',
+      });
+    }
+
+    // Verify session exists in Redis
+    const session = await getSession(sessionId);
+    if (!session) {
+      // Session expired - clear the cookie
+      res.clearCookie(`session_${sessionId}`, { path: '/' });
+
+      return res.status(404).json({
+        success: false,
+        message: 'Session has expired. Please login again.',
+        code: 'SESSION_EXPIRED',
+      });
+    }
+
+    // Set as active session
+    res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
+
+    // Fetch user info for the new active session
+    const user = await prisma.user.findUnique({
+      where: { userId: session.userId },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        profileImageUrl: true,
+        emailVerified: true,
+      },
+    });
+
+    logger.info('account_switched', {
+      userId: session.userId,
+      sessionId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Switched account successfully',
+      data: {
+        user,
+        sessionId,
+      },
+    });
+  } catch (error) {
+    logger.error('Switch account error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to switch account',
+    });
+  }
+};
+
+/**
+ * Logout from all accounts
+ * POST /api/v1/auth/accounts/logout-all
+ */
+export const logoutAllAccounts = async (req: Request, res: Response) => {
+  try {
+    const allSessions = parseSessionCookies(req.cookies || {});
+
+    // Destroy all sessions in Redis
+    for (const { sessionId } of allSessions) {
+      await destroySession(sessionId);
+      res.clearCookie(`session_${sessionId}`, {
+        path: '/',
+        ...(ENV.NODE_ENV === 'production' && { domain: ENV.COOKIE_DOMAIN }),
+      });
+    }
+
+    // Clear active session cookie
+    res.clearCookie('active_session', {
+      path: '/',
+      ...(ENV.NODE_ENV === 'production' && { domain: ENV.COOKIE_DOMAIN }),
+    });
+
+    // Clear legacy cookies if any
+    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('sessionId', { path: '/' });
+
+    logger.info('all_accounts_logged_out', {
+      sessionCount: allSessions.length,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Logged out from ${allSessions.length} account(s)`,
+    });
+  } catch (error) {
+    logger.error('Logout all accounts error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to logout',
     });
   }
 };

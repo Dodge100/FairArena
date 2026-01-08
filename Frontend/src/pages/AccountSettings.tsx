@@ -13,6 +13,7 @@ import {
   Copy,
   Download,
   Globe,
+  Key,
   Laptop,
   Loader2,
   Lock,
@@ -115,9 +116,14 @@ function AccountSettings() {
   const [mfaPreferences, setMfaPreferences] = useState<{
     emailMfaEnabled: boolean;
     notificationMfaEnabled: boolean;
+    disableOTPReverification: boolean;
+    superSecureAccountEnabled: boolean;
+    securityKeyCount: number;
+    passkeyCount: number;
   } | null>(null);
   const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
+  const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<'disableOtp' | 'superSecure' | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -207,6 +213,38 @@ function AccountSettings() {
     } finally {
       setUpdatingMfaPrefs(false);
       setShowSecurityWarning(null);
+    }
+  };
+
+  // Update Advanced Security Settings
+  const updateAdvancedSecuritySetting = async (
+    setting: 'disableOTPReverification' | 'superSecureAccountEnabled',
+    enabled: boolean
+  ) => {
+    setUpdatingMfaPrefs(true);
+    try {
+      const body = { [setting]: enabled };
+
+      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMfaPreferences(data.data);
+        const settingName = setting === 'disableOTPReverification'
+          ? 'OTP Re-verification'
+          : 'Super Secure Account';
+        toast.success(`${settingName} ${enabled ? 'enabled' : 'disabled'}`);
+      } else {
+        toast.error(data.message || 'Failed to update security setting');
+      }
+    } catch (error) {
+      toast.error('Failed to update security setting');
+    } finally {
+      setUpdatingMfaPrefs(false);
+      setShowAdvancedSecurityWarning(null);
     }
   };
 
@@ -944,7 +982,7 @@ function AccountSettings() {
 
             {/* Passkeys Section */}
             <PasskeyManager />
-            <SecurityKeyManager />
+            <SecurityKeyManager onDeviceChange={fetchMfaPreferences} />
 
             {/* MFA Preferences Section */}
             {mfaStatus?.enabled && (
@@ -1039,6 +1077,160 @@ function AccountSettings() {
                           className="flex-1 px-4 py-2 rounded-lg bg-yellow-500 text-black font-medium hover:bg-yellow-400 transition-colors disabled:opacity-50"
                         >
                           {updatingMfaPrefs ? 'Enabling...' : 'I Understand, Enable'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Advanced Security Settings */}
+            {mfaStatus?.enabled && mfaPreferences && (
+              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Key className={`w-6 h-6 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
+                  <h3 className="text-lg font-semibold text-foreground">Advanced Security Settings</h3>
+                </div>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Configure advanced security features for maximum account protection.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Disable OTP Reverification Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                    <div>
+                      <p className="font-medium text-foreground">Disable OTP Re-verification</p>
+                      <p className="text-sm text-muted-foreground">
+                        Force security key verification instead of email OTP for account settings
+                      </p>
+                      {(mfaPreferences.securityKeyCount || 0) === 0 && (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          ⚠️ Requires at least 1 security key
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!mfaPreferences.disableOTPReverification) {
+                          setShowAdvancedSecurityWarning('disableOtp');
+                        } else {
+                          updateAdvancedSecuritySetting('disableOTPReverification', false);
+                        }
+                      }}
+                      disabled={updatingMfaPrefs || (mfaPreferences.securityKeyCount || 0) === 0}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences.disableOTPReverification ? 'bg-green-500' : 'bg-gray-300'
+                        } ${updatingMfaPrefs || (mfaPreferences.securityKeyCount || 0) === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences.disableOTPReverification ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Super Secure Account Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border-2 border-dashed border-yellow-500/30">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">Super Secure Account</p>
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-600 border border-yellow-500/30">
+                          Advanced
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Maximum security: Passkeys/OAuth + WebAuthn MFA only.
+                      </p>
+                      {(!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) && (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          ⚠️ Requires "Disable OTP Re-verification" first
+                        </p>
+                      )}
+                      {(mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled && (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          ⚠️ Requires at least 1 security key
+                        </p>
+                      )}
+                      {(mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled && (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          ⚠️ Requires at least 1 passkey
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!mfaPreferences.superSecureAccountEnabled) {
+                          setShowAdvancedSecurityWarning('superSecure');
+                        } else {
+                          updateAdvancedSecuritySetting('superSecureAccountEnabled', false);
+                        }
+                      }}
+                      disabled={
+                        updatingMfaPrefs ||
+                        (!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled)
+                      }
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences.superSecureAccountEnabled ? 'bg-green-500' : 'bg-gray-300'
+                        } ${updatingMfaPrefs ||
+                          (!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) ||
+                          ((mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled) ||
+                          ((mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled)
+                          ? 'opacity-50 cursor-not-allowed'
+                          : ''
+                        }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences.superSecureAccountEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Advanced Security Warning Modal */}
+                {showAdvancedSecurityWarning && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <Shield className="w-6 h-6 text-green-500" />
+                        <h3 className="text-lg font-semibold">
+                          {showAdvancedSecurityWarning === 'disableOtp'
+                            ? 'Disable OTP Re-verification?'
+                            : 'Enable Super Secure Account?'
+                          }
+                        </h3>
+                      </div>
+                      <p className="text-muted-foreground mb-4">
+                        {showAdvancedSecurityWarning === 'disableOtp'
+                          ? 'This will require using your security key instead of email OTP for account settings verification.'
+                          : 'Password-based login will be disabled. You must use passkeys or OAuth with WebAuthn MFA.'
+                        }
+                      </p>
+                      {showAdvancedSecurityWarning === 'superSecure' && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-lg text-sm mb-4">
+                          <strong>Warning:</strong> If you lose all security keys and passkeys, you may be locked out permanently.
+                        </div>
+                      )}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowAdvancedSecurityWarning(null)}
+                          className="flex-1 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (showAdvancedSecurityWarning === 'disableOtp') {
+                              updateAdvancedSecuritySetting('disableOTPReverification', true);
+                            } else {
+                              updateAdvancedSecuritySetting('superSecureAccountEnabled', true);
+                            }
+                          }}
+                          disabled={updatingMfaPrefs}
+                          className="flex-1 px-4 py-2 rounded-lg bg-green-500 text-white font-medium hover:bg-green-400 transition-colors disabled:opacity-50"
+                        >
+                          {updatingMfaPrefs ? 'Enabling...' : 'Enable'}
                         </button>
                       </div>
                     </div>

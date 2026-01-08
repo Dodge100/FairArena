@@ -25,12 +25,8 @@ import logger from '../../utils/logger.js';
 
 // --- Configuration ---
 const rpName = 'FairArena';
-const rpID = ENV.NODE_ENV === 'production'
-    ? new URL(ENV.FRONTEND_URL).hostname
-    : 'localhost';
-const expectedOrigin = ENV.NODE_ENV === 'production'
-    ? ENV.FRONTEND_URL
-    : ['http://localhost:5173', 'http://localhost:3000'];
+const rpID = new URL(ENV.FRONTEND_URL).hostname;
+const expectedOrigin = ENV.FRONTEND_URL;
 
 const WEBAUTHN_MFA_CHALLENGE_PREFIX = 'webauthn_mfa:challenge:';
 const WEBAUTHN_MFA_CHALLENGE_TTL = 300; // 5 minutes
@@ -195,6 +191,9 @@ export async function verifyRegistration(req: Request, res: Response) {
         // Cleanup
         await redis.del(`${WEBAUTHN_MFA_CHALLENGE_PREFIX}${userId}:register`);
         await redis.del(`user:securityKeys:${userId}`); // Invalidate cache
+        await redis.del(`mfa:prefs:${userId}`);
+        await redis.del(`mfa:session_check:${userId}`);
+        await redis.del(`mfa:prefs:${userId}`); // Invalidate MFA preferences cache
 
         logger.info('Security key registered', { userId, keyId: securityKey.id });
 
@@ -514,10 +513,18 @@ export async function listSecurityKeys(req: Request, res: Response) {
         const cachedKeys = await redis.get(cacheKey);
 
         if (cachedKeys) {
-            return res.status(200).json({
-                success: true,
-                data: JSON.parse(cachedKeys as string)
-            });
+            try {
+                const data = typeof cachedKeys === 'string' ? JSON.parse(cachedKeys) : cachedKeys;
+                return res.status(200).json({
+                    success: true,
+                    data
+                });
+            } catch (error) {
+                logger.warn('Error parsing cached security keys, falling back to DB', {
+                    error: error instanceof Error ? error.message : String(error)
+                });
+                await redis.del(cacheKey);
+            }
         }
 
         const keys = await prisma.securityKey.findMany({
@@ -532,7 +539,9 @@ export async function listSecurityKeys(req: Request, res: Response) {
             orderBy: { createdAt: 'desc' }
         });
 
-        await redis.setex(cacheKey, 3600, JSON.stringify(keys));
+        await redis.setex(cacheKey, 3600, JSON.stringify(keys, (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+        ));
 
         return res.status(200).json({
             success: true,
@@ -540,7 +549,10 @@ export async function listSecurityKeys(req: Request, res: Response) {
         });
 
     } catch (error) {
-        logger.error('Error listing security keys', { error });
+        logger.error('Error listing security keys', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        });
         return res.status(500).json({ success: false, message: 'Failed to list keys' });
     }
 }
@@ -559,15 +571,45 @@ export async function deleteSecurityKey(req: Request, res: Response) {
         const key = await prisma.securityKey.findFirst({ where: { id, userId } });
         if (!key) return res.status(404).json({ message: 'Device not found' });
 
-        await prisma.securityKey.delete({ where: { id } });
-        await redis.del(`user:securityKeys:${userId}`);
-
-        // Notifications
+        // Check if user has Super Secure Account or disableOTPReverification enabled
+        // If so, they cannot delete their last security key
         const user = await prisma.user.findUnique({
             where: { userId },
-            select: { email: true }
+            select: {
+                email: true,
+                superSecureAccountEnabled: true,
+                disableOTPReverification: true,
+                _count: { select: { securityKeys: true } },
+            },
         });
 
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Security check: Cannot delete last security key if advanced security is enabled
+        if (user._count.securityKeys <= 1) {
+            if (user.superSecureAccountEnabled) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot remove your only security key while Super Secure Account is enabled. Please disable Super Secure Account first.',
+                    code: 'LAST_KEY_PROTECTED',
+                });
+            }
+            if (user.disableOTPReverification) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot remove your only security key while OTP re-verification is disabled. Please re-enable OTP re-verification first.',
+                    code: 'LAST_KEY_PROTECTED',
+                });
+            }
+        }
+
+        await prisma.securityKey.delete({ where: { id } });
+        await redis.del(`user:securityKeys:${userId}`);
+        await redis.del(`mfa:prefs:${userId}`);
+        await redis.del(`mfa:session_check:${userId}`);
+        await redis.del(`mfa:prefs:${userId}`); // Invalidate MFA preferences cache
+
+        // Notifications
         if (user) {
             await inngest.send([
                 {

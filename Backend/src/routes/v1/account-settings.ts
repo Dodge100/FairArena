@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import {
   checkStatus,
+  checkWebAuthnAvailable,
   exportUserData,
   getLogs,
+  getWebAuthnOptions,
   sendOtp,
   verifyOtp,
+  verifyWebAuthn
 } from '../../controllers/v1/accountSettingsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
@@ -202,4 +205,86 @@ router.get('/logs', protectRoute, requireSettingsVerification, getLogs);
  */
 router.post('/export-data', protectRoute, requireSettingsVerification, exportUserData);
 
+// =============================================================================
+// WEBAUTHN VERIFICATION ROUTES (Alternative to OTP for users with security keys)
+// =============================================================================
+
+/**
+ * @swagger
+ * /api/v1/account-settings/webauthn/available:
+ *   get:
+ *     summary: Check if WebAuthn verification is available
+ *     description: Check if user has security keys and can use WebAuthn for account settings verification
+ *     tags: [Account Settings]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: WebAuthn availability status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     webauthnAvailable:
+ *                       type: boolean
+ *                     securityKeyCount:
+ *                       type: integer
+ *                     otpDisabled:
+ *                       type: boolean
+ */
+router.get('/webauthn/available', protectRoute, checkWebAuthnAvailable);
+
+/**
+ * @swagger
+ * /api/v1/account-settings/webauthn/options:
+ *   post:
+ *     summary: Get WebAuthn authentication options
+ *     description: Generate WebAuthn challenge for account settings verification using registered security keys
+ *     tags: [Account Settings]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: WebAuthn options generated
+ *       400:
+ *         description: No security keys registered
+ */
+router.post('/webauthn/options', protectRoute, getWebAuthnOptions);
+
+/**
+ * @swagger
+ * /api/v1/account-settings/webauthn/verify:
+ *   post:
+ *     summary: Verify WebAuthn authentication
+ *     description: Verify security key response and grant account settings access
+ *     tags: [Account Settings]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - response
+ *             properties:
+ *               response:
+ *                 type: object
+ *                 description: WebAuthn authentication response
+ *     responses:
+ *       200:
+ *         description: Verification successful
+ *       400:
+ *         description: Verification failed
+ */
+router.post('/webauthn/verify', protectRoute, verifyWebAuthn);
+
 export default router;
+

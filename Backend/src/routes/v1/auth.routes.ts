@@ -4,6 +4,7 @@ import {
     checkMfaSession,
     forgotPassword,
     getCurrentUser,
+    getLoggedInAccounts,
     getMfaPreferences,
     getRecentActivity,
     invalidateMfaSession,
@@ -11,6 +12,7 @@ import {
     login,
     logout,
     logoutAll,
+    logoutAllAccounts,
     refreshAccessToken,
     register,
     resendVerificationEmail,
@@ -18,6 +20,7 @@ import {
     revokeSession,
     sendEmailOtp,
     sendNotificationOtp,
+    switchAccount,
     updateMfaPreferences,
     verifyEmail,
     verifyLoginMFA,
@@ -552,6 +555,61 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
  *         description: Invalid OTP
  */
 router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
+
+// ============================================================================
+// MULTI-ACCOUNT ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/v1/auth/accounts:
+ *   get:
+ *     summary: Get all logged-in accounts
+ *     tags: [Authentication, Multi-Account]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: List of logged-in accounts
+ */
+router.get('/accounts', getLoggedInAccounts);
+
+/**
+ * @swagger
+ * /api/v1/auth/accounts/switch:
+ *   post:
+ *     summary: Switch to a different logged-in account
+ *     tags: [Authentication, Multi-Account]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId]
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Switched account successfully
+ *       404:
+ *         description: Session not found
+ */
+router.post('/accounts/switch', switchAccount);
+
+/**
+ * @swagger
+ * /api/v1/auth/accounts/logout-all:
+ *   post:
+ *     summary: Logout from all accounts
+ *     tags: [Authentication, Multi-Account]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: All accounts logged out
+ */
+router.post('/accounts/logout-all', logoutAllAccounts);
 
 // OAuth Routes
 import {

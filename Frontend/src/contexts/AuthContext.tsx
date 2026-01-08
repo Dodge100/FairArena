@@ -12,6 +12,17 @@ export interface User {
     emailVerified?: boolean;
 }
 
+export interface AccountSession {
+    sessionId: string;
+    userId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+    deviceName?: string;
+    lastActiveAt?: string;
+}
+
 export interface AuthContextType {
     user: User | null;
     accessToken: string | null;
@@ -30,6 +41,13 @@ export interface AuthContextType {
     verifyEmail: (token: string) => Promise<void>;
     verifyLoginMFA: (code: string, isBackupCode?: boolean, recaptchaToken?: string) => Promise<void>;
     resendVerificationEmail: (email: string, recaptchaToken?: string) => Promise<void>;
+    // Multi-account support
+    accounts: AccountSession[];
+    activeSessionId: string | null;
+    maxAccounts: number;
+    fetchAccounts: () => Promise<void>;
+    switchAccount: (sessionId: string) => Promise<void>;
+    logoutAllAccounts: () => Promise<void>;
 }
 
 export interface RegisterData {
@@ -55,6 +73,7 @@ export interface AuthResponse {
         emailMfaEnabled: boolean;
         notificationMfaEnabled: boolean;
         webauthnMfaAvailable?: boolean;
+        superSecureAccountEnabled?: boolean;
     };
 }
 
@@ -73,6 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isBanned, setIsBanned] = useState(false);
     const [banReason, setBanReason] = useState<string | null>(null);
+
+    // Multi-account state
+    const [accounts, setAccounts] = useState<AccountSession[]>([]);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [maxAccounts, setMaxAccounts] = useState<number>(5);
 
     // Register ban handler
     useEffect(() => {
@@ -134,6 +158,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return refreshPromise;
     }, [updateToken]);
+
+    // Fetch logged-in accounts (multi-account)
+    const fetchAccounts = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE}/api/v1/auth/accounts`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    setAccounts(data.data.accounts || []);
+                    setActiveSessionId(data.data.activeSessionId || null);
+                    if (data.data.maxAccounts) {
+                        setMaxAccounts(data.data.maxAccounts);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch accounts:', error);
+        }
+    }, []);
 
     // Get current user from server
     const fetchCurrentUser = useCallback(async (token: string): Promise<User | null> => {
@@ -202,11 +252,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
             }
 
+            // Always fetch accounts on init
+            await fetchAccounts();
+
             setIsLoading(false);
         };
 
         initAuth();
-    }, [fetchCurrentUser, refreshToken, updateToken]);
+    }, [fetchCurrentUser, refreshToken, updateToken, fetchAccounts]);
 
     // Login with email/password
     const login = useCallback(async (email: string, password: string, recaptchaToken?: string): Promise<AuthResponse> => {
@@ -235,10 +288,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.data?.accessToken && data.data?.user) {
             updateToken(data.data.accessToken);
             setUser(data.data.user);
+            await fetchAccounts();
         }
 
         return data; // Return full response for MFA handling
-    }, [updateToken]);
+    }, [updateToken, fetchAccounts]);
 
     const verifyLoginMFA = useCallback(async (code: string, isBackupCode?: boolean, recaptchaToken?: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/v1/auth/verify-mfa`, {
@@ -271,8 +325,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.data?.accessToken && data.data?.user) {
             updateToken(data.data.accessToken);
             setUser(data.data.user);
+            await fetchAccounts();
         }
-    }, [updateToken]);
+    }, [updateToken, fetchAccounts]);
 
     // Register new user
     const register = useCallback(async (registerData: RegisterData, recaptchaToken?: string): Promise<void> => {
@@ -316,13 +371,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.data?.accessToken && data.data?.user) {
             updateToken(data.data.accessToken);
             setUser(data.data.user);
+            await fetchAccounts();
         }
-    }, [updateToken]);
+    }, [updateToken, fetchAccounts]);
 
     // Logout
     const logout = useCallback(async (): Promise<void> => {
         try {
-            await fetch(`${API_BASE}/api/v1/auth/logout`, {
+            const response = await fetch(`${API_BASE}/api/v1/auth/logout`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -330,12 +386,102 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     ...(inMemoryToken ? { Authorization: `Bearer ${inMemoryToken}` } : {}),
                 },
             });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // If backend switched us to another account, update state
+                if (data.data?.switchedToSessionId) {
+                    // Just fetch accounts to sync state (which will update activeSessionId)
+                    await fetchAccounts();
+                    // We need to refresh token for the new account
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        const userData = await fetchCurrentUser(newToken);
+                        if (userData) {
+                            setUser(userData);
+                            return; // Don't clear user state
+                        }
+                    }
+                }
+            }
         } catch (error) {
             console.error('Logout error:', error);
+        }
+        await fetchAccounts(); // Get latest state
+        const newToken = await refreshToken(); // Try to get token for whatever is active
+        if (newToken) {
+            const userData = await fetchCurrentUser(newToken);
+            if (userData) {
+                setUser(userData);
+            } else {
+                setUser(null);
+                updateToken(null);
+            }
+        } else {
+            setUser(null);
+            updateToken(null);
+            setIsBanned(false);
+            setBanReason(null);
+        }
+
+    }, [updateToken, fetchAccounts, refreshToken, fetchCurrentUser]);
+
+    // Switch Account
+    const switchAccount = useCallback(async (sessionId: string) => {
+        try {
+            const response = await fetch(`${API_BASE}/api/v1/auth/accounts/switch`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ sessionId }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Update user state immediately from response if available, or fetch
+                    if (data.data?.sessionId) {
+                        setActiveSessionId(data.data.sessionId);
+                    }
+
+                    // Refresh token for the new account
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        const userData = await fetchCurrentUser(newToken);
+                        if (userData) {
+                            setUser(userData);
+                        }
+                    }
+
+                    await fetchAccounts();
+                }
+            }
+        } catch (error) {
+            console.error('Switch account error:', error);
+        }
+    }, [refreshToken, fetchCurrentUser, fetchAccounts]);
+
+    // Logout All Accounts
+    const logoutAllAccounts = useCallback(async () => {
+        try {
+            await fetch(`${API_BASE}/api/v1/auth/accounts/logout-all`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (error) {
+            console.error('Logout all error:', error);
         } finally {
             updateToken(null);
             setUser(null);
-            setIsBanned(false); // Reset ban state on logout
+            setAccounts([]);
+            setActiveSessionId(null);
+            setIsBanned(false);
             setBanReason(null);
         }
     }, [updateToken]);
@@ -437,6 +583,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyEmail,
         verifyLoginMFA,
         resendVerificationEmail,
+        accounts,
+        activeSessionId,
+        maxAccounts,
+        fetchAccounts,
+        switchAccount,
+        logoutAllAccounts,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

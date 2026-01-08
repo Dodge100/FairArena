@@ -27,13 +27,9 @@ import logger from '../../utils/logger.js';
 // The Relying Party (RP) configuration
 const rpName = 'FairArena';
 // In production, this should be the actual domain (e.g., 'fairarena.com')
-const rpID = ENV.NODE_ENV === 'production'
-    ? new URL(ENV.FRONTEND_URL).hostname
-    : 'localhost';
+const rpID = new URL(ENV.FRONTEND_URL).hostname;
 // The expected origin(s) for the WebAuthn requests
-const expectedOrigin = ENV.NODE_ENV === 'production'
-    ? ENV.FRONTEND_URL
-    : ['http://localhost:5173', 'http://localhost:3000'];
+const expectedOrigin = ENV.FRONTEND_URL;
 
 // Redis keys for challenge storage
 const PASSKEY_CHALLENGE_PREFIX = 'passkey:challenge:';
@@ -721,6 +717,25 @@ export async function deletePasskey(req: Request, res: Response) {
             });
         }
 
+        // Check if user has Super Secure Account enabled and this is their last passkey
+        const user = await prisma.user.findUnique({
+            where: { userId },
+            select: {
+                email: true,
+                firstName: true,
+                superSecureAccountEnabled: true,
+                _count: { select: { passkeys: true } }
+            }
+        });
+
+        if (user?.superSecureAccountEnabled && user._count.passkeys <= 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete your last passkey while Super Secure Account is enabled. Please disable Super Secure Account first or add another passkey.',
+                code: 'LAST_PASSKEY_WITH_SUPER_SECURE',
+            });
+        }
+
         await prisma.passkey.delete({
             where: { id },
         });
@@ -730,11 +745,6 @@ export async function deletePasskey(req: Request, res: Response) {
 
         logger.info('Passkey deleted', { userId, passkeyId: id });
 
-        // Get user details for notifications
-        const user = await prisma.user.findUnique({
-            where: { userId },
-            select: { email: true, firstName: true }
-        });
 
         if (user) {
             // Send in-app notification

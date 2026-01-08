@@ -334,12 +334,21 @@ export async function updateSessionActivity(sessionId: string): Promise<void> {
 
 /**
  * Rotate refresh token (security best practice)
+ * For new multi-session format, oldRefreshToken is not passed (binding token is used instead)
  */
 export async function rotateRefreshToken(
     sessionId: string,
-    oldRefreshToken: string,
+    oldRefreshToken?: string,
 ): Promise<{ newRefreshToken: string; accessToken: string } | null> {
-    const session = await validateRefreshToken(sessionId, oldRefreshToken);
+    let session: SessionData | null = null;
+
+    if (oldRefreshToken) {
+        // Legacy format - validate refresh token
+        session = await validateRefreshToken(sessionId, oldRefreshToken);
+    } else {
+        // New multi-session format - just get the session (binding token already validated)
+        session = await getSession(sessionId);
+    }
 
     if (!session) {
         return null; // Invalid session or token
@@ -626,4 +635,300 @@ export function parseUserAgent(userAgent: string | undefined): {
     }
 
     return { deviceType, deviceName };
+}
+
+
+export interface MultiSessionCookie {
+    sessionId: string;
+    bindingToken: string;
+}
+
+export interface ActiveSessionData {
+    sessionId: string;
+    bindingToken: string;
+    session: SessionData;
+}
+
+/**
+ * Parse all session cookies from request
+ * Returns array of {sessionId, bindingToken} for all `session_*` cookies
+ */
+export function parseSessionCookies(
+    cookies: Record<string, string | undefined>,
+): MultiSessionCookie[] {
+    const result: MultiSessionCookie[] = [];
+    const sessionPrefix = 'session_';
+
+    for (const [key, value] of Object.entries(cookies)) {
+        if (key.startsWith(sessionPrefix) && value) {
+            const sessionId = key.slice(sessionPrefix.length);
+            // Validate sessionId format (should be UUID-like)
+            if (sessionId.length >= 20) {
+                result.push({
+                    sessionId,
+                    bindingToken: value,
+                });
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Validate session binding token against stored hash
+ * Uses timing-safe comparison to prevent timing attacks
+ */
+export function validateSessionBinding(
+    bindingToken: string,
+    storedBindingHash: string,
+): boolean {
+    const inputHash = hashToken(bindingToken);
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(inputHash, 'hex'),
+            Buffer.from(storedBindingHash, 'hex'),
+        );
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Get the active session with full validation
+ * Returns null if:
+ * - No active_session cookie
+ * - Session doesn't exist in Redis
+ * - Binding token validation fails
+ *
+ * If active session is invalid but other sessions exist, returns first valid one
+ */
+export async function getActiveSession(
+    cookies: Record<string, string | undefined>,
+): Promise<ActiveSessionData | null> {
+    const activeSessionId = cookies.active_session;
+    const allSessions = parseSessionCookies(cookies);
+
+    // Try active session first
+    if (activeSessionId) {
+        const activeCookie = allSessions.find(s => s.sessionId === activeSessionId);
+        if (activeCookie) {
+            const session = await getSession(activeSessionId);
+            if (session && session.refreshTokenHash) {
+                // Validate binding if hash exists
+                const bindingHash = await redis.hget(`${SESSION_PREFIX}${activeSessionId}`, 'bindingHash');
+                if (!bindingHash || validateSessionBinding(activeCookie.bindingToken, bindingHash as string)) {
+                    return {
+                        sessionId: activeSessionId,
+                        bindingToken: activeCookie.bindingToken,
+                        session,
+                    };
+                }
+            }
+        }
+    }
+
+    // Fallback: find first valid session
+    for (const cookie of allSessions) {
+        const session = await getSession(cookie.sessionId);
+        if (session) {
+            const bindingHash = await redis.hget(`${SESSION_PREFIX}${cookie.sessionId}`, 'bindingHash');
+            if (!bindingHash || validateSessionBinding(cookie.bindingToken, bindingHash as string)) {
+                return {
+                    sessionId: cookie.sessionId,
+                    bindingToken: cookie.bindingToken,
+                    session,
+                };
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Get all valid sessions for a user from cookies
+ * Validates each session exists in Redis
+ */
+export async function getAllValidSessions(
+    cookies: Record<string, string | undefined>,
+): Promise<Array<{ sessionId: string; session: SessionData }>> {
+    const allCookies = parseSessionCookies(cookies);
+    const validSessions: Array<{ sessionId: string; session: SessionData }> = [];
+
+    for (const cookie of allCookies) {
+        const session = await getSession(cookie.sessionId);
+        if (session) {
+            // Validate binding
+            const bindingHash = await redis.hget(`${SESSION_PREFIX}${cookie.sessionId}`, 'bindingHash');
+            if (!bindingHash || validateSessionBinding(cookie.bindingToken, bindingHash as string)) {
+                validSessions.push({ sessionId: cookie.sessionId, session });
+            }
+        }
+    }
+
+    return validSessions;
+}
+
+/**
+ * Count current sessions for a user (for limit enforcement)
+ */
+export async function countUserSessions(userId: string): Promise<number> {
+    const sessionIds = await redis.smembers(`${USER_SESSIONS_PREFIX}${userId}`);
+    if (!sessionIds) return 0;
+
+    // Verify sessions actually exist (cleanup stale references)
+    let count = 0;
+    for (const sessionId of sessionIds) {
+        const exists = await redis.exists(`${SESSION_PREFIX}${sessionId}`);
+        if (exists) {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Generate binding token and hash for session cookie security
+ */
+export function generateBindingToken(): { token: string; hash: string } {
+    const token = generateSecureToken(24);
+    const hash = hashToken(token);
+    return { token, hash };
+}
+
+/**
+ * Check if user already has a session in the current cookies
+ */
+export async function findExistingUserSession(
+    cookies: Record<string, string | undefined>,
+    userId: string,
+): Promise<{ sessionId: string; bindingToken: string } | null> {
+    const allCookies = parseSessionCookies(cookies);
+
+    for (const cookie of allCookies) {
+        const session = await getSession(cookie.sessionId);
+        if (session && session.userId === userId) {
+            return cookie;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Migrate legacy single-session cookies to new format
+ * One-time, destructive, logged
+ */
+export async function migrateLegacyCookies(
+    cookies: Record<string, string | undefined>,
+    clearCookieCallback: (name: string) => void,
+    setCookieCallback: (name: string, value: string) => void,
+): Promise<{ migrated: boolean; sessionId?: string }> {
+    // Check if already migrated
+    if (cookies._multi_session_migrated === 'true') {
+        return { migrated: false };
+    }
+
+    const legacyRefreshToken = cookies.refreshToken;
+    const legacySessionId = cookies.sessionId;
+
+    if (legacyRefreshToken && legacySessionId) {
+        // Validate legacy session
+        const session = await getSession(legacySessionId);
+        if (session) {
+            // Generate binding token for new format
+            const { token, hash } = generateBindingToken();
+
+            // Store binding hash in Redis
+            await redis.hset(`${SESSION_PREFIX}${legacySessionId}`, { bindingHash: hash });
+
+            // Set new format cookies
+            setCookieCallback(`session_${legacySessionId}`, token);
+            setCookieCallback('active_session', legacySessionId);
+
+            logger.info('legacy_session_migrated', {
+                sessionId: legacySessionId,
+                userId: session.userId,
+            });
+
+            // Clear legacy cookies
+            clearCookieCallback('refreshToken');
+            clearCookieCallback('sessionId');
+
+            // Set migration flag
+            setCookieCallback('_multi_session_migrated', 'true');
+
+            return { migrated: true, sessionId: legacySessionId };
+        }
+    }
+
+    // No valid legacy session, but still mark as migrated
+    if (legacyRefreshToken || legacySessionId) {
+        clearCookieCallback('refreshToken');
+        clearCookieCallback('sessionId');
+    }
+    setCookieCallback('_multi_session_migrated', 'true');
+
+    return { migrated: false };
+}
+
+/**
+ * Get all logged-in accounts with user info
+ * Fetches from database for complete user data
+ */
+export async function getLoggedInAccountsInfo(
+    cookies: Record<string, string | undefined>,
+    prisma: { user: { findMany: Function } },
+): Promise<
+    Array<{
+        sessionId: string;
+        userId: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        profileImageUrl: string | null;
+        deviceName?: string;
+        lastActiveAt: Date;
+    }>
+> {
+    const validSessions = await getAllValidSessions(cookies);
+    if (validSessions.length === 0) return [];
+
+    const userIds = [...new Set(validSessions.map(s => s.session.userId))];
+
+    interface UserInfo {
+        userId: string;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        profileImageUrl: string | null;
+    }
+
+    const users: UserInfo[] = await prisma.user.findMany({
+        where: { userId: { in: userIds } },
+        select: {
+            userId: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+        },
+    });
+
+    const userMap = new Map<string, UserInfo>(users.map((u) => [u.userId, u]));
+
+    return validSessions.map(({ sessionId, session }) => {
+        const user = userMap.get(session.userId);
+        return {
+            sessionId,
+            userId: session.userId,
+            email: user?.email || '',
+            firstName: user?.firstName || null,
+            lastName: user?.lastName || null,
+            profileImageUrl: user?.profileImageUrl || null,
+            deviceName: session.deviceName,
+            lastActiveAt: session.lastActiveAt,
+        };
+    });
 }

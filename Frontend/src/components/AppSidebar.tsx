@@ -1,5 +1,5 @@
+import { AccountSwitcher } from '@/components/AccountSwitcher';
 import { ThemeSwitcher } from '@/components/kibo-ui/theme-switcher';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
@@ -30,11 +30,10 @@ import {
   HelpCircle,
   Home,
   Inbox,
-  LogOut,
   Search,
   Settings,
   Trophy,
-  Users,
+  Users
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -288,36 +287,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t bg-sidebar">
+        <AccountSwitcher />
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => navigate('/dashboard/public-profile')}
-              className="h-auto py-2 cursor-pointer w-full"
-              isActive={location.pathname === '/dashboard/public-profile'}
-              tooltip="Profile"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 shrink-0">
-                    <AvatarImage src={user?.profileImageUrl ?? undefined} alt={user?.fullName || 'User'} />
-                    <AvatarFallback
-                      className={`bg-primary text-primary-foreground ${theme === 'dark' ? 'bg-primary/20 text-primary-foreground' : ''}`}
-                    >
-                      {getInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col items-start overflow-hidden flex-1 min-w-0">
-                    <span className="text-sm font-medium truncate w-full">
-                      {user?.firstName} {user?.lastName}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate w-full">
-                      {user?.email}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <div className="px-2 py-2">
               <ThemeSwitcher
@@ -330,12 +301,6 @@ export function AppSidebar() {
                 className="justify-center group-data-[collapsible=icon]:hidden"
               />
             </div>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out">
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

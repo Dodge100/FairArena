@@ -581,3 +581,265 @@ export const exportUserData = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to initiate data export' });
   }
 };
+
+// =============================================================================
+// WEBAUTHN RE-VERIFICATION FOR ACCOUNT SETTINGS
+// Alternative to OTP for users who have security keys configured
+// =============================================================================
+
+import {
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
+import type { AuthenticationResponseJSON, AuthenticatorTransportFuture } from '@simplewebauthn/types';
+import { prisma } from '../../config/database.js';
+
+const WEBAUTHN_RP_ID = ENV.NODE_ENV === 'production' ? new URL(ENV.FRONTEND_URL).hostname : 'localhost';
+const WEBAUTHN_ORIGIN = ENV.FRONTEND_URL
+const WEBAUTHN_CHALLENGE_PREFIX = 'account_settings_webauthn:challenge:';
+const WEBAUTHN_CHALLENGE_TTL = 300; // 5 minutes
+
+/**
+ * Get WebAuthn authentication options for account settings re-verification
+ * POST /api/v1/account-settings/webauthn/options
+ */
+export const getWebAuthnOptions = async (req: Request, res: Response) => {
+  try {
+    const auth = req.user;
+    if (!auth?.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Get user's security keys
+    const securityKeys = await prisma.securityKey.findMany({
+      where: { userId: auth.userId },
+      select: {
+        credentialId: true,
+        transports: true,
+      },
+    });
+
+    if (securityKeys.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No security keys registered. Please use OTP verification or add a security key first.',
+        code: 'NO_SECURITY_KEYS',
+      });
+    }
+
+    // Generate authentication options
+    const options = await generateAuthenticationOptions({
+      rpID: WEBAUTHN_RP_ID,
+      allowCredentials: securityKeys.map((key) => ({
+        id: key.credentialId,
+        transports: (key.transports || []) as AuthenticatorTransportFuture[],
+      })),
+      userVerification: 'preferred',
+      timeout: 60000, // 1 minute
+    });
+
+    // Store challenge in Redis
+    await redis.setex(
+      `${WEBAUTHN_CHALLENGE_PREFIX}${auth.userId}`,
+      WEBAUTHN_CHALLENGE_TTL,
+      options.challenge
+    );
+
+    logger.info('WebAuthn options generated for account settings verification', {
+      userId: auth.userId,
+      keyCount: securityKeys.length,
+    });
+
+    return res.json({
+      success: true,
+      data: options,
+    });
+  } catch (error) {
+    logger.error('WebAuthn options generation error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate WebAuthn options',
+    });
+  }
+};
+
+/**
+ * Verify WebAuthn authentication for account settings re-verification
+ * POST /api/v1/account-settings/webauthn/verify
+ */
+export const verifyWebAuthn = async (req: Request, res: Response) => {
+  try {
+    const auth = req.user;
+    if (!auth?.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { response } = req.body as { response: AuthenticationResponseJSON };
+    if (!response) {
+      return res.status(400).json({
+        success: false,
+        message: 'WebAuthn response required',
+      });
+    }
+
+    // Get stored challenge
+    const challengeKey = `${WEBAUTHN_CHALLENGE_PREFIX}${auth.userId}`;
+    const expectedChallenge = await redis.get<string>(challengeKey);
+
+    if (!expectedChallenge) {
+      return res.status(400).json({
+        success: false,
+        message: 'WebAuthn challenge expired. Please try again.',
+        code: 'CHALLENGE_EXPIRED',
+      });
+    }
+
+    // Find the security key by credential ID
+    const securityKey = await prisma.securityKey.findUnique({
+      where: { credentialId: response.id },
+    });
+
+    if (!securityKey || securityKey.userId !== auth.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security key not found or does not belong to this account',
+      });
+    }
+
+    // Verify the authentication response
+    const verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge,
+      expectedOrigin: WEBAUTHN_ORIGIN,
+      expectedRPID: WEBAUTHN_RP_ID,
+      credential: {
+        id: securityKey.credentialId,
+        publicKey: Buffer.from(securityKey.publicKey, 'base64url'),
+        counter: Number(securityKey.counter),
+        transports: (securityKey.transports || []) as AuthenticatorTransportFuture[],
+      },
+    });
+
+    if (!verification.verified) {
+      logger.warn('WebAuthn verification failed for account settings', { userId: auth.userId });
+      return res.status(400).json({
+        success: false,
+        message: 'WebAuthn verification failed',
+      });
+    }
+
+    // Update counter to prevent replay attacks
+    await prisma.securityKey.update({
+      where: { id: securityKey.id },
+      data: {
+        counter: BigInt(verification.authenticationInfo.newCounter),
+        lastUsedAt: new Date(),
+      },
+    });
+
+    // Delete the challenge
+    await redis.del(challengeKey);
+
+    // Generate JWT token for account settings access (same as OTP verification)
+    const deviceFingerprint = {
+      userAgent: req.headers['user-agent'] || 'unknown',
+      ip: req.ip || req.connection.remoteAddress || 'unknown',
+    };
+
+    const token = jwt.sign(
+      {
+        userId: auth.userId,
+        purpose: 'account-settings',
+        device: deviceFingerprint,
+        method: 'webauthn', // Mark that this was verified via WebAuthn
+      },
+      ENV.JWT_SECRET,
+      {
+        expiresIn: `${TOKEN_EXPIRY_MINUTES}m`,
+      }
+    );
+
+    // Set secure cookie
+    res.cookie('account-settings-token', token, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === 'production',
+      sameSite: 'strict' as const,
+      maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000,
+      ...(ENV.NODE_ENV === 'production' && {
+        domain: ENV.COOKIE_DOMAIN,
+      }),
+    });
+
+    // Log the verification
+    inngest.send({
+      name: 'log.create',
+      data: {
+        userId: auth.userId,
+        action: 'sensitive-action-verified-webauthn',
+        level: 'CRITICAL',
+      },
+    });
+
+    logger.info('WebAuthn verification successful for account settings', {
+      userId: auth.userId,
+      keyId: securityKey.id,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Security key verification successful',
+    });
+  } catch (error) {
+    logger.error('WebAuthn verification error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Security key verification failed',
+    });
+  }
+};
+
+/**
+ * Check if user has security keys for WebAuthn re-verification
+ * GET /api/v1/account-settings/webauthn/available
+ */
+export const checkWebAuthnAvailable = async (req: Request, res: Response) => {
+  try {
+    const auth = req.user;
+    if (!auth?.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const keyCount = await prisma.securityKey.count({
+      where: { userId: auth.userId },
+    });
+
+    // Also get user preferences to determine if OTP is disabled
+    const user = await prisma.user.findUnique({
+      where: { userId: auth.userId },
+      select: {
+        disableOTPReverification: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        webauthnAvailable: keyCount > 0,
+        securityKeyCount: keyCount,
+        otpDisabled: user?.disableOTPReverification || false,
+      },
+    });
+  } catch (error) {
+    logger.error('Check WebAuthn available error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to check WebAuthn availability',
+    });
+  }
+};
