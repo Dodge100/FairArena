@@ -55,6 +55,7 @@
     "@types/opossum": "^8.1.9",
     "@upstash/redis": "^1.35.8",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.8.0",
     "commitlint": "20.3.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

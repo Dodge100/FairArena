@@ -48,6 +48,7 @@ export interface AuthContextType {
     fetchAccounts: () => Promise<void>;
     switchAccount: (sessionId: string) => Promise<void>;
     logoutAllAccounts: () => Promise<void>;
+    refreshUser: () => Promise<void>;
 }
 
 export interface RegisterData {
@@ -589,6 +590,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchAccounts,
         switchAccount,
         logoutAllAccounts,
+        refreshUser: async () => {
+            const token = await getToken();
+            if (token) {
+                const userData = await fetchCurrentUser(token);
+                if (userData) {
+                    setUser(userData);
+                }
+            }
+        },
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

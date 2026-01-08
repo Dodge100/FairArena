@@ -28,6 +28,7 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AccountSettingsComponent from '../components/AccountSettings';
+import { ImageUploader } from '@/components/ImageUploader';
 
 interface Session {
   id: string;
@@ -85,7 +86,7 @@ const formatTimeAgo = (date: Date) => {
 function AccountSettings() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'security' | 'settings'>('overview');
 
   // Data State
@@ -513,17 +514,15 @@ function AccountSettings() {
       <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
         <div className={`p-6 ${isDark ? 'bg-gradient-to-r from-[#DDEF00]/10 to-transparent' : 'bg-gradient-to-r from-primary/10 to-transparent'}`}>
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            {user.profileImageUrl ? (
-              <img
-                src={user.profileImageUrl}
-                alt="Profile"
-                className="w-20 h-20 rounded-full object-cover border-4 border-background shadow-md"
-              />
-            ) : (
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ${isDark ? 'bg-[#DDEF00] text-black' : 'bg-primary text-primary-foreground'}`}>
-                {user.firstName?.[0] || user.email[0].toUpperCase()}
-              </div>
-            )}
+            <ImageUploader
+              currentImageUrl={user.profileImageUrl}
+              onUploadComplete={() => {
+                refreshUser();
+                toast.success('Profile photo updated!');
+              }}
+              showUserDetails={false}
+              className="shrink-0"
+            />
             <div className="flex-1 text-center sm:text-left">
               <h1 className="text-2xl font-bold text-foreground">
                 {user.firstName} {user.lastName}
