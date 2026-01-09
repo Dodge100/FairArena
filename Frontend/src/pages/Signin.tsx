@@ -114,12 +114,52 @@ export default function Signin() {
     }
   }, [location.state]);
 
+  // Build OAuth URL with flow parameter preserved
+  const getOAuthUrl = useCallback((provider: string) => {
+    const redirectPath = getRedirectPath();
+    const params = new URLSearchParams(window.location.search);
+    const flow = params.get('flow') || sessionStorage.getItem('auth_flow');
+
+    // Build the final redirect with flow parameter if needed
+    let finalRedirect = redirectPath;
+    if (flow === 'add_account') {
+      // Include flow in the state that will be passed through OAuth
+      finalRedirect = finalRedirect.includes('?')
+        ? `${finalRedirect}&flow=add_account`
+        : `${finalRedirect}?flow=add_account`;
+    }
+
+    return `${apiUrl}/api/v1/auth/${provider}?redirect=${encodeURIComponent(finalRedirect)}`;
+  }, [getRedirectPath, apiUrl]);
+
   // Calculate time remaining for MFA session
   const getTimeRemaining = useCallback(() => {
     if (!mfaSession.expiresAt) return 0;
     const remaining = Math.max(0, Math.floor((mfaSession.expiresAt - Date.now()) / 1000));
     return remaining;
   }, [mfaSession.expiresAt]);
+
+  // Persist and restore add_account flow across redirects (OAuth, MFA)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlFlow = params.get('flow');
+    const storedFlow = sessionStorage.getItem('auth_flow');
+
+    // If flow is in URL, store it for persistence across redirects
+    if (urlFlow === 'add_account') {
+      sessionStorage.setItem('auth_flow', 'add_account');
+    }
+    // If flow is in storage but not in URL, restore it to URL
+    else if (storedFlow === 'add_account' && !urlFlow) {
+      params.set('flow', 'add_account');
+      window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
+    }
+  }, []);
+
+  // Clean up flow from sessionStorage on successful login
+  const clearAddAccountFlow = useCallback(() => {
+    sessionStorage.removeItem('auth_flow');
+  }, []);
 
   // Clean up URL parameters on mount (in case of old redirects or errors)
   useEffect(() => {
@@ -129,14 +169,20 @@ export default function Signin() {
     const errorParam = params.get('error');
     if (errorParam === 'signup_disabled') {
       toast.error('Signups are currently disabled. Please join our waitlist.');
+    } else if (errorParam === 'max_accounts_reached') {
+      toast.error('Maximum number of accounts reached. Please log out from an account first.', {
+        duration: 5000,
+      });
     } else if (errorParam) {
       // Decode potential URL-encoded error messages
       toast.error(decodeURIComponent(errorParam).replace(/_/g, ' '));
     }
 
     if (params.has('mfaRequired') || params.has('tempToken') || params.has('error')) {
-      // Clean up URL without reloading
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // Clean up URL without reloading, but preserve flow parameter
+      const flow = params.get('flow');
+      const newUrl = flow ? `${window.location.pathname}?flow=${flow}` : window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
   }, []);
 
@@ -329,6 +375,7 @@ export default function Signin() {
           });
         } else {
           toast.success('Welcome back!');
+          clearAddAccountFlow();
           const redirectPath = getRedirectPath();
           navigate(redirectPath, { replace: true });
         }
@@ -368,6 +415,7 @@ export default function Signin() {
         }
 
         toast.success('Welcome back!');
+        clearAddAccountFlow();
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       }
@@ -501,10 +549,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('google');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/google?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('google'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -524,10 +569,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('github');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/github?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('github'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -547,10 +589,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('microsoft');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/microsoft?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('microsoft'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -570,10 +609,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('discord');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/discord?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('discord'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -593,10 +629,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('huggingface');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/huggingface?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('huggingface'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -616,10 +649,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('gitlab');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/gitlab?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('gitlab'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -639,10 +669,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('slack');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/slack?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('slack'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -662,10 +689,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('notion');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/notion?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('notion'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -777,10 +801,7 @@ export default function Signin() {
     try {
       saveLastUsedMethod('linkedin');
       setIsLoading(true);
-      const redirectPath = getRedirectPath();
-      const response = await fetch(
-        `${apiUrl}/api/v1/auth/linkedin?redirect=${encodeURIComponent(redirectPath)}`
-      );
+      const response = await fetch(getOAuthUrl('linkedin'));
       const result = await response.json();
 
       if (result.success && result.data?.url) {
@@ -812,6 +833,7 @@ export default function Signin() {
       if (result.success && result.user && result.accessToken) {
         toast.success('Welcome back!');
         // Full page reload to properly set auth state from cookies
+        clearAddAccountFlow();
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       } else if (result.error === 'cancelled') {
@@ -878,14 +900,12 @@ export default function Signin() {
       }
 
       // Success
-      const { user, accessToken } = verifyData.data;
-      login(user, accessToken); // Use context login
-
-      // Handle redirect
-      const statePath = location.state?.from?.pathname;
-      const redirectPath = statePath || '/dashboard';
-      navigate(redirectPath, { replace: true });
       toast.success('Signed in successfully');
+
+      // Clear flow and redirect (full reload to pick up session)
+      clearAddAccountFlow();
+      const redirectPath = getRedirectPath();
+      window.location.href = redirectPath;
 
     } catch (error) {
       console.error('WebAuthn MFA error:', error);

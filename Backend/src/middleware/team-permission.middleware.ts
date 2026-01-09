@@ -74,11 +74,6 @@ export const teamPermissionMiddleware = async (req: Request, res: Response, next
       if (cachedPermissions !== null) {
         // Upstash Redis automatically parses JSON
         req.teamContext = cachedPermissions as TeamContext;
-        logger.debug('Loaded team permissions from cache', {
-          userId,
-          organizationSlug,
-          teamSlug,
-        });
         return next();
       }
     } catch (cacheError) {
@@ -165,12 +160,6 @@ export const teamPermissionMiddleware = async (req: Request, res: Response, next
     // Cache the permissions
     try {
       await redis.setex(cacheKey, PERMISSION_CACHE_TTL, JSON.stringify(teamContext));
-      logger.debug('Cached team permissions', {
-        userId,
-        organizationSlug,
-        teamSlug,
-        cacheKey,
-      });
     } catch (cacheError) {
       logger.warn('Failed to cache team permissions', {
         error: (cacheError as Error).message,

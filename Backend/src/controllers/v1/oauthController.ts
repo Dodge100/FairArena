@@ -3,11 +3,15 @@ import { OAuth2Client } from 'google-auth-library';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
+import { redis } from '../../config/redis.js';
 import {
     createSession,
+    findExistingUserSession,
     generateAccessToken,
+    generateBindingToken,
     generateRefreshToken,
-    parseUserAgent,
+    parseSessionCookies,
+    parseUserAgent
 } from '../../services/auth.service.js';
 import logger from '../../utils/logger.js';
 
@@ -18,11 +22,10 @@ const googleClient = new OAuth2Client(
     ENV.GOOGLE_CALLBACK_URL,
 );
 
-// Cookie configuration
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
+    sameSite: 'lax' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
     ...(ENV.NODE_ENV === 'production' && {
@@ -33,7 +36,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
+    sameSite: 'lax' as const,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/',
     ...(ENV.NODE_ENV === 'production' && {
@@ -44,13 +47,84 @@ const SESSION_COOKIE_OPTIONS = {
 const MFA_SESSION_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: ENV.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
+    sameSite: 'lax' as const,
     maxAge: 5 * 60 * 1000, // 5 minutes
     path: '/',
     ...(ENV.NODE_ENV === 'production' && {
         domain: ENV.COOKIE_DOMAIN,
     }),
 };
+
+// =====================================================
+// MULTI-ACCOUNT HELPER FUNCTIONS
+// =====================================================
+
+/**
+ * Build MFA redirect URL preserving add_account flow
+ */
+function buildMfaRedirectUrl(redirectTarget: string): string {
+    const isAddAccountFlow = redirectTarget.includes('flow=add_account');
+    return isAddAccountFlow
+        ? `${ENV.FRONTEND_URL}/signin?flow=add_account`
+        : `${ENV.FRONTEND_URL}/signin`;
+}
+
+/**
+ * Check and handle multi-account session for OAuth callbacks
+ * Returns redirect URL if user already logged in or at account limit
+ * Returns null if should proceed with creating new session
+ */
+async function checkMultiAccountSession(
+    req: Request,
+    res: Response,
+    userId: string,
+    state: string
+): Promise<string | null> {
+    // Debug: Log received cookies
+    const allSessionCookies = parseSessionCookies(req.cookies || {});
+    logger.info('OAuth multi-account check', {
+        userId,
+        existingSessionCount: allSessionCookies.length,
+        sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+        activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
+        hasCookies: Object.keys(req.cookies || {}).length > 0,
+    });
+
+    // Check if this user is already logged in
+    const existingSession = await findExistingUserSession(req.cookies || {}, userId);
+    if (existingSession) {
+        // User already logged in - just switch to their existing session
+        res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
+        res.clearCookie('mfa_session', { path: '/' });
+        res.clearCookie('mfa_redirect', { path: '/' });
+
+        logger.info('Switched to existing session via OAuth', { userId, sessionId: existingSession.sessionId });
+
+        const redirectPath = state || '/dashboard';
+        return `${ENV.FRONTEND_URL}${redirectPath}`;
+    }
+
+    // Check account limit before creating new session
+    const currentSessionCount = allSessionCookies.length;
+    if (currentSessionCount >= ENV.MAX_CONCURRENT_ACCOUNTS) {
+        logger.info('OAuth account_limit_hit', {
+            userId,
+            count: currentSessionCount,
+            limit: ENV.MAX_CONCURRENT_ACCOUNTS
+        });
+
+        return `${ENV.FRONTEND_URL}/signin?error=max_accounts_reached`;
+    }
+
+    logger.info('OAuth proceeding with new session', {
+        userId,
+        existingSessionCount: currentSessionCount,
+        maxAllowed: ENV.MAX_CONCURRENT_ACCOUNTS,
+    });
+
+    // Proceed with creating new session
+    return null;
+}
 
 // Validation schema for Google token
 const googleAuthSchema = z.object({
@@ -208,13 +282,20 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
-            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+            return res.redirect(buildMfaRedirectUrl(redirectTarget));
         }
 
         // Get device info
         const userAgent = req.headers['user-agent'];
         const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
         const { deviceType, deviceName } = parseUserAgent(userAgent);
+        const redirectUrl = (state as string) || '/dashboard';
+
+        // Multi-account handling: Check existing session and account limits
+        const existingSessionRedirect = await checkMultiAccountSession(req, res, user.userId, redirectUrl);
+        if (existingSessionRedirect) {
+            return res.redirect(existingSessionRedirect);
+        }
 
         // Create session and tokens
         const refreshToken = generateRefreshToken();
@@ -236,16 +317,18 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         });
 
         // Set cookies
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
 
-        // Redirect to frontend with access token
-        const redirectUrl = (state as string) || '/dashboard';
-        const frontendUrl = `${ENV.FRONTEND_URL}${redirectUrl}?token=${accessToken}`;
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
+        // Redirect to frontend (access token retrieved via cookies)
         logger.info('User logged in via Google OAuth', { userId: user.userId, deviceType });
 
-        return res.redirect(frontendUrl);
+        return res.redirect(`${ENV.FRONTEND_URL}${redirectUrl}`);
     }
     catch (error) {
         logger.error('Failed to handle Google callback', {
@@ -406,8 +489,13 @@ export const handleGoogleToken = async (req: Request, res: Response) => {
         });
 
         // Set cookies
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
         logger.info('User logged in via Google token', { userId: user.userId, deviceType });
 
@@ -629,15 +717,23 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
-            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+            return res.redirect(buildMfaRedirectUrl(redirectTarget));
         }
-
-        // Generate tokens
-        const refreshToken = generateRefreshToken();
 
         // Get device info
         const userAgentRaw = req.headers['user-agent'];
         const userAgent = parseUserAgent(userAgentRaw);
+        const ipAddress = req.ip || 'unknown';
+        const redirectPath = (state as string) || '/dashboard';
+
+        // Multi-account handling: Check existing session and account limits
+        const existingSessionRedirect = await checkMultiAccountSession(req, res, transaction.userId, redirectPath);
+        if (existingSessionRedirect) {
+            return res.redirect(existingSessionRedirect);
+        }
+
+        // Generate tokens
+        const refreshToken = generateRefreshToken();
 
         // Create Session
         const sessionId = await createSession(
@@ -647,15 +743,20 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
                 deviceName: userAgent.deviceName,
                 deviceType: userAgent.deviceType,
                 userAgent: userAgentRaw,
-                ipAddress: req.ip || 'unknown'
+                ipAddress
             }
         );
 
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
         // Set cookies
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
 
         // Clear any MFA cookies if they exist
@@ -663,7 +764,6 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
         res.clearCookie('mfa_redirect', { path: '/' });
 
         // Redirect to dashboard
-        const redirectPath = (state as string) || '/dashboard';
         return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
 
     } catch (error) {
@@ -853,15 +953,23 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
             });
 
             // Redirect to signin page - frontend will detect the MFA cookie
-            return res.redirect(`${ENV.FRONTEND_URL}/signin`);
+            return res.redirect(buildMfaRedirectUrl(redirectTarget));
         }
-
-        // Generate tokens
-        const refreshToken = generateRefreshToken();
 
         // Get device info
         const userAgentRaw = req.headers['user-agent'];
         const userAgent = parseUserAgent(userAgentRaw);
+        const ipAddress = req.ip || 'unknown';
+        const redirectPath = (state as string) || '/dashboard';
+
+        // Multi-account handling: Check existing session and account limits
+        const existingSessionRedirect = await checkMultiAccountSession(req, res, transaction.userId, redirectPath);
+        if (existingSessionRedirect) {
+            return res.redirect(existingSessionRedirect);
+        }
+
+        // Generate tokens
+        const refreshToken = generateRefreshToken();
 
         // Create Session
         const sessionId = await createSession(
@@ -871,22 +979,26 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
                 deviceName: userAgent.deviceName,
                 deviceType: userAgent.deviceType,
                 userAgent: userAgentRaw,
-                ipAddress: req.ip || 'unknown'
+                ipAddress
             }
         );
 
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
         // Set cookies
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
         // Clear any MFA cookies if they exist
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
         // Redirect to dashboard
-        const redirectPath = (state as string) || '/dashboard';
         return res.redirect(`${ENV.FRONTEND_URL}${redirectPath}`);
 
     } catch (error) {
@@ -1082,8 +1194,13 @@ export const handleDiscordCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -1276,8 +1393,13 @@ export const handleHuggingFaceCallback = async (req: Request, res: Response) => 
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -1470,8 +1592,13 @@ export const handleGitLabCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -1673,8 +1800,13 @@ export const handleSlackCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -1863,8 +1995,13 @@ export const handleNotionCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -2063,8 +2200,13 @@ export const handleXCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -2310,8 +2452,13 @@ export const handleZohoCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -2525,8 +2672,13 @@ export const handleLinearCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -2724,8 +2876,13 @@ export const handleDropboxCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 
@@ -2941,8 +3098,13 @@ export const handleLinkedInCallback = async (req: Request, res: Response) => {
         });
         const newAccessToken = generateAccessToken(transaction.userId, sessionId);
 
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await redis.hset(`session:${sessionId}`, { bindingHash });
+
+        // Set multi-session cookies
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });
         res.clearCookie('mfa_redirect', { path: '/' });
 

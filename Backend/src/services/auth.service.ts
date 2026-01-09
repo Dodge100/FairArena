@@ -824,7 +824,7 @@ export async function migrateLegacyCookies(
     cookies: Record<string, string | undefined>,
     clearCookieCallback: (name: string) => void,
     setCookieCallback: (name: string, value: string) => void,
-): Promise<{ migrated: boolean; sessionId?: string }> {
+): Promise<{ migrated: boolean; sessionId?: string; bindingToken?: string }> {
     // Check if already migrated
     if (cookies._multi_session_migrated === 'true') {
         return { migrated: false };
@@ -859,7 +859,7 @@ export async function migrateLegacyCookies(
             // Set migration flag
             setCookieCallback('_multi_session_migrated', 'true');
 
-            return { migrated: true, sessionId: legacySessionId };
+            return { migrated: true, sessionId: legacySessionId, bindingToken: token };
         }
     }
 

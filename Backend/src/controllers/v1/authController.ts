@@ -121,13 +121,10 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
   }
 };
 
-
-
-// Cookie configuration - sameSite=lax for OAuth compatibility
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,  // lax for OAuth redirect compatibility
+  sameSite: 'lax' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -138,7 +135,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,  // lax for OAuth redirect compatibility
+  sameSite: 'lax' as const,
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -149,7 +146,7 @@ const SESSION_COOKIE_OPTIONS = {
 const MFA_SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const,
   maxAge: 5 * 60 * 1000, // 5 minutes
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -486,6 +483,16 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Known device - proceed with normal login
+
+    // Debug: Log received cookies for multi-account
+    const allSessionCookies = parseSessionCookies(req.cookies || {});
+    logger.info('Password login multi-account check', {
+      userId: user.userId,
+      existingSessionCount: allSessionCookies.length,
+      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
+      hasCookies: Object.keys(req.cookies || {}).length > 0,
+    });
 
     // Check if this user is already logged in (has existing session in cookies)
     const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
@@ -935,6 +942,16 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
 
     // Get device info
     const ipAddress = currentIp;
+
+    // Debug: Log received cookies for multi-account
+    const allSessionCookies = parseSessionCookies(req.cookies || {});
+    logger.info('MFA verify multi-account check', {
+      userId: user.userId,
+      existingSessionCount: allSessionCookies.length,
+      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
+      hasCookies: Object.keys(req.cookies || {}).length > 0,
+    });
 
     // Check if this user is already logged in (has existing session in cookies)
     const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
@@ -2742,6 +2759,16 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     const userAgentRaw = req.headers['user-agent'] || 'unknown';
     const uaInfo = parseUserAgent(userAgentRaw);
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+
+    // Debug: Log received cookies for multi-account
+    const allSessionCookies = parseSessionCookies(req.cookies || {});
+    logger.info('OTP verify multi-account check', {
+      userId: user.userId,
+      existingSessionCount: allSessionCookies.length,
+      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
+      hasCookies: Object.keys(req.cookies || {}).length > 0,
+    });
 
     // Check if this user is already logged in (has existing session in cookies)
     const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);

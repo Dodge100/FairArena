@@ -1,7 +1,7 @@
+import { ImageUploader } from '@/components/ImageUploader';
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
-import { SecurityKeyManager } from '@/components/SecurityKeyManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { apiFetch } from '@/lib/apiClient';
@@ -28,7 +28,8 @@ import {
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AccountSettingsComponent from '../components/AccountSettings';
-import { ImageUploader } from '@/components/ImageUploader';
+import { SecurityKeyManager } from '../components/SecurityKeyManager';
+import { ApiKeyManager } from '@/components/ApiKeyManager';
 
 interface Session {
   id: string;
@@ -982,6 +983,7 @@ function AccountSettings() {
             {/* Passkeys Section */}
             <PasskeyManager />
             <SecurityKeyManager onDeviceChange={fetchMfaPreferences} />
+            <ApiKeyManager />
 
             {/* MFA Preferences Section */}
             {mfaStatus?.enabled && (

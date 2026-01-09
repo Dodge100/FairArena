@@ -68,6 +68,7 @@ model User {
   userOrganizations     UserOrganization[]
   projectMemberships    UserProject[]
   teamMemberships       UserTeam[]
+  apiKeys               ApiKey[]
 
 
   @@index([userId])
@@ -83,6 +84,26 @@ model User {
   @@index([phoneNumber, isPhoneVerified])
   @@index([googleId])
   @@index([emailVerified])
+}
+
+model ApiKey {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  keyPrefix   String
+  keyHash     String       @unique
+  lastUsedAt  DateTime?
+  lastUsedIp  String?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([keyPrefix])
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 model Plan {

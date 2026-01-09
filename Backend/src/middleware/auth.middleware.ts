@@ -1,5 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import {
+  ApiKeyData,
+  updateApiKeyLastUsed,
+  validateApiKey
+} from '../services/apiKey.service.js';
+import {
   extractBearerToken,
   getSession,
   updateSessionActivity,
@@ -14,23 +19,64 @@ declare global {
         userId: string;
         sessionId: string;
       };
+      apiKey?: ApiKeyData;
+      apiKeyAuth?: boolean;
+      userId?: string;
     }
   }
 }
 
 /**
  * Middleware to protect routes requiring authentication
- * Validates JWT access token and attaches user info to request
+ * Supports both JWT access tokens (sessions) and API Keys
  */
 export const protectRoute = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Extract token from Authorization header
+    // 1. Check for API Key first (Authorization: Bearer fa_... or X-API-Key)
+    let apiKeyStr: string | undefined;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader?.startsWith('Bearer fa_')) {
+      apiKeyStr = authHeader.substring(7);
+    } else if (typeof req.headers['x-api-key'] === 'string' && req.headers['x-api-key'].startsWith('fa_')) {
+      apiKeyStr = req.headers['x-api-key'];
+    }
+
+    // If API Key is present, validate it
+    if (apiKeyStr) {
+      const validation = await validateApiKey(apiKeyStr);
+
+      if (!validation.valid || !validation.apiKey) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid API key',
+          message: validation.error || 'The provided API key is invalid or expired',
+        });
+      }
+
+      // Valid API Key - Attach user info
+      req.user = {
+        userId: validation.apiKey.userId,
+        sessionId: 'api-key', // Placeholder for API key auth
+      };
+      req.userId = validation.apiKey.userId;
+      req.apiKey = validation.apiKey;
+      req.apiKeyAuth = true;
+
+      // Update last used (fire and forget)
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+      updateApiKeyLastUsed(validation.apiKey.id, ipAddress).catch(() => { });
+
+      return next();
+    }
+
+    // 2. Fallback to Standard JWT/Session Auth
     const token = extractBearerToken(req.headers.authorization);
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - no token provided',
+        message: 'Unauthorized - no token or API key provided',
       });
     }
 
@@ -98,6 +144,7 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       userId: payload.userId,
       sessionId: payload.sessionId,
     };
+    req.userId = payload.userId;
 
     next();
   } catch (error) {

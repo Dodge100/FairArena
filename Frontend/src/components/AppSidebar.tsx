@@ -33,6 +33,7 @@ import {
   Search,
   Settings,
   Trophy,
+  UserCircle,
   Users
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -63,13 +64,13 @@ const playSound = () => {
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, getToken, signOut, isLoaded } = useAuthState();
+  const { getToken, isLoaded } = useAuthState();
   const { theme, toggleTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
   const { customization } = useSidebarCustomization();
 
   const [unreadCount, setUnreadCount] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(() => {
+  const [soundEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationSoundEnabled');
     return saved ? JSON.parse(saved) : false;
   });
@@ -159,6 +160,7 @@ export function AppSidebar() {
         Users,
         CreditCard,
         Inbox,
+        UserCircle,
       };
 
       return {
@@ -187,17 +189,7 @@ export function AppSidebar() {
       };
     });
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
-  const getInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    }
-    return user?.firstName?.[0]?.toUpperCase() || 'U';
-  };
 
   return (
     <Sidebar collapsible="icon" className="border-r bg-sidebar">

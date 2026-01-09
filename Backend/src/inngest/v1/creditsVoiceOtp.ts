@@ -44,12 +44,6 @@ const sendVoiceCall = async (userId: string, phoneNumber: string, otp: string) =
       templateId: 'call_template',
     });
 
-    // Log the result for debugging
-    logger.info('NotificationAPI response', {
-      phoneNumber: formattedPhone.slice(-4),
-      result: notificationResult.data,
-    });
-
     logger.info('Voice call OTP sent successfully via NotificationAPI', {
       phoneNumber: formattedPhone.slice(-4),
     });

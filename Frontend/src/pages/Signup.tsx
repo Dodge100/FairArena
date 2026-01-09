@@ -110,83 +110,40 @@ export default function Signup() {
     }
   };
 
-  const handleGoogleSignup = () => {
+  const handleOAuthSignup = async (provider: string) => {
     const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
     const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/google?redirect=${encodeURIComponent(redirectPath)}`;
+
+    try {
+      // Fetch the auth URL first (backend returns JSON)
+      const response = await fetch(`${apiUrl}/api/v1/auth/${provider}?redirect=${encodeURIComponent(redirectPath)}`);
+      const data = await response.json();
+
+      if (data.success && data.data?.url) {
+        // Redirect to the provider's OAuth page
+        window.location.href = data.data.url;
+      } else {
+        toast.error(`Failed to initiate ${provider} sign-up`);
+      }
+    } catch (error) {
+      console.error(`${provider} sign-up error:`, error);
+      toast.error(`Failed to connect to ${provider}`);
+    }
   };
 
-  const handleGithubSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/github?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleMicrosoftSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/microsoft?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleDiscordSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/discord?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleGitLabSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/gitlab?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleHuggingFaceSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/huggingface?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleSlackSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/slack?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleNotionSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/notion?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleXSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/x?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleZohoSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/zoho?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleLinearSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/linear?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleDropboxSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/dropbox?redirect=${encodeURIComponent(redirectPath)}`;
-  };
-
-  const handleLinkedInSignup = () => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    const redirectPath = location.state?.from?.pathname || '/dashboard';
-    window.location.href = `${apiUrl}/api/v1/auth/linkedin?redirect=${encodeURIComponent(redirectPath)}`;
-  };
+  const handleGoogleSignup = () => handleOAuthSignup('google');
+  const handleGithubSignup = () => handleOAuthSignup('github');
+  const handleMicrosoftSignup = () => handleOAuthSignup('microsoft');
+  const handleDiscordSignup = () => handleOAuthSignup('discord');
+  const handleGitLabSignup = () => handleOAuthSignup('gitlab');
+  const handleHuggingFaceSignup = () => handleOAuthSignup('huggingface');
+  const handleSlackSignup = () => handleOAuthSignup('slack');
+  const handleNotionSignup = () => handleOAuthSignup('notion');
+  const handleXSignup = () => handleOAuthSignup('x');
+  const handleZohoSignup = () => handleOAuthSignup('zoho');
+  const handleLinearSignup = () => handleOAuthSignup('linear');
+  const handleDropboxSignup = () => handleOAuthSignup('dropbox');
+  const handleLinkedInSignup = () => handleOAuthSignup('linkedin');
 
   if (success) {
     return (

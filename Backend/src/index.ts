@@ -57,6 +57,8 @@ import {
   sendPasskeyRemovedHandler,
   sendPasswordChangedEmail,
   sendPasswordResetEmail,
+  sendSecurityKeyAddedEmail,
+  sendSecurityKeyRemovedEmail,
   sendTeamInviteEmail,
   sendWeeklyFeedbackEmail,
   starProfile,
@@ -70,14 +72,13 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  sendSecurityKeyAddedEmail,
-  sendSecurityKeyRemovedEmail,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
+import apiKeysRouter from './routes/v1/apiKeys.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
@@ -129,7 +130,6 @@ const originRegex = new RegExp(
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or same-origin requests)
       if (!origin) return callback(null, true);
 
       if (originRegex.test(origin) || ENV.NODE_ENV === 'development') {
@@ -143,6 +143,7 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'X-API-Key',
       'ip.src',
       'X-Recaptcha-Token',
       'X-Requested-With',
@@ -275,6 +276,9 @@ app.use('/api/v1/support', supportRouter);
 
 // Team routes
 app.use('/api/v1/team', teamRouter);
+
+// API Keys routes
+app.use('/api/v1/api-keys', apiKeysRouter);
 
 // Inngest serve
 app.use(

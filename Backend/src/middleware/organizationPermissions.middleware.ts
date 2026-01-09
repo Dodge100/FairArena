@@ -94,7 +94,6 @@ export const loadOrganizationPermissions = async (
       if (cachedPermissions !== null) {
         // Upstash Redis automatically parses JSON
         req.organizationContext = cachedPermissions as OrganizationContext;
-        logger.debug('Loaded organization permissions from cache', { userId, orgSlug });
         return next();
       }
     } catch (cacheError) {
@@ -155,7 +154,6 @@ export const loadOrganizationPermissions = async (
     // Cache the permissions
     try {
       await redis.setex(cacheKey, PERMISSION_CACHE_TTL, JSON.stringify(organizationContext));
-      logger.debug('Cached organization permissions', { userId, orgSlug, cacheKey });
     } catch (cacheError) {
       logger.warn('Failed to cache permissions', {
         error: (cacheError as Error).message,

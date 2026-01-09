@@ -45,6 +45,7 @@ const defaultMainItems: SidebarItem[] = [
     { id: 'teams', title: 'Teams', url: '/dashboard/teams', icon: 'Users', visible: true, order: 4 },
     { id: 'credits', title: 'Credits', url: '/dashboard/credits', icon: 'CreditCard', visible: true, order: 5 },
     { id: 'inbox', title: 'Inbox', url: '/dashboard/inbox', icon: 'Inbox', visible: true, order: 6 },
+    { id: 'public-profile', title: 'Public Profile', url: '/dashboard/public-profile', icon: 'UserCircle', visible: true, order: 7 },
 ];
 
 const defaultSecondaryItems: SidebarItem[] = [
@@ -71,7 +72,24 @@ export function SidebarCustomizationProvider({ children }: SidebarCustomizationP
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                setCustomization(parsed);
+
+                // Migration: Ensure new default items exist in the saved config
+                // Keep order/visibility from saved, but add missing new defaults
+                // Actually, simpler: Use saved if valid, but check for missing IDs
+
+                // We want to preserve user's order and visibility, but append new items
+                const savedMainIds = new Set(parsed.mainItems.map((i: SidebarItem) => i.id));
+                const newItems = defaultMainItems.filter(i => !savedMainIds.has(i.id));
+
+                const finalMainItems = [...parsed.mainItems, ...newItems];
+
+                // Same for secondary if needed (none added recently)
+                const finalSecondaryItems = parsed.secondaryItems || defaultSecondaryItems;
+
+                setCustomization({
+                    mainItems: finalMainItems,
+                    secondaryItems: finalSecondaryItems
+                });
             } catch (error) {
                 console.warn('Failed to load sidebar customization:', error);
             }
