@@ -124,7 +124,7 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
@@ -135,8 +135,8 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
+  maxAge: 15 * 60 * 1000, // 15 minutes
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
     domain: ENV.COOKIE_DOMAIN,
@@ -146,13 +146,24 @@ const SESSION_COOKIE_OPTIONS = {
 const MFA_SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: ENV.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
   maxAge: 5 * 60 * 1000, // 5 minutes
   path: '/',
   ...(ENV.NODE_ENV === 'production' && {
     domain: ENV.COOKIE_DOMAIN,
   }),
 };
+
+// Helper function to clear cookies with proper security attributes
+const getCookieClearOptions = () => ({
+  path: '/',
+  httpOnly: true,
+  secure: ENV.NODE_ENV === 'production',
+  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
+  ...(ENV.NODE_ENV === 'production' && {
+    domain: ENV.COOKIE_DOMAIN,
+  }),
+});
 
 /**
  * Register a new user
@@ -747,7 +758,7 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
       }
     } catch (jwtError) {
       // Clear invalid cookie
-      res.clearCookie('mfa_session', { path: '/' });
+      res.clearCookie('mfa_session', getCookieClearOptions());
       logger.warn('MFA token verification failed', {
         error: jwtError instanceof Error ? jwtError.message : 'Unknown error',
       });
@@ -768,7 +779,7 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     const currentFingerprint = `${deviceType}:${userAgent.substring(0, 50)}`;
 
     if (payload.ipAddress !== currentIp || payload.deviceFingerprint !== currentFingerprint) {
-      res.clearCookie('mfa_session', { path: '/' });
+      res.clearCookie('mfa_session', getCookieClearOptions());
       logger.warn('MFA session hijacking attempt detected during verification', {
         userId: payload.userId,
         expectedIp: payload.ipAddress,
@@ -1087,7 +1098,7 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
 
 
     // Clear MFA session cookie on successful login
-    res.clearCookie('mfa_session', { path: '/' });
+    res.clearCookie('mfa_session', getCookieClearOptions());
 
     return res.status(200).json({
       success: true,
@@ -1148,11 +1159,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     if (!session) {
       // Clear the invalid session cookie
       if (req.cookies?.active_session) {
-        res.clearCookie(`session_${sessionId}`, { path: '/' });
-        res.clearCookie('active_session', { path: '/' });
+        res.clearCookie(`session_${sessionId}`, getCookieClearOptions());
+        res.clearCookie('active_session', getCookieClearOptions());
       } else {
-        res.clearCookie('refreshToken', { path: '/' });
-        res.clearCookie('sessionId', { path: '/' });
+        res.clearCookie('refreshToken', getCookieClearOptions());
+        res.clearCookie('sessionId', getCookieClearOptions());
       }
 
       return res.status(401).json({
@@ -1167,10 +1178,10 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     if (!result) {
       // Clear invalid cookies
       if (req.cookies?.active_session) {
-        res.clearCookie(`session_${sessionId}`, { path: '/' });
+        res.clearCookie(`session_${sessionId}`, getCookieClearOptions());
       } else {
-        res.clearCookie('refreshToken', { path: '/' });
-        res.clearCookie('sessionId', { path: '/' });
+        res.clearCookie('refreshToken', getCookieClearOptions());
+        res.clearCookie('sessionId', getCookieClearOptions());
       }
 
       return res.status(401).json({
@@ -1185,6 +1196,8 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       const { token: newBindingToken, hash: newBindingHash } = generateBindingToken();
       await redis.hset(`session:${sessionId}`, { bindingHash: newBindingHash });
       res.cookie(`session_${sessionId}`, newBindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+      // Renew the active_session cookie to prevent expiration
+      res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
     } else if (req.cookies?.refreshToken) {
       // Legacy format - update refresh token cookie
       res.cookie('refreshToken', result.newRefreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1260,16 +1273,13 @@ export const logout = async (req: Request, res: Response) => {
         }
 
         // No more sessions remaining
-        res.clearCookie('active_session', {
-          path: '/',
-          ...(ENV.NODE_ENV === 'production' && { domain: ENV.COOKIE_DOMAIN }),
-        });
+        res.clearCookie('active_session', getCookieClearOptions());
       }
     }
 
     // Clear legacy cookies
-    res.clearCookie('refreshToken', { path: '/' });
-    res.clearCookie('sessionId', { path: '/' });
+    res.clearCookie('refreshToken', getCookieClearOptions());
+    res.clearCookie('sessionId', getCookieClearOptions());
 
     return res.status(200).json({
       success: true,
@@ -1280,9 +1290,9 @@ export const logout = async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : String(error),
     });
     // Still clear cookies even on error
-    res.clearCookie('refreshToken', { path: '/' });
-    res.clearCookie('sessionId', { path: '/' });
-    res.clearCookie('active_session', { path: '/' });
+    res.clearCookie('refreshToken', getCookieClearOptions());
+    res.clearCookie('sessionId', getCookieClearOptions());
+    res.clearCookie('active_session', getCookieClearOptions());
 
     return res.status(200).json({
       success: true,
@@ -2012,15 +2022,7 @@ export const invalidateMfaSession = async (req: Request, res: Response) => {
     const mfaToken = req.cookies?.mfa_session;
 
     // Clear the MFA session cookie
-    res.clearCookie('mfa_session', {
-      path: '/',
-      httpOnly: true,
-      secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict',
-      ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-      }),
-    });
+    res.clearCookie('mfa_session', getCookieClearOptions());
 
     // If there was a session, try to get userId for logging
     if (mfaToken) {

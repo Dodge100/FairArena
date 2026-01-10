@@ -7,6 +7,7 @@ import {
 import { getProfileViews, recordView } from '../../controllers/v1/profileViewController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { getUploadSignature, updateProfileImage } from '../../controllers/v1/profile/imageController.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 const router = Router();
 
@@ -134,7 +135,7 @@ router.put('/me', protectRoute, updateProfile);
 
 // Profile Image
 router.get('/image/signature', protectRoute, getUploadSignature);
-router.put('/image', protectRoute, updateProfileImage);
+router.put('/image', protectRoute, requireSettingsVerification, updateProfileImage);
 
 /**
  * @swagger
