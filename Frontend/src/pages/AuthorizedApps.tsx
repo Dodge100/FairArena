@@ -103,7 +103,7 @@ export default function AuthorizedApps() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-6 sm:p-10 transition-colors duration-300">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-4 sm:p-6 md:p-10 transition-colors duration-300">
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="border-b border-neutral-200 dark:border-neutral-800 pb-8">
@@ -112,7 +112,7 @@ export default function AuthorizedApps() {
                             <ShieldCheck className="w-6 h-6 text-neutral-900 dark:text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">Authorized Apps</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">Authorized Apps</h1>
                             <p className="text-neutral-500 dark:text-neutral-400 mt-1 max-w-2xl">
                                 Manage third-party applications that have access to your FairArena account.
                             </p>
@@ -134,11 +134,11 @@ export default function AuthorizedApps() {
 
                 {/* Consents List */}
                 {consents.length === 0 ? (
-                    <div className="bg-white dark:bg-black rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 p-16 text-center">
-                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-800 p-16 text-center">
+                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-6">
                             <ShieldCheck className="w-8 h-8 text-neutral-400" />
                         </div>
-                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">No Authorized Applications</h2>
+                        <h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white mb-2">No Authorized Applications</h2>
                         <p className="text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
                             You haven't authorized any third-party applications to access your account yet. When you do, they'll appear here.
                         </p>

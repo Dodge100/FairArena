@@ -37,7 +37,7 @@ export default function Onboarding() {
 
     const handleNext = async () => {
         trackOnboardingStepCompleted(currentStep);
-        await trackStep(currentStep);
+        trackStep(currentStep); // Fire-and-forget, don't await
 
         if (currentStep < TOTAL_STEPS) {
             setCurrentStep(currentStep + 1);

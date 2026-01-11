@@ -304,11 +304,13 @@ export async function getSession(sessionId: string): Promise<SessionData | null>
         session.expiresAt = new Date(session.expiresAt);
         return session;
     } catch (error) {
-        logger.error('Failed to parse session data', {
+        logger.error('Failed to parse session data, deleting corrupt session', {
             sessionId,
             dataType: typeof data,
             error: error instanceof Error ? error.message : String(error)
         });
+        // Delete corrupt session to clear state
+        await redis.del(sessionKey).catch(e => logger.error('Failed to delete corrupt session', { error: e }));
         return null;
     }
 }

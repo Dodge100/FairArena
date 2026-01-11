@@ -1017,7 +1017,7 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
 
     // Generate binding token for session security
     const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-    await redis.hset(`session:${sessionId}`, { bindingHash });
+    await storeSessionBinding(sessionId, bindingHash);
 
     // Update last login
     await prisma.user.update({
@@ -2832,7 +2832,7 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
 
     // Generate binding token for session security
     const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-    await redis.hset(`session:${sessionId}`, { bindingHash });
+    await storeSessionBinding(sessionId, bindingHash);
 
     // Update last login
     await prisma.user.update({

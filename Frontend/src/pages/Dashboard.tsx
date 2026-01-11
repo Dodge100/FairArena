@@ -14,9 +14,9 @@ import {
   Zap,
 } from 'lucide-react';
 import DashboardSkeleton from '../components/DashboardSkeleton';
-import Onboarding from '../components/Onboarding';
 import { useOnboarding } from '../contexts/OnboardingContext';
 import { useAuthState } from '../lib/auth';
+import Onboarding from '@/components/Onboarding';
 
 function Dashboard() {
   const { user } = useAuthState();
@@ -25,11 +25,6 @@ function Dashboard() {
   // Show skeleton while loading onboarding status
   if (onboardingLoading) {
     return <DashboardSkeleton />;
-  }
-
-  // Show onboarding for new users
-  if (onboardingStatus === 'PENDING') {
-    return <Onboarding />;
   }
 
   // Render main dashboard content
@@ -114,7 +109,8 @@ function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {onboardingStatus === 'PENDING' && <Onboarding />}
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

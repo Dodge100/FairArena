@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useTheme } from '../../hooks/useTheme';
 import { QRScanner } from './QRScanner';
+import { DialogDescription } from '@radix-ui/react-dialog';
 
 interface QRScannerDialogProps {
     open: boolean;
@@ -75,7 +76,7 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
 
             setLoading(true);
 
-            const response = await apiFetch('/api/v1/auth/qr/device-info', {
+            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/device-info`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: data.sessionId }),
@@ -101,7 +102,9 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
                 setStep('approve');
                 setTimeLeft(Math.floor((resData.data.expiresAt - Date.now()) / 1000));
             } else {
-                toast.error(resData.message || 'Could not verify QR code');
+                // Check standard message, global error message, or fallback
+                const msg = resData.message || resData.error?.message || 'Could not verify QR code';
+                toast.error(msg);
             }
         } catch (error: any) {
             console.error('Scan Error:', error);
@@ -118,7 +121,7 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
         try {
             setLoading(true);
 
-            const response = await apiFetch('/api/v1/auth/qr/approve', {
+            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: approvalReq.sessionId }),
@@ -138,7 +141,8 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
                 toast.success('Login approved! The other device is now signed in.');
                 handleClose();
             } else {
-                toast.error(data.message || 'Failed to approve login');
+                const msg = data.message || data.error?.message || 'Failed to approve login';
+                toast.error(msg);
             }
         } catch (error: any) {
             console.error('Approve Error:', error);
@@ -208,12 +212,12 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
                             <DialogTitle className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-neutral-900'}`}>
                                 {step === 'scan' ? 'Scan QR Code' : 'Approve Login'}
                             </DialogTitle>
-                            <p className={`text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                            <DialogDescription className={`text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
                                 {step === 'scan'
                                     ? 'Point camera at the login QR code'
                                     : 'Verify this is your sign-in request'
                                 }
-                            </p>
+                            </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>

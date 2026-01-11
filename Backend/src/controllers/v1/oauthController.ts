@@ -3,7 +3,6 @@ import { OAuth2Client } from 'google-auth-library';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
-import { redis } from '../../config/redis.js';
 import {
     createSession,
     findExistingUserSession,
@@ -989,7 +988,7 @@ export const handleMicrosoftCallback = async (req: Request, res: Response) => {
         // Set cookies
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1197,7 +1196,7 @@ export const handleDiscordCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1396,7 +1395,7 @@ export const handleHuggingFaceCallback = async (req: Request, res: Response) => 
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1595,7 +1594,7 @@ export const handleGitLabCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1803,7 +1802,7 @@ export const handleSlackCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -1998,7 +1997,7 @@ export const handleNotionCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -2203,7 +2202,7 @@ export const handleXCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -2455,7 +2454,7 @@ export const handleZohoCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -2675,7 +2674,7 @@ export const handleLinearCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -2879,7 +2878,7 @@ export const handleDropboxCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -3101,7 +3100,7 @@ export const handleLinkedInCallback = async (req: Request, res: Response) => {
 
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);

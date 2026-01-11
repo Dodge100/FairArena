@@ -1,7 +1,7 @@
+import { apiFetch } from '@/lib/apiClient';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
-import { apiFetch } from '@/lib/apiClient';
 
 type OnboardingStatus = 'PENDING' | 'COMPLETED' | 'SKIPPED';
 
@@ -112,19 +112,22 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     };
 
     const trackStep = async (step: number) => {
-        try {
-            const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-            await apiFetch(`${apiUrl}/api/v1/onboarding/progress`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ step }),
-            });
-        } catch (error) {
-            console.error('Error tracking onboarding step:', error);
-            // Don't throw - tracking is best-effort
-        }
+        // Fire-and-forget - don't block UI
+        void (async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+                await apiFetch(`${apiUrl}/api/v1/onboarding/progress`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ step }),
+                });
+            } catch (error) {
+                console.error('Error tracking onboarding step:', error);
+                // Don't throw - tracking is best-effort
+            }
+        })();
     };
 
     const value: OnboardingContextValue = {

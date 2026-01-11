@@ -113,12 +113,12 @@ export default function OAuthApplications() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-6 sm:p-10 transition-colors duration-300">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-4 sm:p-6 md:p-10 transition-colors duration-300">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header with Stats */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-neutral-200 dark:border-neutral-800 pb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2 tracking-tight">
+                        <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-2 tracking-tight">
                             OAuth Applications
                         </h1>
                         <p className="text-neutral-500 dark:text-neutral-400 max-w-2xl">
@@ -127,7 +127,7 @@ export default function OAuthApplications() {
                     </div>
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="group flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg font-semibold hover:opacity-90 transition-all shadow-sm active:scale-[0.98]"
+                        className="group flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg font-semibold hover:opacity-90 transition-all shadow-sm active:scale-[0.98] w-full md:w-auto"
                     >
                         <Plus className="w-5 h-5" />
                         New Application
@@ -177,8 +177,8 @@ export default function OAuthApplications() {
 
                 {/* Applications Grid */}
                 {applications.length === 0 ? (
-                    <div className="bg-white dark:bg-black rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 p-16 text-center">
-                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-800 p-8 md:p-16 text-center">
+                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-6">
                             <Code className="w-8 h-8 text-neutral-400" />
                         </div>
                         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">No Applications Yet</h2>
@@ -194,7 +194,7 @@ export default function OAuthApplications() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredApps.map((app) => (
                             <div
                                 key={app.id}
