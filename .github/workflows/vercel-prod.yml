@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Frontend/**'
   pull_request:
+    paths:
+      - 'Frontend/**'
 
 env:
   NODE_VERSION: 22

@@ -16,6 +16,7 @@ import { useAuth, useToken } from './lib/auth'; // Updated import
 import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
+import AuthorizedApps from './pages/AuthorizedApps';
 import BannedAccount from './pages/BannedAccount'; // Import BannedAccount
 import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
@@ -28,6 +29,8 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
+import OAuthApplications from './pages/OAuthApplications';
+import OAuthConsent from './pages/OAuthConsent';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProfileStars from './pages/ProfileStars';
 import ProfileViews from './pages/ProfileViews';
@@ -43,12 +46,15 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Unsubscribe from './pages/Unsubscribe';
 import VerifyEmail from './pages/VerifyEmail';
 import HowItWorks from './pages/WhyChooseUsPage';
+import { FrontendMismatch } from "./components/FrontendMismatch";
 
 function App() {
   const location = useLocation();
   const [showPricingModal, setShowPricingModal] = useState(false);
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
   const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
   const token = useToken();
   const { isBanned } = useAuth(); // Get ban state
@@ -78,6 +84,14 @@ function App() {
       window.removeEventListener('hashchange', handleHashChange);
     };
   }, []);
+
+  // Check if frontend is running on allowed domain
+  if (frontendUrl) {
+    const normalize = (url: string) => url.replace(/\/$/, '').toLowerCase();
+    if (normalize(window.location.origin) !== normalize(frontendUrl)) {
+      return <FrontendMismatch expectedUrl={frontendUrl} />;
+    }
+  }
 
   // Redirect all routes to maintenance if enabled
   if (isMaintenanceMode && location.pathname !== '/maintenance') {
@@ -141,6 +155,8 @@ function App() {
           <Route path="/dashboard/public-profile" element={<MyProfile />} />
           <Route path="/dashboard/account-settings" element={<AccountSettings />} />
           <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
+          <Route path="/dashboard/oauth/applications" element={<OAuthApplications />} />
+          <Route path="/dashboard/oauth/authorized" element={<AuthorizedApps />} />
         </Route>
         <Route path="/feedback/:feedbackCode" element={<Feedback />} />
         <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />
@@ -154,6 +170,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
         <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
+        <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

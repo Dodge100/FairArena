@@ -32,6 +32,7 @@ import {
   Inbox,
   Search,
   Settings,
+  Shield,
   Trophy,
   UserCircle,
   Users
@@ -161,6 +162,7 @@ export function AppSidebar() {
         CreditCard,
         Inbox,
         UserCircle,
+        Shield,
       };
 
       return {

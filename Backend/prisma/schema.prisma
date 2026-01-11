@@ -9,67 +9,57 @@ datasource db {
 }
 
 model User {
-  id                    String                  @id @default(cuid())
-  userId                String                  @unique
-  email                 String                  @unique
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  deletedAt             DateTime?
-  isDeleted             Boolean                 @default(false)
-  firstName             String?
-  lastName              String?
-  profileImageUrl       String?
-  username              String?
-  phoneNumber           String?                 @unique
-  isPhoneVerified       Boolean                 @default(false)
-  hasClaimedFreeCredits Boolean                 @default(false)
-
-  // Authentication fields
-  passwordHash          String?
-  emailVerified         Boolean                 @default(false)
-
-  // Ban fields
-  isBanned              Boolean                 @default(false)
-  banReason             String?
-
-  googleId              String?                 @unique
-  lastLoginAt           DateTime?
-  lastLoginIp           String?
-
-  // MFA (Two-Factor Authentication) fields
-  mfaEnabled            Boolean                 @default(false)
-  mfaSecret             String?                 // Encrypted TOTP secret
-  mfaBackupCodes        String[]                // Encrypted backup codes
-  mfaEnabledAt          DateTime?
-  emailMfaEnabled       Boolean                 @default(false)  // Email OTP as MFA method
-  notificationMfaEnabled Boolean                @default(false)  // Push notification as MFA method
-
-  // Advanced Security Settings
-  disableOTPReverification    Boolean            @default(false)  // Disable OTP for account settings re-verification (WebAuthn only)
-  superSecureAccountEnabled   Boolean            @default(false)  // Maximum security mode (passkey/OAuth + WebAuthn only, no password)
-
-  // Relations
-  creditTransactions    CreditTransaction[]
-  Logs                  Logs[]
-  notifications         Notification[]
-  organizationFollowers OrganizationFollowers[]
-  organizationStars     OrganizationStars[]
-  OrganizationUserRole  OrganizationUserRole[]
-  passkeys              Passkey[]
-  securityKeys          SecurityKey[]
-  payments              Payment[]
-  profile               Profile?
-  profileStars          ProfileStars[]
-  projectUserRoles      ProjectUserRole[]
-  reports               Report[]
-  settings              Settings?
-  supportRequests       Support[]
-  teamUserRoles         TeamUserRole[]
-  userOrganizations     UserOrganization[]
-  projectMemberships    UserProject[]
-  teamMemberships       UserTeam[]
-  apiKeys               ApiKey[]
-
+  id                        String                  @id @default(cuid())
+  userId                    String                  @unique
+  email                     String                  @unique
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  deletedAt                 DateTime?
+  isDeleted                 Boolean                 @default(false)
+  firstName                 String?
+  lastName                  String?
+  profileImageUrl           String?
+  username                  String?
+  phoneNumber               String?                 @unique
+  isPhoneVerified           Boolean                 @default(false)
+  hasClaimedFreeCredits     Boolean                 @default(false)
+  emailVerified             Boolean                 @default(false)
+  googleId                  String?                 @unique
+  lastLoginAt               DateTime?
+  lastLoginIp               String?
+  passwordHash              String?
+  mfaBackupCodes            String[]
+  mfaEnabled                Boolean                 @default(false)
+  mfaEnabledAt              DateTime?
+  mfaSecret                 String?
+  banReason                 String?
+  isBanned                  Boolean                 @default(false)
+  emailMfaEnabled           Boolean                 @default(false)
+  notificationMfaEnabled    Boolean                 @default(false)
+  disableOTPReverification  Boolean                 @default(false)
+  superSecureAccountEnabled Boolean                 @default(false)
+  apiKeys                   ApiKey[]
+  creditTransactions        CreditTransaction[]
+  Logs                      Logs[]
+  notifications             Notification[]
+  oauthApplications         OAuthApplication[]
+  oauthConsents             OAuthConsent[]
+  organizationFollowers     OrganizationFollowers[]
+  organizationStars         OrganizationStars[]
+  OrganizationUserRole      OrganizationUserRole[]
+  passkeys                  Passkey[]
+  payments                  Payment[]
+  profile                   Profile?
+  profileStars              ProfileStars[]
+  projectUserRoles          ProjectUserRole[]
+  reports                   Report[]
+  securityKeys              SecurityKey[]
+  settings                  Settings?
+  supportRequests           Support[]
+  teamUserRoles             TeamUserRole[]
+  userOrganizations         UserOrganization[]
+  projectMemberships        UserProject[]
+  teamMemberships           UserTeam[]
 
   @@index([userId])
   @@index([isBanned])
@@ -87,17 +77,17 @@ model User {
 }
 
 model ApiKey {
-  id          String       @id @default(cuid())
-  userId      String
-  name        String
-  keyPrefix   String
-  keyHash     String       @unique
-  lastUsedAt  DateTime?
-  lastUsedIp  String?
-  expiresAt   DateTime?
-  revokedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  user        User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  keyPrefix  String
+  keyHash    String    @unique
+  lastUsedAt DateTime?
+  lastUsedIp String?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([keyHash])
@@ -155,7 +145,7 @@ model Payment {
   completedAt        DateTime?
   invoiceUrl         String?
   razorpayInvoiceId  String?               @unique
-  creditTransactions CreditTransaction[]
+  creditTransactions CreditTransaction?
   plan               Plan                  @relation(fields: [planId], references: [planId])
   user               User                  @relation(fields: [userId], references: [userId])
   webhookEvents      PaymentWebhookEvent[]
@@ -298,11 +288,11 @@ model Organization {
   slug                  String                   @unique
   joinEnabled           Boolean                  @default(false)
   isPublic              Boolean                  @default(true)
-  isDeleted             Boolean                  @default(false)
-  deletedAt             DateTime?
   timezone              String?
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
+  deletedAt             DateTime?
+  isDeleted             Boolean                  @default(false)
   organizationAuditLogs OrganizationAuditLog[]
   organizationFollowers OrganizationFollowers[]
   inviteCodes           OrganizationInviteCode[]
@@ -409,11 +399,11 @@ model Team {
   joinEnabled     Boolean        @default(false)
   visibility      Visibility     @default(INTERNAL)
   timezone        String?
-  isDeleted       Boolean        @default(false)
-  deletedAt       DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   organizationId  String
+  deletedAt       DateTime?
+  isDeleted       Boolean        @default(false)
   inviteCodes     InviteCode[]
   projects        Project[]
   organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -572,8 +562,8 @@ model Project {
   visibility         Visibility          @default(INTERNAL)
   joinEnabled        Boolean             @default(false)
   slug               String?
-  isDeleted          Boolean             @default(false)
   deletedAt          DateTime?
+  isDeleted          Boolean             @default(false)
   team               Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
   projectAuditLogs   ProjectAuditLog[]
   inviteCodes        ProjectInviteCode[]
@@ -778,19 +768,19 @@ model Feedback {
 }
 
 model Support {
-  id        String      @id @default(cuid())
-  userId    String?
-  emailId   String
-  subject   String
-  message   String
-  status    ReportState @default(QUEUED)
-  severity  ReportSeverity @default(LOW)
-  type      ReportType @default(BUG)
+  id               String              @id @default(cuid())
+  userId           String?
+  emailId          String
+  subject          String
+  message          String
+  status           ReportState         @default(QUEUED)
+  severity         ReportSeverity      @default(LOW)
+  type             ReportType          @default(BUG)
   shortDescription String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  user      User?       @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  attachments SupportAttachment[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  user             User?               @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  attachments      SupportAttachment[]
 
   @@index([userId])
   @@index([status])
@@ -817,6 +807,285 @@ model EnvironmentVariable {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model SupportAttachment {
+  id               String           @id @default(cuid())
+  userId           String
+  supportRequestId String
+  fileName         String
+  originalFileName String
+  fileSize         Int
+  mimeType         String
+  fileHash         String
+  status           AttachmentStatus @default(PENDING)
+  azureBlobName    String?
+  azureUrl         String?
+  uploadedAt       DateTime?
+  deletedAt        DateTime?
+  errorMessage     String?
+  referenceCount   Int              @default(1)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  fileData         Bytes?
+  supportRequest   Support          @relation(fields: [supportRequestId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([supportRequestId])
+  @@index([status])
+  @@index([fileHash])
+  @@index([fileHash, status])
+  @@index([createdAt])
+}
+
+model Waitlist {
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String?
+  source           String?
+  status           WaitlistStatus @default(PENDING)
+  notifiedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  city             String?
+  country          String?
+  ipAddress        String?
+  marketingConsent Boolean        @default(false)
+  userAgent        String?
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique
+  publicKey    String
+  counter      BigInt    @default(0)
+  deviceType   String?
+  name         String?
+  transports   String[]
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+model SecurityKey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique
+  publicKey    String
+  counter      BigInt    @default(0)
+  deviceType   String?
+  name         String?
+  transports   String[]
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+model OAuthScope {
+  id                   String   @id @default(cuid())
+  name                 String   @unique
+  displayName          String
+  description          String
+  isOidc               Boolean  @default(false)
+  isDefault            Boolean  @default(false)
+  isDangerous          Boolean  @default(false)
+  requiresVerification Boolean  @default(false)
+  isPublic             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  @@index([name])
+  @@index([isOidc])
+  @@index([isPublic])
+}
+
+model OAuthSigningKey {
+  id            String    @id @default(cuid())
+  kid           String    @unique
+  algorithm     String    @default("RS256")
+  publicKeyPem  String
+  privateKeyPem String
+  isActive      Boolean   @default(true)
+  isPrimary     Boolean   @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  rotatedAt     DateTime?
+
+  @@index([kid])
+  @@index([isActive])
+  @@index([isPrimary])
+}
+
+model OAuthApplication {
+  id                      String                      @id @default(cuid())
+  clientId                String                      @unique
+  clientSecretHash        String?
+  name                    String
+  description             String?
+  logoUrl                 String?
+  websiteUrl              String?
+  privacyPolicyUrl        String?
+  termsOfServiceUrl       String?
+  redirectUris            String[]
+  allowedScopes           String[]
+  allowedAudiences        String[]
+  grantTypes              String[]                    @default(["authorization_code", "refresh_token"])
+  responseTypes           String[]                    @default(["code"])
+  tokenEndpointAuthMethod String                      @default("client_secret_basic")
+  isPublic                Boolean                     @default(false)
+  isConfidential          Boolean                     @default(true)
+  requirePkce             Boolean                     @default(true)
+  isActive                Boolean                     @default(true)
+  isVerified              Boolean                     @default(false)
+  isTrusted               Boolean                     @default(false)
+  ownerId                 String
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  accessTokens            OAuthAccessToken[]
+  owner                   User                        @relation(fields: [ownerId], references: [userId], onDelete: Cascade)
+  authorizationCodes      OAuthAuthorizationCode[]
+  authorizationRequests   OAuthAuthorizationRequest[]
+  consents                OAuthConsent[]
+  refreshTokens           OAuthRefreshToken[]
+
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([isActive])
+  @@index([isVerified])
+}
+
+model OAuthAuthorizationRequest {
+  id                  String                  @id @default(cuid())
+  requestId           String                  @unique
+  applicationId       String
+  userId              String?
+  responseType        String
+  redirectUri         String
+  scope               String
+  state               String?
+  nonce               String?
+  codeChallenge       String?
+  codeChallengeMethod String?
+  status              String                  @default("pending")
+  consentedScopes     String[]                @default([])
+  expiresAt           DateTime
+  createdAt           DateTime                @default(now())
+  completedAt         DateTime?
+  authorizationCode   OAuthAuthorizationCode?
+  application         OAuthApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model OAuthAuthorizationCode {
+  id                     String                    @id @default(cuid())
+  code                   String                    @unique
+  authorizationRequestId String                    @unique
+  applicationId          String
+  userId                 String
+  redirectUri            String
+  scope                  String
+  codeChallenge          String?
+  codeChallengeMethod    String?
+  nonce                  String?
+  expiresAt              DateTime
+  usedAt                 DateTime?
+  createdAt              DateTime                  @default(now())
+  application            OAuthApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorizationRequest   OAuthAuthorizationRequest @relation(fields: [authorizationRequestId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OAuthAccessToken {
+  id            String           @id @default(cuid())
+  jti           String           @unique
+  applicationId String
+  userId        String?
+  audience      String?
+  scope         String
+  grantType     String
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  createdAt     DateTime         @default(now())
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([jti])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model OAuthRefreshToken {
+  id            String           @id @default(cuid())
+  tokenHash     String           @unique
+  applicationId String
+  userId        String
+  scope         String
+  familyId      String
+  generation    Int              @default(0)
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  rotatedAt     DateTime?
+  createdAt     DateTime         @default(now())
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+model OAuthConsent {
+  id            String           @id @default(cuid())
+  userId        String
+  applicationId String
+  grantedScopes String[]
+  scopeHistory  Json             @default("[]")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  revokedAt     DateTime?
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, applicationId])
+  @@index([userId])
+  @@index([applicationId])
+  @@index([revokedAt])
+}
+
+model OAuthAuditLog {
+  id            String   @id @default(cuid())
+  eventType     String
+  applicationId String?
+  userId        String?
+  ipAddress     String?
+  userAgent     String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([eventType])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum PaymentStatus {
@@ -906,93 +1175,8 @@ enum AttachmentStatus {
   DELETED
 }
 
-model SupportAttachment {
-  id                String           @id @default(cuid())
-  userId            String
-  supportRequestId  String
-  fileName          String
-  originalFileName  String
-  fileSize          Int
-  mimeType          String
-  fileHash          String
-  fileData          Bytes?           // Store file temporarily until uploaded to Azure
-  status            AttachmentStatus @default(PENDING)
-  azureBlobName     String?
-  azureUrl          String?
-  uploadedAt        DateTime?
-  deletedAt         DateTime?
-  errorMessage      String?
-  referenceCount    Int              @default(1) // How many support requests use this file
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  supportRequest    Support          @relation(fields: [supportRequestId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([supportRequestId])
-  @@index([status])
-  @@index([fileHash]) // For deduplication lookups
-  @@index([fileHash, status]) // For finding uploaded duplicates
-  @@index([createdAt])
-}
-
-// Waitlist for early access signups
-model Waitlist {
-  id         String         @id @default(cuid())
-  email      String         @unique
-  name       String?
-  source     String?        // Where they came from (homepage, referral, etc.)
-  status     WaitlistStatus @default(PENDING)
-  notifiedAt DateTime?
-  createdAt        DateTime       @default(now())
-  ipAddress        String?
-  userAgent        String?
-  country          String?
-  city             String?
-  marketingConsent Boolean        @default(false)
-
-  @@index([email])
-  @@index([status])
-  @@index([createdAt])
-}
-
 enum WaitlistStatus {
   PENDING
   INVITED
   REGISTERED
-}
-
-// Passkey (WebAuthn) credentials for passwordless authentication
-model Passkey {
-  id           String    @id @default(cuid())
-  userId       String
-  credentialId String    @unique // Base64URL encoded credential ID
-  publicKey    String             // Base64URL encoded public key
-  counter      BigInt    @default(0) // Signature counter for replay protection
-  deviceType   String?            // "platform" | "cross-platform"
-  name         String?            // User-friendly name like "MacBook Pro"
-  transports   String[]           // Transports the credential supports
-  lastUsedAt   DateTime?
-  createdAt    DateTime  @default(now())
-  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([credentialId])
-}
-
-// WebAuthn Security Keys for MFA (distinct from Passkeys used for login)
-model SecurityKey {
-  id           String    @id @default(cuid())
-  userId       String
-  credentialId String    @unique // Base64URL encoded credential ID
-  publicKey    String             // Base64URL encoded public key
-  counter      BigInt    @default(0) // Signature counter for replay protection
-  deviceType   String?            // "platform" | "cross-platform"
-  name         String?            // User-friendly name like "YubiKey 5"
-  transports   String[]           // Transports the credential supports
-  lastUsedAt   DateTime?
-  createdAt    DateTime  @default(now())
-  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([credentialId])
 }

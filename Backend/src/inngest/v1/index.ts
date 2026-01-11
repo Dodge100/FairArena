@@ -36,7 +36,7 @@ export { createTeamAuditLog, sendTeamInviteEmail } from './teamInvite.js';
 export {
   processBulkTeamInvites,
   processSingleTeamInvite,
-  processTeamInviteAcceptance,
+  processTeamInviteAcceptance
 } from './teamInviteProcessing.js';
 export { createTeamFunction, deleteTeamFunction, updateTeamFunction } from './teamManagement.js';
 export { updateOrganization } from './updateOrganization.js';
@@ -50,7 +50,7 @@ export {
   sendBackupCodeUsedHandler, sendEmailVerification,
   sendLoginNotification, sendPasskeyAddedHandler,
   sendPasskeyRemovedHandler, sendPasswordChangedEmail,
-  sendPasswordResetEmail,
+  sendPasswordResetEmail
 } from './authEmails.js';
 
 // Security email functions
@@ -61,6 +61,11 @@ export {
   sendMfaOtpEmail,
   sendNewDeviceLoginEmail,
   sendSecurityKeyAddedEmail,
-  sendSecurityKeyRemovedEmail,
+  sendSecurityKeyRemovedEmail
 } from './securityEmails.js';
+
+// OAuth background jobs
+export {
+  archiveOldAuditLogs, calculateApplicationStats, cleanupExpiredTokens
+} from './oauthJobs.js';
 

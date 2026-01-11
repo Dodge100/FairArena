@@ -46,6 +46,18 @@ const defaultMainItems: SidebarItem[] = [
     { id: 'credits', title: 'Credits', url: '/dashboard/credits', icon: 'CreditCard', visible: true, order: 5 },
     { id: 'inbox', title: 'Inbox', url: '/dashboard/inbox', icon: 'Inbox', visible: true, order: 6 },
     { id: 'public-profile', title: 'Public Profile', url: '/dashboard/public-profile', icon: 'UserCircle', visible: true, order: 7 },
+    {
+        id: 'developers',
+        title: 'Developers',
+        url: '/dashboard/oauth/applications',
+        icon: 'Shield',
+        visible: true,
+        order: 8,
+        items: [
+            { id: 'oauth-apps', title: 'My Applications', url: '/dashboard/oauth/applications', icon: '', visible: true, order: 0 },
+            { id: 'authorized-apps', title: 'Authorized Apps', url: '/dashboard/oauth/authorized', icon: '', visible: true, order: 1 },
+        ]
+    },
 ];
 
 const defaultSecondaryItems: SidebarItem[] = [

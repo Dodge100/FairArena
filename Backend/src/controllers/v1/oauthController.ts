@@ -11,7 +11,8 @@ import {
     generateBindingToken,
     generateRefreshToken,
     parseSessionCookies,
-    parseUserAgent
+    parseUserAgent,
+    storeSessionBinding
 } from '../../services/auth.service.js';
 import logger from '../../utils/logger.js';
 
@@ -286,7 +287,7 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         }
 
         // Get device info
-        const userAgent = req.headers['user-agent'];
+        const userAgent = req.headers['user-agent'] as string;
         const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
         const { deviceType, deviceName } = parseUserAgent(userAgent);
         const redirectUrl = (state as string) || '/dashboard';
@@ -319,7 +320,7 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         // Set cookies
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -465,7 +466,7 @@ export const handleGoogleToken = async (req: Request, res: Response) => {
         }
 
         // Get device info
-        const userAgent = req.headers['user-agent'];
+        const userAgent = req.headers['user-agent'] as string;
         const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
         const { deviceType, deviceName } = parseUserAgent(userAgent);
 
@@ -491,7 +492,7 @@ export const handleGoogleToken = async (req: Request, res: Response) => {
         // Set cookies
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -721,7 +722,7 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
         }
 
         // Get device info
-        const userAgentRaw = req.headers['user-agent'];
+        const userAgentRaw = req.headers['user-agent'] as string;
         const userAgent = parseUserAgent(userAgentRaw);
         const ipAddress = req.ip || 'unknown';
         const redirectPath = (state as string) || '/dashboard';
@@ -752,7 +753,7 @@ export const handleGithubCallback = async (req: Request, res: Response) => {
         // Set cookies
         // Generate binding token for session security
         const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-        await redis.hset(`session:${sessionId}`, { bindingHash });
+        await storeSessionBinding(sessionId, bindingHash);
 
         // Set multi-session cookies
         res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);

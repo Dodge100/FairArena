@@ -80,6 +80,96 @@ async function main() {
     console.log(`✅ Created plan: ${created.name} (${created.planId})`);
   }
 
+  // ============================================
+  // OAUTH 2.0 / OPENID CONNECT SEEDING
+  // ============================================
+
+  console.log('🌱 Seeding OAuth scopes...');
+
+  // Clear and recreate OAuth scopes
+  await prisma.oAuthScope.deleteMany({});
+
+  const oauthScopes = [
+    {
+      name: 'openid',
+      displayName: 'OpenID',
+      description: 'Verify your identity and get a unique user identifier',
+      isOidc: true,
+      isDefault: true,
+      isDangerous: false,
+      requiresVerification: false,
+      isPublic: true,
+    },
+    {
+      name: 'profile',
+      displayName: 'Profile Information',
+      description: 'Access your basic profile information (name, picture)',
+      isOidc: true,
+      isDefault: false,
+      isDangerous: false,
+      requiresVerification: false,
+      isPublic: true,
+    },
+    {
+      name: 'email',
+      displayName: 'Email Address',
+      description: 'Access your email address and verification status',
+      isOidc: true,
+      isDefault: false,
+      isDangerous: false,
+      requiresVerification: false,
+      isPublic: true,
+    },
+    {
+      name: 'offline_access',
+      displayName: 'Offline Access',
+      description: 'Access your data when you are not actively using the application',
+      isOidc: true,
+      isDefault: false,
+      isDangerous: false,
+      requiresVerification: false,
+      isPublic: true,
+    },
+  ];
+
+  for (const scope of oauthScopes) {
+    await prisma.oAuthScope.create({ data: scope });
+    console.log(`✅ Created OAuth scope: ${scope.name}`);
+  }
+
+  // Seed initial signing key if none exists
+  console.log('🌱 Checking OAuth signing keys...');
+
+  const existingKeys = await prisma.oAuthSigningKey.count();
+  if (existingKeys === 0) {
+    console.log('🔑 Generating initial RSA signing key...');
+
+    // Generate RSA key pair
+    const crypto = await import('crypto');
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    });
+
+    const kid = `fa-key-${Date.now()}`;
+
+    await prisma.oAuthSigningKey.create({
+      data: {
+        kid,
+        algorithm: 'RS256',
+        publicKeyPem: publicKey,
+        privateKeyPem: privateKey,
+        isActive: true,
+        isPrimary: true,
+      },
+    });
+
+    console.log(`✅ Created initial signing key: ${kid}`);
+  } else {
+    console.log(`✅ Found ${existingKeys} existing signing key(s), skipping generation`);
+  }
+
   console.log('🎉 Seeding completed!');
 }
 

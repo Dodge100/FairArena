@@ -214,6 +214,18 @@ export async function createSession(
 }
 
 /**
+ * Store session binding hash
+ */
+export async function storeSessionBinding(sessionId: string, bindingHash: string): Promise<void> {
+    const bindingKey = `binding:${sessionId}`;
+    await redis.setex(
+        bindingKey,
+        REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60,
+        bindingHash,
+    );
+}
+
+/**
  * Update ban status for all user sessions
  * Used to immediately enforce a ban without waiting for session expiry
  */
@@ -394,6 +406,10 @@ export async function destroySession(sessionId: string): Promise<void> {
     // Delete session
     const sessionKey = `${SESSION_PREFIX}${sessionId}`;
     await redis.del(sessionKey);
+
+    // Delete binding
+    const bindingKey = `binding:${sessionId}`;
+    await redis.del(bindingKey);
 
     logger.info('Session destroyed', { sessionId });
 }
@@ -716,7 +732,7 @@ export async function getActiveSession(
             const session = await getSession(activeSessionId);
             if (session && session.refreshTokenHash) {
                 // Validate binding if hash exists
-                const bindingHash = await redis.hget(`${SESSION_PREFIX}${activeSessionId}`, 'bindingHash');
+                const bindingHash = await redis.get(`binding:${activeSessionId}`);
                 if (!bindingHash || validateSessionBinding(activeCookie.bindingToken, bindingHash as string)) {
                     return {
                         sessionId: activeSessionId,
@@ -732,7 +748,7 @@ export async function getActiveSession(
     for (const cookie of allSessions) {
         const session = await getSession(cookie.sessionId);
         if (session) {
-            const bindingHash = await redis.hget(`${SESSION_PREFIX}${cookie.sessionId}`, 'bindingHash');
+            const bindingHash = await redis.get(`binding:${cookie.sessionId}`);
             if (!bindingHash || validateSessionBinding(cookie.bindingToken, bindingHash as string)) {
                 return {
                     sessionId: cookie.sessionId,
@@ -760,7 +776,7 @@ export async function getAllValidSessions(
         const session = await getSession(cookie.sessionId);
         if (session) {
             // Validate binding
-            const bindingHash = await redis.hget(`${SESSION_PREFIX}${cookie.sessionId}`, 'bindingHash');
+            const bindingHash = await redis.get(`binding:${cookie.sessionId}`);
             if (!bindingHash || validateSessionBinding(cookie.bindingToken, bindingHash as string)) {
                 validSessions.push({ sessionId: cookie.sessionId, session });
             }

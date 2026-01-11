@@ -1,4 +1,4 @@
-import { registerBanHandler } from '@/lib/apiClient';
+import { registerAuth, registerBanHandler } from '@/lib/apiClient';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Types
@@ -160,6 +160,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return refreshPromise;
     }, [updateToken]);
 
+    // Get token (with auto-refresh if needed)
+    const getToken = useCallback(async (): Promise<string | null> => {
+        if (inMemoryToken) {
+            return inMemoryToken;
+        }
+        return refreshToken();
+    }, [refreshToken]);
+
     // Fetch logged-in accounts (multi-account)
     const fetchAccounts = useCallback(async () => {
         try {
@@ -259,8 +267,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
         };
 
+        // Register token getter with API client
+        registerAuth(getToken);
+
         initAuth();
-    }, [fetchCurrentUser, refreshToken, updateToken, fetchAccounts]);
+    }, [fetchCurrentUser, refreshToken, updateToken, fetchAccounts, getToken]);
 
     // Login with email/password
     const login = useCallback(async (email: string, password: string, recaptchaToken?: string): Promise<AuthResponse> => {
@@ -487,13 +498,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [updateToken]);
 
-    // Get token (with auto-refresh if needed)
-    const getToken = useCallback(async (): Promise<string | null> => {
-        if (inMemoryToken) {
-            return inMemoryToken;
-        }
-        return refreshToken();
-    }, [refreshToken]);
+
 
     // Forgot password
     const forgotPassword = useCallback(async (email: string, recaptchaToken?: string): Promise<void> => {

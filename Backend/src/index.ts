@@ -72,6 +72,9 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
+  archiveOldAuditLogs,
+  calculateApplicationStats,
+  cleanupExpiredTokens,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -85,6 +88,7 @@ import feedbackRouter from './routes/v1/feedback.js';
 import mfaRouter from './routes/v1/mfa.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
+import oauthRouter from './routes/v1/oauth.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import passkeyRouter from './routes/v1/passkey.routes.js';
 import paymentsRouter from './routes/v1/payments.js';
@@ -210,6 +214,12 @@ if (ENV.NODE_ENV !== 'production') {
     }),
   );
 }
+
+// OAuth 2.0 / OpenID Connect Provider routes
+// Well-known endpoints (for OIDC discovery)
+app.use('/.well-known', oauthRouter);
+// OAuth endpoints
+app.use('/oauth', oauthRouter);
 
 // Authentication routes (public)
 app.use('/api/v1/auth', authRouter);
@@ -344,6 +354,9 @@ app.use(
       sendBackupCodeUsedHandler,
       sendSecurityKeyAddedEmail,
       sendSecurityKeyRemovedEmail,
+      archiveOldAuditLogs,
+      calculateApplicationStats,
+      cleanupExpiredTokens,
     ],
   }),
 );

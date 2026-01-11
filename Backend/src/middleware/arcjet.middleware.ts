@@ -3,7 +3,7 @@ import { aj } from '../config/arcjet.js';
 import logger from '../utils/logger.js';
 
 export const arcjetMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api/inngest') || req.path.startsWith('/healthz') || req.path.startsWith('/api/v1/payments/webhook')) {
+  if (req.path.startsWith('/api/inngest') || req.path.startsWith('/healthz') || req.path.startsWith('/api/v1/payments/webhook') || req.path.startsWith('/.well-known')) {
     return next();
   }
 

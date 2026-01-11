@@ -28,6 +28,7 @@ import {
   parseUserAgent,
   recordFailedLogin,
   rotateRefreshToken,
+  storeSessionBinding,
   validatePasswordStrength,
   verifyEmailVerificationToken,
   verifyPassword,
@@ -567,7 +568,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Generate binding token for session security
     const { token: bindingToken, hash: bindingHash } = generateBindingToken();
-    await redis.hset(`session:${sessionId}`, { bindingHash });
+    await storeSessionBinding(sessionId, bindingHash);
 
     // Update last login
     await prisma.user.update({
@@ -1194,7 +1195,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     if (bindingToken) {
       // Generate new binding token
       const { token: newBindingToken, hash: newBindingHash } = generateBindingToken();
-      await redis.hset(`session:${sessionId}`, { bindingHash: newBindingHash });
+      await storeSessionBinding(sessionId, newBindingHash);
       res.cookie(`session_${sessionId}`, newBindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
       // Renew the active_session cookie to prevent expiration
       res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
