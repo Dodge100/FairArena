@@ -6,9 +6,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { toast } from 'sonner';
 
 function Newsletter() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
+  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);

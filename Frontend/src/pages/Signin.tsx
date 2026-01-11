@@ -1,3 +1,4 @@
+import { QRAuthDialog } from '@/components/auth/QRAuthDialog';
 import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
@@ -18,8 +19,7 @@ interface MfaSessionState {
 }
 
 export default function Signin() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -72,6 +72,7 @@ export default function Signin() {
   }>({ emailMfaEnabled: false, notificationMfaEnabled: false, webauthnMfaAvailable: false, superSecureAccountEnabled: false });
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [showQRDialog, setShowQRDialog] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   const passkeySupported = usePasskeySupport();
@@ -1327,7 +1328,20 @@ export default function Signin() {
           </button>
         )}
 
-        {/* Compact OAuth Icon Grid */}
+        {/* QR Code Login */}
+        <button
+          type="button"
+          onClick={() => setShowQRDialog(true)}
+          disabled={isLoading}
+          className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
+          </svg>
+          Sign in with QR Code
+        </button>
+
+
         <div className="grid grid-cols-4 gap-2 mb-3">
           {/* GitHub */}
           <button
@@ -1676,6 +1690,12 @@ export default function Signin() {
           </div>
         </DialogContent>
       </Dialog>
-    </div >
+
+      <QRAuthDialog
+        open={showQRDialog}
+        onOpenChange={setShowQRDialog}
+      />
+    </div>
   );
 }
+

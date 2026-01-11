@@ -1,25 +1,22 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import {
-  AlertCircle,
-  CheckCircle,
+  ArrowRight,
   CreditCard,
   ExternalLink,
   Gift,
-  HelpCircle,
   History,
-  Info,
   Plus,
   RefreshCw,
   Shield,
   TrendingDown,
-  TrendingUp,
-  XCircle,
+  TrendingUp
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthState } from '../lib/auth';
@@ -68,10 +65,13 @@ interface PaymentDetails {
 }
 
 const CreditsPage = () => {
-  const { isSignedIn } = useAuthState();
+  const { isSignedIn, getToken } = useAuthState();
   const navigate = useNavigate();
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [history, setHistory] = useState<CreditHistory | null>(null);
+  // Use ref to track history without adding it to dependency arrays prevents infinite loops
+  const historyRef = useRef<CreditHistory | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -82,7 +82,11 @@ const CreditsPage = () => {
     hasClaimedFreeCredits: boolean;
     phoneVerified: boolean;
   } | null>(null);
-  const { getToken } = useAuthState();
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
 
   const fetchCreditHistory = useCallback(
     async (loadMore = false) => {
@@ -93,9 +97,10 @@ const CreditsPage = () => {
       }
 
       try {
-        const offset = loadMore && history ? history.offset + history.limit : 0;
+        const offset = loadMore && historyRef.current ? historyRef.current.offset + historyRef.current.limit : 0;
         const token = await getToken();
-        // Add cache busting for fresh data
+        if (!token) return;
+
         const cacheBuster = Date.now();
         const response = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${offset}&_=${cacheBuster}`,
@@ -104,9 +109,14 @@ const CreditsPage = () => {
               Authorization: `Bearer ${token}`,
             },
             credentials: 'include',
-            cache: 'no-store', // Disable browser cache
+            cache: 'no-store',
           },
         );
+
+        if (response.status === 429) {
+          toast.error("You are checking history too frequently. Please wait a moment.");
+          return;
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -115,10 +125,10 @@ const CreditsPage = () => {
         const data = await response.json();
 
         if (data.success) {
-          if (loadMore && history) {
+          if (loadMore && historyRef.current) {
             setHistory({
               ...data.data,
-              transactions: [...history.transactions, ...data.data.transactions],
+              transactions: [...historyRef.current.transactions, ...data.data.transactions],
             });
           } else {
             setHistory(data.data);
@@ -135,21 +145,24 @@ const CreditsPage = () => {
         setLoading(false);
       }
     },
-    [history, getToken],
+    [getToken], // Removed history from dependencies
   );
 
   const fetchCreditBalance = useCallback(async () => {
     try {
       const token = await getToken();
-      // Add cache busting to ensure fresh data after claims
+      if (!token) return;
+
       const cacheBuster = Date.now();
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance?_=${cacheBuster}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
-        cache: 'no-store', // Disable browser cache
+        cache: 'no-store',
       });
+
+      if (response.status === 429) return;
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -171,14 +184,14 @@ const CreditsPage = () => {
   const checkUserEligibility = useCallback(async () => {
     try {
       const token = await getToken();
-      // Add cache busting parameter to force fresh data
+      if (!token) return;
+
       const cacheBuster = Date.now();
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility?_=${cacheBuster}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
-        // Disable browser cache
         cache: 'no-store',
       });
 
@@ -186,22 +199,10 @@ const CreditsPage = () => {
         const data = await response.json();
         if (data.success) {
           setUserEligibility(data.data);
-
-          // Log for debugging
-          console.debug('Eligibility check result:', {
-            canClaimFreeCredits: data.data.canClaimFreeCredits,
-            hasClaimedFreeCredits: data.data.hasClaimedFreeCredits,
-            phoneVerified: data.data.phoneVerified,
-            hasPhoneNumber: data.data.hasPhoneNumber,
-          });
         }
-      } else {
-        console.error('Eligibility check failed:', response.status);
-        toast.error('Failed to check user eligibility');
       }
     } catch (error) {
       console.error('Error checking user eligibility:', error);
-      toast.error('Failed to check user eligibility');
     }
   }, [getToken]);
 
@@ -235,15 +236,11 @@ const CreditsPage = () => {
       return;
     }
 
-    // Check if we're being redirected with a refresh parameter (after claim)
     const urlParams = new URLSearchParams(window.location.search);
     const shouldRefresh = urlParams.get('refresh');
 
     if (shouldRefresh) {
-      // Remove the refresh parameter from URL
       window.history.replaceState({}, '', '/dashboard/credits');
-
-      // Force fresh data fetch with slight delay to ensure backend cache is cleared
       setTimeout(() => {
         setLoading(true);
         Promise.all([
@@ -253,99 +250,30 @@ const CreditsPage = () => {
         ]).finally(() => setLoading(false));
       }, 500);
     } else {
-      // Normal load
       fetchCreditBalance();
       fetchCreditHistory();
       checkUserEligibility();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, navigate]);
+  }, [isSignedIn, navigate]); // Removed fetch functions from dep array to be extra safe, though useCallback fix should handle it.
 
   const getTransactionIcon = (type: string, amount: number) => {
     switch (type) {
       case 'PURCHASE':
-        return <CreditCard className="h-5 w-5 text-emerald-500" />;
+        return <CreditCard className="h-4 w-4" />;
       case 'REFUND':
-        return <RefreshCw className="h-5 w-5 text-blue-500" />;
+        return <RefreshCw className="h-4 w-4" />;
       case 'BONUS':
-        return <Gift className="h-5 w-5 text-purple-500" />;
+        return <Gift className="h-4 w-4" />;
       case 'DEDUCTION':
-        return <TrendingDown className="h-5 w-5 text-red-500" />;
+        return <TrendingDown className="h-4 w-4" />;
       default:
         return amount > 0 ? (
-          <TrendingUp className="h-5 w-5 text-emerald-500" />
+          <TrendingUp className="h-4 w-4" />
         ) : (
-          <TrendingDown className="h-5 w-5 text-red-500" />
+          <TrendingDown className="h-4 w-4" />
         );
     }
-  };
-
-  const getTransactionColor = (type: string, amount: number) => {
-    switch (type) {
-      case 'PURCHASE':
-        return 'text-emerald-600 dark:text-emerald-400';
-      case 'REFUND':
-        return 'text-blue-600 dark:text-blue-400';
-      case 'BONUS':
-        return 'text-purple-600 dark:text-purple-400';
-      case 'DEDUCTION':
-        return 'text-red-600 dark:text-red-400';
-      default:
-        return amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
-      case 'pending':
-        return <RefreshCw className="h-4 w-4 text-yellow-500" />;
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Info className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const formatTransactionType = (type: string) => {
-    switch (type) {
-      case 'PURCHASE':
-        return 'Purchase';
-      case 'REFUND':
-        return 'Refund';
-      case 'BONUS':
-        return 'Bonus';
-      case 'DEDUCTION':
-        return 'Used';
-      case 'ADJUSTMENT':
-        return 'Adjustment';
-      case 'EXPIRY':
-        return 'Expired';
-      case 'TRANSFER_IN':
-        return 'Transfer In';
-      case 'TRANSFER_OUT':
-        return 'Transfer Out';
-      default:
-        return type;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount / 100);
   };
 
   if (!isSignedIn) {
@@ -353,436 +281,231 @@ const CreditsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-12">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold bg-linear-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-4">
-            Credits Dashboard
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Manage your hackathon credits, view transaction history, and purchase additional credits to fuel your innovation journey.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">Credits</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              Manage your balance and transaction history.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => window.location.hash = 'pricing'}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Buy Credits
+            </Button>
+          </div>
         </div>
 
-        {/* Credit Balance Card */}
-        <Card className="mb-8 border-0 shadow-xl bg-linear-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white overflow-hidden relative">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <CardHeader className="pb-6 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-3xl font-bold mb-2">Current Balance</CardTitle>
-                <CardDescription className="text-emerald-100 text-base">
-                  Available credits for creating hackathons
-                </CardDescription>
-              </div>
-              <div className="text-right">
-                <div className="text-6xl font-bold mb-2">
-                  {loading ? (
-                    <Skeleton className="h-16 w-32 bg-white/20" />
-                  ) : (
-                    balance?.balance.toLocaleString() || '0'
-                  )}
-                </div>
-                <div className="text-emerald-100 text-lg">Credits</div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="flex flex-wrap gap-4">
-              {/* Only show free credits buttons after eligibility is loaded */}
-              {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
-                <Button
-                  onClick={() => navigate('/dashboard/credits/verify')}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:scale-105"
-                >
-                  <Gift className="h-5 w-5" />
-                  Claim 200 Free Credits
-                </Button>
-              )}
-              {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
-                <Button
-                  onClick={() => navigate('/dashboard/credits/verify')}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:scale-105"
-                >
-                  <Shield className="h-5 w-5" />
-                  Get 200 Free Credits
-                </Button>
-              )}
-              <Button
-                onClick={() => window.location.hash = 'pricing'}
-                className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold shadow-lg px-4 py-2 rounded-lg flex items-center gap-2"
-              >
-                <Plus className="h-5 w-5" />
-                Buy More Credits
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
-          {/* Free Credits Info Card - Show if phone verified and eligible (only after loading) */}
-          {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
-            <Card className="lg:col-span-3 border-2 border-yellow-400 bg-linear-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-yellow-400 p-3 rounded-full">
-                      <Gift className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                        🎉 Claim Your Free 200 Credits!
-                      </h3>
-                      <p className="text-slate-600 dark:text-slate-300">
-                        Your phone is verified! Click the button to claim your free credits now.
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/dashboard/credits/verify')}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-lg px-6 py-3 rounded-lg transition-all hover:scale-105"
-                    size="lg"
-                  >
-                    <Gift className="h-5 w-5 mr-2" />
-                    Claim Now
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Phone Verification Required Card - Show if not verified and not claimed (only after loading) */}
-          {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
-            <Card className="lg:col-span-3 border-2 border-blue-400 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-blue-400 p-3 rounded-full animate-pulse">
-                      <Gift className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                        🎁 Get 200 Free Credits!
-                      </h3>
-                      <p className="text-slate-600 dark:text-slate-300">
-                        Verify your phone number to unlock your welcome bonus and start creating hackathons
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/dashboard/credits/verify')}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-lg px-6 py-3 rounded-lg transition-all hover:scale-105"
-                    size="lg"
-                  >
-                    <Shield className="h-5 w-5 mr-2" />
-                    Verify Phone & Get Credits
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Quick Stats */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
-                Quick Stats
-              </CardTitle>
+        {/* Balance Section */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="md:col-span-1 border shadow-sm bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Available Balance</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Total Earned</span>
-                <span className="font-semibold text-emerald-600">
-                  {history?.transactions
-                    .filter(t => t.amount > 0)
-                    .reduce((sum, t) => sum + t.amount, 0)
-                    .toLocaleString() || '0'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Total Used</span>
-                <span className="font-semibold text-red-600">
-                  {history?.transactions
-                    .filter(t => t.amount < 0)
-                    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-                    .toLocaleString() || '0'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Transactions</span>
-                <span className="font-semibold">{history?.total.toLocaleString() || '0'}</span>
+            <CardContent>
+              <div className="text-4xl font-bold tracking-tight">
+                {loading ? (
+                  <Skeleton className="h-10 w-24" />
+                ) : (
+                  balance?.balance.toLocaleString() || '0'
+                )}
+                <span className="text-lg font-normal text-muted-foreground ml-2">credits</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Transaction History */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                  <CardTitle className="text-xl">Recent Transactions</CardTitle>
-                </div>
-              </div>
-              <CardDescription>Your credit transaction activity</CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Promotional cards / Actions */}
+          <div className="md:col-span-2 space-y-4">
+            {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
+              <Card className="border bg-secondary/30 shadow-none">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <Gift className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Claim Free Credits</h3>
+                      <p className="text-muted-foreground text-sm">Verify your phone to verify your account and get 200 free credits.</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate('/dashboard/credits/verify')} variant="outline" className="w-full sm:w-auto shrink-0">
+                    Claim Now <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
+              <Card className="border bg-secondary/30 shadow-none">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <Shield className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Verify & Earn</h3>
+                      <p className="text-muted-foreground text-sm">Secure your account with phone verification and earn 200 credits.</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate('/dashboard/credits/verify')} variant="outline" className="w-full sm:w-auto shrink-0">
+                    Verify Phone <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Transactions Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold tracking-tight">History</h2>
+          </div>
+
+          <Card className="border shadow-none">
+            <CardContent className="p-0">
               {historyLoading && !history ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 border rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div>
-                          <Skeleton className="h-4 w-32 mb-2" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
+                <div className="p-6 space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="flex justify-between items-center">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-32" />
                       </div>
-                      <div className="text-right">
-                        <Skeleton className="h-4 w-16 mb-1" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
+                      <Skeleton className="h-4 w-16" />
                     </div>
                   ))}
                 </div>
               ) : history?.transactions.length === 0 ? (
-                <div className="text-center py-12">
-                  <AlertCircle className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    No transactions yet
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
-                    Your credit transaction history will appear here once you make purchases or use credits.
+                <div className="text-center py-16">
+                  <div className="bg-muted inline-flex p-4 rounded-full mb-4">
+                    <History className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium">No transactions yet</h3>
+                  <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
+                    When you purchase or use credits, they will appear here.
                   </p>
-                  <a href='/dashboard/credits#pricing'>
-                    <Button
-                      className="bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Get Started with Credits
-                    </Button>
-                  </a>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {history?.transactions.slice(0, 5).map((transaction) => (
+                <div className="divide-y">
+                  {history?.transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className={`flex items-center justify-between p-4 border rounded-xl transition-all hover:shadow-md cursor-pointer ${transaction.type === 'PURCHASE' && transaction.payment
-                        ? 'hover:border-emerald-200 dark:hover:border-emerald-800'
-                        : 'hover:border-slate-200 dark:hover:border-slate-700'
-                        }`}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-muted/50 transition-colors gap-4"
+                      role={transaction.type === 'PURCHASE' ? "button" : undefined}
                       onClick={() => transaction.type === 'PURCHASE' && transaction.payment && fetchPaymentDetails(transaction)}
                     >
-                      <div className="flex items-center gap-3">
-                        {getTransactionIcon(transaction.type, transaction.amount)}
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-slate-900 dark:text-white">
-                              {transaction.description}
-                            </span>
-                            <Badge
-                              variant="secondary"
-                              className={`text-xs ${getTransactionColor(transaction.type, transaction.amount)}`}
-                            >
-                              {formatTransactionType(transaction.type)}
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className={cn("mt-1 p-2 rounded-full bg-secondary shrink-0",
+                          transaction.type === 'PURCHASE' ? "text-green-600 dark:text-green-500" :
+                            transaction.type === 'DEDUCTION' ? "text-red-600 dark:text-red-500" : "text-foreground"
+                        )}>
+                          {getTransactionIcon(transaction.type, transaction.amount)}
+                        </div>
+                        <div className="space-y-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground truncate pr-2">
+                            {transaction.description}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>{new Date(transaction.createdAt).toLocaleDateString()}</span>
+                            <span className="hidden sm:inline">•</span>
+                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal uppercase tracking-wider">
+                              {transaction.type.replace('_', ' ')}
                             </Badge>
-                            {transaction.type === 'PURCHASE' && transaction.payment && (
-                              <Badge variant="outline" className="text-xs">
-                                Click for details
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">
-                            {formatDate(transaction.createdAt)}
-                            {transaction.payment && (
-                              <span className="ml-2">• {transaction.payment.planName}</span>
-                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div
-                          className={`font-bold text-lg ${getTransactionColor(transaction.type, transaction.amount)}`}
-                        >
-                          {transaction.amount > 0 ? '+' : ''}
-                          {transaction.amount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">
-                          Balance: {transaction.balance.toLocaleString()}
-                        </div>
+                      <div className="text-left sm:text-right pl-[52px] sm:pl-0">
+                        <span className={cn("font-semibold block",
+                          transaction.amount > 0 ? "text-green-600 dark:text-green-500" : "text-foreground"
+                        )}>
+                          {transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()}
+                        </span>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Bal: {transaction.balance.toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   ))}
-
-                  {history && history.transactions.length > 5 && (
-                    <div className="text-center pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => fetchCreditHistory(true)}
-                        disabled={loadingMore}
-                        className="w-full"
-                      >
-                        Load More Transactions ({history.total - history.transactions.length} remaining)
-                        <ExternalLink className="h-4 w-4 ml-2" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
+            {history && history.transactions.length < history.total && (
+              <div className="p-4 border-t text-center">
+                <Button variant="ghost" onClick={() => fetchCreditHistory(true)} disabled={loadingMore}>
+                  {loadingMore ? 'Loading...' : 'Load more transactions'}
+                </Button>
+              </div>
+            )}
           </Card>
+        </div>
+
+        {/* Footer Links */}
+        <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex gap-4">
+            <Link to="/terms-and-conditions" className="hover:underline">Terms</Link>
+            <Link to="/privacy-policy" className="hover:underline">Privacy</Link>
+            <Link to="/refund" className="hover:underline">Refunds</Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Shield className="h-3 w-3" />
+            <span>Secured by Razorpay</span>
+          </div>
         </div>
 
         {/* Payment Details Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Details
-              </DialogTitle>
+              <DialogTitle>Transaction Details</DialogTitle>
               <DialogDescription>
-                Complete information about your credit purchase
+                Receipt for credit purchase
               </DialogDescription>
             </DialogHeader>
-
             {selectedPayment && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Order ID</label>
-                    <p className="font-mono text-sm bg-slate-100 dark:bg-slate-800 p-2 rounded">
-                      {selectedPayment.razorpayOrderId}
-                    </p>
+              <div className="space-y-4 pt-4">
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge variant={selectedPayment.status === 'captured' ? 'default' : 'secondary'}>
+                      {selectedPayment.status}
+                    </Badge>
                   </div>
-                  {selectedPayment.razorpayPaymentId && (
-                    <div>
-                      <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Payment ID</label>
-                      <p className="font-mono text-sm bg-slate-100 dark:bg-slate-800 p-2 rounded">
-                        {selectedPayment.razorpayPaymentId}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Plan</label>
-                    <p className="font-semibold">{selectedPayment.planName}</p>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Amount</span>
+                    <span className="font-semibold">₹{selectedPayment.amount / 100}</span>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Status</label>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(selectedPayment.status)}
-                      <span className="capitalize">{selectedPayment.status}</span>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Credits</span>
+                    <span className="font-semibold">{selectedPayment.credits}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Date</span>
+                    <span>{new Date(selectedPayment.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="border-t pt-3 mt-3 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Order ID</span>
+                      <span className="font-mono">{selectedPayment.razorpayOrderId}</span>
                     </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Amount Paid</label>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      {formatCurrency(selectedPayment.amount)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Credits Received</label>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {selectedPayment.credits.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Rate</label>
-                    <p className="text-lg font-semibold">
-                      ₹{(selectedPayment.amount / 100 / selectedPayment.credits).toFixed(2)}/credit
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Created</label>
-                    <p>{formatDate(selectedPayment.createdAt)}</p>
-                  </div>
-                  {selectedPayment.completedAt && (
-                    <div>
-                      <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Completed</label>
-                      <p>{formatDate(selectedPayment.completedAt)}</p>
-                    </div>
-                  )}
                 </div>
 
                 {selectedPayment.invoiceUrl && (
-                  <div className="pt-4 border-t">
-                    <Button
-                      onClick={() => window.open(selectedPayment.invoiceUrl, '_blank')}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Download Invoice
-                    </Button>
-                  </div>
+                  <Button onClick={() => window.open(selectedPayment.invoiceUrl, '_blank')} className="w-full" variant="outline">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Download Invoice
+                  </Button>
                 )}
               </div>
             )}
           </DialogContent>
         </Dialog>
-
-        {/* Help & Support */}
-        <Card className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border-blue-200 dark:border-blue-800">
-          <CardContent className="p-8">
-            <div className="text-center">
-              <HelpCircle className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                Need Help with Credits?
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-2xl mx-auto">
-                Our support team is here to help you with any questions about credits, payments, or using the platform.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button
-                  onClick={() => window.open('mailto:fairarena.contact@gmail.com', '_blank')}
-                  variant="outline"
-                  size="lg"
-                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                >
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  Contact Support
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Legal Compliance Footer */}
-        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-center text-sm text-slate-600 dark:text-slate-400">
-            <div className="flex flex-wrap justify-center gap-6 mb-4">
-              <Link to="/terms-and-conditions" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-                Terms of Service
-              </Link>
-              <Link to="/privacy-policy" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <Link to="/refund" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-                Refund Policy
-              </Link>
-              <Link to="/contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">
-                Contact Us
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Shield className="h-4 w-4" />
-              <span>Secured by Razorpay • PCI DSS Compliant</span>
-            </div>
-            <p>© {new Date().getFullYear()} FairArena. All rights reserved. Credits are non-transferable and valid for 1 year from purchase date.</p>
-          </div>
-        </div>
       </div>
     </div>
   );

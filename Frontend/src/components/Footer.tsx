@@ -1,16 +1,10 @@
 import { useTheme } from '@/hooks/useTheme';
-import { Linkedin, Github } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Github, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
 
 function Footer() {
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
+  const { isDark } = useTheme();
 
   return (
     <footer

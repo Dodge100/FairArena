@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { Link } from 'react-router';
 import { FileUpload } from '../components/FileUpload';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -22,12 +23,10 @@ import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
 import { apiFetch } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
-import { Link } from 'react-router';
 
 export default function Support() {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
   const { isSignedIn, user } = useAuthState();
-  const isDark = theme === 'dark';
   const { cn } = useDataSaverUtils();
   const [formData, setFormData] = useState({
     name: '',

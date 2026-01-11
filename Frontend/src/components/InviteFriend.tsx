@@ -8,8 +8,7 @@ import { apiFetch } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 function InviteFriend() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);

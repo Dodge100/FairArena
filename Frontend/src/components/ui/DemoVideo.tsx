@@ -6,17 +6,13 @@ import { useDataSaverUtils } from '../../hooks/useDataSaverUtils';
 import { useTheme } from '../../hooks/useTheme';
 
 function DemoVideo() {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
   const { shouldLoadImage, cn } = useDataSaverUtils();
-  const [isDark, setIsDark] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
 
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
 
   useEffect(() => {
     if (!videoRef.current) return;

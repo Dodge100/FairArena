@@ -557,6 +557,115 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
 router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
 
 // ============================================================================
+// QR CODE AUTHENTICATION ROUTES
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/v1/auth/qr/generate:
+ *   post:
+ *     summary: Generate a new QR auth session
+ *     tags: [Authentication, QR]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: QR session generated
+ */
+router.post('/qr/generate', generateQRSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/qr/status/{sessionId}:
+ *   get:
+ *     summary: Stream QR session status (SSE)
+ *     tags: [Authentication, QR]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Server-sent events stream
+ */
+router.get('/qr/status/:sessionId', streamQRStatus);
+
+/**
+ * @swagger
+ * /api/v1/auth/qr/approve:
+ *   post:
+ *     summary: Approve QR login from authenticated device
+ *     tags: [Authentication, QR]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId]
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login approved
+ */
+router.post('/qr/approve', protectRoute, approveQRSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/qr/claim:
+ *   post:
+ *     summary: Claim approved session tokens
+ *     tags: [Authentication, QR]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId, nonce]
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *               nonce:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
+router.post('/qr/claim', claimQRSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/qr/device-info:
+ *   post:
+ *     summary: Get device info for approval confirmation
+ *     tags: [Authentication, QR]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId]
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Device info retrieved
+ */
+router.post('/qr/device-info', protectRoute, getQRDeviceInfo);
+
+// ============================================================================
 // MULTI-ACCOUNT ROUTES
 // ============================================================================
 
@@ -642,6 +751,7 @@ import {
     handleZohoCallback
 } from '../../controllers/v1/oauthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
+import { approveQRSession, claimQRSession, generateQRSession, getQRDeviceInfo, streamQRStatus } from '../../controllers/v1/qrAuthController.js';
 
 /**
  * @swagger

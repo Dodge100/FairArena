@@ -13,10 +13,26 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import DashboardSkeleton from '../components/DashboardSkeleton';
+import Onboarding from '../components/Onboarding';
+import { useOnboarding } from '../contexts/OnboardingContext';
 import { useAuthState } from '../lib/auth';
 
 function Dashboard() {
   const { user } = useAuthState();
+  const { status: onboardingStatus, isLoading: onboardingLoading } = useOnboarding();
+
+  // Show skeleton while loading onboarding status
+  if (onboardingLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // Show onboarding for new users
+  if (onboardingStatus === 'PENDING') {
+    return <Onboarding />;
+  }
+
+  // Render main dashboard content
   const stats = [
     {
       title: 'Active Projects',

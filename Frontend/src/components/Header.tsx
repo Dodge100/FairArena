@@ -1,6 +1,5 @@
 import { Zap } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
@@ -8,15 +7,10 @@ import { useAuthState } from '../lib/auth';
 import { Spotlight } from './ui/Spotlight';
 
 function Header() {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
   const { dataSaverSettings } = useDataSaverUtils();
-  const [isDark, setIsDark] = useState(false);
   const { isSignedIn } = useAuthState();
   const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
-
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
 
   return (
     <div

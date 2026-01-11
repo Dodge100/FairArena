@@ -66,7 +66,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getToken, isLoaded } = useAuthState();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
   const { customization } = useSidebarCustomization();
 
@@ -287,11 +287,7 @@ export function AppSidebar() {
             <div className="px-2 py-2">
               <ThemeSwitcher
                 value={theme}
-                onChange={(newTheme) => {
-                  if (theme !== newTheme) {
-                    toggleTheme();
-                  }
-                }}
+                onChange={setTheme}
                 className="justify-center group-data-[collapsible=icon]:hidden"
               />
             </div>

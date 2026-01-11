@@ -1,14 +1,8 @@
 import { useTheme } from '@/hooks/useTheme';
-import { useEffect, useState } from 'react';
-import { Rocket, Target, Star, Zap, Handshake, Brain, Heart, ArrowRight } from 'lucide-react';
+import { ArrowRight, Brain, Handshake, Heart, Rocket, Star, Target, Zap } from 'lucide-react';
 
 function About() {
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
+  const { isDark } = useTheme();
 
   return (
     <div

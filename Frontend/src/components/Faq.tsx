@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 
 function Faq() {
@@ -35,12 +35,8 @@ function Faq() {
     },
   ];
 
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
+  const { isDark } = useTheme();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
 
   const cardBG = isDark
     ? 'bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/5'

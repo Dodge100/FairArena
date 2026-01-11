@@ -326,3 +326,55 @@ body {
 body > div[style*="z-index"][style*="position: absolute"] {
   pointer-events: auto !important;
 }
+
+/* QR Scanner Animations */
+@keyframes scan {
+  0% {
+    top: 16px;
+  }
+  50% {
+    top: calc(100% - 16px);
+  }
+  100% {
+    top: 16px;
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+/* Border width utilities for corner markers */
+.border-l-3 {
+  border-left-width: 3px;
+}
+
+.border-r-3 {
+  border-right-width: 3px;
+}
+
+.border-t-3 {
+  border-top-width: 3px;
+}
+
+.border-b-3 {
+  border-bottom-width: 3px;
+}

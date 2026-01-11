@@ -24,8 +24,7 @@ export function OTPVerification({
   className = '',
   fullScreen = true,
 }: OTPVerificationProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');

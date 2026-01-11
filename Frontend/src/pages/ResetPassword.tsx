@@ -12,8 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
 export default function ResetPassword() {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const { theme, isDark } = useTheme();
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
     const { resetPassword } = useAuth();

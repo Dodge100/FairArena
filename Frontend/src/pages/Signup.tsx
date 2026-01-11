@@ -12,8 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
 export default function Signup() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { theme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();

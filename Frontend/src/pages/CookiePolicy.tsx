@@ -1,17 +1,11 @@
 import { LegalList, LegalSection } from '@/components/legal/LegalSection';
 import { useTheme } from '@/hooks/useTheme';
-import { useEffect, useState } from 'react';
 
 /* ---------------------------------------------
    MAIN PAGE: Cookie Policy
 ---------------------------------------------- */
 function CookiePolicy() {
-    const { theme } = useTheme();
-    const [isDark, setIsDark] = useState(false);
-
-    useEffect(() => {
-        setIsDark(theme === 'dark');
-    }, [theme]);
+    const { isDark } = useTheme();
 
     return (
         <div

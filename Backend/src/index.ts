@@ -89,6 +89,7 @@ import mfaRouter from './routes/v1/mfa.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
 import oauthRouter from './routes/v1/oauth.routes.js';
+import onboardingRouter from './routes/v1/onboarding.routes.js';
 import organizationRouter from './routes/v1/organization.js';
 import passkeyRouter from './routes/v1/passkey.routes.js';
 import paymentsRouter from './routes/v1/payments.js';
@@ -253,6 +254,9 @@ app.use('/api/v1/mfa', mfaRouter);
 
 // Passkey routes (WebAuthn - mixed auth)
 app.use('/api/v1/passkeys', passkeyRouter);
+
+// Onboarding routes (authenticated)
+app.use('/api/v1/onboarding', onboardingRouter);
 
 // Platform invite routes
 app.use('/api/v1/platform', platformInviteRouter);

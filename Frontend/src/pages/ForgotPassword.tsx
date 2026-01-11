@@ -12,8 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
 export default function ForgotPassword() {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const { isDark } = useTheme();
     const { forgotPassword } = useAuth();
 
     const [email, setEmail] = useState('');

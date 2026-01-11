@@ -65,6 +65,7 @@ export interface AuthorizationRequest {
         isVerified: boolean;
     };
     scopes: OAuthScope[];
+    redirectUri: string;
     expiresAt: string;
 }
 

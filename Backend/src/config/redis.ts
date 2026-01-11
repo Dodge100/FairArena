@@ -52,4 +52,6 @@ export const REDIS_KEYS = {
   RATE_LIMIT: 'ratelimit:',
   USER_ORGANIZATIONS: 'user:organizations:',
   USER_RECENT_ACTIVITY_CACHE: 'user:recent:activity:',
+  QR_AUTH_SESSION: 'qr:auth:session:',
+  QR_AUTH_RATE_LIMIT: 'qr:auth:ratelimit:',
 } as const;

@@ -204,9 +204,18 @@ export async function createSession(
         JSON.stringify(sessionData),
     );
 
-    // Add to user's session list
     const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
-    await redis.sadd(userSessionsKey, sessionId);
+    try {
+        await redis.sadd(userSessionsKey, sessionId);
+    } catch (error: any) {
+        if (error.message && error.message.includes('WRONGTYPE')) {
+            logger.warn('Recovering from WRONGTYPE error for session set', { userId });
+            await redis.del(userSessionsKey);
+            await redis.sadd(userSessionsKey, sessionId);
+        } else {
+            throw error;
+        }
+    }
 
     logger.info('Session created', { userId, sessionId, deviceType: deviceInfo.deviceType });
 
@@ -235,7 +244,18 @@ export async function updateUserBanStatus(
     banReason?: string,
 ): Promise<void> {
     const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
-    const sessionIds = await redis.smembers(userSessionsKey);
+    let sessionIds: string[] = [];
+    try {
+        sessionIds = await redis.smembers(userSessionsKey);
+    } catch (error: any) {
+        if (error.message && error.message.includes('WRONGTYPE')) {
+            logger.warn('Recovering from WRONGTYPE error in ban status update', { userId });
+            await redis.del(userSessionsKey);
+            sessionIds = [];
+        } else {
+            throw error;
+        }
+    }
 
     for (const sessionId of sessionIds) {
         const session = await getSession(sessionId);
@@ -421,7 +441,18 @@ export async function getUserSessions(
     userId: string,
 ): Promise<Array<{ sessionId: string; data: SessionData }>> {
     const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
-    const sessionIds = await redis.smembers(userSessionsKey);
+    let sessionIds: string[] = [];
+    try {
+        sessionIds = await redis.smembers(userSessionsKey);
+    } catch (error: any) {
+        if (error.message && error.message.includes('WRONGTYPE')) {
+            logger.warn('Recovering from WRONGTYPE error in getUserSessions', { userId });
+            await redis.del(userSessionsKey);
+            sessionIds = [];
+        } else {
+            throw error;
+        }
+    }
 
     const sessions: Array<{ sessionId: string; data: SessionData }> = [];
 
@@ -443,7 +474,18 @@ export async function getUserSessions(
  */
 export async function destroyAllUserSessions(userId: string): Promise<number> {
     const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
-    const sessionIds = await redis.smembers(userSessionsKey);
+    let sessionIds: string[] = [];
+    try {
+        sessionIds = await redis.smembers(userSessionsKey);
+    } catch (error: any) {
+        if (error.message && error.message.includes('WRONGTYPE')) {
+            logger.warn('Recovering from WRONGTYPE error in destroyAllUserSessions', { userId });
+            await redis.del(userSessionsKey);
+            sessionIds = [];
+        } else {
+            throw error;
+        }
+    }
 
     for (const sessionId of sessionIds) {
         const sessionKey = `${SESSION_PREFIX}${sessionId}`;

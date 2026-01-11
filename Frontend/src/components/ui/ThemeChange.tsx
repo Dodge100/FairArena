@@ -15,8 +15,7 @@ export default function ThemeToggleButton({ className }: { className: string }) 
 }
 
 const ThemeToggleButton3 = ({ className = '' }: { className?: string }) => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const { toggleTheme, isDark } = useTheme();
   const id = useId();
   const clipPathId = `skiper-btn-${id}`;
 

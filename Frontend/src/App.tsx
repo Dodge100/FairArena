@@ -4,20 +4,22 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { CookieConsentModal } from './components/CookieConsentModal';
+import { FrontendMismatch } from "./components/FrontendMismatch";
 import { GoogleOneTap } from './components/GoogleOneTap';
 import NotFound from './components/NotFound';
 import PricingModal from './components/PricingModal';
 import WaitList from './components/WaitList';
 import { useCookieConsent } from './contexts/CookieConsentContext';
+import { OnboardingProvider } from './contexts/OnboardingContext';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
 import { registerAuth } from './lib/apiClient';
-import { useAuth, useToken } from './lib/auth'; // Updated import
+import { useAuth, useToken } from './lib/auth';
 import About from './pages/About';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
 import AuthorizedApps from './pages/AuthorizedApps';
-import BannedAccount from './pages/BannedAccount'; // Import BannedAccount
+import BannedAccount from './pages/BannedAccount';
 import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
 import CreditsVerificationPage from './pages/CreditsVerificationPage';
@@ -46,7 +48,6 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Unsubscribe from './pages/Unsubscribe';
 import VerifyEmail from './pages/VerifyEmail';
 import HowItWorks from './pages/WhyChooseUsPage';
-import { FrontendMismatch } from "./components/FrontendMismatch";
 
 function App() {
   const location = useLocation();
@@ -57,7 +58,7 @@ function App() {
 
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
   const token = useToken();
-  const { isBanned } = useAuth(); // Get ban state
+  const { isBanned } = useAuth();
 
   useEffect(() => {
     registerAuth(token);
@@ -74,15 +75,9 @@ function App() {
       }
     };
 
-    // Check initial hash
     handleHashChange();
-
-    // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // Check if frontend is running on allowed domain
@@ -132,47 +127,49 @@ function App() {
         onRejectAll={rejectAll}
       />
       <GoogleOneTap />
-      <Routes>
-        <Route path="/maintenance" element={<Maintenance />} />
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/why-choose-us" element={<HowItWorks />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/refund" element={<RefundPage />} />
-          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-        </Route>
-        <Route path="/dashboard" element={<ProtectedLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="/dashboard/credits" element={<CreditsPage />} />
-          <Route path="/dashboard/credits/verify" element={<CreditsVerificationPage />} />
-          <Route path="/dashboard/inbox" element={<Inbox />} />
-          <Route path="/dashboard/teams" element={<TeamsPage />} />
-          <Route path="/dashboard/profile/edit" element={<EditProfile />} />
-          <Route path="/dashboard/profile/views" element={<ProfileViews />} />
-          <Route path="/dashboard/public-profile" element={<MyProfile />} />
-          <Route path="/dashboard/account-settings" element={<AccountSettings />} />
-          <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
-          <Route path="/dashboard/oauth/applications" element={<OAuthApplications />} />
-          <Route path="/dashboard/oauth/authorized" element={<AuthorizedApps />} />
-        </Route>
-        <Route path="/feedback/:feedbackCode" element={<Feedback />} />
-        <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />
-        <Route path="/profile/:userId" element={<PublicProfile />} />
-        <Route path="/profile/:userId/stars" element={<ProfileStars />} />
-        <Route path="/support" element={<Support />} />
-        <Route path="/waitlist" element={isNewSignupEnabled ? <Navigate to="/signup" replace /> : <WaitList />} />
-        <Route path="/signin" element={<Signin />} />
-        <Route path="/signup" element={isNewSignupEnabled ? <Signup /> : <Navigate to="/waitlist" replace />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/verify-email/:token" element={<VerifyEmail />} />
-        <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
-        <Route path="/oauth/consent" element={<OAuthConsent />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <OnboardingProvider>
+        <Routes>
+          <Route path="/maintenance" element={<Maintenance />} />
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/why-choose-us" element={<HowItWorks />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/refund" element={<RefundPage />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          </Route>
+          <Route path="/dashboard" element={<ProtectedLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="/dashboard/credits" element={<CreditsPage />} />
+            <Route path="/dashboard/credits/verify" element={<CreditsVerificationPage />} />
+            <Route path="/dashboard/inbox" element={<Inbox />} />
+            <Route path="/dashboard/teams" element={<TeamsPage />} />
+            <Route path="/dashboard/profile/edit" element={<EditProfile />} />
+            <Route path="/dashboard/profile/views" element={<ProfileViews />} />
+            <Route path="/dashboard/public-profile" element={<MyProfile />} />
+            <Route path="/dashboard/account-settings" element={<AccountSettings />} />
+            <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
+            <Route path="/dashboard/oauth/applications" element={<OAuthApplications />} />
+            <Route path="/dashboard/oauth/authorized" element={<AuthorizedApps />} />
+          </Route>
+          <Route path="/feedback/:feedbackCode" element={<Feedback />} />
+          <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />
+          <Route path="/profile/:userId" element={<PublicProfile />} />
+          <Route path="/profile/:userId/stars" element={<ProfileStars />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/waitlist" element={isNewSignupEnabled ? <Navigate to="/signup" replace /> : <WaitList />} />
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/signup" element={isNewSignupEnabled ? <Signup /> : <Navigate to="/waitlist" replace />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
+          <Route path="/oauth/consent" element={<OAuthConsent />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </OnboardingProvider>
     </>
   );
 }

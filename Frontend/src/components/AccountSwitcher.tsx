@@ -2,8 +2,10 @@ import {
     Check,
     ChevronsUpDown,
     LogOut,
-    Plus
+    Plus,
+    QrCode,
 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -27,9 +29,11 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { QRScannerDialog } from "@/components/auth/QRScannerDialog";
 
 export function AccountSwitcher() {
     const { isMobile } = useSidebar();
+    const [showQRScanner, setShowQRScanner] = useState(false);
     const {
         user,
         accounts,
@@ -50,15 +54,6 @@ export function AccountSwitcher() {
         // but react-router navigate is better for SPA.
         // However, we need to make sure we don't auto-redirect back.
         navigate("/signin?flow=add_account");
-    };
-
-    const currentAccount = accounts.find(a => a.sessionId === activeSessionId) || {
-        sessionId: 'current',
-        userId: user.userId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profileImageUrl: user.profileImageUrl,
     };
 
     return (
@@ -126,6 +121,12 @@ export function AccountSwitcher() {
                         )}
 
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setShowQRScanner(true)} className="gap-2 cursor-pointer">
+                            <QrCode className="size-4" />
+                            Scan QR Code
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => logout()} className="gap-2 cursor-pointer text-red-500 focus:text-red-500">
                             <LogOut className="size-4" />
                             Log out
@@ -137,6 +138,8 @@ export function AccountSwitcher() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
+
+            <QRScannerDialog open={showQRScanner} onOpenChange={setShowQRScanner} />
         </SidebarMenu>
     );
 }

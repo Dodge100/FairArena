@@ -26,8 +26,7 @@ interface WaitlistResponse {
 }
 
 function WaitList() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const { isSignedIn } = useAuthState();
   const [email, setEmail] = useState('');

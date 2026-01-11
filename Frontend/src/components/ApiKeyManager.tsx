@@ -21,8 +21,7 @@ interface NewApiKey {
 }
 
 export const ApiKeyManager: React.FC = () => {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const { isDark } = useTheme();
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);

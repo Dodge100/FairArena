@@ -27,6 +27,7 @@ import { CookieConsentModal } from '../components/CookieConsentModal';
 import { useCookieConsent } from '../contexts/CookieConsentContext';
 import { useDataSaver } from '../contexts/DataSaverContext';
 import { useSidebarCustomization } from '../contexts/SidebarCustomizationContext';
+import { QRScannerDialog } from './auth/QRScannerDialog';
 
 interface Report {
   id: string;
@@ -60,6 +61,7 @@ export default function AccountSettingsComponent() {
   const { consentSettings, acceptAll, rejectAll, updateConsent } = useCookieConsent();
   const { customization, resetToDefault } = useSidebarCustomization();
   const [showCookieModal, setShowCookieModal] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
   const [confirmationText, setConfirmationText] = useState('');
@@ -215,7 +217,7 @@ export default function AccountSettingsComponent() {
 
   // Fetch settings when verified
   useEffect(() => {
-      fetchSettings();
+    fetchSettings();
   }, [fetchSettings]);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -513,6 +515,56 @@ export default function AccountSettingsComponent() {
         </div>
       ),
     },
+    {
+      id: 'security',
+      title: 'Security',
+      icon: Shield,
+      description: 'Manage security settings and cross-device login',
+      keywords: ['security', 'qr', 'login', 'device', 'scan', 'cross-device', 'authentication'],
+      content: (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Cross-Device Login</span>
+              </CardTitle>
+              <CardDescription>
+                Securely sign in to FairArena on another device by scanning a QR code with this device.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/50 border">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">How it works</p>
+                  <ol className="text-sm text-muted-foreground mt-1 space-y-1 list-decimal list-inside">
+                    <li>Go to the sign-in page on another device</li>
+                    <li>Choose "Sign in with QR Code"</li>
+                    <li>Use this device to scan the QR code</li>
+                    <li>Approve the login request</li>
+                  </ol>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowQRScanner(true)}
+                className="w-full"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                Scan QR Code
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ),
+    },
+
     {
       id: 'data',
       title: 'Data & Performance',
@@ -869,61 +921,61 @@ export default function AccountSettingsComponent() {
       </div>
 
       <div className="space-y-6 mt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search settings..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-4">
-            {filteredSections.map((section) => {
-              const Icon = section.icon;
-              const isOpen = openSections.includes(section.id);
-              return (
-                <div key={section.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                  <button
-                    onClick={() => toggleSection(section.id)}
-                    className="flex items-center justify-between w-full p-6 text-left"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-full bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">{section.title}</h3>
-                        <p className="text-sm text-muted-foreground">{section.description}</p>
-                      </div>
-                    </div>
-                    {isOpen ? (
-                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-6 pt-0 border-t animate-in slide-in-from-top-2 duration-200">
-                      <div className="mt-6">{section.content}</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {filteredSections.length === 0 && (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                <h3 className="text-lg font-medium">No settings found</h3>
-                <p className="text-muted-foreground">
-                  Try searching for a different keyword or browse the categories.
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search settings..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+
+        <div className="space-y-4">
+          {filteredSections.map((section) => {
+            const Icon = section.icon;
+            const isOpen = openSections.includes(section.id);
+            return (
+              <div key={section.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                <button
+                  onClick={() => toggleSection(section.id)}
+                  className="flex items-center justify-between w-full p-6 text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{section.title}</h3>
+                      <p className="text-sm text-muted-foreground">{section.description}</p>
+                    </div>
+                  </div>
+                  {isOpen ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="px-6 pb-6 pt-0 border-t animate-in slide-in-from-top-2 duration-200">
+                    <div className="mt-6">{section.content}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {filteredSections.length === 0 && (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+              <h3 className="text-lg font-medium">No settings found</h3>
+              <p className="text-muted-foreground">
+                Try searching for a different keyword or browse the categories.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Cookie Consent Modal */}
       <CookieConsentModal
@@ -940,6 +992,10 @@ export default function AccountSettingsComponent() {
           rejectAll();
           setShowCookieModal(false);
         }}
+      />
+      <QRScannerDialog
+        open={showQRScanner}
+        onOpenChange={setShowQRScanner}
       />
     </div >
   );

@@ -1,19 +1,16 @@
 import { useTheme } from '@/hooks/useTheme';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthState } from '../lib/auth';
-import ThemeToggleButton from './ui/ThemeChange';
+import { ThemeSwitcher } from './kibo-ui/theme-switcher';
+
 export default function Navbar() {
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
+  const { theme, setTheme, isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const { isSignedIn } = useAuthState();
   const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
 
   return (
     <>
@@ -115,7 +112,9 @@ export default function Navbar() {
           </motion.button>
         </motion.div>
 
-        <ThemeToggleButton
+        <ThemeSwitcher
+          value={theme}
+          onChange={setTheme}
           className={
             'hidden absolute lg:flex lg:top-1/2 right-10 -translate-x-1/2 -translate-y-1/2'
           }
@@ -247,7 +246,11 @@ export default function Navbar() {
                 )}
 
                 <div className="w-full flex items-center mt-5 justify-center">
-                  <ThemeToggleButton className={'flex'} />
+                  <ThemeSwitcher
+                    value={theme}
+                    onChange={setTheme}
+                    className={'flex'}
+                  />
                 </div>
               </>
             </motion.div>

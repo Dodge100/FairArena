@@ -1,6 +1,5 @@
 import { LegalList, LegalSection } from '@/components/legal/LegalSection';
 import { useTheme } from '@/hooks/useTheme';
-import { useEffect, useState } from 'react';
 
 /* ----------------------------------------------------
    DATA ARRAYS
@@ -54,12 +53,7 @@ const suspensionList = [
 ----------------------------------------------------- */
 
 function TermsAndConditions() {
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
+  const { isDark } = useTheme();
 
   return (
     <div

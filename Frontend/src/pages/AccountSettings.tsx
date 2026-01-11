@@ -1,3 +1,4 @@
+import { ApiKeyManager } from '@/components/ApiKeyManager';
 import { ImageUploader } from '@/components/ImageUploader';
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
@@ -29,7 +30,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AccountSettingsComponent from '../components/AccountSettings';
 import { SecurityKeyManager } from '../components/SecurityKeyManager';
-import { ApiKeyManager } from '@/components/ApiKeyManager';
 
 interface Session {
   id: string;
@@ -85,8 +85,7 @@ const formatTimeAgo = (date: Date) => {
 };
 
 function AccountSettings() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { isDark } = useTheme();
   const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'security' | 'settings'>('overview');
 

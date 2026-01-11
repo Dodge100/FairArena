@@ -2,28 +2,43 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useDataSaver } from './contexts/DataSaverContext';
 import { ThemeContext } from './hooks/useTheme';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark' | 'system';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { dataSaverSettings } = useDataSaver();
 
   // Initialize theme from localStorage synchronously to prevent flash
   const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage first, then fallback to system preference or "light"
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme') as Theme | null;
-      if (stored === 'light' || stored === 'dark') {
+      if (stored === 'light' || stored === 'dark' || stored === 'system') {
         return stored;
       }
-      // If no stored theme, check system preference
-      const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-      return prefersDark ? 'dark' : 'light';
     }
-    return 'light';
+    return 'system';
   });
 
-  // Effective theme considers data saver settings
-  const effectiveTheme = dataSaverSettings.enabled && dataSaverSettings.forceDarkTheme ? 'dark' : theme;
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateSystemTheme = () => setSystemTheme(media.matches ? 'dark' : 'light');
+
+    updateSystemTheme(); // Initial check
+    media.addEventListener('change', updateSystemTheme);
+    return () => media.removeEventListener('change', updateSystemTheme);
+  }, []);
+
+  // Effective theme considers data saver settings and system preference
+  const effectiveTheme =
+    dataSaverSettings.enabled && dataSaverSettings.forceDarkTheme
+      ? 'dark'
+      : theme === 'system'
+        ? systemTheme
+        : theme;
 
   // Apply theme to <html> when effective theme changes
   useEffect(() => {
@@ -37,7 +52,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     // Only save to localStorage if not forced by data saver
     if (!(dataSaverSettings.enabled && dataSaverSettings.forceDarkTheme)) {
-      localStorage.setItem('theme', theme);
+      if (theme === 'system') {
+        localStorage.removeItem('theme'); // Clean storage for system
+      } else {
+        localStorage.setItem('theme', theme);
+      }
     }
   }, [effectiveTheme, theme, dataSaverSettings]);
 
@@ -46,8 +65,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (dataSaverSettings.enabled && dataSaverSettings.forceDarkTheme) {
       return;
     }
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    setTheme((prev) => {
+      if (prev === 'system') {
+        return systemTheme === 'light' ? 'dark' : 'light';
+      }
+      return prev === 'light' ? 'dark' : 'light';
+    });
   };
 
-  return <ThemeContext.Provider value={{ theme: effectiveTheme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  const isDark = effectiveTheme === 'dark';
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme,
+        resolvedTheme: effectiveTheme,
+        isDark,
+        toggleTheme,
+        setTheme
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
 }

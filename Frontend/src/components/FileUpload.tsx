@@ -50,8 +50,7 @@ export function FileUpload({
     allowedTypes = DEFAULT_ALLOWED_TYPES,
     className = '',
 }: FileUploadProps) {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const { isDark } = useTheme();
     const [isDragging, setIsDragging] = useState(false);
     const [uploadingFiles, setUploadingFiles] = useState<Map<string, UploadingFile>>(new Map());
     const fileInputRef = useRef<HTMLInputElement>(null);

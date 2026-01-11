@@ -8,6 +8,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum OnboardingStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
 model User {
   id                        String                  @id @default(cuid())
   userId                    String                  @unique
@@ -38,6 +44,9 @@ model User {
   notificationMfaEnabled    Boolean                 @default(false)
   disableOTPReverification  Boolean                 @default(false)
   superSecureAccountEnabled Boolean                 @default(false)
+  onboardingStatus          OnboardingStatus        @default(PENDING)
+  onboardingVersion         Int                     @default(1)
+  onboardingCompletedAt     DateTime?
   apiKeys                   ApiKey[]
   creditTransactions        CreditTransaction[]
   Logs                      Logs[]
@@ -74,6 +83,8 @@ model User {
   @@index([phoneNumber, isPhoneVerified])
   @@index([googleId])
   @@index([emailVerified])
+  @@index([onboardingStatus])
+  @@index([userId, onboardingStatus])
 }
 
 model ApiKey {

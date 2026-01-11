@@ -1,14 +1,8 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 
 function NotFound() {
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(theme === 'dark');
-  }, [theme]);
+  const { isDark } = useTheme();
 
   return (
     <div
