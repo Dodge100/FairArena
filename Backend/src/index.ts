@@ -14,6 +14,9 @@ import { initSocket } from './config/socket.js';
 import { swaggerSpec } from './config/swagger.js';
 import { inngest } from './inngest/v1/client.js';
 import {
+  archiveOldAuditLogs,
+  calculateApplicationStats,
+  cleanupExpiredTokens,
   createLog,
   createOrganizationAuditLog,
   createReport,
@@ -72,9 +75,6 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  archiveOldAuditLogs,
-  calculateApplicationStats,
-  cleanupExpiredTokens,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -102,7 +102,6 @@ import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
 import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
-import webhookRouter from './routes/v1/webhook.js';
 import logger from './utils/logger.js';
 
 const app = express();
@@ -121,6 +120,7 @@ app.use(
         fontSrc: ["'self'", 'data:'],
       },
     },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   }),
 );
 app.use(hpp());
@@ -132,32 +132,41 @@ const originRegex = new RegExp(
 );
 
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+  cors((req, callback) => {
+    // Allow strict CORS for most routes, but loose for public metadata
+    const isPublicMetadata = req.path.startsWith('/.well-known');
 
-      if (originRegex.test(origin) || ENV.NODE_ENV === 'development') {
-        return callback(null, true);
+    const corsOptions = {
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-API-Key',
+        'ip.src',
+        'X-Recaptcha-Token',
+        'X-Requested-With',
+      ],
+      credentials: true,
+      origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+        if (!origin) return cb(null, true);
+
+        // Allow .well-known endpoints from any origin (needed for OIDC discovery)
+        if (isPublicMetadata) {
+          return cb(null, true);
+        }
+
+        if (originRegex.test(origin) || ENV.NODE_ENV === 'development') {
+          return cb(null, true);
+        }
+
+        logger.warn('CORS blocked origin', { origin, path: req.path });
+        return cb(new Error('Not allowed by CORS'));
       }
+    };
 
-      logger.warn('CORS blocked origin', { origin });
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-API-Key',
-      'ip.src',
-      'X-Recaptcha-Token',
-      'X-Requested-With',
-    ],
-    credentials: true,
+    callback(null, corsOptions);
   }),
 );
-
-// Webhook routes (must be before JSON middleware for raw body parsing)
-app.use('/webhooks/v1', webhookRouter);
 
 // JSON middleware
 app.use(express.json());
