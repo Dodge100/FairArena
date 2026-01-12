@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { apiFetch, publicApiFetch } from '@/lib/apiClient';
 
 export interface PaymentPlan {
   id: string;
@@ -70,17 +70,23 @@ export class PaymentService {
 
   async createOrder(planId: string, token: string): Promise<CreateOrderResponse> {
     try {
-      const response = await axios.post(
+      const response = await apiFetch(
         `${this.baseURL}/api/v1/payments/create-order`,
-        { planId },
         {
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-        },
+          body: JSON.stringify({ planId }),
+        }
       );
 
-      return response.data;
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('Create order error:', error);
       throw error;
@@ -92,17 +98,23 @@ export class PaymentService {
     token: string,
   ): Promise<VerifyPaymentResponse> {
     try {
-      const response = await axios.post(
+      const response = await apiFetch(
         `${this.baseURL}/api/v1/payments/verify-payment`,
-        paymentData,
         {
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-        },
+          body: JSON.stringify(paymentData),
+        }
       );
 
-      return response.data;
+      if (!response.ok) {
+        throw new Error('Failed to verify payment');
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('Verify payment error:', error);
       throw error;
@@ -117,12 +129,18 @@ export class PaymentService {
       }
 
       // Fetch from API
-      const response = await axios.get<PlansResponse>(`${this.baseURL}/api/v1/plans`);
+      const response = await publicApiFetch(`${this.baseURL}/api/v1/plans`);
 
-      if (response.data.success && response.data.plans) {
-        this.plansCache = response.data.plans;
+      if (!response.ok) {
+        throw new Error('Failed to fetch plans from API');
+      }
+
+      const data = await response.json() as PlansResponse;
+
+      if (data.success && data.plans) {
+        this.plansCache = data.plans;
         this.plansCacheTimestamp = now;
-        return response.data.plans;
+        return data.plans;
       }
 
       throw new Error('Failed to fetch plans from API');

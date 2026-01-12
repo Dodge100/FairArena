@@ -19,18 +19,22 @@ export const getUploadSignature = async (req: Request, res: Response) => {
         const timestamp = Math.round(new Date().getTime() / 1000);
         const folder = `users/${userId}/profile`;
 
-        // Parameters to sign
-        const params = {
+        // Parameters to sign (only include params that Cloudinary accepts)
+        const paramsToSign: Record<string, any> = {
             timestamp,
             folder,
-            upload_preset: undefined,
             eager: 'w_400,h_400,c_fill,g_face,q_auto,f_auto',
-            // Security constraints
-            max_file_size: 5000000, // 5MB
             allowed_formats: 'jpg,jpeg,png,webp',
         };
 
-        const signature = cloudinary.utils.api_sign_request(params, cloudinary.config().api_secret!);
+        // Remove undefined values
+        Object.keys(paramsToSign).forEach(key => {
+            if (paramsToSign[key] === undefined) {
+                delete paramsToSign[key];
+            }
+        });
+
+        const signature = cloudinary.utils.api_sign_request(paramsToSign, cloudinary.config().api_secret!);
 
         return res.status(200).json({
             success: true,
@@ -40,10 +44,8 @@ export const getUploadSignature = async (req: Request, res: Response) => {
                 signature,
                 apiKey: cloudinary.config().api_key,
                 cloudName: cloudinary.config().cloud_name,
-                eager: params.eager,
-                // Pass constraints to frontend for FormData
-                max_file_size: params.max_file_size,
-                allowed_formats: params.allowed_formats,
+                eager: paramsToSign.eager,
+                allowed_formats: paramsToSign.allowed_formats,
             },
         });
     } catch (error) {

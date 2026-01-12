@@ -581,10 +581,9 @@ export default function Signin() {
       setIsLoading(true);
 
       // Step 1: Get authentication options
-      const optionsRes = await fetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/options`, {
+      const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
       });
       const optionsData = await optionsRes.json();
 
@@ -598,10 +597,9 @@ export default function Signin() {
       });
 
       // Step 3: Verify with server
-      const verifyRes = await fetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/verify`, {
+      const verifyRes = await publicApiFetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ response: credential }),
       });
       const verifyData = await verifyRes.json();

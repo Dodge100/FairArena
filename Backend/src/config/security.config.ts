@@ -229,6 +229,7 @@ export const INTRUSION_DETECTION_CONFIG = {
     // Paths excluded from intrusion detection (e.g. system endpoints, AI streams)
     excludedPaths: [
         '/api/inngest',
+        '/api/v1/ai/stream',
         '/api/v1/webhooks',
     ],
 };

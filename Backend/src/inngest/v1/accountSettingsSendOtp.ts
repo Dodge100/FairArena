@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { ENV } from '../../config/env.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendOtpEmail } from '../../email/v1/send-mail.js';
+import { getLocationFromIP } from '../../utils/location.utils.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
-import { ENV } from '../../config/env.js';
 
 const SALT_ROUNDS = ENV.BCRYPT_ROUNDS!;
 const OTP_EXPIRY_SECONDS = 600; // 10 minutes
@@ -74,22 +75,7 @@ export const sendOtpForAccountSettings = inngest.createFunction(
       }
 
       try {
-        const response = await fetch(`https://ipinfo.io/${ip}/json`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        const [latitude, longitude] = data.loc ? data.loc.split(',').map(Number) : [null, null];
-        return {
-          city: data.city,
-          region: data.region,
-          country: data.country,
-          latitude,
-          longitude,
-        };
+        return await getLocationFromIP(ip);
       } catch (error) {
         logger.error('Failed to fetch location', {
           userId,

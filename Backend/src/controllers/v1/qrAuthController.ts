@@ -13,6 +13,7 @@ import {
     storeSessionBinding,
 } from '../../services/auth.service.js';
 import { REFRESH_TOKEN_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../utils/cookie.utils.js';
+import { formatLocationString, getLocationFromIP } from '../../utils/location.utils.js';
 import logger from '../../utils/logger.js';
 
 // ============================================================================
@@ -104,12 +105,12 @@ async function checkRateLimit(
 /**
  * Parse device info for display in approval screen
  */
-function parseDeviceInfo(userAgent: string, ipAddress: string): {
+async function parseDeviceInfo(userAgent: string, ipAddress: string): Promise<{
     browser: string;
     os: string;
     device: string;
     location: string;
-} {
+}> {
     const ua = userAgent.toLowerCase();
 
     // Browser detection
@@ -136,8 +137,9 @@ function parseDeviceInfo(userAgent: string, ipAddress: string): {
         device = 'Tablet';
     }
 
-    // Location placeholder (would need GeoIP in production)
-    const location = 'Location unavailable';
+    // Get location from IP address
+    const locationData = await getLocationFromIP(ipAddress);
+    const location = formatLocationString(locationData, ipAddress);
 
     return { browser, os, device, location };
 }
@@ -452,7 +454,7 @@ export async function approveQRSession(req: Request, res: Response) {
         });
 
         // Parse device info for response
-        const deviceInfo = parseDeviceInfo(
+        const deviceInfo = await parseDeviceInfo(
             session.requestingDevice.userAgent,
             session.requestingDevice.ipAddress,
         );
@@ -585,6 +587,7 @@ export async function claimQRSession(req: Request, res: Response) {
                 profileImageUrl: true,
                 isBanned: true,
                 banReason: true,
+                superSecureAccountEnabled: true,
             },
         });
 
@@ -600,6 +603,19 @@ export async function claimQRSession(req: Request, res: Response) {
                 success: false,
                 message: 'Account is banned',
                 banReason: user.banReason,
+            });
+        }
+
+        // Block QR-based auth for Super Secure Accounts
+        if (user.superSecureAccountEnabled) {
+            logger.warn('QR auth blocked for super secure account', {
+                sessionId,
+                userId: user.userId,
+            });
+            return res.status(403).json({
+                success: false,
+                message: 'QR-based authentication is not available for Super Secure Accounts. Please use WebAuthn (security key) authentication.',
+                code: 'SUPER_SECURE_ACCOUNT_NO_QR',
             });
         }
 
@@ -701,7 +717,7 @@ export async function getQRDeviceInfo(req: Request, res: Response) {
 
         const session: QRAuthSession = typeof data === 'string' ? JSON.parse(data) : data;
 
-        const deviceInfo = parseDeviceInfo(
+        const deviceInfo = await parseDeviceInfo(
             session.requestingDevice.userAgent,
             session.requestingDevice.ipAddress,
         );

@@ -5,20 +5,7 @@ import { parseUserAgent } from '../../services/auth.service.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
-/**
- * Get location from IP address (simplified - can be enhanced with IP geolocation service)
- */
-function getLocationFromIP(ipAddress: string): string {
-  if (
-    ipAddress === 'unknown' ||
-    ipAddress === '::1' ||
-    ipAddress.startsWith('192.168') ||
-    ipAddress.startsWith('10.')
-  ) {
-    return 'Local Network';
-  }
-  return 'Unknown Location'; // Can integrate with IP geolocation API
-}
+import { formatLocationString, getLocationFromIP } from '../../utils/location.utils.js';
 
 /**
  * Send email when MFA is enabled
@@ -50,7 +37,8 @@ export const sendMFAEnabledEmail = inngest.createFunction(
         }
 
         const { deviceName } = parseUserAgent(userAgent);
-        const location = getLocationFromIP(ipAddress || 'unknown');
+        const locationData = await getLocationFromIP(ipAddress || 'unknown');
+        const location = formatLocationString(locationData, ipAddress || 'unknown');
 
         await sendEmail({
           to: user.email,
@@ -106,7 +94,8 @@ export const sendMFADisabledEmail = inngest.createFunction(
         }
 
         const { deviceName } = parseUserAgent(userAgent);
-        const location = getLocationFromIP(ipAddress || 'unknown');
+        const locationData = await getLocationFromIP(ipAddress || 'unknown');
+        const location = formatLocationString(locationData, ipAddress || 'unknown');
 
         await sendEmail({
           to: user.email,
@@ -162,7 +151,8 @@ export const sendBackupCodesRegeneratedEmail = inngest.createFunction(
         }
 
         const { deviceName } = parseUserAgent(userAgent);
-        const location = getLocationFromIP(ipAddress || 'unknown');
+        const locationData = await getLocationFromIP(ipAddress || 'unknown');
+        const location = formatLocationString(locationData, ipAddress || 'unknown');
 
         await sendEmail({
           to: user.email,
@@ -241,7 +231,7 @@ export const sendNewDeviceLoginEmail = inngest.createFunction(
             deviceName: deviceName || 'Unknown device',
             browser,
             ipAddress,
-            location: getLocationFromIP(ipAddress),
+            location: formatLocationString(await getLocationFromIP(ipAddress), ipAddress),
             securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
           },
         });
@@ -320,7 +310,8 @@ export const sendSecurityKeyAddedEmail = inngest.createFunction(
         }
 
         const { deviceName } = parseUserAgent(userAgent);
-        const location = getLocationFromIP(ipAddress || 'unknown');
+        const locationData = await getLocationFromIP(ipAddress || 'unknown');
+        const location = formatLocationString(locationData, ipAddress || 'unknown');
 
         await sendEmail({
           to: user.email,
@@ -373,7 +364,8 @@ export const sendSecurityKeyRemovedEmail = inngest.createFunction(
         }
 
         const { deviceName } = parseUserAgent(userAgent);
-        const location = getLocationFromIP(ipAddress || 'unknown');
+        const locationData = await getLocationFromIP(ipAddress || 'unknown');
+        const location = formatLocationString(locationData, ipAddress || 'unknown');
 
         await sendEmail({
           to: user.email,

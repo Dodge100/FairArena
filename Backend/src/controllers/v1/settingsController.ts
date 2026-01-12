@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
@@ -55,18 +56,41 @@ export const getSettings = async (req: Request, res: Response) => {
     });
 
     // Settings should exist for all users (created during registration)
+    // If not found, create them now
+    let settingsData;
     if (!settings) {
-      logger.error('Settings not found for user - this should not happen', { userId: auth.userId });
-      return res.status(500).json({
-        success: false,
-        message: 'User settings not found. Please contact support.',
-      });
+      logger.warn('Settings not found for user - creating default settings', { userId: auth.userId });
+
+      try {
+        const newSettings = await prisma.settings.create({
+          data: {
+            userId: auth.userId,
+            settings: DEFAULT_USER_SETTINGS,
+          },
+          select: {
+            id: true,
+            settings: true,
+          },
+        });
+        settingsData = newSettings.settings;
+      } catch (createError) {
+        logger.error('Failed to create default settings', {
+          userId: auth.userId,
+          error: createError instanceof Error ? createError.message : String(createError)
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to initialize user settings. Please try again.',
+        });
+      }
+    } else {
+      settingsData = settings.settings;
     }
 
     // Merge with defaults to ensure all fields are present
     const mergedSettings = {
       ...DEFAULT_USER_SETTINGS,
-      ...(typeof settings.settings === 'object' && settings.settings !== null ? settings.settings : {}),
+      ...(typeof settingsData === 'object' && settingsData !== null ? settingsData : {}),
     };
 
     // Cache the settings
