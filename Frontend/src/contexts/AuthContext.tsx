@@ -1,4 +1,4 @@
-import { registerAuth, registerBanHandler } from '@/lib/apiClient';
+import { publicApiFetch, registerAuth, registerBanHandler } from '@/lib/apiClient';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Types
@@ -126,9 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Create a new refresh promise
         refreshPromise = (async () => {
             try {
-                const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+                const response = await publicApiFetch(`${API_BASE}/api/v1/auth/refresh`, {
                     method: 'POST',
-                    credentials: 'include', // Include cookies
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -171,9 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch logged-in accounts (multi-account)
     const fetchAccounts = useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE}/api/v1/auth/accounts`, {
+            const response = await publicApiFetch(`${API_BASE}/api/v1/auth/accounts`, {
                 method: 'GET',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -197,9 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get current user from server
     const fetchCurrentUser = useCallback(async (token: string): Promise<User | null> => {
         try {
-            const response = await fetch(`${API_BASE}/api/v1/auth/me`, {
+            const response = await publicApiFetch(`${API_BASE}/api/v1/auth/me`, {
                 method: 'GET',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
@@ -275,9 +272,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Login with email/password
     const login = useCallback(async (email: string, password: string, recaptchaToken?: string): Promise<AuthResponse> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/login`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
                 ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
@@ -307,13 +303,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [updateToken, fetchAccounts]);
 
     const verifyLoginMFA = useCallback(async (code: string, isBackupCode?: boolean, recaptchaToken?: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/verify-mfa`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/verify-mfa`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
             },
-            credentials: 'include', // Include cookies
             body: JSON.stringify({ code, isBackupCode }),
         });
 
@@ -343,9 +338,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Register new user
     const register = useCallback(async (registerData: RegisterData, recaptchaToken?: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/register`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
                 ...(recaptchaToken ? { 'X-Recaptcha-Token': recaptchaToken } : {}),
@@ -365,9 +359,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Login with Google credential
     const loginWithGoogle = useCallback(async (credential: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/google/token`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/google/token`, {
             method: 'POST',
-            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -390,9 +383,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Logout
     const logout = useCallback(async (): Promise<void> => {
         try {
-            const response = await fetch(`${API_BASE}/api/v1/auth/logout`, {
+            const response = await publicApiFetch(`${API_BASE}/api/v1/auth/logout`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     ...(inMemoryToken ? { Authorization: `Bearer ${inMemoryToken}` } : {}),
@@ -442,9 +434,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Switch Account
     const switchAccount = useCallback(async (sessionId: string) => {
         try {
-            const response = await fetch(`${API_BASE}/api/v1/auth/accounts/switch`, {
+            const response = await publicApiFetch(`${API_BASE}/api/v1/auth/accounts/switch`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -479,9 +470,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Logout All Accounts
     const logoutAllAccounts = useCallback(async () => {
         try {
-            await fetch(`${API_BASE}/api/v1/auth/accounts/logout-all`, {
+            await publicApiFetch(`${API_BASE}/api/v1/auth/accounts/logout-all`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -502,7 +492,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Forgot password
     const forgotPassword = useCallback(async (email: string, recaptchaToken?: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/forgot-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -520,7 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Reset password
     const resetPassword = useCallback(async (token: string, password: string, recaptchaToken?: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/reset-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -538,7 +528,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Verify email
     const verifyEmail = useCallback(async (token: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/verify-email`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/verify-email`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -555,7 +545,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Resend verification email
     const resendVerificationEmail = useCallback(async (email: string, recaptchaToken?: string): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/v1/auth/resend-verification`, {
+        const response = await publicApiFetch(`${API_BASE}/api/v1/auth/resend-verification`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

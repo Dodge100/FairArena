@@ -78,7 +78,12 @@ import {
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
+import { setCsrfToken, validateCsrfToken } from './middleware/csrf.middleware.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware.js';
+import { intrusionDetection, trackAuthFailures } from './middleware/intrusionDetection.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
+import { requestValidation } from './middleware/requestValidation.middleware.js';
+import { securityHeaders } from './middleware/securityHeaders.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
 import apiKeysRouter from './routes/v1/apiKeys.routes.js';
@@ -109,23 +114,30 @@ const app = express();
 const PORT = ENV.PORT || 3000;
 Sentry.setupExpressErrorHandler(app);
 
-// Security middlewares - relaxed CSP for Swagger UI
+// Security middlewares
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        fontSrc: ["'self'", 'data:'],
-      },
-    },
+    contentSecurityPolicy: false, // Will be handled by securityHeaders middleware
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   }),
 );
 app.use(hpp());
 app.set('trust proxy', true);
+
+// Apply enhanced security headers
+app.use(securityHeaders);
+
+// Apply request validation (size limits, content-type, sanitization)
+app.use(requestValidation);
+
+// Apply CSRF token generation (sets token in cookie and header)
+app.use(setCsrfToken);
+
+// Apply intrusion detection
+app.use(intrusionDetection);
+
+// Track authentication failures for brute force protection
+app.use(trackAuthFailures);
 
 const originRegex = new RegExp(
   `^https://(${ENV.CORS_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.CORS_URL.replace('.', '\\.')})$`,
@@ -146,7 +158,9 @@ app.use(
         'ip.src',
         'X-Recaptcha-Token',
         'X-Requested-With',
+        'X-CSRF-Token',
       ],
+      exposedHeaders: ['X-CSRF-Token'],
       credentials: true,
       origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
         if (!origin) return cb(null, true);
@@ -224,6 +238,8 @@ if (ENV.NODE_ENV !== 'production') {
     }),
   );
 }
+
+app.use(validateCsrfToken);
 
 // OAuth 2.0 / OpenID Connect Provider routes
 // Well-known endpoints (for OIDC discovery)
@@ -439,31 +455,10 @@ if (ENV.NODE_ENV === 'development') {
 }
 
 // 404 handler for unmatched routes
-app.use((_, res) => {
-  logger.info('404 Not Found', { path: _.originalUrl });
-  res.status(404).json({ error: { message: 'Not found', status: 404 } });
-});
+app.use(notFoundHandler);
 
 // Global error handler for uncaught errors
-app.use((err: unknown, req: express.Request, res: express.Response) => {
-  let errorMessage = 'Unknown error';
-  let errorStack = undefined;
-
-  if (err instanceof Error) {
-    errorMessage = err.message;
-    errorStack = err.stack;
-  } else if (typeof err === 'string') {
-    errorMessage = err;
-  }
-
-  logger.error('Unhandled error', {
-    error: errorMessage,
-    stack: errorStack,
-    url: req.url,
-    method: req.method,
-  });
-  res.status(500).json({ error: { message: 'Internal Server Error', status: 500 } });
-});
+app.use(errorHandler);
 
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {

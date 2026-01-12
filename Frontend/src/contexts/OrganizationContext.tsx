@@ -1,6 +1,7 @@
-import { useAuthState } from '../lib/auth';
+import { apiFetch } from '@/lib/apiClient';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { useAuthState } from '../lib/auth';
 
 interface Organization {
   id: string;
@@ -52,12 +53,7 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
     if (!isSignedIn) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`, {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
-        credentials: 'include',
-      });
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`);
       if (response.ok) {
         const data = await response.json();
         setOrganizations(data.organizations);

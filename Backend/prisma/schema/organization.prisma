@@ -1,0 +1,419 @@
+
+
+model Organization {
+  id                    String                   @id @default(cuid())
+  name                  String                   @unique
+  slug                  String                   @unique
+  joinEnabled           Boolean                  @default(false)
+  isPublic              Boolean                  @default(true)
+  timezone              String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  deletedAt             DateTime?
+  isDeleted             Boolean                  @default(false)
+  organizationAuditLogs OrganizationAuditLog[]
+  organizationFollowers OrganizationFollowers[]
+  inviteCodes           OrganizationInviteCode[]
+  organizationProfile   OrganizationProfile?
+  organizationRoles     OrganizationRole[]
+  organizationStars     OrganizationStars[]
+  organizationUserRoles OrganizationUserRole[]
+  teams                 Team[]
+  userOrganizations     UserOrganization[]
+
+  @@index([name])
+  @@index([slug])
+  @@index([isPublic])
+  @@index([joinEnabled])
+  @@index([createdAt])
+}
+
+model OrganizationUserRole {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  roleId         String
+  assignedAt     DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, organizationId, roleId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([roleId])
+  @@index([organizationId, userId])
+}
+
+model UserOrganization {
+  userId         String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model OrganizationRole {
+  id                      String                   @id @default(cuid())
+  organizationId          String
+  roleName                String
+  permissions             Json
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  organizationInviteCodes OrganizationInviteCode[]
+  organization            Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationUserRoles   OrganizationUserRole[]
+
+  @@unique([organizationId, roleName])
+  @@index([organizationId])
+  @@index([roleName])
+}
+
+model OrganizationInviteCode {
+  id             String           @id @default(cuid())
+  organizationId String
+  code           String           @unique
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  createdBy      String
+  email          String
+  roleId         String
+  used           Boolean          @default(false)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([code])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+  @@index([roleId])
+  @@index([organizationId, used, expiresAt])
+}
+
+model OrganizationProfile {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  description    String?
+  website        String?
+  logoUrl        String?
+  bannerUrl      String?
+  location       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model OrganizationAuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  action         String
+  level          level
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([level])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, userId, createdAt])
+}
+
+model OrganizationFollowers {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model OrganizationStars {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Team {
+  id              String         @id @default(cuid())
+  name            String
+  slug            String
+  joinEnabled     Boolean        @default(false)
+  visibility      Visibility     @default(INTERNAL)
+  timezone        String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  organizationId  String
+  deletedAt       DateTime?
+  isDeleted       Boolean        @default(false)
+  inviteCodes     InviteCode[]
+  projects        Project[]
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamAuditLogs   TeamAuditLog[]
+  teamProfile     TeamProfile?
+  teamRoles       TeamRole[]
+  teamUserRoles   TeamUserRole[]
+  teamMemberships UserTeam[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([name])
+  @@index([slug])
+  @@index([visibility])
+  @@index([joinEnabled])
+  @@index([createdAt])
+  @@index([organizationId, visibility])
+}
+
+model TeamProfile {
+  id          String   @id @default(cuid())
+  teamId      String   @unique
+  description String?
+  website     String?
+  logoUrl     String?
+  bannerUrl   String?
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  teamId    String
+  code      String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  createdBy String
+  email     String
+  roleId    String
+  used      Boolean  @default(false)
+  role      TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([code])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+  @@index([roleId])
+  @@index([teamId, used, expiresAt])
+}
+
+model TeamRole {
+  id            String         @id @default(cuid())
+  teamId        String
+  roleName      String
+  permissions   Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  inviteCodes   InviteCode[]
+  team          Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamUserRoles TeamUserRole[]
+
+  @@unique([teamId, roleName])
+  @@index([teamId])
+  @@index([roleName])
+}
+
+model TeamUserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  teamId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+  role       TeamRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, teamId, roleId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([roleId])
+  @@index([teamId, userId])
+}
+
+model UserTeam {
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, teamId])
+  @@index([teamId])
+  @@index([createdAt])
+}
+
+model TeamAuditLog {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  action    String
+  level     level
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@index([userId])
+  @@index([action])
+  @@index([level])
+  @@index([createdAt])
+  @@index([teamId, createdAt])
+  @@index([teamId, userId, createdAt])
+}
+
+model Project {
+  id                 String              @id @default(cuid())
+  teamId             String
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  createdBy          String
+  updatedBy          String
+  visibility         Visibility          @default(INTERNAL)
+  joinEnabled        Boolean             @default(false)
+  slug               String?
+  deletedAt          DateTime?
+  isDeleted          Boolean             @default(false)
+  team               Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  projectAuditLogs   ProjectAuditLog[]
+  inviteCodes        ProjectInviteCode[]
+  projectRoles       ProjectRole[]
+  projectUserRoles   ProjectUserRole[]
+  projectMemberships UserProject[]
+  projectProfile     projectProfile?
+
+  @@unique([teamId, name])
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@index([name])
+  @@index([slug])
+  @@index([visibility])
+  @@index([joinEnabled])
+  @@index([createdAt])
+  @@index([teamId, visibility])
+}
+
+model projectProfile {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  description String?
+  website     String?
+  logoUrl     String?
+  bannerUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ProjectRole {
+  id                 String              @id @default(cuid())
+  projectId          String
+  roleName           String
+  permissions        Json
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  projectInviteCodes ProjectInviteCode[]
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectUserRoles   ProjectUserRole[]
+
+  @@unique([projectId, roleName])
+  @@index([projectId])
+  @@index([roleName])
+}
+
+model ProjectUserRole {
+  id         String      @id @default(cuid())
+  userId     String
+  projectId  String
+  roleId     String
+  assignedAt DateTime    @default(now())
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role       ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, projectId, roleId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([roleId])
+  @@index([projectId, userId])
+}
+
+model UserProject {
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, projectId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model ProjectInviteCode {
+  id        String      @id @default(cuid())
+  projectId String
+  email     String?
+  code      String      @unique
+  roleId    String
+  expiresAt DateTime
+  used      Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  createdBy String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role      ProjectRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([code])
+  @@index([expiresAt])
+  @@index([email])
+  @@index([used])
+  @@index([projectId, used, expiresAt])
+}
+
+model ProjectAuditLog {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  action    String
+  level     level
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([action])
+  @@index([level])
+  @@index([createdAt])
+  @@index([projectId, createdAt])
+  @@index([projectId, userId, createdAt])
+}

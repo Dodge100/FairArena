@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
+import { publicApiFetch } from '@/lib/apiClient';
 import { Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -56,13 +57,12 @@ function Newsletter() {
 
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
+      const response = await publicApiFetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Recaptcha-Token': captchaToken,
         },
-        credentials: 'include',
         body: JSON.stringify({ email }),
       });
 

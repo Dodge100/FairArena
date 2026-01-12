@@ -4,7 +4,7 @@
  * Frontend API client for OAuth application management and consent.
  */
 
-import { apiFetch } from '@/lib/apiClient';
+import { apiFetch, publicApiFetch } from '@/lib/apiClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -178,7 +178,7 @@ export async function revokeConsent(applicationId: string): Promise<void> {
 // ============================================
 
 export async function getAuthorizationRequest(requestId: string): Promise<AuthorizationRequest> {
-    const response = await fetch(`${API_BASE_URL}/oauth/authorize/request/${requestId}`);
+    const response = await publicApiFetch(`${API_BASE_URL}/oauth/authorize/request/${requestId}`);
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));

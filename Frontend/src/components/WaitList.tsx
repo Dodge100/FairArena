@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { publicApiFetch } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useNavigate } from 'react-router-dom';
@@ -55,7 +56,7 @@ function WaitList() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/v1/waitlist/stats`);
+        const response = await publicApiFetch(`${API_BASE}/api/v1/waitlist/stats`);
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -85,7 +86,7 @@ function WaitList() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/waitlist`, {
+      const response = await publicApiFetch(`${API_BASE}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

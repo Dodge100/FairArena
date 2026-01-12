@@ -1,0 +1,35 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../../src/generated"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model EnvironmentVariable {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Logs {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  level     level
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@index([action])
+  @@index([level])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+

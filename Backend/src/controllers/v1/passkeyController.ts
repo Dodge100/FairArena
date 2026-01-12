@@ -21,6 +21,10 @@ import {
     generateRefreshToken,
     parseUserAgent,
 } from '../../services/auth.service.js';
+import {
+    REFRESH_TOKEN_COOKIE_OPTIONS,
+    SESSION_COOKIE_OPTIONS,
+} from '../../utils/cookie.utils.js';
 import logger from '../../utils/logger.js';
 
 // --- Configuration ---
@@ -76,35 +80,7 @@ const renamePasskeySchema = z.object({
     name: z.string().min(1).max(100),
 });
 
-// Cookie configuration
-const REFRESH_TOKEN_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: ENV.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    path: '/',
-    ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-    }),
-};
 
-const SESSION_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: ENV.NODE_ENV === 'production',
-    sameSite: 'strict' as const,
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    path: '/',
-    ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-    }),
-};
-
-// --- Controller Functions ---
-
-/**
- * Generate registration options for a new passkey
- * POST /api/v1/passkeys/register/options
- */
 export async function getRegistrationOptions(req: Request, res: Response) {
     try {
         const userId = req.user?.userId;

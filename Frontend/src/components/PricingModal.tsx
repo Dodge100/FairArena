@@ -59,7 +59,7 @@ interface RazorpayOptions {
 }
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
-  const { getToken } = useAuthState();
+  const { isSignedIn, getToken } = useAuthState();
   const navigate = useNavigate();
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -131,7 +131,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
     try {
       const token = await getToken();
-      if (!token) {
+      if (!isSignedIn || !token) {
         navigate('/signin');
         onClose();
         return;

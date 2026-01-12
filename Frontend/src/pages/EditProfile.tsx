@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { apiFetch } from '@/lib/apiClient';
 import { ArrowLeft, Plus, Save, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -141,14 +142,8 @@ export default function EditProfile() {
 
       try {
         setLoading(true);
-        const token = await getToken();
         const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(`${apiUrl}/api/v1/profile/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        });
+        const response = await apiFetch(`${apiUrl}/api/v1/profile/me`);
 
         if (response.ok) {
           const data = await response.json();
@@ -218,7 +213,6 @@ export default function EditProfile() {
 
     try {
       setSaving(true);
-      const token = await getToken();
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
       const payload = {
@@ -228,13 +222,11 @@ export default function EditProfile() {
         dateOfBirth: profile.dateOfBirth || null,
       };
 
-      const response = await fetch(`${apiUrl}/api/v1/profile/me`, {
+      const response = await apiFetch(`${apiUrl}/api/v1/profile/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

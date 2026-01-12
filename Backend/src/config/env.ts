@@ -22,6 +22,7 @@ const requiredEnvVars = [
   'SESSION_PREFIX',
   'USER_SESSIONS_PREFIX',
   'BCRYPT_ROUNDS',
+  'CSRF_SECRET',
 ];
 
 const productionRequiredEnvVars = [...requiredEnvVars];
@@ -268,4 +269,10 @@ export const ENV = {
   OAUTH_ID_TOKEN_EXPIRY: parseInt(getEnv('OAUTH_ID_TOKEN_EXPIRY', '3600')), // 1 hour in seconds
   OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY', ''),
   OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY', ''),
+  // Security Configuration
+  CSRF_SECRET: getEnv('CSRF_SECRET'),
+  SESSION_FINGERPRINT_SECRET: getEnv('SESSION_FINGERPRINT_SECRET', ''),
+  MAX_REQUEST_SIZE: getEnv('MAX_REQUEST_SIZE', '100kb'),
+  SESSION_ABSOLUTE_TIMEOUT: parseInt(getEnv('SESSION_ABSOLUTE_TIMEOUT', '86400000')), // 24 hours
+  SESSION_IDLE_TIMEOUT: parseInt(getEnv('SESSION_IDLE_TIMEOUT', '1800000')), // 30 minutes
 };

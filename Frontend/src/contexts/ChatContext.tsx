@@ -1,4 +1,4 @@
-import { useAuthState } from '../lib/auth';
+import { apiFetch } from '@/lib/apiClient';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -93,7 +93,6 @@ const saveCurrentSessionId = (sessionId: string) => {
 };
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const { getToken } = useAuthState();
   const [sessions, setSessions] = useState<ChatSession[]>(loadSessions);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(loadCurrentSessionId);
   const [isLoading, setIsLoading] = useState(false);
@@ -319,13 +318,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const pageTitle = document.title;
       const pageContent = document.body.innerText.substring(0, 1000); // First 1000 chars for context
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/ai/stream`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/ai/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getToken()}`,
         },
-        credentials: 'include',
         signal: controller.signal,
         body: JSON.stringify({
           message,

@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { publicApiFetch } from '@/lib/apiClient';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -53,10 +54,9 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
         setSession(null);
 
         try {
-            const res = await fetch(`${apiUrl}/api/v1/auth/qr/generate`, {
+            const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             const data = await res.json();
@@ -122,10 +122,9 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
     // Claim the approved session
     const claimSession = async (sessionId: string, nonce: string) => {
         try {
-            const res = await fetch(`${apiUrl}/api/v1/auth/qr/claim`, {
+            const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/claim`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
                 body: JSON.stringify({ sessionId, nonce }),
             });
 

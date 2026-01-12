@@ -20,6 +20,7 @@ import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { useTheme } from '@/hooks/useTheme';
+import { apiFetch } from '@/lib/apiClient';
 import { useAuthState } from '@/lib/auth';
 import {
   BarChart3,
@@ -90,16 +91,7 @@ export function AppSidebar() {
 
     const fetchUnreadCount = async () => {
       try {
-        const token = await getToken();
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
-          },
-        );
+        const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`);
 
         if (response.ok) {
           const data = await response.json();

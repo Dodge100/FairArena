@@ -12,6 +12,7 @@ import {
     parseUserAgent,
     storeSessionBinding,
 } from '../../services/auth.service.js';
+import { REFRESH_TOKEN_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../../utils/cookie.utils.js';
 import logger from '../../utils/logger.js';
 
 // ============================================================================
@@ -641,28 +642,11 @@ export async function claimQRSession(req: Request, res: Response) {
         });
 
         // Set cookies
-        const isProduction = process.env.NODE_ENV === 'production';
-        const cookieOptions = {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'strict' as const : 'lax' as const,
-            path: '/',
-            ...(isProduction && process.env.COOKIE_DOMAIN && {
-                domain: process.env.COOKIE_DOMAIN,
-            }),
-        };
-
         // Set session cookie
-        res.cookie(`session_${authSessionId}`, bindingToken, {
-            ...cookieOptions,
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        });
+        res.cookie(`session_${authSessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
 
         // Set active session cookie
-        res.cookie('active_session', authSessionId, {
-            ...cookieOptions,
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-        });
+        res.cookie('active_session', authSessionId, SESSION_COOKIE_OPTIONS);
 
         return res.status(200).json({
             success: true,

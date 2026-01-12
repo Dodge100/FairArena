@@ -1,0 +1,137 @@
+
+
+
+
+
+
+
+
+
+
+
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  read        Boolean          @default(false)
+  actionUrl   String?
+  actionLabel String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  description String
+  user        User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+model Report {
+  id               String      @id @default(cuid())
+  reporterId       String?
+  reportedEntityId String
+  entityType       String
+  reason           String
+  details          String?
+  createdAt        DateTime    @default(now())
+  state            ReportState @default(QUEUED)
+  reporter         User?       @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([reporterId])
+  @@index([reportedEntityId, entityType])
+  @@index([state])
+  @@index([createdAt])
+  @@index([entityType, state])
+}
+
+model Support {
+  id               String              @id @default(cuid())
+  userId           String?
+  emailId          String
+  subject          String
+  message          String
+  status           ReportState         @default(QUEUED)
+  severity         ReportSeverity      @default(LOW)
+  type             ReportType          @default(BUG)
+  shortDescription String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  user             User?               @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  attachments      SupportAttachment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([severity])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, status])
+  @@index([status, severity])
+  @@index([type, severity])
+}
+
+model SupportAttachment {
+  id               String           @id @default(cuid())
+  userId           String
+  supportRequestId String
+  fileName         String
+  originalFileName String
+  fileSize         Int
+  mimeType         String
+  fileHash         String
+  status           AttachmentStatus @default(PENDING)
+  azureBlobName    String?
+  azureUrl         String?
+  uploadedAt       DateTime?
+  deletedAt        DateTime?
+  errorMessage     String?
+  referenceCount   Int              @default(1)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  fileData         Bytes?
+  supportRequest   Support          @relation(fields: [supportRequestId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([supportRequestId])
+  @@index([status])
+  @@index([fileHash])
+  @@index([fileHash, status])
+  @@index([createdAt])
+}
+
+model Waitlist {
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String?
+  source           String?
+  status           WaitlistStatus @default(PENDING)
+  notifiedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  city             String?
+  country          String?
+  ipAddress        String?
+  marketingConsent Boolean        @default(false)
+  userAgent        String?
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  feedbackCode String   @unique
+  message      String?
+  rating       Int?
+  isUsed       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([isUsed])
+  @@index([feedbackCode, isUsed])
+}

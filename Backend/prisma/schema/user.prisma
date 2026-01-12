@@ -1,0 +1,158 @@
+
+
+
+
+model User {
+  id                        String                  @id @default(cuid())
+  userId                    String                  @unique
+  email                     String                  @unique
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  deletedAt                 DateTime?
+  isDeleted                 Boolean                 @default(false)
+  firstName                 String?
+  lastName                  String?
+  profileImageUrl           String?
+  username                  String?
+  phoneNumber               String?                 @unique
+  isPhoneVerified           Boolean                 @default(false)
+  hasClaimedFreeCredits     Boolean                 @default(false)
+  emailVerified             Boolean                 @default(false)
+  googleId                  String?                 @unique
+  lastLoginAt               DateTime?
+  lastLoginIp               String?
+  passwordHash              String?
+  mfaBackupCodes            String[]
+  mfaEnabled                Boolean                 @default(false)
+  mfaEnabledAt              DateTime?
+  mfaSecret                 String?
+  banReason                 String?
+  isBanned                  Boolean                 @default(false)
+  emailMfaEnabled           Boolean                 @default(false)
+  notificationMfaEnabled    Boolean                 @default(false)
+  disableOTPReverification  Boolean                 @default(false)
+  superSecureAccountEnabled Boolean                 @default(false)
+  onboardingStatus          OnboardingStatus        @default(PENDING)
+  onboardingVersion         Int                     @default(1)
+  onboardingCompletedAt     DateTime?
+  apiKeys                   ApiKey[]
+  creditTransactions        CreditTransaction[]
+  Logs                      Logs[]
+  notifications             Notification[]
+  oauthApplications         OAuthApplication[]
+  oauthConsents             OAuthConsent[]
+  organizationFollowers     OrganizationFollowers[]
+  organizationStars         OrganizationStars[]
+  OrganizationUserRole      OrganizationUserRole[]
+  passkeys                  Passkey[]
+  payments                  Payment[]
+  profile                   Profile?
+  profileStars              ProfileStars[]
+  projectUserRoles          ProjectUserRole[]
+  reports                   Report[]
+  securityKeys              SecurityKey[]
+  settings                  Settings?
+  supportRequests           Support[]
+  teamUserRoles             TeamUserRole[]
+  userOrganizations         UserOrganization[]
+  projectMemberships        UserProject[]
+  teamMemberships           UserTeam[]
+
+  @@index([userId])
+  @@index([isBanned])
+  @@index([userId, isBanned])
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([isPhoneVerified])
+  @@index([hasClaimedFreeCredits])
+  @@index([isDeleted])
+  @@index([userId, isPhoneVerified])
+  @@index([userId, hasClaimedFreeCredits])
+  @@index([phoneNumber, isPhoneVerified])
+  @@index([googleId])
+  @@index([emailVerified])
+  @@index([onboardingStatus])
+  @@index([userId, onboardingStatus])
+}
+
+model Profile {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  bio               String         @db.VarChar(500)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  company           String?
+  dateOfBirth       DateTime?
+  education         String[]
+  gender            gender?
+  githubUsername    String?
+  interests         String[]
+  isPublic          Boolean        @default(false)
+  jobTitle          String?
+  languages         String[]
+  linkedInProfile   String?
+  location          String?
+  phoneNumber       String?
+  portfolioUrl      String?
+  requireAuth       Boolean        @default(false)
+  resumeUrl         String?
+  skills            String[]
+  trackViews        Boolean        @default(false)
+  twitterHandle     String?
+  yearsOfExperience Int?
+  awards            String[]
+  certifications    String[]
+  experiences       String[]
+  firstName         String?
+  lastName          String?
+  user              User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  profileStars      ProfileStars[]
+  profileViews      ProfileView[]
+
+  @@index([userId])
+  @@index([isPublic])
+  @@index([requireAuth])
+  @@index([trackViews])
+}
+
+model ProfileView {
+  id           String   @id @default(cuid())
+  profileId    String
+  viewerUserId String
+  viewerEmail  String
+  viewerName   String?
+  createdAt    DateTime @default(now())
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, viewerUserId])
+  @@index([profileId])
+  @@index([viewerUserId])
+  @@index([viewerEmail])
+  @@index([createdAt])
+  @@index([profileId, createdAt])
+}
+
+model ProfileStars {
+  id        String   @id @default(cuid())
+  profileId String
+  userId    String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([profileId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  settings  Json
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+}

@@ -1,12 +1,12 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is the Backend of FairArena",
   "main": "src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "dev:inngest": "npx inngest-cli dev",
     "build": "tsc --noEmitOnError false",
     "typecheck": "tsc --noEmit",

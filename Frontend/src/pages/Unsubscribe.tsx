@@ -1,5 +1,6 @@
 import { DataSaverImage } from '@/components/ui/DataSaverImage';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
+import { publicApiFetch } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -20,7 +21,7 @@ function Unsubscribe() {
     const unsubscribe = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(`${apiUrl}/api/v1/newsletter/unsubscribe`, {
+        const response = await publicApiFetch(`${apiUrl}/api/v1/newsletter/unsubscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),

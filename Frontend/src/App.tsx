@@ -48,6 +48,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Unsubscribe from './pages/Unsubscribe';
 import VerifyEmail from './pages/VerifyEmail';
 import HowItWorks from './pages/WhyChooseUsPage';
+import { initializeCsrfToken } from './utils/csrfToken';
 
 function App() {
   const location = useLocation();
@@ -62,6 +63,8 @@ function App() {
 
   useEffect(() => {
     registerAuth(token);
+    // Initialize CSRF token from sessionStorage on app load
+    initializeCsrfToken();
   }, [token]);
 
   // Handle hash routing for pricing modal

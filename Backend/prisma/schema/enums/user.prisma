@@ -1,0 +1,12 @@
+enum OnboardingStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}

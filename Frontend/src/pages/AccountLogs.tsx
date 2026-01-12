@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuthState } from '../lib/auth';
+import { apiFetch } from '@/lib/apiClient';
 import { AlertCircle, AlertTriangle, Clock, Filter, Info, Loader2, Shield } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -27,17 +27,11 @@ export default function AccountLogs() {
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const { getToken } = useAuthState();
 
   const fetchLogs = useCallback(async () => {
     setIsLoadingLogs(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`, {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
-        credentials: 'include',
-      });
+      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`);
       const data = await res.json();
       if (data.success) {
         setLogs(data.logs);
@@ -47,7 +41,7 @@ export default function AccountLogs() {
     } finally {
       setIsLoadingLogs(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     if (isVerified) {

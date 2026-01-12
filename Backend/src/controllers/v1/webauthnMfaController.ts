@@ -21,6 +21,10 @@ import {
     generateRefreshToken,
     parseUserAgent,
 } from '../../services/auth.service.js';
+import {
+    REFRESH_TOKEN_COOKIE_OPTIONS,
+    SESSION_COOKIE_OPTIONS,
+} from '../../utils/cookie.utils.js';
 import logger from '../../utils/logger.js';
 
 // --- Configuration ---
@@ -442,27 +446,6 @@ export async function verifyAuthentication(req: Request, res: Response) {
         // Set cookies
         // Re-import cookie options from authController or define locally (best to import to stay synced)
         // For now defining same as authController
-        const REFRESH_TOKEN_COOKIE_OPTIONS = {
-            httpOnly: true,
-            secure: ENV.NODE_ENV === 'production',
-            sameSite: 'strict' as const,
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            ...(ENV.NODE_ENV === 'production' && {
-                domain: ENV.COOKIE_DOMAIN,
-            }),
-        };
-        const SESSION_COOKIE_OPTIONS = {
-            httpOnly: true,
-            secure: ENV.NODE_ENV === 'production',
-            sameSite: 'strict' as const,
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-            path: '/',
-            ...(ENV.NODE_ENV === 'production' && {
-                domain: ENV.COOKIE_DOMAIN,
-            }),
-        };
-
         res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
         res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
         res.clearCookie('mfa_session', { path: '/' });

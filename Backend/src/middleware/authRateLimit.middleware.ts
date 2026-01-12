@@ -18,10 +18,6 @@ const defaultKeyGenerator = (req: Request): string => {
     return `${ip}:${route}`;
 };
 
-/**
- * Create an auth-specific rate limiter using Redis
- * More granular than the global Arcjet rate limiter
- */
 export function createAuthRateLimiter(options: RateLimitOptions) {
     const {
         windowMs,
@@ -35,18 +31,44 @@ export function createAuthRateLimiter(options: RateLimitOptions) {
         try {
             const key = `${keyPrefix}${keyGenerator(req)}`;
             const windowSeconds = Math.ceil(windowMs / 1000);
+            const now = Date.now();
+            const windowStart = now - windowMs;
 
-            // Get current count
-            const currentStr = await redis.get<string>(key);
-            const current = currentStr ? parseInt(currentStr, 10) : 0;
+            // Use sliding window algorithm for more accurate rate limiting
+            const multi = redis.multi();
 
-            if (current >= max) {
+            // Remove old entries outside the window
+            multi.zremrangebyscore(key, 0, windowStart);
+
+            // Count requests in current window
+            multi.zcard(key);
+
+            // Add current request
+            multi.zadd(key, { score: now, member: `${now}-${Math.random()}` });
+
+            // Set expiry
+            multi.expire(key, windowSeconds);
+
+            const results = await multi.exec();
+
+            if (!results) {
+                // If Redis fails, allow the request (fail open)
+                logger.warn('Rate limit check failed - Redis multi exec returned null', {
+                    path: req.path,
+                });
+                return next();
+            }
+
+            // Get count from results (index 1 is the zcard result)
+            const count = (results[1] as number) || 0;
+
+            if (count >= max) {
                 // Get TTL for retry-after header
                 const ttl = await redis.ttl(key);
 
                 logger.warn('Rate limit exceeded', {
                     key,
-                    current,
+                    current: count,
                     max,
                     path: req.path,
                     ip: req.ip,
@@ -59,20 +81,11 @@ export function createAuthRateLimiter(options: RateLimitOptions) {
                 });
             }
 
-            // Increment counter
-            if (current === 0) {
-                // First request in window, set with expiry
-                await redis.setex(key, windowSeconds, '1');
-            } else {
-                // Increment existing counter
-                await redis.incr(key);
-            }
-
             // Add rate limit headers
-            const remaining = Math.max(0, max - current - 1);
+            const remaining = Math.max(0, max - count - 1);
             res.setHeader('X-RateLimit-Limit', max.toString());
             res.setHeader('X-RateLimit-Remaining', remaining.toString());
-            res.setHeader('X-RateLimit-Reset', Math.ceil(Date.now() / 1000 + windowSeconds).toString());
+            res.setHeader('X-RateLimit-Reset', Math.ceil((now + windowMs) / 1000).toString());
 
             next();
         } catch (error) {

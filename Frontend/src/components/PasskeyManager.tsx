@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetch } from '@/lib/apiClient';
+import { apiFetch, publicApiFetch } from '@/lib/apiClient';
 import {
     browserSupportsWebAuthn,
     startAuthentication,
@@ -416,10 +416,9 @@ export async function initiatePasskeyLogin(apiUrl: string, email?: string): Prom
 }> {
     try {
         // Step 1: Get authentication options
-        const optionsRes = await fetch(`${apiUrl}/api/v1/passkeys/login/options`, {
+        const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/options`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify({ email }),
         });
         const optionsData = await optionsRes.json();
@@ -434,10 +433,9 @@ export async function initiatePasskeyLogin(apiUrl: string, email?: string): Prom
         });
 
         // Step 3: Verify with server
-        const verifyRes = await fetch(`${apiUrl}/api/v1/passkeys/login/verify`, {
+        const verifyRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify({ response: credential }),
         });
         const verifyData = await verifyRes.json();

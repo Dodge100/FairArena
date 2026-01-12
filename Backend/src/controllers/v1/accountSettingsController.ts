@@ -6,6 +6,7 @@ import { ENV } from '../../config/env.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { getAccountSettingsCookieOptions } from '../../utils/cookie.utils.js';
 import logger from '../../utils/logger.js';
 import { Verifier } from '../../utils/settings-token-verfier.js';
 
@@ -369,15 +370,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     );
 
     // Set secure cookie
-    res.cookie('account-settings-token', token, {
-      httpOnly: true,
-      secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
-      maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000, // 10 minutes
-      ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-      }),
-    });
+    res.cookie('account-settings-token', token, getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES));
 
     inngest.send({
       name: 'log.create',
@@ -762,15 +755,7 @@ export const verifyWebAuthn = async (req: Request, res: Response) => {
     );
 
     // Set secure cookie
-    res.cookie('account-settings-token', token, {
-      httpOnly: true,
-      secure: ENV.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
-      maxAge: TOKEN_EXPIRY_MINUTES * 60 * 1000,
-      ...(ENV.NODE_ENV === 'production' && {
-        domain: ENV.COOKIE_DOMAIN,
-      }),
-    });
+    res.cookie('account-settings-token', token, getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES));
 
     // Log the verification
     inngest.send({

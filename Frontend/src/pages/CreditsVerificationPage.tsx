@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { apiFetch } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
@@ -66,7 +67,7 @@ type PendingAction = {
 } | null;
 
 const CreditsVerificationPage = () => {
-  const { isSignedIn, getToken } = useAuthState();
+  const { isSignedIn } = useAuthState();
   const navigate = useNavigate();
   const [step, setStep] = useState<'phone' | 'otp' | 'claim'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -113,16 +114,10 @@ const CreditsVerificationPage = () => {
 
     const checkEligibility = async () => {
       try {
-        const token = await getToken();
-        if (!token) return;
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
           }
         );
 
@@ -149,7 +144,7 @@ const CreditsVerificationPage = () => {
     };
 
     checkEligibility();
-  }, [isSignedIn, navigate, getToken]);
+  }, [isSignedIn, navigate]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -233,17 +228,14 @@ const CreditsVerificationPage = () => {
     setIsSendingOtp(true);
     try {
       const cleanPhone = phoneNumber.trim().replace(/\D/g, '');
-      const token = await getToken();
       const endpoint = method === 'voice' ? '/api/v1/credits/send-voice-otp' : '/api/v1/credits/send-sms-otp';
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
           'X-Recaptcha-Token': captcha,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           phoneNumber: cleanPhone,
           countryCode: countryCode,
@@ -282,17 +274,14 @@ const CreditsVerificationPage = () => {
   const performVerifyOtp = async (method: 'sms' | 'voice', captcha: string) => {
     setIsVerifyingOtp(true);
     try {
-      const token = await getToken();
       const endpoint = method === 'voice' ? '/api/v1/credits/verify-voice-otp' : '/api/v1/credits/verify-sms-otp';
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
           'X-Recaptcha-Token': captcha,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ otp }),
-        credentials: 'include',
       });
 
       const data = await response.json();
@@ -321,15 +310,12 @@ const CreditsVerificationPage = () => {
   const performClaimCredits = async (captcha: string) => {
     setIsClaiming(true);
     try {
-      const token = await getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
           'X-Recaptcha-Token': captcha,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
       });
 
       const data = await response.json();

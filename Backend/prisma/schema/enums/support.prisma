@@ -1,0 +1,51 @@
+enum NotificationType {
+  SYSTEM
+  MENTION
+  INVITATION
+  ACHIEVEMENT
+  UPDATE
+  REMINDER
+  ALERT
+  MESSAGE
+  FOLLOW
+  STAR
+  COMMENT
+  ANNOUNCEMENT
+}
+
+enum ReportState {
+  QUEUED
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+  ESCALATED
+}
+
+enum ReportSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportType {
+  BUG
+  FEATURE_REQUEST
+  QUERY
+  SUGGESTION
+  OTHER
+}
+
+enum AttachmentStatus {
+  PENDING
+  UPLOADING
+  UPLOADED
+  FAILED
+  DELETED
+}
+
+enum WaitlistStatus {
+  PENDING
+  INVITED
+  REGISTERED
+}

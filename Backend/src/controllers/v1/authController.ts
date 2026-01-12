@@ -34,6 +34,12 @@ import {
   verifyPassword,
   verifyPasswordResetToken
 } from '../../services/auth.service.js';
+import {
+  getCookieClearOptions,
+  MFA_SESSION_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+  SESSION_COOKIE_OPTIONS,
+} from '../../utils/cookie.utils.js';
 import logger from '../../utils/logger.js';
 
 // Types
@@ -122,49 +128,7 @@ const verifyOTPHash = (otp: string, hash: string): boolean => {
   }
 };
 
-const REFRESH_TOKEN_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: ENV.NODE_ENV === 'production',
-  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  path: '/',
-  ...(ENV.NODE_ENV === 'production' && {
-    domain: ENV.COOKIE_DOMAIN,
-  }),
-};
-
-const SESSION_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: ENV.NODE_ENV === 'production',
-  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
-  maxAge: 15 * 60 * 1000, // 15 minutes
-  path: '/',
-  ...(ENV.NODE_ENV === 'production' && {
-    domain: ENV.COOKIE_DOMAIN,
-  }),
-};
-
-const MFA_SESSION_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: ENV.NODE_ENV === 'production',
-  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
-  maxAge: 5 * 60 * 1000, // 5 minutes
-  path: '/',
-  ...(ENV.NODE_ENV === 'production' && {
-    domain: ENV.COOKIE_DOMAIN,
-  }),
-};
-
-// Helper function to clear cookies with proper security attributes
-const getCookieClearOptions = () => ({
-  path: '/',
-  httpOnly: true,
-  secure: ENV.NODE_ENV === 'production',
-  sameSite: (ENV.NODE_ENV === 'production' ? 'strict' : 'lax') as 'strict' | 'lax',
-  ...(ENV.NODE_ENV === 'production' && {
-    domain: ENV.COOKIE_DOMAIN,
-  }),
-});
+// Cookie options now imported from cookie.utils.ts
 
 /**
  * Register a new user

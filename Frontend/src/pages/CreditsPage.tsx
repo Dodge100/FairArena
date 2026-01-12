@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiFetch } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
 import {
   ArrowRight,
@@ -65,7 +66,7 @@ interface PaymentDetails {
 }
 
 const CreditsPage = () => {
-  const { isSignedIn, getToken } = useAuthState();
+  const { isSignedIn } = useAuthState();
   const navigate = useNavigate();
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [history, setHistory] = useState<CreditHistory | null>(null);
@@ -98,17 +99,11 @@ const CreditsPage = () => {
 
       try {
         const offset = loadMore && historyRef.current ? historyRef.current.offset + historyRef.current.limit : 0;
-        const token = await getToken();
-        if (!token) return;
 
         const cacheBuster = Date.now();
-        const response = await fetch(
+        const response = await apiFetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${offset}&_=${cacheBuster}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
             cache: 'no-store',
           },
         );
@@ -145,20 +140,14 @@ const CreditsPage = () => {
         setLoading(false);
       }
     },
-    [getToken], // Removed history from dependencies
+    [], // Removed history from dependencies
   );
 
   const fetchCreditBalance = useCallback(async () => {
     try {
-      const token = await getToken();
-      if (!token) return;
 
       const cacheBuster = Date.now();
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance?_=${cacheBuster}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance?_=${cacheBuster}`, {
         cache: 'no-store',
       });
 
@@ -179,19 +168,12 @@ const CreditsPage = () => {
       console.error('Error fetching credit balance:', error);
       toast.error('Failed to load credit balance');
     }
-  }, [getToken]);
+  }, []);
 
   const checkUserEligibility = useCallback(async () => {
     try {
-      const token = await getToken();
-      if (!token) return;
-
       const cacheBuster = Date.now();
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility?_=${cacheBuster}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility?_=${cacheBuster}`, {
         cache: 'no-store',
       });
 
@@ -204,7 +186,7 @@ const CreditsPage = () => {
     } catch (error) {
       console.error('Error checking user eligibility:', error);
     }
-  }, [getToken]);
+  }, []);
 
   const fetchPaymentDetails = useCallback(async (transaction: CreditTransaction) => {
     if (!transaction.payment) return;

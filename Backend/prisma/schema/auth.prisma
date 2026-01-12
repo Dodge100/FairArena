@@ -1,0 +1,250 @@
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  keyPrefix  String
+  keyHash    String    @unique
+  lastUsedAt DateTime?
+  lastUsedIp String?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([keyPrefix])
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique
+  publicKey    String
+  counter      BigInt    @default(0)
+  deviceType   String?
+  name         String?
+  transports   String[]
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+model SecurityKey {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique
+  publicKey    String
+  counter      BigInt    @default(0)
+  deviceType   String?
+  name         String?
+  transports   String[]
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+model OAuthScope {
+  id                   String   @id @default(cuid())
+  name                 String   @unique
+  displayName          String
+  description          String
+  isOidc               Boolean  @default(false)
+  isDefault            Boolean  @default(false)
+  isDangerous          Boolean  @default(false)
+  requiresVerification Boolean  @default(false)
+  isPublic             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  @@index([name])
+  @@index([isOidc])
+  @@index([isPublic])
+}
+
+model OAuthSigningKey {
+  id            String    @id @default(cuid())
+  kid           String    @unique
+  algorithm     String    @default("RS256")
+  publicKeyPem  String
+  privateKeyPem String
+  isActive      Boolean   @default(true)
+  isPrimary     Boolean   @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  rotatedAt     DateTime?
+
+  @@index([kid])
+  @@index([isActive])
+  @@index([isPrimary])
+}
+
+model OAuthApplication {
+  id                      String                      @id @default(cuid())
+  clientId                String                      @unique
+  clientSecretHash        String?
+  name                    String
+  description             String?
+  logoUrl                 String?
+  websiteUrl              String?
+  privacyPolicyUrl        String?
+  termsOfServiceUrl       String?
+  redirectUris            String[]
+  allowedScopes           String[]
+  allowedAudiences        String[]
+  grantTypes              String[]                    @default(["authorization_code", "refresh_token"])
+  responseTypes           String[]                    @default(["code"])
+  tokenEndpointAuthMethod String                      @default("client_secret_basic")
+  isPublic                Boolean                     @default(false)
+  isConfidential          Boolean                     @default(true)
+  requirePkce             Boolean                     @default(true)
+  isActive                Boolean                     @default(true)
+  isVerified              Boolean                     @default(false)
+  isTrusted               Boolean                     @default(false)
+  ownerId                 String
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  accessTokens            OAuthAccessToken[]
+  owner                   User                        @relation(fields: [ownerId], references: [userId], onDelete: Cascade)
+  authorizationCodes      OAuthAuthorizationCode[]
+  authorizationRequests   OAuthAuthorizationRequest[]
+  consents                OAuthConsent[]
+  refreshTokens           OAuthRefreshToken[]
+
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([isActive])
+  @@index([isVerified])
+}
+
+model OAuthAuthorizationRequest {
+  id                  String                  @id @default(cuid())
+  requestId           String                  @unique
+  applicationId       String
+  userId              String?
+  responseType        String
+  redirectUri         String
+  scope               String
+  state               String?
+  nonce               String?
+  codeChallenge       String?
+  codeChallengeMethod String?
+  status              String                  @default("pending")
+  consentedScopes     String[]                @default([])
+  expiresAt           DateTime
+  createdAt           DateTime                @default(now())
+  completedAt         DateTime?
+  authorizationCode   OAuthAuthorizationCode?
+  application         OAuthApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model OAuthAuthorizationCode {
+  id                     String                    @id @default(cuid())
+  code                   String                    @unique
+  authorizationRequestId String                    @unique
+  applicationId          String
+  userId                 String
+  redirectUri            String
+  scope                  String
+  codeChallenge          String?
+  codeChallengeMethod    String?
+  nonce                  String?
+  expiresAt              DateTime
+  usedAt                 DateTime?
+  createdAt              DateTime                  @default(now())
+  application            OAuthApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorizationRequest   OAuthAuthorizationRequest @relation(fields: [authorizationRequestId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OAuthAccessToken {
+  id            String           @id @default(cuid())
+  jti           String           @unique
+  applicationId String
+  userId        String?
+  audience      String?
+  scope         String
+  grantType     String
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  createdAt     DateTime         @default(now())
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([jti])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model OAuthRefreshToken {
+  id            String           @id @default(cuid())
+  tokenHash     String           @unique
+  applicationId String
+  userId        String
+  scope         String
+  familyId      String
+  generation    Int              @default(0)
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  rotatedAt     DateTime?
+  createdAt     DateTime         @default(now())
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+model OAuthConsent {
+  id            String           @id @default(cuid())
+  userId        String
+  applicationId String
+  grantedScopes String[]
+  scopeHistory  Json             @default("[]")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  revokedAt     DateTime?
+  application   OAuthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, applicationId])
+  @@index([userId])
+  @@index([applicationId])
+  @@index([revokedAt])
+}
+
+model OAuthAuditLog {
+  id            String   @id @default(cuid())
+  eventType     String
+  applicationId String?
+  userId        String?
+  ipAddress     String?
+  userAgent     String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([eventType])
+  @@index([applicationId])
+  @@index([userId])
+  @@index([createdAt])
+}
