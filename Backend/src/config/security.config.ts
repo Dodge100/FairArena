@@ -24,7 +24,7 @@ export const CSRF_CONFIG = {
         '/api/v1/payments/webhook',
         '/api/inngest',
         '/healthz',
-        '/api/v1/auth/refresh',
+        '/api/v1/auth/stream', // Unified SSE stream (read-only)
         '/metrics',
         '/.well-known',
     ],
@@ -230,6 +230,7 @@ export const INTRUSION_DETECTION_CONFIG = {
     excludedPaths: [
         '/api/inngest',
         '/api/v1/ai/stream',
+        '/api/v1/auth/stream', // Unified SSE stream
         '/api/v1/webhooks',
     ],
 };

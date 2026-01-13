@@ -75,6 +75,9 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
+  emitSessionRevoked,
+  scheduleTokenRefresh,
+
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -386,6 +389,8 @@ app.use(
       archiveOldAuditLogs,
       calculateApplicationStats,
       cleanupExpiredTokens,
+      emitSessionRevoked,
+      scheduleTokenRefresh,
     ],
   }),
 );

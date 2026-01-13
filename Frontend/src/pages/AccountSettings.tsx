@@ -5,7 +5,8 @@ import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import { apiFetch } from '@/lib/apiClient';
+import { apiFetch, apiRequest } from '@/lib/apiClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   Check,
@@ -89,12 +90,8 @@ function AccountSettings() {
   const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'security' | 'settings'>('overview');
 
-  // Data State
+  // UI State
   const [isLoading, setIsLoading] = useState(false);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(true);
-  const [loadingLogs, setLoadingLogs] = useState(true);
   const [revokingSession, setRevokingSession] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
 
@@ -127,38 +124,28 @@ function AccountSettings() {
   const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<'disableOtp' | 'superSecure' | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  const queryClient = useQueryClient();
 
-  // Fetch sessions
-  const fetchSessions = async () => {
-    try {
-      const response = await apiFetch(`${API_BASE}/api/v1/auth/sessions`);
+  // Queries
+  const {
+    data: sessions = [],
+    isLoading: loadingSessions,
+    refetch: fetchSessions
+  } = useQuery({
+    queryKey: ['sessions', user?.userId],
+    queryFn: () => apiRequest<{ data: Session[] }>(`${API_BASE}/api/v1/auth/sessions`).then(res => res.data),
+    enabled: !!user && isVerified && activeTab === 'overview',
+  });
 
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch sessions:', error);
-    } finally {
-      setLoadingSessions(false);
-    }
-  };
-
-  // Fetch activity logs
-  const fetchActivityLogs = async () => {
-    try {
-      const response = await apiFetch(`${API_BASE}/api/v1/auth/recent-activity`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setActivityLogs(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch activity logs:', error);
-    } finally {
-      setLoadingLogs(false);
-    }
-  };
+  const {
+    data: activityLogs = [],
+    isLoading: loadingLogs,
+    refetch: fetchActivityLogs
+  } = useQuery({
+    queryKey: ['activityLogs', user?.userId],
+    queryFn: () => apiRequest<{ data: ActivityLog[] }>(`${API_BASE}/api/v1/auth/recent-activity`).then(res => res.data),
+    enabled: !!user && isVerified && activeTab === 'overview',
+  });
 
   // Fetch MFA Status
   const fetchMfaStatus = async () => {
@@ -249,12 +236,7 @@ function AccountSettings() {
     }
   };
 
-  useEffect(() => {
-    if (user && isVerified) {
-      fetchSessions();
-      fetchActivityLogs();
-    }
-  }, [user, isVerified]);
+  // Removed manual useEffect for sessions/logs as it is handled by useQuery enabled flag
 
   useEffect(() => {
     if (activeTab === 'security' && isVerified) {
@@ -275,24 +257,24 @@ function AccountSettings() {
     }
   };
 
-  const handleRevokeSession = async (sessionId: string) => {
-    setRevokingSession(sessionId);
-    try {
-      const response = await apiFetch(`${API_BASE}/api/v1/auth/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Session revoked successfully');
-        setSessions(sessions.filter(s => s.id !== sessionId));
-      } else {
-        throw new Error('Failed to revoke session');
-      }
-    } catch (error) {
+  const revokeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await apiRequest(`${API_BASE}/api/v1/auth/sessions/${sessionId}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      toast.success('Session revoked successfully');
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+    onError: () => {
       toast.error('Failed to revoke session');
-    } finally {
-      setRevokingSession(null);
     }
+  });
+
+  const handleRevokeSession = (sessionId: string) => {
+    setRevokingSession(sessionId);
+    revokeSessionMutation.mutate(sessionId, {
+      onSettled: () => setRevokingSession(null)
+    });
   };
 
   const handleRevokeAllOtherSessions = async () => {
@@ -304,16 +286,14 @@ function AccountSettings() {
 
     setIsLoading(true);
     try {
-      for (const session of otherSessions) {
-        await apiFetch(`${API_BASE}/api/v1/auth/sessions/${session.id}`, {
-          method: 'DELETE',
-        });
-      }
+      await Promise.all(otherSessions.map(session =>
+        apiRequest(`${API_BASE}/api/v1/auth/sessions/${session.id}`, { method: 'DELETE' })
+      ));
       toast.success(`Revoked ${otherSessions.length} session(s)`);
-      setSessions(sessions.filter(s => s.isCurrent));
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
     } catch (error) {
       toast.error('Failed to revoke some sessions');
-      fetchSessions();
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
     } finally {
       setIsLoading(false);
     }
@@ -611,7 +591,7 @@ function AccountSettings() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={fetchSessions}
+                  onClick={() => fetchSessions()}
                   disabled={loadingSessions}
                   className="p-2 rounded-lg hover:bg-muted transition-colors"
                   title="Refresh sessions"
@@ -707,7 +687,7 @@ function AccountSettings() {
                 <h2 className="text-lg font-semibold text-foreground">Recent Security Activity</h2>
               </div>
               <button
-                onClick={fetchActivityLogs}
+                onClick={() => fetchActivityLogs()}
                 disabled={loadingLogs}
                 className="p-2 rounded-lg hover:bg-muted transition-colors"
                 title="Refresh activity"

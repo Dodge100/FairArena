@@ -49,6 +49,9 @@ export interface AuthContextType {
     switchAccount: (sessionId: string) => Promise<void>;
     logoutAllAccounts: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    // SSE handlers for unified stream
+    handleTokenRefreshFromStream: (newToken: string) => void;
+    handleSessionRevokedFromStream: () => void;
 }
 
 export interface RegisterData {
@@ -117,17 +120,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Refresh the access token (with deduplication to prevent race conditions)
+    // NOTE: Token refresh is now primarily handled via SSE stream (handleTokenRefreshFromStream)
+    // This method is kept for initial hydration on page load only
     const refreshToken = useCallback(async (): Promise<string | null> => {
+        // If we already have a token, prefer that (SSE will refresh it)
+        if (inMemoryToken) {
+            return inMemoryToken;
+        }
+
         // If a refresh is already in progress, return the existing promise
         if (refreshPromise) {
             return refreshPromise;
         }
 
-        // Create a new refresh promise
+        // Create a new refresh promise for initial hydration
         refreshPromise = (async () => {
             try {
-                const response = await publicApiFetch(`${API_BASE}/api/v1/auth/refresh`, {
-                    method: 'POST',
+                // This endpoint is deprecated - will return 410
+                // We try to get initial token from accounts endpoint instead
+                const response = await publicApiFetch(`${API_BASE}/api/v1/auth/accounts`, {
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -139,16 +151,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return null;
                 }
 
-                const data: AuthResponse = await response.json();
+                const data = await response.json();
 
                 if (data.success && data.data?.accessToken) {
                     updateToken(data.data.accessToken);
                     return data.data.accessToken;
                 }
 
+                // No token available, user needs to sign in
                 return null;
             } catch (error) {
-                console.error('Token refresh failed:', error);
+                console.error('Initial token hydration failed:', error);
                 return null;
             } finally {
                 // Clear the promise so future calls can start a new refresh
@@ -561,6 +574,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    // SSE Handlers for unified stream
+    const handleTokenRefreshFromStream = useCallback((newToken: string) => {
+        updateToken(newToken);
+        console.log('[SSE] Token refreshed automatically');
+    }, [updateToken]);
+
+    const handleSessionRevokedFromStream = useCallback(() => {
+        updateToken(null);
+        setUser(null);
+        setIsBanned(false);
+        setBanReason(null);
+        console.log('[SSE] Session revoked, redirecting to signin');
+        window.location.href = '/signin';
+    }, [updateToken]);
+
     const value: AuthContextType = {
         user,
         accessToken,
@@ -594,6 +622,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
             }
         },
+        handleTokenRefreshFromStream,
+        handleSessionRevokedFromStream,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

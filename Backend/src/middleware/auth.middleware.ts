@@ -9,6 +9,7 @@ import {
   getSession,
   updateSessionActivity,
   verifyAccessToken,
+  verifySessionBinding,
 } from '../services/auth.service.js';
 import logger from '../utils/logger.js';
 
@@ -188,5 +189,60 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   } catch (error) {
     // Don't fail on optional auth errors
     next();
+  }
+};
+
+export const protectStreamRoute = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1. Try standard auth first (Authorization header)
+    const token = extractBearerToken(req.headers.authorization);
+    if (token) {
+      return protectRoute(req, res, next);
+    }
+
+    // 2. Fallback to Cookie-based Auth
+    const sessionId = req.cookies?.active_session;
+    if (!sessionId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized - No session cookie' });
+    }
+
+    // Check strict binding token
+    const bindingToken = req.cookies?.[`session_${sessionId}`];
+    if (!bindingToken) {
+      return res.status(401).json({ success: false, message: 'Invalid session binding' });
+    }
+
+    // Verify session binding
+    const isBindingValid = await verifySessionBinding(sessionId, bindingToken);
+    if (!isBindingValid) {
+      logger.warn('Invalid session binding attempt', { sessionId });
+      return res.status(401).json({ success: false, message: 'Invalid session binding' });
+    }
+
+    // Get session
+    const session = await getSession(sessionId);
+    if (!session) {
+      return res.status(401).json({ success: false, message: 'Session invalid' });
+    }
+
+    // Check ban
+    if (session.isBanned) {
+      return res.status(403).json({ success: false, message: 'User banned' });
+    }
+
+    // Update activity
+    updateSessionActivity(sessionId).catch(() => { });
+
+    // Attach user info
+    req.user = {
+      userId: session.userId,
+      sessionId,
+    };
+    req.userId = session.userId;
+
+    next();
+  } catch (error) {
+    logger.error('Stream auth error:', { error });
+    return res.status(401).json({ success: false, message: 'Stream authentication failed' });
   }
 };

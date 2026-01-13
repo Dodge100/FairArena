@@ -13,7 +13,6 @@ import {
     logout,
     logoutAll,
     logoutAllAccounts,
-    refreshAccessToken,
     register,
     resendVerificationEmail,
     resetPassword,
@@ -26,7 +25,7 @@ import {
     verifyLoginMFA,
     verifyMfaOtp
 } from '../../controllers/v1/authController.js';
-import { protectRoute } from '../../middleware/auth.middleware.js';
+import { protectRoute, protectStreamRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
@@ -229,20 +228,6 @@ router.post('/verify-mfa', loginLimiter, verifyRecaptcha, verifyLoginMFA);
  */
 router.get('/check-mfa-session', checkMfaSession);
 
-/**
- * @swagger
- * /api/v1/auth/refresh:
- *   post:
- *     summary: Refresh access token
- *     tags: [Authentication]
- *     security: []
- *     responses:
- *       200:
- *         description: Token refreshed
- *       401:
- *         description: Invalid refresh token
- */
-router.post('/refresh', refreshLimiter, refreshAccessToken);
 
 /**
  * @swagger
@@ -750,8 +735,8 @@ import {
     handleXCallback,
     handleZohoCallback
 } from '../../controllers/v1/oauthController.js';
-import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 import { approveQRSession, claimQRSession, generateQRSession, getQRDeviceInfo, streamQRStatus } from '../../controllers/v1/qrAuthController.js';
+import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 /**
  * @swagger
@@ -1232,5 +1217,29 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
  *         description: No MFA session
  */
 router.post('/mfa/verify-otp', loginLimiter, verifyMfaOtp);
+
+import { streamController } from '../../controllers/v1/streamController.js';
+
+/**
+ * @swagger
+ * /api/v1/auth/stream:
+ *   get:
+ *     summary: Unified SSE stream for realtime events
+ *     tags: [Authentication, Realtime]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Server-sent events stream
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *       401:
+ *         description: Not authenticated
+ *       429:
+ *         description: Connection already exists
+ */
+router.get('/stream', protectStreamRoute, streamController.stream);
 
 export default router;

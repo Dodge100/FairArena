@@ -69,3 +69,8 @@ export {
   archiveOldAuditLogs, calculateApplicationStats, cleanupExpiredTokens
 } from './oauthJobs.js';
 
+// Auth stream functions
+export {
+  emitSessionRevoked, scheduleTokenRefresh
+} from './authStream.js';
+

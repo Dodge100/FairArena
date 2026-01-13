@@ -235,6 +235,19 @@ export async function storeSessionBinding(sessionId: string, bindingHash: string
 }
 
 /**
+ * Verify session binding token
+ */
+export async function verifySessionBinding(sessionId: string, token: string): Promise<boolean> {
+    const bindingKey = `binding:${sessionId}`;
+    const storedHash = await redis.get<string>(bindingKey);
+
+    if (!storedHash) return false;
+
+    const tokenHash = hashToken(token);
+    return tokenHash === storedHash;
+}
+
+/**
  * Update ban status for all user sessions
  * Used to immediately enforce a ban without waiting for session expiry
  */

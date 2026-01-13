@@ -1,9 +1,10 @@
 import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis } from '../../config/redis.js';
-import { getIo } from '../../config/socket.js';
 import { NotificationType } from '../../generated/enums.js';
 import * as Prisma from '../../generated/internal/prismaNamespace.js';
+import { getUserSessions } from '../../services/auth.service.js';
+import { publishToStream } from '../../services/stream.service.js';
 import logger from '../../utils/logger.js';
 
 // Cache configuration
@@ -140,15 +141,18 @@ class NotificationService {
     // Invalidate cache
     await this.invalidateUserCache(userId);
 
-    // Emit socket event if notification was marked as read
+    // Emit SSE event for real-time update
     if (result.count > 0) {
       try {
-        const io = getIo();
-        if (io) {
-          io.to(userId).emit('notification:read', { count: -1 });
+        const sessions = await getUserSessions(userId);
+        for (const { sessionId } of sessions) {
+          await publishToStream(sessionId, {
+            type: 'inbox.notification.read',
+            data: { notificationId, count: -1 },
+          });
         }
       } catch (error) {
-        logger.warn('Failed to emit notification read socket event', { error, userId });
+        logger.warn('Failed to emit notification read event', { error, userId });
       }
     }
 
@@ -175,15 +179,18 @@ class NotificationService {
     // Invalidate cache
     await this.invalidateUserCache(userId);
 
-    // Emit socket event if notifications were marked as read
+    // Emit SSE event for real-time update
     if (result.count > 0) {
       try {
-        const io = getIo();
-        if (io) {
-          io.to(userId).emit('notification:read', { count: -result.count });
+        const sessions = await getUserSessions(userId);
+        for (const { sessionId } of sessions) {
+          await publishToStream(sessionId, {
+            type: 'inbox.notification.read',
+            data: { count: -result.count },
+          });
         }
       } catch (error) {
-        logger.warn('Failed to emit notification read socket event', { error, userId });
+        logger.warn('Failed to emit notification read event', { error, userId });
       }
     }
 
@@ -352,14 +359,17 @@ class NotificationService {
     // Invalidate cache
     await this.invalidateUserCache(data.userId);
 
-    // Emit socket event to notify frontend
+    // Emit SSE event for real-time notification
     try {
-      const io = getIo();
-      if (io) {
-        io.to(data.userId).emit('notification:new', { count: 1 });
+      const sessions = await getUserSessions(data.userId);
+      for (const { sessionId } of sessions) {
+        await publishToStream(sessionId, {
+          type: 'inbox.notification.new',
+          data: { notification, count: 1 },
+        });
       }
     } catch (error) {
-      logger.warn('Failed to emit notification socket event', { error, userId: data.userId });
+      logger.warn('Failed to emit notification event', { error, userId: data.userId });
     }
 
     return notification;

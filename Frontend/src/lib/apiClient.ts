@@ -107,3 +107,35 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
 
   return response;
 }
+
+export class ApiError extends Error {
+  status: number;
+  data: any;
+
+  constructor(status: number, data: any) {
+    super(`API Error: ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+export async function apiRequest<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const response = await apiFetch(input, init);
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: response.statusText };
+    }
+    throw new ApiError(response.status, errorData);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
+}

@@ -26,8 +26,10 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { apiFetch } from '@/lib/apiClient';
+import { useStream } from '@/contexts/StreamContext';
+import { apiRequest } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import DOMPurify from 'dompurify';
 import {
   AlertCircle,
@@ -49,7 +51,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 // Custom time formatting to avoid date-fns bundle size
@@ -148,251 +150,192 @@ const getNotificationColor = (type: string) => {
 };
 
 export default function InboxPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [unreadCount, setUnreadCount] = useState(0);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationSoundEnabled');
     return saved ? JSON.parse(saved) : false;
   });
 
-  const fetchNotifications = useCallback(
-    async (filter?: 'read' | 'unread') => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
+  const queryClient = useQueryClient();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-        if (filter === 'unread') {
-          params.append('read', 'false');
-        } else if (filter === 'read') {
-          params.append('read', 'true');
-        }
+  // SSE for real-time updates
+  const { addEventListener, removeEventListener } = useStream();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-        const response = await apiFetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications?${params}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data.data.notifications);
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        toast.error('Failed to fetch notifications');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.data.count);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
+  // Notification sound
+  useEffect(() => {
+    audioRef.current = new Audio('/sounds/notification.mp3');
+    audioRef.current.volume = 0.5;
   }, []);
 
+  // Queries
+  const getNotificationsFilter = () => {
+    if (activeTab === 'unread') return 'unread';
+    if (activeTab === 'read') return 'read';
+    return undefined;
+  };
+
+  const { data: notificationsData, isLoading: loading } = useQuery({
+    queryKey: ['notifications', activeTab],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      const filter = getNotificationsFilter();
+
+      if (filter === 'unread') {
+        params.append('read', 'false');
+      } else if (filter === 'read') {
+        params.append('read', 'true');
+      }
+
+      return apiRequest<{ data: { notifications: Notification[] } }>(
+        `${API_BASE}/api/v1/notifications?${params}`
+      );
+    },
+    staleTime: 30000, // 30 seconds
+  });
+
+  const notifications = notificationsData?.data?.notifications || [];
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['notifications', 'unreadCount'],
+    queryFn: () => apiRequest<{ data: { count: number } }>(`${API_BASE}/api/v1/notifications/unread/count`),
+    staleTime: 10000, // 10 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const unreadCount = unreadCountData?.data?.count || 0;
+
+  // Removed manual fetch - handled by useQuery
+
+  // SSE: Real-time new notification listener
   useEffect(() => {
-    fetchNotifications();
-    fetchUnreadCount();
-  }, [fetchNotifications, fetchUnreadCount]);
+    const handleNewNotification = (e: MessageEvent) => {
+      try {
+        const { notification } = JSON.parse(e.data);
+
+        // Invalidate queries to refetch
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+
+        // Play sound if enabled
+        if (soundEnabled && audioRef.current) {
+          audioRef.current.play().catch(() => { });
+        }
+
+        // Show toast
+        toast.success(notification.title, {
+          description: notification.description,
+          duration: 5000,
+        });
+      } catch (error) {
+        console.error('Failed to parse new notification event', error);
+      }
+    };
+
+    addEventListener('inbox.notification.new', handleNewNotification);
+    return () => removeEventListener('inbox.notification.new', handleNewNotification);
+  }, [addEventListener, removeEventListener, soundEnabled, queryClient]);
+
+  // SSE: Real-time read status listener
+  useEffect(() => {
+    const handleReadUpdate = (e: MessageEvent) => {
+      try {
+        // Invalidate queries to refetch
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } catch (error) {
+        console.error('Failed to parse read update event', error);
+      }
+    };
+
+    addEventListener('inbox.notification.read', handleReadUpdate);
+    return () => removeEventListener('inbox.notification.read', handleReadUpdate);
+  }, [addEventListener, removeEventListener, queryClient]);
 
   useEffect(() => {
     localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));
   }, [soundEnabled]);
 
-  useEffect(() => {
-    if (activeTab === 'all') {
-      fetchNotifications();
-    } else if (activeTab === 'unread') {
-      fetchNotifications('unread');
-    } else if (activeTab === 'read') {
-      fetchNotifications('read');
-    }
-  }, [activeTab, fetchNotifications]);
+  // Removed - activeTab changes trigger useQuery refetch via queryKey
 
-  const markAsRead = async (notificationId: string) => {
-    // Optimistic update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}/read`,
-        {
-          method: 'PATCH'
-        },
-      );
-
-      if (response.ok) {
-        toast.success('Marked as read');
-      } else {
-        // Revert on error
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n)),
-        );
-        setUnreadCount((prev) => prev + 1);
-        toast.error('Failed to mark as read');
-      }
-    } catch (error) {
-      console.error('Error marking as read:', error);
-      // Revert on error
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n)),
-      );
-      setUnreadCount((prev) => prev + 1);
+  const markAsReadMutation = useMutation({
+    mutationFn: (notificationId: string) =>
+      apiRequest(`${API_BASE}/api/v1/notifications/${notificationId}/read`, { method: 'PATCH' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Marked as read');
+    },
+    onError: () => {
       toast.error('Failed to mark as read');
-    }
+    },
+  });
+
+  const markAsRead = (notificationId: string) => {
+    markAsReadMutation.mutate(notificationId);
   };
 
-  const markAsUnread = async (notificationId: string) => {
-    // Optimistic update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n)),
-    );
-    setUnreadCount((prev) => prev + 1);
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}/unread`,
-        {
-          method: 'PATCH'
-        },
-      );
-
-      if (response.ok) {
-        toast.success('Marked as unread');
-      } else {
-        // Revert on error
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-        toast.error('Failed to mark as unread');
-      }
-    } catch (error) {
-      console.error('Error marking as unread:', error);
-      // Revert on error
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+  const markAsUnreadMutation = useMutation({
+    mutationFn: (notificationId: string) =>
+      apiRequest(`${API_BASE}/api/v1/notifications/${notificationId}/unread`, { method: 'PATCH' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Marked as unread');
+    },
+    onError: () => {
       toast.error('Failed to mark as unread');
-    }
+    },
+  });
+
+  const markAsUnread = (notificationId: string) => {
+    markAsUnreadMutation.mutate(notificationId);
   };
 
-  const markAllAsRead = async () => {
-    const previousNotifications = notifications;
-    const previousCount = unreadCount;
-
-    // Optimistic update
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/read/all`,
-        {
-          method: 'PATCH',
-        },
-      );
-
-      if (response.ok) {
-        toast.success('All notifications marked as read');
-      } else {
-        // Revert on error
-        setNotifications(previousNotifications);
-        setUnreadCount(previousCount);
-        toast.error('Failed to mark all as read');
-      }
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-      // Revert on error
-      setNotifications(previousNotifications);
-      setUnreadCount(previousCount);
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => apiRequest(`${API_BASE}/api/v1/notifications/read/all`, { method: 'PATCH' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('All notifications marked as read');
+    },
+    onError: () => {
       toast.error('Failed to mark all as read');
-    }
+    },
+  });
+
+  const markAllAsRead = () => {
+    markAllAsReadMutation.mutate();
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    const previousNotifications = notifications;
-    const wasUnread = notifications.find((n) => n.id === notificationId)?.read === false;
-
-    // Optimistic update
-    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-    if (wasUnread) {
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    }
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/${notificationId}`,
-        {
-          method: 'DELETE',
-        },
-      );
-
-      if (response.ok) {
-        toast.success('Notification deleted');
-      } else {
-        // Revert on error
-        setNotifications(previousNotifications);
-        if (wasUnread) {
-          setUnreadCount((prev) => prev + 1);
-        }
-        toast.error('Failed to delete notification');
-      }
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      // Revert on error
-      setNotifications(previousNotifications);
-      if (wasUnread) {
-        setUnreadCount((prev) => prev + 1);
-      }
+  const deleteNotificationMutation = useMutation({
+    mutationFn: (notificationId: string) =>
+      apiRequest(`${API_BASE}/api/v1/notifications/${notificationId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Notification deleted');
+    },
+    onError: () => {
       toast.error('Failed to delete notification');
-    }
+    },
+  });
+
+  const deleteNotification = (notificationId: string) => {
+    deleteNotificationMutation.mutate(notificationId);
   };
 
-  const deleteAllRead = async () => {
-    const previousNotifications = notifications;
-
-    // Optimistic update
-    setNotifications((prev) => prev.filter((n) => !n.read));
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/read/all`,
-        {
-          method: 'DELETE',
-        },
-      );
-
-      if (response.ok) {
-        toast.success('Read notifications deleted');
-      } else {
-        // Revert on error
-        setNotifications(previousNotifications);
-        toast.error('Failed to delete read notifications');
-      }
-    } catch (error) {
-      console.error('Error deleting read notifications:', error);
-      // Revert on error
-      setNotifications(previousNotifications);
+  const deleteAllReadMutation = useMutation({
+    mutationFn: () => apiRequest(`${API_BASE}/api/v1/notifications/read/all`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Read notifications deleted');
+    },
+    onError: () => {
       toast.error('Failed to delete read notifications');
-    }
+    },
+  });
+
+  const deleteAllRead = () => {
+    deleteAllReadMutation.mutate();
   };
 
   const filteredNotifications = notifications.filter((notification) => {

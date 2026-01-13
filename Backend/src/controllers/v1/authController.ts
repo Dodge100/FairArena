@@ -32,7 +32,8 @@ import {
   validatePasswordStrength,
   verifyEmailVerificationToken,
   verifyPassword,
-  verifyPasswordResetToken
+  verifyPasswordResetToken,
+  verifySessionBinding,
 } from '../../services/auth.service.js';
 import {
   getCookieClearOptions,
@@ -656,6 +657,16 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+    // Schedule token refresh using Inngest (durable, survives restarts)
+    await inngest.send({
+      name: 'auth/session.created',
+      data: {
+        sessionId,
+        userId: user.userId,
+        accessToken,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -1061,6 +1072,15 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
       sessionId,
     });
 
+    // Schedule token refresh using Inngest (durable, survives restarts)
+    await inngest.send({
+      name: 'auth/session.created',
+      data: {
+        sessionId,
+        userId: user.userId,
+        accessToken,
+      },
+    });
 
     // Clear MFA session cookie on successful login
     res.clearCookie('mfa_session', getCookieClearOptions());
@@ -1201,6 +1221,15 @@ export const logout = async (req: Request, res: Response) => {
     }
 
     if (sessionId) {
+      // Emit session revocation event before destroying
+      await inngest.send({
+        name: 'auth/session.revoked',
+        data: {
+          sessionId,
+          reason: 'logout',
+        },
+      });
+
       await destroySession(sessionId);
 
       if (isMultiSession) {
@@ -1278,6 +1307,20 @@ export const logoutAll = async (req: Request, res: Response) => {
       return res.status(401).json({
         success: false,
         message: 'Not authenticated',
+      });
+    }
+
+    // Get all sessions before destroying to emit revocation events
+    const sessions = await getUserSessions(userId);
+
+    // Emit revocation events for all sessions
+    for (const { sessionId } of sessions) {
+      await inngest.send({
+        name: 'auth/session.revoked',
+        data: {
+          sessionId,
+          reason: 'logout_all',
+        },
       });
     }
 
@@ -1772,6 +1815,15 @@ export const revokeSession = async (req: Request, res: Response) => {
         message: 'Session not found',
       });
     }
+
+    // Emit session revocation event before destroying
+    await inngest.send({
+      name: 'auth/session.revoked',
+      data: {
+        sessionId,
+        reason: 'manual_revocation',
+      },
+    });
 
     await destroySession(sessionId);
 
@@ -2857,6 +2909,9 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
 /**
  * Get all logged-in accounts
  * GET /api/v1/auth/accounts
+ *
+ * Also returns an access token for the active session if one exists.
+ * This enables initial hydration on page load (replaces deprecated /refresh endpoint).
  */
 export const getLoggedInAccounts = async (req: Request, res: Response) => {
   try {
@@ -2870,12 +2925,29 @@ export const getLoggedInAccounts = async (req: Request, res: Response) => {
     const accounts = await getLoggedInAccountsInfo(req.cookies || {}, prisma);
     const activeSessionId = req.cookies?.active_session;
 
+    // Generate access token for active session (for initial hydration)
+    let accessToken: string | null = null;
+    if (activeSessionId) {
+      // Verify the session cookie binding
+      const bindingToken = req.cookies?.[`session_${activeSessionId}`];
+      if (bindingToken) {
+        const isValid = await verifySessionBinding(activeSessionId, bindingToken);
+        if (isValid) {
+          const session = await getSession(activeSessionId);
+          if (session && !session.isBanned) {
+            accessToken = generateAccessToken(session.userId, activeSessionId);
+          }
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: {
         accounts,
         activeSessionId,
         maxAccounts: ENV.MAX_CONCURRENT_ACCOUNTS,
+        accessToken, // For initial hydration on page load
       },
     });
   } catch (error) {
