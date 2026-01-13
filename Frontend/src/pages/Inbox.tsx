@@ -217,19 +217,34 @@ export default function InboxPage() {
       try {
         const { notification } = JSON.parse(e.data);
 
-        // Invalidate queries to refetch
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        // Optimistically add to cache without refetching
+        queryClient.setQueryData(['notifications', activeTab], (old: any) => {
+          if (!old?.data?.notifications) return old;
+          return {
+            ...old,
+            data: {
+              notifications: [notification, ...old.data.notifications]
+            }
+          };
+        });
+
+        // Update unread count
+        queryClient.setQueryData(['notifications', 'unreadCount'], (old: any) => {
+          if (!old?.data?.count) return old;
+          return {
+            ...old,
+            data: { count: old.data.count + 1 }
+          };
+        });
 
         // Play sound if enabled
         if (soundEnabled && audioRef.current) {
+          if (navigator.vibrate){
+            navigator.vibrate(50);
+          }
           audioRef.current.play().catch(() => { });
         }
 
-        // Show toast
-        toast.success(notification.title, {
-          description: notification.description,
-          duration: 5000,
-        });
       } catch (error) {
         console.error('Failed to parse new notification event', error);
       }
@@ -237,14 +252,37 @@ export default function InboxPage() {
 
     addEventListener('inbox.notification.new', handleNewNotification);
     return () => removeEventListener('inbox.notification.new', handleNewNotification);
-  }, [addEventListener, removeEventListener, soundEnabled, queryClient]);
+  }, [addEventListener, removeEventListener, soundEnabled, queryClient, activeTab]);
 
   // SSE: Real-time read status listener
   useEffect(() => {
     const handleReadUpdate = (e: MessageEvent) => {
       try {
-        // Invalidate queries to refetch
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        const { notificationId, count } = JSON.parse(e.data);
+
+        // Optimistically update notification status
+        if (notificationId) {
+          queryClient.setQueryData(['notifications', activeTab], (old: any) => {
+            if (!old?.data?.notifications) return old;
+            return {
+              ...old,
+              data: {
+                notifications: old.data.notifications.map((n: any) =>
+                  n.id === notificationId ? { ...n, read: true } : n
+                )
+              }
+            };
+          });
+        }
+
+        // Update unread count
+        queryClient.setQueryData(['notifications', 'unreadCount'], (old: any) => {
+          if (!old?.data?.count) return old;
+          return {
+            ...old,
+            data: { count: Math.max(0, old.data.count + count) }
+          };
+        });
       } catch (error) {
         console.error('Failed to parse read update event', error);
       }
@@ -252,7 +290,7 @@ export default function InboxPage() {
 
     addEventListener('inbox.notification.read', handleReadUpdate);
     return () => removeEventListener('inbox.notification.read', handleReadUpdate);
-  }, [addEventListener, removeEventListener, queryClient]);
+  }, [addEventListener, removeEventListener, queryClient, activeTab]);
 
   useEffect(() => {
     localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));

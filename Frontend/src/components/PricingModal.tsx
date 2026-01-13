@@ -114,6 +114,9 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
       toast.error('Payments are currently disabled. Please contact support.');
       return;
     }
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
 
     if (!razorpayLoaded) {
       toast.error('Payment system is loading. Please try again.');

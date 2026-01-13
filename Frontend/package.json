@@ -80,6 +80,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@tanstack/react-query-devtools": "^5.91.2",
     "@types/dompurify": "^3.2.0",
     "@types/locomotive-scroll": "^4.1.4",
     "@types/next": "^8.0.7",

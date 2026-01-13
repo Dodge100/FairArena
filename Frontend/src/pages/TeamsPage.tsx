@@ -3,11 +3,11 @@ import { TeamManagementModal } from '@/components/TeamManagementModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, Plus, Search, Users } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
 interface Team {
     id: string;
@@ -34,48 +34,24 @@ interface Organization {
 
 export default function TeamsPage() {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [organizationTeams, setOrganizationTeams] = useState<OrganizationTeam[]>([]);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [managementModalOpen, setManagementModalOpen] = useState(false);
     const [selectedOrgSlug, setSelectedOrgSlug] = useState('');
 
-    const fetchAllTeams = useCallback(async () => {
-        setLoading(true);
-        try {
-            // Fetch user's organizations first
-            const orgsResponse = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`
-            );
+    const { data: organizationTeams = [], isLoading: loading, refetch: fetchAllTeams } = useQuery({
+        queryKey: ['teams-all'],
+        queryFn: async () => {
+            const orgsRes = await apiRequest<{ organizations: Organization[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`);
+            const organizations = orgsRes.organizations || [];
 
-            if (!orgsResponse.ok) {
-                toast.error('Failed to load organizations');
-                return;
-            }
-
-            const orgsData = await orgsResponse.json();
-            const organizations: Organization[] = orgsData.organizations || [];
-
-            // Fetch teams for each organization
-            const teamsPromises = organizations.map(async (org: Organization) => {
+            const teamsPromises = organizations.map(async (org) => {
                 try {
-                    const teamsResponse = await apiFetch(
-                        `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${org.slug}/teams`
-                    );
-
-                    if (teamsResponse.ok) {
-                        const teamsData = await teamsResponse.json();
-                        return {
-                            organizationSlug: org.slug,
-                            organizationName: org.name,
-                            teams: teamsData.teams || [],
-                        };
-                    }
+                    const teamsRes = await apiRequest<{ teams: Team[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${org.slug}/teams`);
                     return {
                         organizationSlug: org.slug,
                         organizationName: org.name,
-                        teams: [],
+                        teams: teamsRes.teams || [],
                     };
                 } catch (error) {
                     console.error(`Error fetching teams for ${org.slug}:`, error);
@@ -86,20 +62,9 @@ export default function TeamsPage() {
                     };
                 }
             });
-
-            const allTeams = await Promise.all(teamsPromises);
-            setOrganizationTeams(allTeams);
-        } catch (error) {
-            console.error('Error fetching teams:', error);
-            toast.error('Failed to load teams');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchAllTeams();
-    }, [fetchAllTeams]);
+            return Promise.all(teamsPromises);
+        },
+    });
 
     const filteredTeams = organizationTeams
         .map((orgTeam) => ({
@@ -293,7 +258,7 @@ export default function TeamsPage() {
                         open={createModalOpen}
                         onOpenChange={setCreateModalOpen}
                         organizationSlug={selectedOrgSlug}
-                        onTeamCreated={fetchAllTeams}
+                        onTeamCreated={() => fetchAllTeams()}
                     />
                     <TeamManagementModal
                         open={managementModalOpen}

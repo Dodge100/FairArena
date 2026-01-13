@@ -872,17 +872,29 @@ export function generateBindingToken(): { token: string; hash: string } {
 
 /**
  * Check if user already has a session in the current cookies
+ * Optionally check for same device to prevent duplicate logins
  */
 export async function findExistingUserSession(
     cookies: Record<string, string | undefined>,
     userId: string,
-): Promise<{ sessionId: string; bindingToken: string } | null> {
+    deviceFingerprint?: string,
+): Promise<{ sessionId: string; bindingToken: string; isSameDevice?: boolean } | null> {
     const allCookies = parseSessionCookies(cookies);
 
     for (const cookie of allCookies) {
         const session = await getSession(cookie.sessionId);
         if (session && session.userId === userId) {
-            return cookie;
+            // If device fingerprint is provided, check if it's the same device
+            let isSameDevice = false;
+            if (deviceFingerprint) {
+                const sessionFingerprint = `${session.deviceType || 'unknown'}:${session.userAgent?.substring(0, 50) || 'unknown'}`;
+                isSameDevice = sessionFingerprint === deviceFingerprint;
+            }
+
+            return {
+                ...cookie,
+                isSameDevice,
+            };
         }
     }
 

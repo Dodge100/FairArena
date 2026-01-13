@@ -7,10 +7,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Settings, Trash2, Users } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { CreateTeamModal } from './CreateTeamModal';
 import { TeamInviteModal } from './TeamInviteModal';
 
@@ -37,38 +37,32 @@ export function TeamManagementModal({
     onOpenChange,
     organizationSlug,
 }: TeamManagementModalProps) {
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
-    const fetchTeams = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`
-            );
+    const { data: teams = [], isLoading: loading, refetch: fetchTeams } = useQuery({
+        queryKey: ['teams', organizationSlug],
+        queryFn: () => apiRequest<{ teams: Team[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`)
+            .then(res => res.teams || []),
+        enabled: open,
+        staleTime: 60000,
+    });
 
-            if (response.ok) {
-                const data = await response.json();
-                setTeams(data.teams || []);
-            } else {
-                toast.error('Failed to load teams');
-            }
-        } catch (error) {
-            console.error('Error fetching teams:', error);
-            toast.error('Failed to load teams');
-        } finally {
-            setLoading(false);
-        }
-    }, [organizationSlug]);
-
-    useEffect(() => {
-        if (open) {
-            fetchTeams();
-        }
-    }, [open, fetchTeams]);
+    const deleteTeamMutation = useMutation({
+        mutationFn: (team: Team) => apiRequest<{ success: boolean; error?: string }>(
+            `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${team.slug}`,
+            { method: 'DELETE' }
+        ),
+        onSuccess: (_, team) => {
+            toast.success(`Team "${team.name}" is being deleted`);
+            queryClient.invalidateQueries({ queryKey: ['teams', organizationSlug] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to delete team');
+        },
+    });
 
     const handleDeleteTeam = async (team: Team) => {
         if (
@@ -79,26 +73,7 @@ export function TeamManagementModal({
             return;
         }
 
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${team.slug}`,
-                {
-                    method: 'DELETE',
-                }
-            );
-
-            if (response.ok) {
-                toast.success(`Team "${team.name}" is being deleted`);
-                // Refresh the teams list after a short delay
-                setTimeout(() => fetchTeams(), 2000);
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to delete team');
-            }
-        } catch (error) {
-            console.error('Error deleting team:', error);
-            toast.error('Failed to delete team');
-        }
+        deleteTeamMutation.mutate(team);
     };
 
     const handleInviteToTeam = (team: Team) => {

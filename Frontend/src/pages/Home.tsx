@@ -1,15 +1,15 @@
-import Header from '../components/Header';
+import Newsletter from '@/components/NewsLetter';
+import { useAuthState } from '@/lib/auth';
+import { Navigate } from 'react-router';
+import Faq from '../components/Faq';
+import Hero from '../components/Hero';
 import DemoVideo from '../components/ui/DemoVideo';
 import WhyChooseUs from '../components/WhyChooseUs';
-import Faq from '../components/Faq';
-import Newsletter from '@/components/NewsLetter';
-import { Navigate } from 'react-router';
-import { useAuthState } from '@/lib/auth';
 
 function Home() {
   const { isSignedIn } = useAuthState();
 
-    if (
+  if (
     isSignedIn &&
     localStorage.getItem('disableHomePage') === 'true'
   ) {
@@ -17,13 +17,19 @@ function Home() {
   }
 
   return (
-    <>
-      <Header />
-      <DemoVideo />
+    <div className="flex flex-col w-full overflow-hidden">
+      <Hero />
+
+      <section id="demo" className="w-full py-10 md:py-20 bg-neutral-50 dark:bg-neutral-900/10">
+        <DemoVideo />
+      </section>
+
       <WhyChooseUs />
+
       <Faq />
+
       <Newsletter />
-    </>
+    </div>
   );
 }
 

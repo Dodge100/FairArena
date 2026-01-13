@@ -39,7 +39,7 @@ export default function Navbar() {
             className={`font-semibold ml-4 text-lg transition-colors ${isDark ? 'text-white' : 'text-black'
               }`}
           >
-            <Link to="/home">
+            <Link to="/">
               <img width="100" src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" />
             </Link>
           </motion.div>

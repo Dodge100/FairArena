@@ -2,9 +2,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Eye, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -19,51 +20,38 @@ interface ProfileView {
 
 export default function ProfileViews() {
   const navigate = useNavigate();
-  const [views, setViews] = useState<ProfileView[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [profileMissing, setProfileMissing] = useState(false);
+  const { data: profileData = { views: [], missing: false }, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['profile-views'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest<{ data: ProfileView[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/profile/views`);
+        return { views: res.data || [], missing: false };
+      } catch (err: any) {
+        // Check if it's an ApiError (or similar structure)
+        if (err.status === 404) {
+          // If we can access the parsed error response from ApiError
+          // Assuming ApiError has a 'data' property
+          if (err.data?.error?.message === 'Profile not found') {
+            return { views: [], missing: true };
+          }
+          // For other 404 errors, treat as no views (backward compatibility)
+          return { views: [], missing: false };
+        }
+        throw err;
+      }
+    }
+  });
+
+  const views = profileData.views;
+  const profileMissing = profileData.missing;
+  const error = queryError ? 'Failed to load profile views' : null;
 
   useEffect(() => {
-    const fetchProfileViews = async () => {
-      try {
-        setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await apiFetch(`${apiUrl}/api/v1/profile/views`);
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            try {
-              const errorData = await response.json();
-              // Check if the error indicates profile is missing
-              if (errorData.error?.message === 'Profile not found') {
-                setProfileMissing(true);
-                return;
-              }
-            } catch (parseError) {
-              // If we can't parse the error response, treat as generic 404
-              console.warn('Failed to parse 404 error response:', parseError);
-            }
-            // For other 404 errors, treat as no views (backward compatibility)
-            setViews([]);
-            return;
-          }
-          throw new Error('Failed to fetch profile views');
-        }
-
-        const data = await response.json();
-        setViews(data.data || []);
-      } catch (err) {
-        console.error('Error fetching profile views:', err);
-        setError('Failed to load profile views');
-        toast.error('Failed to load profile views');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfileViews();
-  }, []);
+    if (queryError) {
+      console.error('Error fetching profile views:', queryError);
+      toast.error('Failed to load profile views');
+    }
+  }, [queryError]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

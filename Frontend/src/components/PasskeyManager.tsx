@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetch, publicApiFetch } from '@/lib/apiClient';
+import { apiRequest, publicApiFetch } from '@/lib/apiClient';
 import {
     browserSupportsWebAuthn,
     startAuthentication,
     startRegistration,
 } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     AlertCircle,
     Fingerprint,
@@ -18,7 +19,7 @@ import {
     Smartphone,
     Trash2,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Passkey {
@@ -34,14 +35,13 @@ interface PasskeyManagerProps {
 }
 
 export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
-    const [passkeys, setPasskeys] = useState<Passkey[]>([]);
-    const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [newName, setNewName] = useState('');
     const [isSupported, setIsSupported] = useState(true);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
     const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -51,99 +51,92 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
     }, []);
 
     // Fetch passkeys
-    const fetchPasskeys = useCallback(async () => {
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/passkeys`);
-            const data = await res.json();
-            if (data.success) {
-                setPasskeys(data.data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch passkeys:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [apiUrl]);
-
-    useEffect(() => {
-        fetchPasskeys();
-    }, [fetchPasskeys]);
+    const { data: passkeys = [], isLoading: loading } = useQuery({
+        queryKey: ['passkeys'],
+        queryFn: () => apiRequest<{ success: boolean; data: Passkey[] }>(`${apiUrl}/api/v1/passkeys`)
+            .then(res => res.data),
+        staleTime: 60000,
+    });
 
     // Register new passkey
-    const handleRegister = async () => {
-        if (!isSupported) {
-            toast.error('Passkeys are not supported in this browser');
-            return;
-        }
+    const registerMutation = useMutation({
+        mutationFn: async () => {
+            const optionsRes = await apiRequest<{ success: boolean; data: any; message?: string }>(
+                `${apiUrl}/api/v1/passkeys/register/options`,
+                { method: 'POST' }
+            );
 
-        setRegistering(true);
-        try {
-            // Step 1: Get registration options from server
-            const optionsRes = await apiFetch(`${apiUrl}/api/v1/passkeys/register/options`, {
-                method: 'POST',
-            });
-            const optionsData = await optionsRes.json();
-
-            if (!optionsData.success) {
-                throw new Error(optionsData.message || 'Failed to get registration options');
+            if (!optionsRes.success) {
+                throw new Error(optionsRes.message || 'Failed to get registration options');
             }
 
-            // Step 2: Create credential with browser WebAuthn API
             const credential = await startRegistration({
-                optionsJSON: optionsData.data as PublicKeyCredentialCreationOptionsJSON,
+                optionsJSON: optionsRes.data as PublicKeyCredentialCreationOptionsJSON,
             });
 
-            // Step 3: Verify and save the credential
-            const verifyRes = await apiFetch(`${apiUrl}/api/v1/passkeys/register/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ response: credential }),
-            });
-            const verifyData = await verifyRes.json();
+            const verifyRes = await apiRequest<{ success: boolean; message?: string }>(
+                `${apiUrl}/api/v1/passkeys/register/verify`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ response: credential }),
+                }
+            );
 
-            if (!verifyData.success) {
-                throw new Error(verifyData.message || 'Failed to verify registration');
+            if (!verifyRes.success) {
+                throw new Error(verifyRes.message || 'Failed to verify registration');
             }
-
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['passkeys'] });
             toast.success('Passkey registered successfully!');
-            fetchPasskeys();
             onPasskeyChange?.();
-        } catch (error) {
+        },
+        onError: (error: any) => {
             const message = error instanceof Error ? error.message : 'Failed to register passkey';
-            // Handle user cancellation gracefully
             if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
                 toast.info('Passkey registration cancelled');
             } else {
                 toast.error(message);
             }
+        },
+    });
+
+    const handleRegister = async () => {
+        if (!isSupported) {
+            toast.error('Passkeys are not supported in this browser');
+            return;
+        }
+        setRegistering(true);
+        try {
+            await registerMutation.mutateAsync();
         } finally {
             setRegistering(false);
         }
     };
 
     // Delete passkey
-    const handleDelete = async (id: string) => {
-        setDeletingId(id);
-        setShowDropdown(null);
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/passkeys/${id}`, {
-                method: 'DELETE',
-            });
-            const data = await res.json();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to delete passkey');
-            }
-
-            toast.success('Passkey deleted');
-            setPasskeys(prev => prev.filter(p => p.id !== id));
-            onPasskeyChange?.();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete passkey';
-            toast.error(message);
-        } finally {
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => apiRequest(`${apiUrl}/api/v1/passkeys/${id}`, { method: 'DELETE' }),
+        onMutate: (id) => {
+            setDeletingId(id);
+        },
+        onSettled: () => {
             setDeletingId(null);
-        }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['passkeys'] });
+            toast.success('Passkey deleted');
+            onPasskeyChange?.();
+        },
+        onError: (error: any) => {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete passkey');
+        },
+    });
+
+    const handleDelete = (id: string) => {
+        setShowDropdown(null);
+        deleteMutation.mutate(id);
     };
 
     // Start rename
@@ -154,32 +147,30 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
     };
 
     // Save rename
-    const handleRename = async (id: string) => {
+    const renameMutation = useMutation({
+        mutationFn: ({ id, name }: { id: string; name: string }) =>
+            apiRequest<{ success: boolean; message?: string }>(`${apiUrl}/api/v1/passkeys/${id}/rename`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['passkeys'] });
+            setRenamingId(null);
+            setNewName('');
+            toast.success('Passkey renamed');
+        },
+        onError: (error: any) => {
+            toast.error(error instanceof Error ? error.message : 'Failed to rename passkey');
+        },
+    });
+
+    const handleRename = (id: string) => {
         if (!newName.trim()) {
             toast.error('Name cannot be empty');
             return;
         }
-
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/passkeys/${id}/rename`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName.trim() }),
-            });
-            const data = await res.json();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to rename passkey');
-            }
-
-            toast.success('Passkey renamed');
-            setPasskeys(prev => prev.map(p => p.id === id ? { ...p, name: newName.trim() } : p));
-            setRenamingId(null);
-            setNewName('');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to rename passkey';
-            toast.error(message);
-        }
+        renameMutation.mutate({ id, name: newName.trim() });
     };
 
     // Format date
@@ -400,20 +391,55 @@ export function usePasskeySupport() {
  * Initiate passkey login flow
  * Call this from the signin page
  */
-export async function initiatePasskeyLogin(apiUrl: string, email?: string): Promise<{
-    success: boolean;
-    user?: {
-        userId: string;
-        email: string;
-        firstName: string | null;
-        lastName: string | null;
-        profileImageUrl: string | null;
-        emailVerified: boolean;
-        mfaEnabled: boolean;
-    };
-    accessToken?: string;
-    error?: string;
-}> {
+/**
+ * Hook to handle passkey login flow
+ */
+export function usePasskeyLogin() {
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+    return useMutation({
+        mutationFn: async (email?: string) => {
+            // Step 1: Get authentication options
+            const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/options`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const optionsData = await optionsRes.json();
+
+            if (!optionsData.success) {
+                throw new Error(optionsData.message || 'Failed to get authentication options');
+            }
+
+            // Step 2: Authenticate with browser
+            const credential = await startAuthentication({
+                optionsJSON: optionsData.data,
+            });
+
+            // Step 3: Verify with server
+            const verifyRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ response: credential }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.success) {
+                throw new Error(verifyData.message || 'Failed to verify authentication');
+            }
+
+            return {
+                user: verifyData.data.user,
+                accessToken: verifyData.data.accessToken,
+            };
+        }
+    });
+}
+
+/**
+ * Helper to handle passkey login flow (non-hook version)
+ */
+export async function initiatePasskeyLogin(apiUrl: string, email?: string) {
     try {
         // Step 1: Get authentication options
         const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/options`, {
@@ -424,10 +450,10 @@ export async function initiatePasskeyLogin(apiUrl: string, email?: string): Prom
         const optionsData = await optionsRes.json();
 
         if (!optionsData.success) {
-            throw new Error(optionsData.message || 'Failed to get authentication options');
+            return { success: false, error: optionsData.message || 'Failed to get authentication options' };
         }
 
-        // Step 2: Authenticate with browser WebAuthn API
+        // Step 2: Authenticate with browser
         const credential = await startAuthentication({
             optionsJSON: optionsData.data,
         });
@@ -441,7 +467,7 @@ export async function initiatePasskeyLogin(apiUrl: string, email?: string): Prom
         const verifyData = await verifyRes.json();
 
         if (!verifyData.success) {
-            throw new Error(verifyData.message || 'Failed to verify authentication');
+            return { success: false, error: verifyData.message || 'Failed to verify authentication' };
         }
 
         return {
@@ -451,7 +477,6 @@ export async function initiatePasskeyLogin(apiUrl: string, email?: string): Prom
         };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Passkey authentication failed';
-        // Check if it's a cancellation
         if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
             return { success: false, error: 'cancelled' };
         }

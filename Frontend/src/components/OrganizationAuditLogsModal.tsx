@@ -1,5 +1,5 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Clock, Shield, User } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 interface AuditLog {
   id: string;
@@ -39,49 +39,29 @@ export const OrganizationAuditLogsModal = ({
   onOpenChange,
   organizationSlug,
 }: OrganizationAuditLogsModalProps) => {
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-
-  const fetchAuditLogs = useCallback(
-    async (pageNum = 1, append = false) => {
-      setLoading(true);
-      try {
-        const response = await apiFetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageNum}&limit=20`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (append) {
-            setAuditLogs(prev => [...prev, ...data.auditLogs]);
-          } else {
-            setAuditLogs(data.auditLogs);
-          }
-          setHasMore(pageNum < data.pagination.totalPages);
-        }
-      } catch (error) {
-        console.error('Failed to fetch audit logs:', error);
-      } finally {
-        setLoading(false);
-      }
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading
+  } = useInfiniteQuery({
+    queryKey: ['auditLogs', organizationSlug],
+    queryFn: ({ pageParam = 1 }) => apiRequest<{ auditLogs: AuditLog[], pagination: { totalPages: number } }>(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageParam}&limit=20`
+    ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const nextPage = allPages.length + 1;
+      return nextPage <= lastPage.pagination.totalPages ? nextPage : undefined;
     },
-    [organizationSlug]
-  );
+    enabled: open && !!organizationSlug,
+    staleTime: 60000,
+  });
 
-  useEffect(() => {
-    if (open && organizationSlug) {
-      fetchAuditLogs(1, false);
-      setPage(1);
-    }
-  }, [open, organizationSlug, fetchAuditLogs]);
+  const auditLogs = data?.pages.flatMap(page => page.auditLogs) || [];
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchAuditLogs(nextPage, true);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -120,7 +100,7 @@ export const OrganizationAuditLogsModal = ({
 
         <div className="flex-1 overflow-y-auto pr-2 -mr-2">
           <div className="space-y-4 py-4">
-            {loading && auditLogs.length === 0 ? (
+            {isLoading && auditLogs.length === 0 ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -184,15 +164,15 @@ export const OrganizationAuditLogsModal = ({
               </div>
             )}
 
-            {hasMore && (
+            {hasNextPage && (
               <div className="text-center pt-4">
                 <Button
                   variant="outline"
-                  onClick={loadMore}
-                  disabled={loading}
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
                   size="sm"
                 >
-                  {loading ? 'Loading...' : 'Load More'}
+                  {isFetchingNextPage ? 'Loading...' : 'Load More'}
                 </Button>
               </div>
             )}

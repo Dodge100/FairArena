@@ -1,11 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
 import { Edit, Eye, User, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useAuthState } from '../lib/auth';
 
 interface ProfileData {
@@ -39,8 +38,14 @@ interface ProfileData {
 export default function MyProfile() {
   const { user, isLoaded } = useAuthState();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  const { data: profile, isLoading: loading } = useQuery({
+    queryKey: ['profile', 'me', user?.id],
+    queryFn: () => apiRequest<{ data: ProfileData }>(`${API_BASE}/api/v1/profile/me`).then(res => res.data),
+    enabled: !!user && isLoaded,
+    staleTime: 60000, // 1 minute
+  });
 
   const getInitials = () => {
     if (user?.firstName && user?.lastName) {
@@ -48,32 +53,6 @@ export default function MyProfile() {
     }
     return user?.firstName?.[0]?.toUpperCase() || 'U';
   };
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!isLoaded || !user) return;
-
-      try {
-        setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await apiFetch(`${apiUrl}/api/v1/profile/me`);
-
-        if (response.ok) {
-          const data = await response.json();
-          setProfile(data.data);
-        } else {
-          toast.error('Failed to load profile data');
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast.error('Failed to load profile data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user?.id, isLoaded]);
 
   const calculateProfileCompletion = () => {
     if (!profile) return { percentage: 0, completed: 0, total: 0 };

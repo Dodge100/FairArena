@@ -9,9 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, AlertTriangle, Clock, Filter, Info, Loader2, Shield } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Log {
   id: string;
@@ -23,31 +24,17 @@ interface Log {
 
 export default function AccountLogs() {
   const [isVerified, setIsVerified] = useState(false);
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchLogs = useCallback(async () => {
-    setIsLoadingLogs(true);
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`);
-      const data = await res.json();
-      if (data.success) {
-        setLogs(data.logs);
-      }
-    } catch (error) {
-      console.error('Failed to fetch logs', error);
-    } finally {
-      setIsLoadingLogs(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isVerified) {
-      fetchLogs();
-    }
-  }, [isVerified, fetchLogs]);
+  const { data: logs = [], isLoading: isLoadingLogs } = useQuery({
+    queryKey: ['account-logs'],
+    queryFn: () => apiRequest<{ success: boolean; logs: Log[] }>(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`
+    ).then((res) => res.logs),
+    enabled: isVerified,
+    staleTime: 60 * 60 * 1000, // 1 hour as per previous description "Logs are cached and update every hour"
+  });
 
   const getLevelIcon = (level: string) => {
     switch (level) {

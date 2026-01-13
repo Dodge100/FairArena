@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
   CreditCard,
@@ -17,7 +18,7 @@ import {
   TrendingDown,
   TrendingUp
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthState } from '../lib/auth';
@@ -68,127 +69,65 @@ interface PaymentDetails {
 const CreditsPage = () => {
   const { isSignedIn } = useAuthState();
   const navigate = useNavigate();
-  const [balance, setBalance] = useState<CreditBalance | null>(null);
-  const [history, setHistory] = useState<CreditHistory | null>(null);
-  // Use ref to track history without adding it to dependency arrays prevents infinite loops
-  const historyRef = useRef<CreditHistory | null>(null);
+  const queryClient = useQueryClient();
 
-  const [loading, setLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentDetails | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [userEligibility, setUserEligibility] = useState<{
-    canClaimFreeCredits: boolean;
-    hasClaimedFreeCredits: boolean;
-    phoneVerified: boolean;
-  } | null>(null);
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    historyRef.current = history;
-  }, [history]);
+  // Queries
+  const { data: balanceData, isLoading: balanceLoading } = useQuery({
+    queryKey: ['credits-balance'],
+    queryFn: () => apiRequest<{ success: boolean, data: CreditBalance }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance`).then(res => res.data),
+    enabled: isSignedIn,
+  });
 
-  const fetchCreditHistory = useCallback(
-    async (loadMore = false) => {
-      if (loadMore) {
-        setLoadingMore(true);
-      } else {
-        setHistoryLoading(true);
+  const { data: eligibilityData } = useQuery({
+    queryKey: ['credits-eligibility'],
+    queryFn: () => apiRequest<{
+      success: boolean,
+      data: {
+        canClaimFreeCredits: boolean;
+        hasClaimedFreeCredits: boolean;
+        phoneVerified: boolean;
       }
+    }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(res => res.data),
+    enabled: isSignedIn,
+  });
 
-      try {
-        const offset = loadMore && historyRef.current ? historyRef.current.offset + historyRef.current.limit : 0;
-
-        const cacheBuster = Date.now();
-        const response = await apiFetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${offset}&_=${cacheBuster}`,
-          {
-            cache: 'no-store',
-          },
-        );
-
-        if (response.status === 429) {
-          toast.error("You are checking history too frequently. Please wait a moment.");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          if (loadMore && historyRef.current) {
-            setHistory({
-              ...data.data,
-              transactions: [...historyRef.current.transactions, ...data.data.transactions],
-            });
-          } else {
-            setHistory(data.data);
-          }
-        } else {
-          toast.error('Failed to load credit history');
-        }
-      } catch (error) {
-        console.error('Error fetching credit history:', error);
-        toast.error('Failed to load credit history');
-      } finally {
-        setLoadingMore(false);
-        setHistoryLoading(false);
-        setLoading(false);
-      }
+  const {
+    data: historyData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: historyLoading,
+    error: historyError
+  } = useInfiniteQuery({
+    queryKey: ['credits-history'],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await apiRequest<{ success: boolean, data: CreditHistory }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${pageParam}`
+      );
+      return response.data;
     },
-    [], // Removed history from dependencies
-  );
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.offset + lastPage.limit;
+      return nextOffset < lastPage.total ? nextOffset : undefined;
+    },
+    enabled: isSignedIn,
+  });
 
-  const fetchCreditBalance = useCallback(async () => {
-    try {
+  const transactions = historyData?.pages.flatMap((page) => page.transactions) || [];
 
-      const cacheBuster = Date.now();
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance?_=${cacheBuster}`, {
-        cache: 'no-store',
-      });
-
-      if (response.status === 429) return;
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setBalance(data.data);
-      } else {
-        toast.error('Failed to load credit balance');
-      }
-    } catch (error) {
-      console.error('Error fetching credit balance:', error);
-      toast.error('Failed to load credit balance');
+  useEffect(() => {
+    if (historyError) {
+      // Handle simple error logging, toast handled by ApiError usually or generic
+      console.error('Error fetching credit history:', historyError);
+      toast.error('Failed to load credit history');
     }
-  }, []);
+  }, [historyError]);
 
-  const checkUserEligibility = useCallback(async () => {
-    try {
-      const cacheBuster = Date.now();
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility?_=${cacheBuster}`, {
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUserEligibility(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking user eligibility:', error);
-    }
-  }, []);
-
-  const fetchPaymentDetails = useCallback(async (transaction: CreditTransaction) => {
+  const fetchPaymentDetails = useCallback((transaction: CreditTransaction) => {
     if (!transaction.payment) return;
 
     try {
@@ -223,21 +162,12 @@ const CreditsPage = () => {
 
     if (shouldRefresh) {
       window.history.replaceState({}, '', '/dashboard/credits');
-      setTimeout(() => {
-        setLoading(true);
-        Promise.all([
-          fetchCreditBalance(),
-          fetchCreditHistory(),
-          checkUserEligibility()
-        ]).finally(() => setLoading(false));
-      }, 500);
-    } else {
-      fetchCreditBalance();
-      fetchCreditHistory();
-      checkUserEligibility();
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['credits-history'] });
+      queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, navigate]); // Removed fetch functions from dep array to be extra safe, though useCallback fix should handle it.
+  }, [isSignedIn, navigate, queryClient]);
 
   const getTransactionIcon = (type: string, amount: number) => {
     switch (type) {
@@ -292,10 +222,10 @@ const CreditsPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold tracking-tight">
-                {loading ? (
+                {balanceLoading ? (
                   <Skeleton className="h-10 w-24" />
                 ) : (
-                  balance?.balance.toLocaleString() || '0'
+                  balanceData?.balance.toLocaleString() || '0'
                 )}
                 <span className="text-lg font-normal text-muted-foreground ml-2">credits</span>
               </div>
@@ -304,7 +234,7 @@ const CreditsPage = () => {
 
           {/* Promotional cards / Actions */}
           <div className="md:col-span-2 space-y-4">
-            {userEligibility !== null && userEligibility?.canClaimFreeCredits && (
+            {eligibilityData !== undefined && eligibilityData?.canClaimFreeCredits && (
               <Card className="border bg-secondary/30 shadow-none">
                 <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
@@ -323,7 +253,7 @@ const CreditsPage = () => {
               </Card>
             )}
 
-            {userEligibility !== null && !userEligibility?.hasClaimedFreeCredits && !userEligibility?.canClaimFreeCredits && (
+            {eligibilityData !== undefined && !eligibilityData?.hasClaimedFreeCredits && !eligibilityData?.canClaimFreeCredits && (
               <Card className="border bg-secondary/30 shadow-none">
                 <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
@@ -352,7 +282,7 @@ const CreditsPage = () => {
 
           <Card className="border shadow-none">
             <CardContent className="p-0">
-              {historyLoading && !history ? (
+              {historyLoading ? (
                 <div className="p-6 space-y-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex justify-between items-center">
@@ -364,7 +294,7 @@ const CreditsPage = () => {
                     </div>
                   ))}
                 </div>
-              ) : history?.transactions.length === 0 ? (
+              ) : transactions.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="bg-muted inline-flex p-4 rounded-full mb-4">
                     <History className="h-8 w-8 text-muted-foreground" />
@@ -376,7 +306,7 @@ const CreditsPage = () => {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {history?.transactions.map((transaction) => (
+                  {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-muted/50 transition-colors gap-4"
@@ -418,10 +348,10 @@ const CreditsPage = () => {
                 </div>
               )}
             </CardContent>
-            {history && history.transactions.length < history.total && (
+            {hasNextPage && (
               <div className="p-4 border-t text-center">
-                <Button variant="ghost" onClick={() => fetchCreditHistory(true)} disabled={loadingMore}>
-                  {loadingMore ? 'Loading...' : 'Load more transactions'}
+                <Button variant="ghost" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                  {isFetchingNextPage ? 'Loading...' : 'Load more transactions'}
                 </Button>
               </div>
             )}

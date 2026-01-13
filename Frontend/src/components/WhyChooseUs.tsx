@@ -35,7 +35,7 @@ function WhyChooseUs() {
       <h2
         className={`
           text-xl md:text-sm font-semibold px-6 py-1 h-15 rounded-full flex items-center overflow-hidden
-          ${isDark ? 'bg-neutral-900 text-[#ddef00]' : 'bg-neutral-100 text-neutral-800'}
+          ${isDark ? 'bg-neutral-900 text-[#d9ff00] border border-neutral-800' : 'bg-neutral-100 text-neutral-800 border border-neutral-200'}
         `}
       >
         Why Choose
@@ -83,7 +83,7 @@ function WhyChooseUs() {
       </div>
 
       <Link to="/why-choose-us">
-        <button className="mt-10 px-6 py-3 rounded-full bg-[#ddef00] text-black font-semibold text-lg hover:bg-[#ddef00]/80 transition">
+        <button className="mt-10 px-8 py-4 rounded-full bg-[#d9ff00] text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.4)] transition-all duration-300 hover:scale-105">
           Read More
         </button>
       </Link>

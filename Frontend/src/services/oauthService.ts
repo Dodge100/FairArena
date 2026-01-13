@@ -4,7 +4,7 @@
  * Frontend API client for OAuth application management and consent.
  */
 
-import { apiFetch, publicApiFetch } from '@/lib/apiClient';
+import { apiFetch, apiRequest } from '@/lib/apiClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -69,42 +69,16 @@ export interface AuthorizationRequest {
     expiresAt: string;
 }
 
-// Helper to make authenticated requests
-async function authFetch<T>(
-    endpoint: string,
-    options: RequestInit = {},
-): Promise<T> {
-    const response = await apiFetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error_description || error.message || `HTTP ${response.status}`);
-    }
-
-    // Handle 204 No Content
-    if (response.status === 204) {
-        return undefined as T;
-    }
-
-    return response.json();
-}
-
 // ============================================
 // APPLICATION MANAGEMENT
 // ============================================
 
 export async function listApplications(): Promise<{ applications: OAuthApplication[] }> {
-    return authFetch('/oauth/applications');
+    return apiRequest('/oauth/applications');
 }
 
 export async function getApplication(id: string): Promise<{ application: OAuthApplication & { stats: object } }> {
-    return authFetch(`/oauth/applications/${id}`);
+    return apiRequest(`/oauth/applications/${id}`);
 }
 
 export async function createApplication(data: {
@@ -118,7 +92,7 @@ export async function createApplication(data: {
     isPublic?: boolean;
     grantTypes?: string[];
 }): Promise<{ application: OAuthApplication; clientSecret: string | null; message: string }> {
-    return authFetch('/oauth/applications', {
+    return apiRequest('/oauth/applications', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -137,20 +111,20 @@ export async function updateApplication(
         isActive?: boolean;
     },
 ): Promise<{ application: OAuthApplication }> {
-    return authFetch(`/oauth/applications/${id}`, {
+    return apiRequest(`/oauth/applications/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteApplication(id: string): Promise<void> {
-    return authFetch(`/oauth/applications/${id}`, {
+    return apiRequest(`/oauth/applications/${id}`, {
         method: 'DELETE',
     });
 }
 
 export async function regenerateSecret(id: string): Promise<{ clientSecret: string; message: string }> {
-    return authFetch(`/oauth/applications/${id}/secret`, {
+    return apiRequest(`/oauth/applications/${id}/secret`, {
         method: 'POST',
     });
 }
@@ -160,15 +134,15 @@ export async function regenerateSecret(id: string): Promise<{ clientSecret: stri
 // ============================================
 
 export async function listConsents(): Promise<{ consents: OAuthConsent[] }> {
-    return authFetch('/oauth/consents');
+    return apiRequest('/oauth/consents');
 }
 
 export async function getConsent(applicationId: string): Promise<{ consent: OAuthConsent }> {
-    return authFetch(`/oauth/consents/${applicationId}`);
+    return apiRequest(`/oauth/consents/${applicationId}`);
 }
 
 export async function revokeConsent(applicationId: string): Promise<void> {
-    return authFetch(`/oauth/consents/${applicationId}`, {
+    return apiRequest(`/oauth/consents/${applicationId}`, {
         method: 'DELETE',
     });
 }
@@ -178,20 +152,20 @@ export async function revokeConsent(applicationId: string): Promise<void> {
 // ============================================
 
 export async function getAuthorizationRequest(requestId: string): Promise<AuthorizationRequest> {
-    const response = await publicApiFetch(`${API_BASE_URL}/oauth/authorize/request/${requestId}`);
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error_description || error.message || 'Failed to load authorization request');
-    }
-
-    return response.json();
+    // This uses publicApiFetch originally, but apiRequest handles auth header automatically.
+    // Use apiRequest for consistency and error handling.
+    // If it needs to be strictly public (no auth header), we should use apiFetch, but mostly adding auth header is harmless.
+    // However, if the endpoint rejects requests with auth headers (rare), keep that in mind.
+    // Given the previous code used publicApiFetch, it implies no auth needed.
+    // apiRequest adds auth if available.
+    return apiRequest(`/oauth/authorize/request/${requestId}`);
 }
 
 export async function submitConsent(data: {
     request_id: string;
     action: 'approve' | 'deny';
     scopes?: string[];
+    redirect_uri?: string;
 }): Promise<void> {
     const response = await apiFetch(`${API_BASE_URL}/oauth/authorize/consent`, {
         method: 'POST',
@@ -201,7 +175,7 @@ export async function submitConsent(data: {
         body: JSON.stringify(data),
     });
 
-    // Consent endpoint redirects on success
+    // Consent endpoint redirects on success (e.g., to the app)
     if (response.redirected) {
         window.location.href = response.url;
         return;

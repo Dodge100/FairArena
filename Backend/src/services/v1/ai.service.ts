@@ -811,7 +811,7 @@ FairArena is a professional collaboration and portfolio platform. The website is
 **Main Routes & Pages:**
 
 **Public Pages (No Authentication Required):**
-1. **Home (/ or /home)** - Landing page with platform overview and features
+1. **Home (/)** - Landing page with platform overview and features
 2. **Why Choose Us (/why-choose-us)** - Platform benefits and how it works
 3. **About (/about)** - Information about FairArena and the team
 4. **Pricing (/pricing)** - Pricing plans and subscription options

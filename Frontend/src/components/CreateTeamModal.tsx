@@ -16,9 +16,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 interface CreateTeamModalProps {
     open: boolean;
@@ -33,7 +34,7 @@ export function CreateTeamModal({
     organizationSlug,
     onTeamCreated,
 }: CreateTeamModalProps) {
-    const [loading, setLoading] = useState(false);
+
 
     const [formData, setFormData] = useState({
         name: '',
@@ -61,6 +62,46 @@ export function CreateTeamModal({
         }
     };
 
+    const createTeamMutation = useMutation({
+        mutationFn: (data: typeof formData) => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: data.name,
+                slug: data.slug,
+                description: data.description || undefined,
+                visibility: data.visibility,
+                joinEnabled: data.joinEnabled,
+                timezone: data.timezone || undefined,
+                website: data.website || undefined,
+                logoUrl: data.logoUrl || undefined,
+                location: data.location || undefined,
+            })
+        }),
+        onSuccess: () => {
+            toast.success(`Team "${formData.name}" is being created`);
+
+            // Reset form
+            setFormData({
+                name: '',
+                slug: '',
+                description: '',
+                visibility: 'INTERNAL',
+                joinEnabled: false,
+                timezone: '',
+                website: '',
+                logoUrl: '',
+                location: '',
+            });
+
+            onTeamCreated?.();
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to create team');
+        }
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -76,57 +117,7 @@ export function CreateTeamModal({
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/teams`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: formData.name,
-                        slug: formData.slug,
-                        description: formData.description || undefined,
-                        visibility: formData.visibility,
-                        joinEnabled: formData.joinEnabled,
-                        timezone: formData.timezone || undefined,
-                        website: formData.website || undefined,
-                        logoUrl: formData.logoUrl || undefined,
-                        location: formData.location || undefined,
-                    }),
-                }
-            );
-
-            if (response.ok) {
-                toast.success(`Team "${formData.name}" is being created`);
-
-                // Reset form
-                setFormData({
-                    name: '',
-                    slug: '',
-                    description: '',
-                    visibility: 'INTERNAL',
-                    joinEnabled: false,
-                    timezone: '',
-                    website: '',
-                    logoUrl: '',
-                    location: '',
-                });
-
-                onTeamCreated?.();
-                onOpenChange(false);
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to create team');
-            }
-        } catch (error) {
-            console.error('Error creating team:', error);
-            toast.error('Failed to create team');
-        } finally {
-            setLoading(false);
-        }
+        createTeamMutation.mutate(formData);
     };
 
     return (
@@ -272,12 +263,12 @@ export function CreateTeamModal({
                                 type="button"
                                 variant="outline"
                                 onClick={() => onOpenChange(false)}
-                                disabled={loading}
+                                disabled={createTeamMutation.isPending}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? 'Creating...' : 'Create Team'}
+                            <Button type="submit" disabled={createTeamMutation.isPending}>
+                                {createTeamMutation.isPending ? 'Creating...' : 'Create Team'}
                             </Button>
                         </div>
                     </div>

@@ -5,7 +5,7 @@ import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import { apiFetch, apiRequest } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -27,7 +27,7 @@ import {
   User,
   X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import AccountSettingsComponent from '../components/AccountSettings';
 import { SecurityKeyManager } from '../components/SecurityKeyManager';
@@ -87,7 +87,7 @@ const formatTimeAgo = (date: Date) => {
 
 function AccountSettings() {
   const { isDark } = useTheme();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, activeSessionId } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'security' | 'settings'>('overview');
 
   // UI State
@@ -96,8 +96,6 @@ function AccountSettings() {
   const [isVerified, setIsVerified] = useState(false);
 
   // Security State
-  const [mfaStatus, setMfaStatus] = useState<MFAStatus | null>(null);
-  const [loadingMfa, setLoadingMfa] = useState(false);
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [showDisableMfa, setShowDisableMfa] = useState(false);
   const [disablePassword, setDisablePassword] = useState('');
@@ -108,22 +106,13 @@ function AccountSettings() {
   const [regenerateCode, setRegenerateCode] = useState('');
   const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
   const [copiedCodes, setCopiedCodes] = useState(false);
-  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
 
-  // MFA Preferences State
-  const [mfaPreferences, setMfaPreferences] = useState<{
-    emailMfaEnabled: boolean;
-    notificationMfaEnabled: boolean;
-    disableOTPReverification: boolean;
-    superSecureAccountEnabled: boolean;
-    securityKeyCount: number;
-    passkeyCount: number;
-  } | null>(null);
+
   const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
   const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<'disableOtp' | 'superSecure' | null>(null);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
   const queryClient = useQueryClient();
 
   // Queries
@@ -148,102 +137,99 @@ function AccountSettings() {
   });
 
   // Fetch MFA Status
-  const fetchMfaStatus = async () => {
-    setLoadingMfa(true);
-    try {
-      const res = await apiFetch(`${API_BASE}/api/v1/mfa/status`);
-      const data = await res.json();
-      if (data.success) {
-        setMfaStatus(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch MFA status', error);
-    } finally {
-      setLoadingMfa(false);
-    }
-  };
+  const { data: mfaStatus = null, isLoading: loadingMfa, refetch: fetchMfaStatus } = useQuery({
+    queryKey: ['mfa-status', user?.userId],
+    queryFn: () => apiRequest<{ success: boolean, data: MFAStatus }>(`${API_BASE}/api/v1/mfa/status`).then(res => res.data),
+    enabled: !!user && isVerified && activeTab === 'security',
+  });
 
   // Fetch MFA Preferences
-  const fetchMfaPreferences = async () => {
-    try {
-      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`);
-      const data = await res.json();
-      if (data.success) {
-        setMfaPreferences(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch MFA preferences', error);
-    }
-  };
+  const { data: mfaPreferences = null, refetch: fetchMfaPreferences } = useQuery({
+    queryKey: ['mfa-preferences', user?.userId],
+    queryFn: () => apiRequest<{ success: boolean, data: any }>(`${API_BASE}/api/v1/auth/mfa/preferences`).then(res => res.data),
+    enabled: !!user && isVerified && activeTab === 'security',
+  });
 
   // Update MFA Preferences
-  const updateMfaPreference = async (type: 'email' | 'notification', enabled: boolean) => {
-    setUpdatingMfaPrefs(true);
-    try {
+  const updateMfaPreferenceMutation = useMutation({
+    mutationFn: async ({ type, enabled }: { type: 'email' | 'notification', enabled: boolean }) => {
       const body = type === 'email'
         ? { emailMfaEnabled: enabled, acknowledgeSecurityRisk: enabled }
         : { notificationMfaEnabled: enabled, acknowledgeSecurityRisk: enabled };
 
-      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`, {
+      return apiRequest<{ success: boolean, data: any, message?: string }>(`${API_BASE}/api/v1/auth/mfa/preferences`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (data.success) {
-        setMfaPreferences(data.data);
-        toast.success(`${type === 'email' ? 'Email' : 'Notification'} MFA ${enabled ? 'enabled' : 'disabled'}`);
-      } else {
-        toast.error(data.message || 'Failed to update preferences');
-      }
-    } catch (error) {
-      toast.error('Failed to update MFA preferences');
-    } finally {
+    },
+    onSuccess: (data, variables) => {
+      // Optimistically update or refetch
+      queryClient.setQueryData(['mfa-preferences', user?.userId], data.data);
+      toast.success(`${variables.type === 'email' ? 'Email' : 'Notification'} MFA ${variables.enabled ? 'enabled' : 'disabled'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update preferences');
+    },
+    onSettled: () => {
       setUpdatingMfaPrefs(false);
       setShowSecurityWarning(null);
     }
+  });
+
+  const updateMfaPreference = (type: 'email' | 'notification', enabled: boolean) => {
+    setUpdatingMfaPrefs(true);
+    updateMfaPreferenceMutation.mutate({ type, enabled });
   };
 
   // Update Advanced Security Settings
-  const updateAdvancedSecuritySetting = async (
+  const updateAdvancedSecurityMutation = useMutation({
+    mutationFn: async ({ setting, enabled }: { setting: 'disableOTPReverification' | 'superSecureAccountEnabled', enabled: boolean }) => {
+      const body = { [setting]: enabled };
+      return apiRequest<{ success: boolean, data: any, message?: string }>(`${API_BASE}/api/v1/auth/mfa/preferences`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['mfa-preferences', user?.userId], data.data);
+      const settingName = variables.setting === 'disableOTPReverification'
+        ? 'OTP Re-verification'
+        : 'Super Secure Account';
+      toast.success(`${settingName} ${variables.enabled ? 'enabled' : 'disabled'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update security setting');
+    },
+    onSettled: () => {
+      setUpdatingMfaPrefs(false);
+      setShowAdvancedSecurityWarning(null);
+    }
+  });
+
+  const updateAdvancedSecuritySetting = (
     setting: 'disableOTPReverification' | 'superSecureAccountEnabled',
     enabled: boolean
   ) => {
     setUpdatingMfaPrefs(true);
-    try {
-      const body = { [setting]: enabled };
-
-      const res = await apiFetch(`${API_BASE}/api/v1/auth/mfa/preferences`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMfaPreferences(data.data);
-        const settingName = setting === 'disableOTPReverification'
-          ? 'OTP Re-verification'
-          : 'Super Secure Account';
-        toast.success(`${settingName} ${enabled ? 'enabled' : 'disabled'}`);
-      } else {
-        toast.error(data.message || 'Failed to update security setting');
-      }
-    } catch (error) {
-      toast.error('Failed to update security setting');
-    } finally {
-      setUpdatingMfaPrefs(false);
-      setShowAdvancedSecurityWarning(null);
-    }
+    updateAdvancedSecurityMutation.mutate({ setting, enabled });
   };
 
   // Removed manual useEffect for sessions/logs as it is handled by useQuery enabled flag
-
+  // Removed manual useEffect for fetchMfaStatus and fetchMfaPreferences as it is handled by useQuery enabled flag
+  // Removed empty useEffect or kept if needed for other things?
+  // The original useEffect:
+  /*
   useEffect(() => {
     if (activeTab === 'security' && isVerified) {
       fetchMfaStatus();
       fetchMfaPreferences();
     }
   }, [activeTab]);
+  */
+  // This is now redundant essentially because useQuery uses activeTab and isVerified in enablement, but queries automatically fetch when enabled becomes true.
+  // So no useEffect needed.
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -278,7 +264,7 @@ function AccountSettings() {
   };
 
   const handleRevokeAllOtherSessions = async () => {
-    const otherSessions = sessions.filter(s => !s.isCurrent);
+    const otherSessions = sessions.filter(s => !s.isCurrent && s.id !== activeSessionId);
     if (otherSessions.length === 0) {
       toast.info('No other sessions to revoke');
       return;
@@ -299,15 +285,9 @@ function AccountSettings() {
     }
   };
 
-  const handleDisableMfa = async () => {
-    if (!disablePassword || !disableCode) {
-      toast.error('Please enter your password and a verification code');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await apiFetch(`${API_BASE}/api/v1/mfa/disable`, {
+  const disableMfaMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest<{ success: boolean, message?: string }>(`${API_BASE}/api/v1/mfa/disable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -315,55 +295,54 @@ function AccountSettings() {
           code: disableCode
         })
       });
-
-      const data = await res.json();
-      if (data.success) {
-        toast.success('MFA disabled successfully');
-        setShowDisableMfa(false);
-        setDisablePassword('');
-        setDisableCode('');
-        fetchMfaStatus();
-      } else {
-        toast.error(data.message || 'Failed to disable MFA');
-      }
-    } catch (error) {
-      toast.error('An error occurred');
-    } finally {
-      setIsLoading(false);
+    },
+    onSuccess: () => {
+      toast.success('MFA disabled successfully');
+      setShowDisableMfa(false);
+      setDisablePassword('');
+      setDisableCode('');
+      queryClient.invalidateQueries({ queryKey: ['mfa-status'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to disable MFA');
     }
-  };
+  });
 
-  const handleRegenerateBackupCodes = async () => {
-    if (!regenerateCode) {
-      toast.error('Please enter a verification code');
+  const handleDisableMfa = () => {
+    if (!disablePassword || !disableCode) {
+      toast.error('Please enter your password and a verification code');
       return;
     }
+    disableMfaMutation.mutate();
+  };
 
-    setIsLoading(true);
-    try {
-      const res = await apiFetch(`${API_BASE}/api/v1/mfa/regenerate-backup`, {
+  const regenerateBackupCodesMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest<{ success: boolean, data: { backupCodes: string[] }, message?: string }>(`${API_BASE}/api/v1/mfa/regenerate-backup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: regenerateCode
         })
       });
-
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Backup codes regenerated successfully');
-        setNewBackupCodes(data.data.backupCodes);
-        setRegenerateCode('');
-        // Don't close modal yet, need to show codes
-        fetchMfaStatus();
-      } else {
-        toast.error(data.message || 'Failed to regenerate backup codes');
-      }
-    } catch (error) {
-      toast.error('An error occurred');
-    } finally {
-      setIsLoading(false);
+    },
+    onSuccess: (data) => {
+      toast.success('Backup codes regenerated successfully');
+      setNewBackupCodes(data.data.backupCodes);
+      setRegenerateCode('');
+      queryClient.invalidateQueries({ queryKey: ['mfa-status'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to regenerate backup codes');
     }
+  });
+
+  const handleRegenerateBackupCodes = () => {
+    if (!regenerateCode) {
+      toast.error('Please enter a verification code');
+      return;
+    }
+    regenerateBackupCodesMutation.mutate();
   };
 
   const copyBackupCodes = () => {
@@ -389,31 +368,30 @@ function AccountSettings() {
     setRegenerateCode('');
   };
 
-  const handlePasswordChange = async () => {
+  const passwordResetMutation = useMutation({
+    mutationFn: async (email: string) => {
+      return apiRequest<{ success: boolean, message?: string }>(`${API_BASE}/api/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Password reset email sent! Check your inbox.');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to send password reset email');
+    }
+  });
+
+  const sendingPasswordReset = passwordResetMutation.isPending;
+
+  const handlePasswordChange = () => {
     if (!user?.email) {
       toast.error('Unable to send password reset email');
       return;
     }
-
-    setSendingPasswordReset(true);
-    try {
-      const response = await apiFetch(`${API_BASE}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Password reset email sent! Check your inbox.');
-      } else {
-        toast.error(data.message || 'Failed to send password reset email');
-      }
-    } catch (error) {
-      toast.error('An error occurred while sending the password reset email');
-    } finally {
-      setSendingPasswordReset(false);
-    }
+    passwordResetMutation.mutate(user.email);
   };
 
   const getDeviceIcon = (deviceType: string) => {
@@ -637,9 +615,9 @@ function AccountSettings() {
                         <span className="font-medium text-foreground truncate">
                           {session.deviceName || 'Unknown Device'}
                         </span>
-                        {session.isCurrent && (
+                        {(session.isCurrent || session.id === activeSessionId) && (
                           <span className={`px-2 py-0.5 rounded-full text-xs ${isDark ? 'bg-[#DDEF00]/20 text-[#DDEF00]' : 'bg-green-100 text-green-700'}`}>
-                            This device
+                            Current Session
                           </span>
                         )}
                       </div>
@@ -656,7 +634,7 @@ function AccountSettings() {
                         </span>
                       </div>
                     </div>
-                    {!session.isCurrent && (
+                    {!session.isCurrent && session.id !== activeSessionId && (
                       <button
                         onClick={() => handleRevokeSession(session.id)}
                         disabled={revokingSession === session.id}
@@ -1247,6 +1225,6 @@ function AccountSettings() {
 
     </div>
   );
-}
+};
 
 export default AccountSettings;

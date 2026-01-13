@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { QRScannerDialog } from "@/components/auth/QRScannerDialog";
 import {
     Avatar,
     AvatarFallback,
@@ -29,7 +30,6 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { QRScannerDialog } from "@/components/auth/QRScannerDialog";
 
 export function AccountSwitcher() {
     const { isMobile } = useSidebar();
@@ -55,6 +55,20 @@ export function AccountSwitcher() {
         // However, we need to make sure we don't auto-redirect back.
         navigate("/signin?flow=add_account");
     };
+
+    // Deduplicate accounts by userId, keeping the active session if duplicates exist
+    const uniqueAccounts = accounts.reduce((acc, current) => {
+        const existingIndex = acc.findIndex(a => a.userId === current.userId);
+        if (existingIndex >= 0) {
+            // If we found a duplicate, prefer the one that is currently active
+            if (current.sessionId === activeSessionId) {
+                acc[existingIndex] = current;
+            }
+        } else {
+            acc.push(current);
+        }
+        return acc;
+    }, [] as typeof accounts);
 
     return (
         <SidebarMenu>
@@ -86,10 +100,13 @@ export function AccountSwitcher() {
                             Switch Account
                         </DropdownMenuLabel>
                         <DropdownMenuGroup>
-                            {accounts.map((account) => (
+                            {uniqueAccounts.map((account) => (
                                 <DropdownMenuItem
                                     key={account.sessionId}
-                                    onClick={() => switchAccount(account.sessionId)}
+                                    onClick={async () => {
+                                        await switchAccount(account.sessionId);
+                                        window.location.reload();
+                                    }}
                                     className="gap-2 p-2"
                                     disabled={account.sessionId === activeSessionId}
                                 >

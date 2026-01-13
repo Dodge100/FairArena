@@ -1,6 +1,8 @@
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, Shield, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import {
     Card,
@@ -10,7 +12,7 @@ import {
     CardHeader,
     CardTitle,
 } from '../components/ui/card';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 interface InvitationDetails {
@@ -29,112 +31,75 @@ const TeamInviteAcceptPage = () => {
     const { inviteCode } = useParams<{ inviteCode: string }>();
     const navigate = useNavigate();
     const { isSignedIn, user } = useAuthState();
-    const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState(false);
-    const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [emailMismatchError, setEmailMismatchError] = useState<string | null>(null);
 
-    const fetchInvitationDetails = async () => {
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`
-            );
+    const { data: invitation, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['invite', inviteCode],
+        queryFn: () => apiRequest<{ invitation: InvitationDetails }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}`).then(res => res.invitation),
+        enabled: !!inviteCode,
+        retry: false
+    });
 
-            if (response.ok) {
-                const data = await response.json();
-                setInvitation(data.invitation);
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Invalid or expired invitation');
-            }
-        } catch {
-            setError('Failed to load invitation details');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const error = queryError ? (queryError as any).message || 'Invalid or expired invitation' : null;
 
     useEffect(() => {
-        if (inviteCode) {
-            fetchInvitationDetails();
+        if (invitation && user?.email && invitation.email !== user.email) {
+            setEmailMismatchError(`This invitation was sent to ${invitation.email}. You are signed in as ${user.email}. Please sign in with the correct email address.`);
+        } else {
+            setEmailMismatchError(null);
         }
-    }, [inviteCode]);
+    }, [invitation, user]);
 
-    const handleAcceptInvitation = async () => {
+    const acceptMutation = useMutation({
+        mutationFn: () => apiRequest<{ redirectUrl: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/accept`, {
+            method: 'POST',
+        }),
+        onSuccess: (data) => {
+            setSuccess(true);
+            setTimeout(() => {
+                navigate(data.redirectUrl || '/dashboard');
+            }, 2000);
+        },
+        onError: (err: any) => {
+            toast.error(err.message || 'Failed to accept invitation');
+        }
+    });
+
+    const declineMutation = useMutation({
+        mutationFn: () => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/decline`, {
+            method: 'POST',
+        }),
+        onSuccess: () => {
+            toast.success('Invitation declined');
+            navigate('/dashboard');
+        },
+        onError: (err: any) => {
+            toast.error(err.message || 'Failed to decline invitation');
+        }
+    });
+
+    const handleAcceptInvitation = () => {
         if (!isSignedIn) {
-            // Redirect to sign in with return URL
             window.location.href = `/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`;
             return;
         }
-
-        // Check email match
-        if (invitation && user?.email !== invitation.email) {
-            setError(
-                `This invitation was sent to ${invitation.email}. You are signed in as ${user?.email}. Please sign in with the correct email address.`
-            );
+        if (emailMismatchError) {
+            toast.error(emailMismatchError);
             return;
         }
-
-        setProcessing(true);
-        setError(null);
-
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/accept`,
-                {
-                    method: 'POST',
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                setSuccess(true);
-
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    navigate(data.redirectUrl || '/dashboard');
-                }, 2000);
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to accept invitation');
-            }
-        } catch {
-            setError('Failed to accept invitation');
-        } finally {
-            setProcessing(false);
-        }
+        acceptMutation.mutate();
     };
 
-    const handleDeclineInvitation = async () => {
+    const handleDeclineInvitation = () => {
         if (!isSignedIn) {
             navigate('/');
             return;
         }
-
-        setProcessing(true);
-        setError(null);
-
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/invite/${inviteCode}/decline`,
-                {
-                    method: 'POST',
-                }
-            );
-
-            if (response.ok) {
-                navigate('/dashboard');
-            } else {
-                const errorData = await response.json();
-                setError(errorData.error || 'Failed to decline invitation');
-            }
-        } catch {
-            setError('Failed to decline invitation');
-        } finally {
-            setProcessing(false);
-        }
+        declineMutation.mutate();
     };
+
+    const processing = acceptMutation.isPending || declineMutation.isPending;
 
     if (loading) {
         return (

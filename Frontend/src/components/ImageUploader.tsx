@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useMutation } from '@tanstack/react-query';
 import { Check, Loader2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import Cropper, { type Area, type Point } from 'react-easy-crop';
@@ -25,7 +26,6 @@ export const ImageUploader = ({
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
     const [isSignLoading, setIsSignLoading] = useState(false);
 
     const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
@@ -49,7 +49,10 @@ export const ImageUploader = ({
             }
 
             const reader = new FileReader();
-            reader.addEventListener('load', () => setImageSrc(reader.result as string));
+            reader.addEventListener('load', () => {
+                setImageSrc(reader.result as string);
+                setZoom(1);
+            });
             reader.readAsDataURL(file);
         }
     };
@@ -101,22 +104,32 @@ export const ImageUploader = ({
         });
     };
 
-    const handleUpload = async () => {
-        if (!imageSrc || !croppedAreaPixels) return;
-
-        try {
-            setIsUploading(true);
-            setIsSignLoading(true);
+    const uploadMutation = useMutation({
+        mutationFn: async () => {
+            if (!imageSrc || !croppedAreaPixels) throw new Error('No image to upload');
 
             setIsSignLoading(true);
 
             // 1. Get signature from backend
-            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-            const signatureResponse = await apiFetch(`${API_BASE}/api/v1/profile/image/signature`);
-            const signatureData = await signatureResponse.json();
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+            const signatureResponse = await apiRequest<{
+                success: boolean;
+                data: {
+                    signature: string;
+                    timestamp: number;
+                    folder: string;
+                    apiKey: string;
+                    cloudName: string;
+                    eager?: string;
+                    max_file_size?: number;
+                    allowed_formats?: string;
+                }
+            }>(`${API_BASE}/api/v1/profile/image/signature`);
+
+            const signatureData = signatureResponse; // apiRequest returns parsed body
 
             if (!signatureData.success) {
-                throw new Error(signatureData.message || 'Failed to get upload signature');
+                throw new Error('Failed to get upload signature');
             }
 
             setIsSignLoading(false);
@@ -156,7 +169,7 @@ export const ImageUploader = ({
             }
 
             // 4. Update backend with new URL
-            const updateResponse = await apiFetch(`${API_BASE}/api/v1/profile/image`, {
+            const updateResponse = await apiRequest<{ success: boolean; message?: string }>(`${API_BASE}/api/v1/profile/image`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -165,22 +178,27 @@ export const ImageUploader = ({
                 }),
             });
 
-            const updateData = await updateResponse.json();
-
-            if (updateData.success) {
-                toast.success('Profile photo updated successfully!');
-                onUploadComplete(clData.secure_url);
-                setImageSrc(null); // Close cropper
-            } else {
-                throw new Error(updateData.message || 'Failed to update profile');
+            if (!updateResponse.success) {
+                throw new Error(updateResponse.message || 'Failed to update profile');
             }
-        } catch (error) {
+
+            return clData.secure_url;
+        },
+        onSuccess: (url) => {
+            toast.success('Profile photo updated successfully!');
+            onUploadComplete(url);
+            setImageSrc(null);
+            setIsSignLoading(false);
+        },
+        onError: (error) => {
             console.error('Upload error:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to upload image');
-        } finally {
-            setIsUploading(false);
             setIsSignLoading(false);
         }
+    });
+
+    const handleUpload = () => {
+        uploadMutation.mutate();
     };
 
     if (imageSrc) {
@@ -232,16 +250,16 @@ export const ImageUploader = ({
                             <button
                                 onClick={() => setImageSrc(null)}
                                 className="flex-1 px-4 py-2 rounded-lg border font-medium hover:bg-muted transition-colors"
-                                disabled={isUploading}
+                                disabled={uploadMutation.isPending}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleUpload}
-                                disabled={isUploading}
+                                disabled={uploadMutation.isPending}
                                 className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                             >
-                                {isUploading ? (
+                                {uploadMutation.isPending ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         {isSignLoading ? 'Signing...' : 'Uploading...'}

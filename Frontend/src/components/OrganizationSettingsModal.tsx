@@ -1,5 +1,5 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Building2, Globe, Lock, Save, Settings, Trash2, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -23,7 +23,8 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
+import { useEffect, useState } from 'react';
 
 interface OrganizationPermissions {
   organization: {
@@ -96,7 +97,8 @@ export const OrganizationSettingsModal = ({
   organization,
   onOrganizationUpdate,
 }: OrganizationSettingsModalProps) => {
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
     name: '',
     isPublic: false,
@@ -113,59 +115,48 @@ export const OrganizationSettingsModal = ({
     }
   }, [organization]);
 
-  const handleSave = async () => {
-    if (!organization) return;
-
-    setSaving(true);
-    try {
-      const response = await apiFetch(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization.slug}/settings`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Organization settings updated successfully!');
-        onOrganizationUpdate?.();
-        onOpenChange(false);
-      } else {
-        toast.error('Failed to update organization settings');
-      }
-    } catch (error) {
-      toast.error('An error occurred while updating settings');
+  const saveSettingsMutation = useMutation({
+    mutationFn: (data: typeof formData) => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      toast.success('Organization settings updated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      onOrganizationUpdate?.();
+      onOpenChange(false);
+    },
+    onError: (error) => {
       console.error(error);
-    } finally {
-      setSaving(false);
-    }
+      toast.error('Failed to update organization settings');
+    },
+  });
+
+  const deleteOrganizationMutation = useMutation({
+    mutationFn: () => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}`, {
+      method: 'DELETE',
+    }),
+    onSuccess: () => {
+      toast.success('Organization deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      onOrganizationUpdate?.();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error('Failed to delete organization');
+    },
+  });
+
+  const handleSave = () => {
+    if (!organization) return;
+    saveSettingsMutation.mutate(formData);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!organization) return;
-
-    try {
-      const response = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization.slug}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Organization deleted successfully!');
-        onOrganizationUpdate?.();
-        onOpenChange(false);
-      } else {
-        toast.error('Failed to delete organization');
-      }
-    } catch (error) {
-      toast.error('An error occurred while deleting organization');
-      console.error(error);
-    }
+    deleteOrganizationMutation.mutate();
   };
 
   if (!organization) return null;
@@ -293,9 +284,9 @@ export const OrganizationSettingsModal = ({
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saveSettingsMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>

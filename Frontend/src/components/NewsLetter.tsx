@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
 import { publicApiFetch } from '@/lib/apiClient';
+import { useMutation } from '@tanstack/react-query';
 import { Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -9,7 +10,6 @@ import { toast } from 'sonner';
 function Newsletter() {
   const { isDark } = useTheme();
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
@@ -27,6 +27,39 @@ function Newsletter() {
     setCaptchaToken(null);
     toast.error('CAPTCHA verification failed. Please try again.');
   }, []);
+
+  const subscribeMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
+      const response = await publicApiFetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Recaptcha-Token': token,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to subscribe');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Newsletter subscription request received!');
+      setEmail('');
+      setShowCaptchaModal(false);
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to subscribe. Please try again.');
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+    }
+  });
+
+  const isLoading = subscribeMutation.isPending;
 
   const handleSubscribe = async () => {
     if (isLoading) return;
@@ -47,46 +80,12 @@ function Newsletter() {
     setShowCaptchaModal(true);
   };
 
-  const handleCaptchaSubmit = async () => {
+  const handleCaptchaSubmit = () => {
     if (!captchaToken) {
       toast.error('Please complete the CAPTCHA verification.');
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await publicApiFetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Recaptcha-Token': captchaToken,
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        toast.success('Newsletter subscription request received!');
-        setEmail('');
-        setShowCaptchaModal(false);
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      } else {
-        toast.error(data.message || 'Failed to subscribe. Please try again.');
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      }
-    } catch (error) {
-      console.error('Newsletter subscription error:', error);
-      toast.error('Something went wrong. Please try again later.');
-      setCaptchaToken(null);
-      recaptchaRef.current?.reset();
-    } finally {
-      setIsLoading(false);
-    }
+    subscribeMutation.mutate(captchaToken);
   };
 
   const handleCloseModal = () => {

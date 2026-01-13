@@ -1,5 +1,6 @@
 // import * as Sentry from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
@@ -31,7 +32,14 @@ import { ThemeProvider } from './theme-context.tsx';
 //   ],
 // });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -60,6 +68,7 @@ createRoot(document.getElementById('root')!).render(
             </DataSaverProvider>
           </CookieConsentProvider>
         </StreamProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

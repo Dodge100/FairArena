@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, ChevronRight, Clock, Key, Loader2, Lock, Mail, Shield, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useTheme } from '../hooks/useTheme';
-import { apiFetch } from '../lib/apiClient';
+import { ApiError, apiRequest } from '../lib/apiClient';
 
 interface OTPVerificationProps {
   onVerified: () => void;
@@ -28,8 +29,7 @@ export function OTPVerification({
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [otp, setOtp] = useState('');
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
@@ -38,7 +38,7 @@ export function OTPVerification({
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   // Cooldown state
-  const [lastOtpRequestTime, setLastOtpRequestTime] = useState<number>(0);
+
   const [otpCooldown, setOtpCooldown] = useState<number>(0);
 
   // WebAuthn state
@@ -47,57 +47,164 @@ export function OTPVerification({
   const [otpDisabled, setOtpDisabled] = useState(false);
   const [isWebAuthnVerifying, setIsWebAuthnVerifying] = useState(false);
 
-  const checkVerificationStatus = useCallback(async () => {
-    try {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`
-      );
+  const queryClient = useQueryClient();
 
-      const data = await res.json();
-      if (data.success && data.verified) {
-        setIsVerified(true);
-        onVerified();
-      } else {
-        setIsVerified(false);
-      }
-    } catch (error) {
-      console.error('Verification check failed:', error);
-      setIsVerified(false);
-    } finally {
-      setIsVerifying(false);
-    }
-  }, [onVerified]);
+  const { data: statusData, isLoading: isLoadingStatus } = useQuery({
+    queryKey: ['account-verification-status'],
+    queryFn: () => apiRequest<{ success: boolean, verified: boolean }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`),
+  });
+
+  const { data: webauthnData } = useQuery({
+    queryKey: ['webauthn-availability'],
+    queryFn: () => apiRequest<{ success: boolean, data: { webauthnAvailable: boolean, otpDisabled: boolean } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/available`),
+  });
 
   // Check WebAuthn browser support
   useEffect(() => {
     setWebauthnSupported(browserSupportsWebAuthn());
   }, []);
 
-  // Check if user has security keys and if OTP is disabled
   useEffect(() => {
-    const checkWebAuthnAvailability = async () => {
-      try {
-        const res = await apiFetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/available`
-        );
-        const data = await res.json();
-        if (data.success && data.data) {
-          setWebauthnAvailable(data.data.webauthnAvailable);
-          setOtpDisabled(data.data.otpDisabled);
-        }
-      } catch (error) {
-        console.error('Failed to check WebAuthn availability:', error);
+    if (statusData?.success && statusData.verified) {
+      setIsVerified(true);
+      if (statusData.verified !== isVerified) { // Prevent loop if onVerified causes re-render/fetch
+        onVerified();
       }
-    };
-
-    checkWebAuthnAvailability();
-  }, []);
+    } else {
+      setIsVerified(false);
+    }
+  }, [statusData, onVerified]); // isVerified omitted to avoid loop, or check logically
 
   useEffect(() => {
-    checkVerificationStatus();
-  }, [checkVerificationStatus]);
+    if (webauthnData?.success && webauthnData.data) {
+      setWebauthnAvailable(webauthnData.data.webauthnAvailable);
+      setOtpDisabled(webauthnData.data.otpDisabled);
+    }
+  }, [webauthnData]);
 
-  // Handle WebAuthn verification
+  useEffect(() => {
+    if (isLoadingStatus) {
+      setIsVerifying(true);
+    } else {
+      setIsVerifying(false);
+    }
+  }, [isLoadingStatus]);
+
+  useEffect(() => {
+    if (otpCooldown > 0) {
+      const timer = setTimeout(() => setOtpCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCooldown]);
+
+  const { mutate: sendOtp, isPending: isSendingOtp } = useMutation({
+    mutationFn: async (token: string) => {
+      return apiRequest<{ success: boolean, message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Recaptcha-Token': token,
+          },
+        },
+      );
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setMessage({ type: 'success', text: 'OTP sent to your email successfully!' });
+        setIsRateLimited(false);
+        setRetryAfter(0);
+        setOtpCooldown(60);
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Failed to send OTP' });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Send OTP failed:', error);
+      if (error instanceof ApiError && error.status === 429) {
+        setIsRateLimited(true);
+        setRetryAfter(error.data?.retryAfter || 1800);
+        setMessage({ type: 'error', text: error.data?.message || 'Too many OTP requests. Please try again later.' });
+      } else {
+        setMessage({ type: 'error', text: 'Failed to send OTP' });
+      }
+    },
+    onSettled: () => {
+      if (recaptchaRef.current) recaptchaRef.current.reset();
+    }
+  });
+
+  const { mutate: verifyOtp, isPending: isVerifyingOtp } = useMutation({
+    mutationFn: async ({ token, otpCode }: { token: string, otpCode: string }) => {
+      return apiRequest<{ success: boolean, message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Recaptcha-Token': token,
+          },
+          body: JSON.stringify({ otp: otpCode }),
+        },
+      );
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setIsVerified(true);
+        setMessage({ type: 'success', text: 'Verification successful!' });
+        setOtp('');
+        setIsRateLimited(false);
+        setRetryAfter(0);
+        queryClient.invalidateQueries({ queryKey: ['account-verification-status'] });
+        onVerified();
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Verification failed' });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Verify OTP failed:', error);
+      if (error instanceof ApiError && error.status === 429) {
+        setIsRateLimited(true);
+        setRetryAfter(error.data?.retryAfter || 900);
+        setMessage({ type: 'error', text: error.data?.message || 'Too many attempts. Please try again later.' });
+      } else {
+        setMessage({ type: 'error', text: 'Verification failed' });
+      }
+    },
+    onSettled: () => {
+      if (recaptchaRef.current) recaptchaRef.current.reset();
+    }
+  });
+
+  // WebAuthn Mutations
+  const webAuthnOptionsMutation = useMutation({
+    mutationFn: () => apiRequest<{ success: boolean, data: any }>(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/options`,
+      { method: 'POST' }
+    ),
+  });
+
+  const webAuthnVerifyMutation = useMutation({
+    mutationFn: (credential: any) => apiRequest<{ success: boolean, message?: string }>(
+      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/verify`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: credential }),
+      }
+    ),
+    onSuccess: (verifyData) => {
+      if (verifyData.success) {
+        setIsVerified(true);
+        setMessage({ type: 'success', text: 'Security key verification successful!' });
+        queryClient.invalidateQueries({ queryKey: ['account-verification-status'] });
+        onVerified();
+      } else {
+        throw new Error(verifyData.message || 'Security key verification failed');
+      }
+    },
+  });
+
   const handleWebAuthnVerify = async () => {
     if (!webauthnSupported) {
       setMessage({
@@ -112,37 +219,14 @@ export function OTPVerification({
 
     try {
       // Step 1: Get authentication options
-      const optionsRes = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/options`,
-        { method: 'POST' }
-      );
-      const optionsData = await optionsRes.json();
-
-      if (!optionsData.success) {
-        throw new Error(optionsData.message || 'Failed to get WebAuthn options');
-      }
+      const optionsData = await webAuthnOptionsMutation.mutateAsync();
 
       // Step 2: Start authentication with security key
       const credential = await startAuthentication({ optionsJSON: optionsData.data });
 
       // Step 3: Verify with backend
-      const verifyRes = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/verify`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ response: credential }),
-        }
-      );
-      const verifyData = await verifyRes.json();
+      await webAuthnVerifyMutation.mutateAsync(credential);
 
-      if (!verifyData.success) {
-        throw new Error(verifyData.message || 'Security key verification failed');
-      }
-
-      setIsVerified(true);
-      setMessage({ type: 'success', text: 'Security key verification successful!' });
-      onVerified();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Security key verification failed';
       // Handle user cancellation gracefully
@@ -156,169 +240,54 @@ export function OTPVerification({
     }
   };
 
-  // Countdown timer for rate limiting
-  useEffect(() => {
-    let interval: number;
-    if (isRateLimited && retryAfter > 0) {
-      interval = setInterval(() => {
-        setRetryAfter((prev) => {
-          if (prev <= 1) {
-            setIsRateLimited(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRateLimited, retryAfter]);
+  const executeSendOtp = (token: string) => {
+    setMessage(null);
+    setIsRateLimited(false);
+    setRetryAfter(0);
+    sendOtp(token);
+  };
 
-  // OTP cooldown timer (1 minute)
-  useEffect(() => {
-    let interval: number;
-    if (otpCooldown > 0) {
-      interval = setInterval(() => {
-        setOtpCooldown((prev) => {
-          if (prev <= 1) return 0;
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [otpCooldown]);
-
-  const onCaptchaChange = useCallback((token: string | null) => {
-    if (token && pendingAction) {
-      setShowCaptchaModal(false);
-      if (pendingAction === 'send') {
-        executeSendOtp(token);
-      } else if (pendingAction === 'verify') {
-        executeVerifyOtp(token);
-      }
-      setPendingAction(null);
-    }
-  }, [pendingAction]);
-
-  const onCaptchaExpired = useCallback(() => {
-    // No-op
-  }, []);
-
-  const onCaptchaError = useCallback(() => {
-    setMessage({ type: 'error', text: 'CAPTCHA verification failed. Please try again.' });
-  }, []);
+  const executeVerifyOtp = (token: string) => {
+    setMessage(null);
+    setIsRateLimited(false);
+    setRetryAfter(0);
+    verifyOtp({ token, otpCode: otp });
+  };
 
   const handleSendClick = () => {
-    // Check cooldowns first
-    const now = Date.now();
-    const timeSinceLastRequest = (now - lastOtpRequestTime) / 1000;
-    if (timeSinceLastRequest < 60 && lastOtpRequestTime > 0) {
-      const remaining = Math.ceil(60 - timeSinceLastRequest);
-      setOtpCooldown(remaining);
-      setMessage({ type: 'error', text: `Please wait ${remaining} seconds before requesting another OTP.` });
-      return;
-    }
-
     setPendingAction('send');
     setShowCaptchaModal(true);
   };
 
   const handleVerifyClick = () => {
-    if (!otp.trim() || otp.length < 6) {
-      setMessage({ type: 'error', text: 'Please enter at least 6 characters for the OTP' });
-      return;
-    }
+    if (otp.length < 6) return;
     setPendingAction('verify');
     setShowCaptchaModal(true);
   };
 
-  const executeSendOtp = async (token: string) => {
-    setIsSendingOtp(true);
-    setMessage(null);
-    setIsRateLimited(false);
-    setRetryAfter(0);
+  const onCaptchaChange = (token: string | null) => {
+    if (!token) return;
 
-    try {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Recaptcha-Token': token,
-          },
-        },
-      );
-
-      const data = await res.json();
-
-      if (res.status === 429) {
-        setIsRateLimited(true);
-        setRetryAfter(data.retryAfter || 1800);
-        setMessage({ type: 'error', text: data.message || 'Too many OTP requests. Please try again later.' });
-      } else if (data.success) {
-        setMessage({ type: 'success', text: 'OTP sent to your email successfully!' });
-        setIsRateLimited(false);
-        setRetryAfter(0);
-        setLastOtpRequestTime(Date.now());
-        setOtpCooldown(60);
-      } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to send OTP' });
-      }
-    } catch (error) {
-      console.error('Send OTP failed:', error);
-      setMessage({ type: 'error', text: 'Failed to send OTP' });
-    } finally {
-      setIsSendingOtp(false);
-      if (recaptchaRef.current) recaptchaRef.current.reset();
+    if (pendingAction === 'send') {
+      executeSendOtp(token);
+    } else if (pendingAction === 'verify') {
+      executeVerifyOtp(token);
     }
+
+    setShowCaptchaModal(false);
+    setPendingAction(null);
   };
 
-  const executeVerifyOtp = async (token: string) => {
-    setIsVerifyingOtp(true);
-    setMessage(null);
-    setIsRateLimited(false);
-    setRetryAfter(0);
+  const onCaptchaExpired = () => {
+    setShowCaptchaModal(false);
+    setPendingAction(null);
+    setMessage({ type: 'error', text: 'CAPTCHA expired. Please try again.' });
+  };
 
-    try {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Recaptcha-Token': token,
-          },
-          body: JSON.stringify({ otp }),
-          credentials: 'include',
-        },
-      );
-
-      const data = await res.json();
-
-      if (res.status === 429) {
-        setIsRateLimited(true);
-        setRetryAfter(data.retryAfter || 900);
-        setMessage({ type: 'error', text: data.message || 'Too many attempts. Please try again later.' });
-      } else if (data.success) {
-        setIsVerified(true);
-        setMessage({ type: 'success', text: 'Verification successful!' });
-        setOtp('');
-        setIsRateLimited(false);
-        setRetryAfter(0);
-        onVerified();
-      } else {
-        setMessage({ type: 'error', text: data.message || 'Verification failed' });
-      }
-    } catch (error) {
-      console.error('Verify OTP failed:', error);
-      setMessage({ type: 'error', text: 'Verification failed' });
-    } finally {
-      setIsVerifyingOtp(false);
-      if (recaptchaRef.current) recaptchaRef.current.reset();
-    }
+  const onCaptchaError = () => {
+    setShowCaptchaModal(false);
+    setPendingAction(null);
+    setMessage({ type: 'error', text: 'CAPTCHA verification failed. Please try again.' });
   };
 
   if (isVerifying) {

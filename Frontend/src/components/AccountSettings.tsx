@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   Bell,
@@ -62,12 +63,8 @@ export default function AccountSettingsComponent() {
   const { customization, resetToDefault } = useSidebarCustomization();
   const [showCookieModal, setShowCookieModal] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [isExportingData, setIsExportingData] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
   const [confirmationText, setConfirmationText] = useState('');
-  const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [disableHomePage, setDisableHomePage] = useState(() => localStorage.getItem('disableHomePage') === 'true');
 
   const toggleDisableHomePage = (checked: boolean) => {
@@ -75,89 +72,84 @@ export default function AccountSettingsComponent() {
     localStorage.setItem('disableHomePage', String(checked));
     toast.success(`Home page ${checked ? 'disabled' : 'enabled'}`);
   };
+  const queryClient = useQueryClient();
 
-  const fetchSettings = useCallback(async () => {
-    setIsLoadingSettings(true);
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`);
-      const data = await res.json();
-      if (data.success) {
-        setSettings(data.data);
-      } else {
-        toast.error('Failed to load settings');
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      toast.error('Failed to load settings');
-    } finally {
-      setIsLoadingSettings(false);
-    }
-  }, []);
+  const { data: settings = null, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['account-settings'],
+    queryFn: () => apiRequest<{ success: boolean, data: UserSettings }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`).then(res => res.data),
+  });
 
-  const updateSettingsValue = async (key: keyof UserSettings, value: boolean) => {
-    if (!settings) return;
-
-    const originalSettings = settings;
-    const updatedSettings = { ...settings, [key]: value };
-    setSettings(updatedSettings);
-
-    setIsSavingSettings(true);
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
+  const updateSettingsMutation = useMutation({
+    mutationFn: ({ key, value }: { key: keyof UserSettings, value: boolean }) =>
+      apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [key]: value }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Refetch settings to get the latest data
-        toast.success('Settings updated successfully');
-      } else {
-        toast.error(data.message || 'Failed to update settings');
-        setSettings(originalSettings);
+      }),
+    onMutate: async ({ key, value }) => {
+      await queryClient.cancelQueries({ queryKey: ['account-settings'] });
+      const previousSettings = queryClient.getQueryData<UserSettings>(['account-settings']);
+      if (previousSettings) {
+        queryClient.setQueryData(['account-settings'], {
+          ...previousSettings,
+          [key]: value
+        });
       }
-    } catch (error) {
-      console.error('Error updating settings:', error);
+      return { previousSettings };
+    },
+    onError: (_err, _newTodo, context: any) => {
+      if (context?.previousSettings) {
+        queryClient.setQueryData(['account-settings'], context.previousSettings);
+      }
       toast.error('Failed to update settings');
-      // Revert on failure
-      setSettings(originalSettings);
-    } finally {
-      setIsSavingSettings(false);
+    },
+    onSuccess: () => {
+      toast.success('Settings updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['account-settings'] });
+    },
+  });
+
+  const resetSettingsMutation = useMutation({
+    mutationFn: () => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, { method: 'POST' }),
+    onSuccess: () => {
+      toast.success('Settings reset to default successfully');
+      queryClient.invalidateQueries({ queryKey: ['account-settings'] });
+    },
+    onError: () => toast.error('Failed to reset settings'),
+  });
+
+  const exportDataMutation = useMutation({
+    mutationFn: () => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`, { method: 'POST' }),
+    onSuccess: (data) => {
+      if (data.success) {
+        setExportMessage('Data export initiated! Check your email for the download link. You will recieve an email Soon...');
+        setConfirmationText('');
+      } else {
+        setExportMessage(data.message || 'Failed to initiate data export');
+      }
+    },
+    onError: () => {
+      setExportMessage('Failed to initiate data export. Please try again.');
     }
+  });
+
+  const isSavingSettings = updateSettingsMutation.isPending || resetSettingsMutation.isPending;
+
+  const updateSettingsValue = (key: keyof UserSettings, value: boolean) => {
+    if (!settings) return;
+    updateSettingsMutation.mutate({ key, value });
   };
 
-  const resetSettings = async () => {
-    setIsSavingSettings(true);
-    try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success('Settings reset to default successfully');
-        // Refetch settings to get the latest data
-        await fetchSettings();
-      } else {
-        toast.error(data.message || 'Failed to reset settings');
-      }
-    } catch (error) {
-      console.error('Error resetting settings:', error);
-      toast.error('Failed to reset settings');
-    } finally {
-      setIsSavingSettings(false);
-    }
+  const resetSettings = () => {
+    resetSettingsMutation.mutate();
   };
 
   const fetchReports = useCallback(async (): Promise<Report[]> => {
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`);
-      const data = await res.json();
+      const data = await apiRequest<{ success: boolean, reports: Report[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`);
       if (data.success) {
         return data.reports || [];
       } else {
-        console.error('Failed to fetch reports:', data.message);
         return [];
       }
     } catch (error) {
@@ -168,12 +160,10 @@ export default function AccountSettingsComponent() {
 
   const fetchSupportTickets = useCallback(async (): Promise<SupportTicket[]> => {
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`);
-      const data = await res.json();
+      const data = await apiRequest<{ success: boolean, supportTickets: SupportTicket[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`);
       if (data.success) {
         return data.supportTickets || [];
       } else {
-        console.error('Failed to fetch support tickets:', data.message);
         return [];
       }
     } catch (error) {
@@ -182,43 +172,19 @@ export default function AccountSettingsComponent() {
     }
   }, []);
 
-  const exportUserData = useCallback(async () => {
+  const exportUserData = useCallback(() => {
     // Validate confirmation text
     if (confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA') {
       setExportMessage('Please type "CONFIRM EXPORT MY DATA" to proceed.');
       return;
     }
 
-    setIsExportingData(true);
     setExportMessage('');
-    try {
-      const res = await apiFetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`,
-        {
-          method: 'POST',
-        },
-      );
-      const data = await res.json();
-      if (data.success) {
-        setExportMessage(
-          'Data export initiated! Check your email for the download link. You will recieve an email Soon...',
-        );
-        setConfirmationText(''); // Reset confirmation text
-      } else {
-        setExportMessage(data.message || 'Failed to initiate data export');
-      }
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      setExportMessage('Failed to initiate data export. Please try again.');
-    } finally {
-      setIsExportingData(false);
-    }
-  }, [confirmationText]);
+    exportDataMutation.mutate();
+  }, [confirmationText, exportDataMutation]);
 
   // Fetch settings when verified
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [openSections, setOpenSections] = useState<string[]>(['activity', 'preferences', 'data', 'privacy']);
@@ -735,17 +701,17 @@ export default function AccountSettingsComponent() {
               <Button
                 onClick={exportUserData}
                 disabled={
-                  isExportingData ||
+                  exportDataMutation.isPending ||
                   confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA'
                 }
                 className="w-full"
               >
-                {isExportingData ? (
+                {exportDataMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Download className="h-4 w-4 mr-2" />
                 )}
-                {isExportingData
+                {exportDataMutation.isPending
                   ? 'Initiating Export...'
                   : confirmationText.trim().toUpperCase() !== 'CONFIRM EXPORT MY DATA'
                     ? 'Type Confirmation Text'

@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
+import React, { createContext, type ReactNode, useContext, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthState } from '../lib/auth';
 
@@ -27,7 +27,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     useEffect(() => {
         if (isLoaded && isSignedIn && user) {
             // Create socket connection
-            const socket = io(import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000', {
+            const socket = io(import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || undefined, {
                 transports: ['websocket', 'polling'],
             });
 

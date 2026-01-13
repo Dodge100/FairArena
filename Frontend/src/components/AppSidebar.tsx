@@ -20,8 +20,9 @@ import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { useTheme } from '@/hooks/useTheme';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import { useAuthState } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Calendar,
@@ -66,78 +67,77 @@ const playSound = () => {
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getToken, isLoaded } = useAuthState();
+  const { isLoaded } = useAuthState();
   const { theme, setTheme } = useTheme();
   const { dataSaverSettings } = useDataSaver();
   const { customization } = useSidebarCustomization();
 
-  const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
+
   const [soundEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationSoundEnabled');
     return saved ? JSON.parse(saved) : false;
   });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const previousUnreadCountRef = useRef(0);
-
   const { socket } = useSocket();
 
   useEffect(() => {
     localStorage.setItem('notificationSoundEnabled', JSON.stringify(soundEnabled));
   }, [soundEnabled]);
 
-  // Fetch initial unread notification count and set up socket listeners
+  const { data: unreadData } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => apiRequest<{ data: { count: number } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`),
+    enabled: isLoaded && !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications),
+    staleTime: 60000,
+  });
+
+  const unreadCount = unreadData?.data?.count || 0;
+
+  // Sound effect
   useEffect(() => {
-    if (!isLoaded || (dataSaverSettings.enabled && dataSaverSettings.disableNotifications)) return;
+    // Skip sound on initial load or if count didn't increase
+    if (!isInitialLoad && soundEnabled && unreadCount > previousUnreadCountRef.current) {
+      playSound();
+    }
 
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`);
+    if (unreadData && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
 
-        if (response.ok) {
-          const data = await response.json();
-          const current = data.data.count;
-          setUnreadCount(current);
-          if (!isInitialLoad && soundEnabled && current > previousUnreadCountRef.current) {
-            playSound();
-          }
-          if (isInitialLoad) {
-            setIsInitialLoad(false);
-          }
-          previousUnreadCountRef.current = current;
-        }
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
+    previousUnreadCountRef.current = unreadCount;
+  }, [unreadCount, soundEnabled, isInitialLoad, unreadData]);
+
+
+  // Set up socket listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (data: { count: number }) => {
+      queryClient.setQueryData(['notifications', 'unread-count'], (old: any) => {
+        const current = old?.data?.count || 0;
+        return { data: { count: current + data.count } };
+      });
     };
 
-    // Fetch initial count
-    fetchUnreadCount();
+    const handleReadNotification = (data: { count: number }) => {
+      queryClient.setQueryData(['notifications', 'unread-count'], (old: any) => {
+        const current = old?.data?.count || 0;
+        return { data: { count: Math.max(0, current + data.count) } }; // payload usually negative or we subtract? Handlers usually send delta.
+        // Existing code: setUnreadCount(prev => Math.max(0, prev + data.count));
+        // If data.count is negative (e.g. -1), it adds.
+      });
+    };
 
-    // Set up socket listeners for real-time updates
-    if (socket) {
-      const handleNewNotification = (data: { count: number }) => {
-        setUnreadCount(prev => {
-          const newCount = prev + data.count;
-          if (soundEnabled && newCount > prev) {
-            playSound();
-          }
-          return newCount;
-        });
-      };
+    socket.on('notification:new', handleNewNotification);
+    socket.on('notification:read', handleReadNotification);
 
-      const handleReadNotification = (data: { count: number }) => {
-        setUnreadCount(prev => Math.max(0, prev + data.count));
-      };
-
-      socket.on('notification:new', handleNewNotification);
-      socket.on('notification:read', handleReadNotification);
-
-      return () => {
-        socket.off('notification:new', handleNewNotification);
-        socket.off('notification:read', handleReadNotification);
-      };
-    }
-  }, [getToken, dataSaverSettings, isLoaded, isInitialLoad, soundEnabled, socket]);
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+      socket.off('notification:read', handleReadNotification);
+    };
+  }, [socket, queryClient]);
 
   // Menu items - defined inside component to access unreadCount and customization
   const menuItems = customization.mainItems

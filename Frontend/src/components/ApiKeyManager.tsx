@@ -1,8 +1,9 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Check, Copy, Key, Loader2, Plus, Trash2, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useTheme } from '../hooks/useTheme';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 interface ApiKey {
     id: string;
@@ -22,8 +23,6 @@ interface NewApiKey {
 
 export const ApiKeyManager: React.FC = () => {
     const { isDark } = useTheme();
-    const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-    const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
     const [revokingId, setRevokingId] = useState<string | null>(null);
 
@@ -37,86 +36,76 @@ export const ApiKeyManager: React.FC = () => {
     // Delete confirmation modal state
     const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
 
-    // Fetch keys on mount
-    useEffect(() => {
-        fetchApiKeys();
-    }, []);
+    const queryClient = useQueryClient();
 
-    const fetchApiKeys = async () => {
-        setLoading(true);
-        try {
-            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys`);
-            const data = await response.json();
+    // Fetch keys with useQuery
+    const { data: apiKeys = [], isLoading: loading } = useQuery({
+        queryKey: ['apiKeys'],
+        queryFn: () => apiRequest<{ success: boolean; data: { keys: ApiKey[] } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys`)
+            .then(res => res.data.keys),
+        staleTime: 60000,
+    });
+
+    const createKeyMutation = useMutation({
+        mutationFn: (data: { name: string; expiresIn: number | null }) =>
+            apiRequest<{ success: boolean; data: NewApiKey; message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            }),
+        onSuccess: (data) => {
             if (data.success) {
-                setApiKeys(data.data.keys);
+                setCreatedKey(data.data);
+                setShowCreateModal(false);
+                setNewKeyName('');
+                queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+                toast.success('API key created successfully');
+            } else {
+                toast.error(data.message || 'Failed to create API key');
             }
-        } catch (error) {
-            console.error('Failed to fetch API keys:', error);
-            toast.error('Failed to load API keys');
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+        onError: () => {
+            toast.error('An error occurred while creating the API key');
+        },
+    });
 
-    const handleCreateKey = async () => {
+    const handleCreateKey = () => {
         if (!newKeyName.trim()) {
             toast.error('Please enter a name for your API key');
             return;
         }
 
         setCreating(true);
-        try {
-            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: newKeyName,
-                    expiresIn: newKeyExpires === 'never' ? null : parseInt(newKeyExpires)
-                })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                setCreatedKey(data.data);
-                setShowCreateModal(false);
-                setNewKeyName('');
-                fetchApiKeys(); // Refresh list
-                toast.success('API key created successfully');
-            } else {
-                toast.error(data.message || 'Failed to create API key');
-            }
-        } catch (error) {
-            console.error('Error creating API key:', error);
-            toast.error('An error occurred while creating the API key');
-        } finally {
-            setCreating(false);
-        }
+        createKeyMutation.mutate({
+            name: newKeyName,
+            expiresIn: newKeyExpires === 'never' ? null : parseInt(newKeyExpires)
+        }, {
+            onSettled: () => setCreating(false)
+        });
     };
+
+    const revokeKeyMutation = useMutation({
+        mutationFn: (id: string) =>
+            apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys/${id}`, { method: 'DELETE' }),
+        onSuccess: () => {
+            toast.success('API key revoked successfully');
+            queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+        },
+        onError: () => {
+            toast.error('An error occurred while revoking the API key');
+        },
+    });
 
     const confirmRevokeKey = async () => {
         if (!keyToDelete) return;
 
         setRevokingId(keyToDelete.id);
-        try {
-            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/api-keys/${keyToDelete.id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                toast.success('API key revoked successfully');
-                setApiKeys(prev => prev.filter(key => key.id !== keyToDelete.id));
-            } else {
-                toast.error('Failed to revoke API key');
+        revokeKeyMutation.mutate(keyToDelete.id, {
+            onSettled: () => {
+                setRevokingId(null);
+                setKeyToDelete(null);
             }
-        } catch (error) {
-            console.error('Error revoking API key:', error);
-            toast.error('An error occurred while revoking the API key');
-        } finally {
-            setRevokingId(null);
-            setKeyToDelete(null);
-        }
+        });
     };
 
     const copyToClipboard = (text: string) => {

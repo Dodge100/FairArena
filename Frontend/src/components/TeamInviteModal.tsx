@@ -1,7 +1,8 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Upload, UserPlus, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { Button } from './ui/button';
 import {
     Dialog,
@@ -56,12 +57,118 @@ export const TeamInviteModal = ({
     onInviteSent,
     onCreateTeam,
 }: TeamInviteModalProps) => {
-    const [loading, setLoading] = useState(false);
+    const singleInviteMutation = useMutation({
+        mutationFn: (data: InviteEntry) => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }),
+        onSuccess: () => {
+            toast.success('Team invitation is being processed');
+            setSingleInvite({ email: '', roleId: '', firstName: '', lastName: '' });
+            onInviteSent?.();
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to send invitation');
+        }
+    });
+
+    const bulkInviteMutation = useMutation({
+        mutationFn: (invites: InviteEntry[]) => apiRequest<{ summary: any }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invites })
+        }),
+        onSuccess: (data) => {
+            toast.success(`${data.summary.total} invitations are being processed`);
+            setBulkInvites([{ email: '', roleId: '', firstName: '', lastName: '' }]);
+            onInviteSent?.();
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to send invitations');
+        }
+    });
+
+    const csvUploadMutation = useMutation({
+        mutationFn: (csvContent: string) => apiRequest<{ summary: any }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/csv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ csvContent })
+        }),
+        onSuccess: (data) => {
+            toast.success(`CSV Processed: ${data.summary.total} invitations are being processed`);
+            setCsvContent('');
+            setCsvFile(null);
+            onInviteSent?.();
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            toast.error(`Failed to Process CSV: ${error.message || 'An error occurred'}`);
+        }
+    });
+
+    const jsonValidateMutation = useMutation({
+        mutationFn: (jsonContent: string) => apiRequest<{ summary: any, validInvites: InviteEntry[], invalidInvites: InviteEntry[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonContent })
+        }),
+        onSuccess: (data) => {
+            setJsonValidation({
+                valid: data.summary.valid,
+                invalid: data.summary.invalid,
+                total: data.summary.total,
+                validInvites: data.validInvites,
+                invalidInvites: data.invalidInvites,
+            });
+            toast.success(`JSON parsed: ${data.summary.valid} valid, ${data.summary.invalid} invalid invitations`);
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to parse JSON');
+        }
+    });
+
+    const jsonSendMutation = useMutation({
+        mutationFn: (invites: InviteEntry[]) => apiRequest<{ summary: any }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invites })
+        }),
+        onSuccess: (data) => {
+            toast.success(`${data.summary.total} invitations are being processed`);
+            setJsonContent('');
+            setJsonValidation(null);
+            onInviteSent?.();
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to send invitations');
+        }
+    });
+
+    const loading = singleInviteMutation.isPending || bulkInviteMutation.isPending || csvUploadMutation.isPending || jsonValidateMutation.isPending || jsonSendMutation.isPending;
     const [activeTab, setActiveTab] = useState('single');
-    const [teams, setTeams] = useState<Team[]>([]);
     const [selectedTeamSlug, setSelectedTeamSlug] = useState<string | undefined>();
-    const [roles, setRoles] = useState<TeamRole[]>([]);
-    const [loadingTeams, setLoadingTeams] = useState(false);
+    const queryClient = useQueryClient();
+
+    const { data: teams = [], isLoading: loadingTeams } = useQuery({
+        queryKey: ['teams', organizationSlug],
+        queryFn: () => apiRequest<{ teams: Team[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/teams`)
+            .then(res => res.teams || []),
+        enabled: open,
+        staleTime: 60000,
+    });
+
+    const { data: roles = [] } = useQuery({
+        queryKey: ['roles', organizationSlug, selectedTeamSlug],
+        queryFn: () => apiRequest<{ roles: TeamRole[] }>(
+            `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/roles`
+        ).then(res => res.roles || []),
+        enabled: !!selectedTeamSlug,
+        staleTime: 60000,
+    });
 
     // Single invite state
     const [singleInvite, setSingleInvite] = useState<InviteEntry>({
@@ -90,56 +197,9 @@ export const TeamInviteModal = ({
         invalidInvites?: InviteEntry[];
     } | null>(null);
 
-    // Fetch teams when modal opens
-    const fetchTeams = useCallback(async () => {
-        setLoadingTeams(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/teams`
-            );
 
-            if (response.ok) {
-                const data = await response.json();
-                setTeams(data.teams || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch teams:', error);
-        } finally {
-            setLoadingTeams(false);
-        }
-    }, [organizationSlug]);
 
-    useEffect(() => {
-        if (open) {
-            fetchTeams();
-        }
-    }, [open, fetchTeams]);
-
-    // Fetch roles when team is selected
-    const fetchRoles = useCallback(async (teamSlug: string) => {
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${teamSlug}/roles`
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                setRoles(data.roles || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch roles:', error);
-        }
-    }, [organizationSlug]);
-
-    useEffect(() => {
-        if (selectedTeamSlug) {
-            fetchRoles(selectedTeamSlug);
-        } else {
-            setRoles([]);
-        }
-    }, [selectedTeamSlug, fetchRoles]);
-
-    const handleSingleInvite = async () => {
+    const handleSingleInvite = () => {
         if (!selectedTeamSlug) {
             toast.error('Please select a team first');
             return;
@@ -150,36 +210,10 @@ export const TeamInviteModal = ({
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(singleInvite),
-                }
-            );
-
-            if (response.ok) {
-                toast.success('Team invitation is being processed');
-                setSingleInvite({ email: '', roleId: '', firstName: '', lastName: '' });
-                onInviteSent?.();
-                onOpenChange(false);
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to send invitation');
-            }
-        } catch {
-            toast.error('Failed to send invitation');
-        } finally {
-            setLoading(false);
-        }
+        singleInviteMutation.mutate(singleInvite);
     };
 
-    const handleBulkInvite = async () => {
+    const handleBulkInvite = () => {
         if (!selectedTeamSlug) {
             toast.error('Please select a team first');
             return;
@@ -192,37 +226,10 @@ export const TeamInviteModal = ({
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ invites: validInvites }),
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                toast.success(`${data.summary.total} invitations are being processed`);
-                setBulkInvites([{ email: '', roleId: '', firstName: '', lastName: '' }]);
-                onInviteSent?.();
-                onOpenChange(false);
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to send invitations');
-            }
-        } catch {
-            toast.error('Failed to send invitations');
-        } finally {
-            setLoading(false);
-        }
+        bulkInviteMutation.mutate(validInvites);
     };
 
-    const handleCSVUpload = async () => {
+    const handleCSVUpload = () => {
         if (!selectedTeamSlug) {
             toast.error('Please select a team first');
             return;
@@ -233,35 +240,7 @@ export const TeamInviteModal = ({
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/csv`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ csvContent }),
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                toast.success(`CSV Processed: ${data.summary.total} invitations are being processed`);
-                setCsvContent('');
-                setCsvFile(null);
-                onInviteSent?.();
-                onOpenChange(false);
-            } else {
-                const error = await response.json();
-                toast.error(`Failed to Process CSV: ${error.error || 'An error occurred'}`);
-            }
-        } catch {
-            toast.error('Failed to process CSV');
-        } finally {
-            setLoading(false);
-        }
+        csvUploadMutation.mutate(csvContent);
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,7 +266,7 @@ export const TeamInviteModal = ({
         }
     };
 
-    const handleJSONValidation = async () => {
+    const handleJSONValidation = () => {
         if (!selectedTeamSlug) {
             toast.error('Please select a team first');
             return;
@@ -298,77 +277,16 @@ export const TeamInviteModal = ({
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/json`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ jsonContent }),
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                setJsonValidation({
-                    valid: data.summary.valid,
-                    invalid: data.summary.invalid,
-                    total: data.summary.total,
-                    validInvites: data.validInvites,
-                    invalidInvites: data.invalidInvites,
-                });
-                toast.success(
-                    `JSON parsed: ${data.summary.valid} valid, ${data.summary.invalid} invalid invitations`
-                );
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to parse JSON');
-            }
-        } catch {
-            toast.error('Failed to parse JSON');
-        } finally {
-            setLoading(false);
-        }
+        jsonValidateMutation.mutate(jsonContent);
     };
 
-    const handleJSONSendInvites = async () => {
+    const handleJSONSendInvites = () => {
         if (!jsonValidation || !jsonValidation.validInvites) {
             toast.error('Please validate JSON first');
             return;
         }
 
-        setLoading(true);
-        try {
-            const response = await apiFetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/v1/team/organization/${organizationSlug}/team/${selectedTeamSlug}/invites/bulk`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ invites: jsonValidation.validInvites }),
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                toast.success(`${data.summary.total} invitations are being processed`);
-                setJsonContent('');
-                setJsonValidation(null);
-                onInviteSent?.();
-                onOpenChange(false);
-            } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to send invitations');
-            }
-        } catch {
-            toast.error('Failed to send invitations');
-        } finally {
-            setLoading(false);
-        }
+        jsonSendMutation.mutate(jsonValidation.validInvites);
     };
 
     const addBulkInviteRow = () => {

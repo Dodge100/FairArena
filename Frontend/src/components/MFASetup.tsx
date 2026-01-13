@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useMutation } from '@tanstack/react-query';
 import { Check, Copy, Download, Loader2, Shield, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -12,7 +13,7 @@ interface MFASetupProps {
 
 export function MFASetup({ onComplete, onCancel }: MFASetupProps) {
     const [step, setStep] = useState<'init' | 'verify' | 'backup'>('init');
-    const [loading, setLoading] = useState(false);
+
     const [qrCode, setQrCode] = useState<string>('');
     const [secretKey, setSecretKey] = useState<string>('');
     const [verifyCode, setVerifyCode] = useState('');
@@ -20,14 +21,9 @@ export function MFASetup({ onComplete, onCancel }: MFASetupProps) {
     const [copiedKey, setCopiedKey] = useState(false);
     const [copiedCodes, setCopiedCodes] = useState(false);
 
-    const startSetup = async () => {
-        setLoading(true);
-        try {
-            const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/mfa/setup`, {
-                method: 'POST',
-            });
-            const data = await res.json();
-
+    const startSetupMutation = useMutation({
+        mutationFn: () => apiRequest<{ success: boolean, data: { qrCode: string, manualEntryKey: string, backupCodes: string[] }, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/mfa/setup`, { method: 'POST' }),
+        onSuccess: (data) => {
             if (data.success) {
                 setQrCode(data.data.qrCode);
                 setSecretKey(data.data.manualEntryKey);
@@ -36,38 +32,35 @@ export function MFASetup({ onComplete, onCancel }: MFASetupProps) {
             } else {
                 toast.error(data.message || 'Failed to start MFA setup');
             }
-        } catch (error) {
-            toast.error('Failed to start MFA setup');
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+        onError: () => toast.error('Failed to start MFA setup')
+    });
 
-    const verifySetup = async () => {
-        if (verifyCode.length !== 6) return;
-        setLoading(true);
-        try {
-            const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/mfa/verify-setup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ code: verifyCode }),
-            });
-            const data = await res.json();
-
+    const verifySetupMutation = useMutation({
+        mutationFn: (code: string) => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/mfa/verify-setup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        }),
+        onSuccess: (data) => {
             if (data.success) {
                 toast.success('Two-factor authentication enabled!');
                 setStep('backup');
             } else {
                 toast.error(data.message || 'Verification failed');
             }
-        } catch (error) {
-            toast.error('Verification failed');
-        } finally {
-            setLoading(false);
-        }
+        },
+        onError: () => toast.error('Verification failed')
+    });
+
+    const startSetup = () => startSetupMutation.mutate();
+
+    const verifySetup = () => {
+        if (verifyCode.length !== 6) return;
+        verifySetupMutation.mutate(verifyCode);
     };
+
+    const loading = startSetupMutation.isPending || verifySetupMutation.isPending;
 
     const copySecret = () => {
         navigator.clipboard.writeText(secretKey);

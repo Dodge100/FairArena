@@ -13,9 +13,10 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Save, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthState } from '../lib/auth';
@@ -49,10 +50,12 @@ interface ProfileData {
 }
 
 export default function EditProfile() {
-  const { user, getToken, isLoaded } = useAuthState();
+  const { user, isLoaded } = useAuthState();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const queryClient = useQueryClient();
+
   const [profile, setProfile] = useState<ProfileData>({
     firstName: '',
     lastName: '',
@@ -89,6 +92,45 @@ export default function EditProfile() {
   const [newCertification, setNewCertification] = useState('');
   const [newAward, setNewAward] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const { isLoading: loading } = useQuery({
+    queryKey: ['profile', 'me', user?.id],
+    queryFn: async () => {
+      const data = await apiRequest<{ data: ProfileData }>(`${API_BASE}/api/v1/profile/me`);
+      const profileData = data.data;
+      setProfile({
+        firstName: profileData.firstName || '',
+        lastName: profileData.lastName || '',
+        bio: profileData.bio || '',
+        gender: profileData.gender || '',
+        dateOfBirth: profileData.dateOfBirth
+          ? new Date(profileData.dateOfBirth).toISOString().split('T')[0]
+          : '',
+        phoneNumber: profileData.phoneNumber || '',
+        location: profileData.location || '',
+        jobTitle: profileData.jobTitle || '',
+        company: profileData.company || '',
+        yearsOfExperience: profileData.yearsOfExperience ?? '',
+        experiences: profileData.experiences || [],
+        education: profileData.education || [],
+        skills: profileData.skills || [],
+        languages: profileData.languages || [],
+        interests: profileData.interests || [],
+        certifications: profileData.certifications || [],
+        awards: profileData.awards || [],
+        githubUsername: profileData.githubUsername || '',
+        twitterHandle: profileData.twitterHandle || '',
+        linkedInProfile: profileData.linkedInProfile || '',
+        resumeUrl: profileData.resumeUrl || '',
+        portfolioUrl: profileData.portfolioUrl || '',
+        isPublic: profileData.isPublic || false,
+        requireAuth: profileData.requireAuth || false,
+        trackViews: profileData.trackViews || false,
+      });
+      return data;
+    },
+    enabled: !!user && isLoaded,
+  });
 
   // URL validation function
   const isValidUrl = (url: string): boolean => {
@@ -136,61 +178,26 @@ export default function EditProfile() {
     return !hasErrors;
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!isLoaded || !user) return;
+  const updateProfileMutation = useMutation({
+    mutationFn: (payload: any) =>
+      apiRequest(`${API_BASE}/api/v1/profile/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Profile is being updated. Changes will reflect shortly.');
+      setTimeout(() => {
+        navigate(`/profile/${user?.id}`);
+      }, 1500);
+    },
+    onError: () => {
+      toast.error('Failed to save profile');
+    },
+  });
 
-      try {
-        setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await apiFetch(`${apiUrl}/api/v1/profile/me`);
-
-        if (response.ok) {
-          const data = await response.json();
-          const profileData = data.data;
-          setProfile({
-            firstName: profileData.firstName || '',
-            lastName: profileData.lastName || '',
-            bio: profileData.bio || '',
-            gender: profileData.gender || '',
-            dateOfBirth: profileData.dateOfBirth
-              ? new Date(profileData.dateOfBirth).toISOString().split('T')[0]
-              : '',
-            phoneNumber: profileData.phoneNumber || '',
-            location: profileData.location || '',
-            jobTitle: profileData.jobTitle || '',
-            company: profileData.company || '',
-            yearsOfExperience: profileData.yearsOfExperience ?? '',
-            experiences: profileData.experiences || [],
-            education: profileData.education || [],
-            skills: profileData.skills || [],
-            languages: profileData.languages || [],
-            interests: profileData.interests || [],
-            certifications: profileData.certifications || [],
-            awards: profileData.awards || [],
-            githubUsername: profileData.githubUsername || '',
-            twitterHandle: profileData.twitterHandle || '',
-            linkedInProfile: profileData.linkedInProfile || '',
-            resumeUrl: profileData.resumeUrl || '',
-            portfolioUrl: profileData.portfolioUrl || '',
-            isPublic: profileData.isPublic || false,
-            requireAuth: profileData.requireAuth || false,
-            trackViews: profileData.trackViews || false,
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        toast.error('Failed to load profile');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, getToken, isLoaded]);
-
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!user) return;
 
     // Validate required fields
@@ -211,42 +218,14 @@ export default function EditProfile() {
       return;
     }
 
-    try {
-      setSaving(true);
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
+    const payload = {
+      ...profile,
+      gender: profile.gender || null,
+      yearsOfExperience: profile.yearsOfExperience ? Number(profile.yearsOfExperience) : null,
+      dateOfBirth: profile.dateOfBirth || null,
+    };
 
-      const payload = {
-        ...profile,
-        gender: profile.gender || null,
-        yearsOfExperience: profile.yearsOfExperience ? Number(profile.yearsOfExperience) : null,
-        dateOfBirth: profile.dateOfBirth || null,
-      };
-
-      const response = await apiFetch(`${apiUrl}/api/v1/profile/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save profile');
-      }
-
-      // Profile is being processed asynchronously
-      toast.success('Profile is being updated. Changes will reflect shortly.');
-
-      // Navigate after a short delay to allow processing
-      setTimeout(() => {
-        navigate(`/profile/${user.id}`);
-      }, 1500);
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      toast.error('Failed to save profile');
-    } finally {
-      setSaving(false);
-    }
+    updateProfileMutation.mutate(payload);
   };
 
   const addItem = (key: keyof ProfileData, value: string, setter: (val: string) => void) => {

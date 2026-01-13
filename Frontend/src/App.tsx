@@ -135,7 +135,6 @@ function App() {
           <Route path="/maintenance" element={<Maintenance />} />
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
             <Route path="/why-choose-us" element={<HowItWorks />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

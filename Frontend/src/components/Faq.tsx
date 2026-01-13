@@ -111,15 +111,15 @@ function Faq() {
               className={`w-full px-6 py-5 rounded-2xl cursor-pointer select-none border transition-colors ${cardBG}`}
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
             >
-              <div className="flex items-center justify-between">
-                <span className={`text-lg ${textPrimary}`}>{item.q}</span>
+              <div className="flex items-center justify-between gap-4">
+                <span className={`text-lg font-medium flex-1 text-left ${textPrimary}`}>{item.q}</span>
 
                 {/* Animated Icon */}
                 <motion.div
                   animate={{ rotate: openIndex === index ? 45 : 0 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   className="
-                    w-8 h-8 rounded-full bg-[#d9ff00]
+                    w-8 h-8 rounded-full bg-[#d9ff00] shrink-0
                     flex items-center justify-center
                   "
                 >
@@ -128,18 +128,20 @@ function Faq() {
               </div>
 
               {/* Accordion Body */}
-              <AnimatePresence initial={false}>
+              <AnimatePresence>
                 {openIndex === index && (
-                  <motion.p
+                  <motion.div
                     key="answer"
-                    initial={{ opacity: 0, height: 0, y: -4 }}
-                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -4 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className={`${textSecondary} text-sm mt-3 pb-1`}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden"
                   >
-                    {item.a || 'Your answer goes here…'}
-                  </motion.p>
+                    <p className={`${textSecondary} text-sm mt-3 pb-1 leading-relaxed`}>
+                      {item.a || 'Your answer goes here…'}
+                    </p>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>

@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { publicApiFetch } from '@/lib/apiClient';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,7 +14,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
 import { Spotlight } from './ui/Spotlight';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 interface WaitlistResponse {
   success: boolean;
@@ -33,7 +34,6 @@ function WaitList() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [marketingConsent, setMarketingConsent] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [position, setPosition] = useState<number | null>(null);
   const [totalWaitlist, setTotalWaitlist] = useState<number | null>(null);
@@ -52,23 +52,61 @@ function WaitList() {
     }
   }, [isSignedIn, navigate]);
 
-  // Fetch waitlist stats on mount
+  // Fetch waitlist stats
+  const { data: statsData } = useQuery({
+    queryKey: ['waitlist-stats'],
+    queryFn: async () => {
+      const res = await publicApiFetch(`${API_BASE}/api/v1/waitlist/stats`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to fetch stats');
+      return data;
+    },
+    enabled: !isSignedIn,
+  });
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await publicApiFetch(`${API_BASE}/api/v1/waitlist/stats`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setTotalWaitlist(data.data.total);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch waitlist stats:', error);
+    if (statsData?.success) {
+      setTotalWaitlist(statsData.data.total);
+    }
+  }, [statsData]);
+
+  // Join waitlist mutation
+  const joinMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await publicApiFetch(`${API_BASE}/api/v1/waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Recaptcha-Token': token,
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          name: name.trim() || undefined,
+          source: 'website',
+          marketingConsent,
+        }),
+      });
+      const data: WaitlistResponse = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to join waitlist');
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data.data?.hasAccount) {
+        toast.info(data.message);
+        navigate('/signin');
+        return;
       }
-    };
-    fetchStats();
-  }, []);
+      setIsSubmitted(true);
+      setPosition(data.data?.position || null);
+      toast.success(data.message);
+    },
+    onError: (error: Error) => {
+      console.error('Waitlist error:', error);
+      toast.error(error.message || 'Failed to join waitlist. Please try again.');
+    },
+  });
+
+  const isLoading = joinMutation.isPending;
 
   if (isSignedIn) {
     return null;
@@ -83,44 +121,7 @@ function WaitList() {
   const handleCaptchaVerify = async (token: string | null) => {
     if (!token) return;
     setShowCaptcha(false);
-    setIsLoading(true);
-
-    try {
-      const response = await publicApiFetch(`${API_BASE}/api/v1/waitlist`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Recaptcha-Token': token,
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          name: name.trim() || undefined,
-          source: 'website',
-          marketingConsent,
-        }),
-      });
-
-      const data: WaitlistResponse = await response.json();
-
-      if (data.success) {
-        if (data.data?.hasAccount) {
-          toast.info(data.message);
-          navigate('/signin');
-          return;
-        }
-
-        setIsSubmitted(true);
-        setPosition(data.data?.position || null);
-        toast.success(data.message);
-      } else {
-        toast.error(data.message || 'Failed to join waitlist');
-      }
-    } catch (error) {
-      console.error('Waitlist error:', error);
-      toast.error('Failed to join waitlist. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    joinMutation.mutate(token);
   };
 
   return (

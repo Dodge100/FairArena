@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -15,7 +16,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { useOrganization } from '../contexts/OrganizationContext';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 // Zod schema for form fields
 const createOrganizationFormSchema = z.object({
@@ -69,43 +70,36 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
     }
   }, [watchedName, setValue]);
 
-  const onSubmit = async (data: CreateOrganizationFormData) => {
-    try {
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          joinEnabled,
-          isPublic,
-        }),
-      });
-
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        result = { error: 'An unexpected error occurred' };
-      }
-
-      if (response.ok) {
-        toast.success('Organization created successfully!');
-        await refreshOrganizations();
-        onOpenChange(false);
-        reset();
+  const createOrgMutation = useMutation({
+    mutationFn: (data: CreateOrganizationFormData) => apiRequest<{ error?: string, suggestion?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...data,
+        joinEnabled,
+        isPublic,
+      }),
+    }),
+    onSuccess: async () => {
+      toast.success('Organization created successfully!');
+      await refreshOrganizations();
+      onOpenChange(false);
+      reset();
+    },
+    onError: (error: any) => {
+      // Logic to handle slug exists error, check error.data
+      // Note: apiRequest throws ApiError, which we can inspect
+      if ((error as any).data?.error === 'Slug already exists' && (error as any).data?.suggestion) {
+        toast.error(`Slug already exists. Try: ${error.data.suggestion}`);
       } else {
-        if (result.error === 'Slug already exists' && result.suggestion) {
-          toast.error(`Slug already exists. Try: ${result.suggestion}`);
-        } else {
-          toast.error(result.error || 'Failed to create organization');
-        }
+        toast.error(error.message || 'Failed to create organization');
       }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.');
-      console.error(error);
     }
+  });
+
+
+  const onSubmit = (data: CreateOrganizationFormData) => {
+    return createOrgMutation.mutateAsync(data);
   };
 
   return (

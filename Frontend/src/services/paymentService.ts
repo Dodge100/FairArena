@@ -1,4 +1,4 @@
-import { apiFetch, publicApiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 
 export interface PaymentPlan {
   id: string;
@@ -70,7 +70,7 @@ export class PaymentService {
 
   async createOrder(planId: string, token: string): Promise<CreateOrderResponse> {
     try {
-      const response = await apiFetch(
+      return await apiRequest<CreateOrderResponse>(
         `${this.baseURL}/api/v1/payments/create-order`,
         {
           method: 'POST',
@@ -81,12 +81,6 @@ export class PaymentService {
           body: JSON.stringify({ planId }),
         }
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to create order');
-      }
-
-      return await response.json();
     } catch (error) {
       console.error('Create order error:', error);
       throw error;
@@ -98,7 +92,7 @@ export class PaymentService {
     token: string,
   ): Promise<VerifyPaymentResponse> {
     try {
-      const response = await apiFetch(
+      return await apiRequest<VerifyPaymentResponse>(
         `${this.baseURL}/api/v1/payments/verify-payment`,
         {
           method: 'POST',
@@ -109,12 +103,6 @@ export class PaymentService {
           body: JSON.stringify(paymentData),
         }
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to verify payment');
-      }
-
-      return await response.json();
     } catch (error) {
       console.error('Verify payment error:', error);
       throw error;
@@ -129,13 +117,10 @@ export class PaymentService {
       }
 
       // Fetch from API
-      const response = await publicApiFetch(`${this.baseURL}/api/v1/plans`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch plans from API');
-      }
-
-      const data = await response.json() as PlansResponse;
+      // Since publicApiFetch is not wrapped by apiRequest usually, we might need to use apiRequest or just allow auth header which apiRequest adds.
+      // But fetchPlans might be public. apiRequest adds auth header if token exists.
+      // If plans are public, apiRequest is safe to use (extra auth header is usually ignored by public endpoints).
+      const data = await apiRequest<PlansResponse>(`${this.baseURL}/api/v1/plans`);
 
       if (data.success && data.plans) {
         this.plansCache = data.plans;

@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import {
     browserSupportsWebAuthn,
-    startRegistration,
+    startRegistration
 } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Fingerprint,
     Key,
@@ -16,8 +17,10 @@ import {
     ShieldCheck,
     Trash2
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 interface SecurityKey {
     id: string;
@@ -32,114 +35,90 @@ interface SecurityKeyManagerProps {
 }
 
 export function SecurityKeyManager({ onDeviceChange }: SecurityKeyManagerProps) {
-    const [securityKeys, setSecurityKeys] = useState<SecurityKey[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const isSupported = browserSupportsWebAuthn();
     const [registering, setRegistering] = useState(false);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [newName, setNewName] = useState('');
-    const [isSupported, setIsSupported] = useState(true);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
+    const { data: securityKeys = [], isLoading: loading } = useQuery({
+        queryKey: ['securityKeys'],
+        queryFn: () => apiRequest<{ success: boolean; data: SecurityKey[] }>(`${API_BASE}/api/v1/mfa/webauthn/devices`)
+            .then(res => res.data),
+        staleTime: 60000,
+    });
 
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    const registerMutation = useMutation({
+        mutationFn: async () => {
+            const optionsRes = await apiRequest<{ success: boolean; data: any; message?: string }>(
+                `${API_BASE}/api/v1/mfa/webauthn/register/options`,
+                { method: 'POST' }
+            );
 
-    // Check WebAuthn support
-    useEffect(() => {
-        setIsSupported(browserSupportsWebAuthn());
-    }, []);
-
-    // Fetch registered security keys
-    const fetchSecurityKeys = useCallback(async () => {
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/mfa/webauthn/devices`);
-            const data = await res.json();
-            if (data.success) {
-                setSecurityKeys(data.data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch security keys:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [apiUrl]);
-
-    useEffect(() => {
-        fetchSecurityKeys();
-    }, [fetchSecurityKeys]);
-
-    // Register new security key
-    const handleRegister = async () => {
-        if (!isSupported) {
-            toast.error('Security keys are not supported in this browser');
-            return;
-        }
-
-        setRegistering(true);
-        try {
-            // Step 1: Get registration options
-            const optionsRes = await apiFetch(`${apiUrl}/api/v1/mfa/webauthn/register/options`, {
-                method: 'POST',
-            });
-            const optionsData = await optionsRes.json();
-
-            if (!optionsData.success) {
-                throw new Error(optionsData.message || 'Failed to get registration options');
+            if (!optionsRes.success) {
+                throw new Error(optionsRes.message || 'Failed to get registration options');
             }
 
-            // Step 2: Create credential
             const credential = await startRegistration({
-                optionsJSON: optionsData.data as PublicKeyCredentialCreationOptionsJSON,
+                optionsJSON: optionsRes.data as PublicKeyCredentialCreationOptionsJSON,
             });
 
-            // Step 3: Verify and save
-            const verifyRes = await apiFetch(`${apiUrl}/api/v1/mfa/webauthn/register/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ response: credential }),
-            });
-            const verifyData = await verifyRes.json();
+            const verifyRes = await apiRequest<{ success: boolean; message?: string }>(
+                `${API_BASE}/api/v1/mfa/webauthn/register/verify`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ response: credential }),
+                }
+            );
 
-            if (!verifyData.success) {
-                throw new Error(verifyData.message || 'Failed to verify registration');
+            if (!verifyRes.success) {
+                throw new Error(verifyRes.message || 'Failed to verify registration');
             }
-
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['securityKeys'] });
             toast.success('Security key added successfully!');
-            fetchSecurityKeys();
             onDeviceChange?.();
-        } catch (error) {
+        },
+        onError: (error: any) => {
             const message = error instanceof Error ? error.message : 'Failed to register security key';
             if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
                 toast.info('Registration cancelled');
             } else {
                 toast.error(message);
             }
+        },
+    });
+
+    const handleRegister = async () => {
+        if (!isSupported) {
+            toast.error('Security keys are not supported in this browser');
+            return;
+        }
+        setRegistering(true);
+        try {
+            await registerMutation.mutateAsync();
         } finally {
             setRegistering(false);
         }
     };
 
-    // Delete security key
-    const handleDelete = async (id: string) => {
-        setDeletingId(id);
-        setShowDropdown(null);
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/mfa/webauthn/devices/${id}`, {
-                method: 'DELETE',
-            });
-            const data = await res.json();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to remove security key');
-            }
-
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => apiRequest(`${API_BASE}/api/v1/mfa/webauthn/devices/${id}`, { method: 'DELETE' }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['securityKeys'] });
             toast.success('Security key removed');
-            setSecurityKeys(prev => prev.filter(k => k.id !== id));
             onDeviceChange?.();
-        } catch (error) {
+        },
+        onError: (error: any) => {
             toast.error(error instanceof Error ? error.message : 'Failed to delete security key');
-        } finally {
-            setDeletingId(null);
-        }
+        },
+    });
+
+    const handleDelete = (id: string) => {
+        setShowDropdown(null);
+        deleteMutation.mutate(id);
     };
 
     // Rename methods
@@ -149,28 +128,30 @@ export function SecurityKeyManager({ onDeviceChange }: SecurityKeyManagerProps) 
         setShowDropdown(null);
     };
 
-    const handleRename = async (id: string) => {
+    const renameMutation = useMutation({
+        mutationFn: ({ id, name }: { id: string; name: string }) =>
+            apiRequest<{ success: boolean; message?: string }>(`${API_BASE}/api/v1/mfa/webauthn/devices/${id}/rename`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['securityKeys'] });
+            setRenamingId(null);
+            setNewName('');
+            toast.success('Security key renamed');
+        },
+        onError: () => {
+            toast.error('Failed to rename security key');
+        },
+    });
+
+    const handleRename = (id: string) => {
         if (!newName.trim()) {
             toast.error('Name cannot be empty');
             return;
         }
-
-        try {
-            const res = await apiFetch(`${apiUrl}/api/v1/mfa/webauthn/devices/${id}/rename`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName.trim() }),
-            });
-            const data = await res.json();
-
-            if (!data.success) throw new Error(data.message);
-
-            toast.success('Security key renamed');
-            setSecurityKeys(prev => prev.map(k => k.id === id ? { ...k, name: newName.trim() } : k));
-            setRenamingId(null);
-        } catch (error) {
-            toast.error('Failed to rename security key');
-        }
+        renameMutation.mutate({ id, name: newName.trim() });
     };
 
     // Helper functions
@@ -185,6 +166,8 @@ export function SecurityKeyManager({ onDeviceChange }: SecurityKeyManagerProps) 
     const getDeviceIcon = (deviceType: string | null) => {
         return deviceType === 'platform' ? <Fingerprint className="w-5 h-5" /> : <Key className="w-5 h-5" />;
     };
+
+    const deletingId = deleteMutation.isPending ? deleteMutation.variables : null;
 
     if (!isSupported) return null;
 

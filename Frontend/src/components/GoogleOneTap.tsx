@@ -40,7 +40,8 @@ export function GoogleOneTap() {
                     }
                 },
                 auto_select: false, // Don't automatically sign in, let user choose
-                cancel_on_tap_outside: false, // Standard behavior
+                cancel_on_tap_outside: true, // Standard behavior
+                use_fedcm_for_prompt: true, // Opt-in to FedCM migration
             });
 
             window.google.accounts.id.prompt((notification: any) => {

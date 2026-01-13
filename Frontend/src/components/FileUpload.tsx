@@ -1,7 +1,7 @@
 import { AlertCircle, CheckCircle2, FileIcon, Loader2, Upload, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 interface FileUploadProps {
     onUploadComplete?: (blobName: string) => void;
@@ -88,7 +88,7 @@ export function FileUpload({
 
         try {
             // Step 1: Request SAS token from backend
-            const tokenResponse = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/sas-token`, {
+            const tokenResponse = await apiRequest<{ data: { uploadUrl: string; blobName: string } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/sas-token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -100,13 +100,7 @@ export function FileUpload({
                 }),
             });
 
-            if (!tokenResponse.ok) {
-                const error = await tokenResponse.json();
-                throw new Error(error.message || 'Failed to get upload token');
-            }
-
-            const { data } = await tokenResponse.json();
-            const { uploadUrl, blobName } = data;
+            const { uploadUrl, blobName } = tokenResponse.data;
 
             // Step 2: Upload directly to Azure Blob Storage with progress tracking
             const xhr = new XMLHttpRequest();
@@ -149,7 +143,7 @@ export function FileUpload({
             });
 
             // Step 3: Confirm upload with backend
-            await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/confirm`, {
+            await apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/confirm`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

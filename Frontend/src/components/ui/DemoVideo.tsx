@@ -62,10 +62,10 @@ function DemoVideo() {
       className={`
         w-[90%] sm:w-[85%] md:w-[80%] lg:w-full
         max-w-7xl mx-auto
-        h-auto mt-10 md:mt-15
-        md:mb-20 mb-40
+        h-auto mt-0
+        md:mb-10 mb-20
         p-2
-        bg-linear-to-b from-[#DDFF00] ${isDark ? 'to-neutral-950' : 'to-neutral-400'}
+        bg-linear-to-b from-[#d9ff00] ${isDark ? 'to-neutral-950' : 'to-neutral-400'}
         rounded-3xl
       `}
     >
@@ -96,7 +96,7 @@ function DemoVideo() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <button
                   onClick={togglePlay}
-                  className={cn("bg-[#DDFF00] text-black rounded-full p-4 hover:bg-[#c4e600] transition-colors")}
+                  className={cn("bg-[#d9ff00] text-black rounded-full p-4 hover:bg-[#c4e600] transition-colors")}
                 >
                   <Play size={48} fill="currentColor" />
                 </button>

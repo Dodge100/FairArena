@@ -472,9 +472,26 @@ export const login = async (req: Request, res: Response) => {
     });
 
     // Check if this user is already logged in (has existing session in cookies)
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, deviceFingerprint);
+
     if (existingSession) {
-      // User already logged in - just switch to their session
+      // If same device, prevent duplicate login
+      if (existingSession.isSameDevice) {
+        logger.warn('Duplicate login attempt from same device', {
+          userId: user.userId,
+          sessionId: existingSession.sessionId,
+          deviceFingerprint: newDeviceFingerprint
+        });
+
+        return res.status(409).json({
+          success: false,
+          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
+        });
+      }
+
+      // Different device - just switch to their session
       res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
 
       logger.info('Switched to existing session', { userId: user.userId, sessionId: existingSession.sessionId });
@@ -549,7 +566,6 @@ export const login = async (req: Request, res: Response) => {
     res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
     // Check if this is a new device login (simple check: no login from this device type in last 7 days)
-    const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
     const recentDeviceKey = `recent_device:${user.userId}:${deviceFingerprint}`;
 
     // Set/update device tracking (expires in 7 days)
@@ -941,9 +957,27 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     });
 
     // Check if this user is already logged in (has existing session in cookies)
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, currentFingerprint);
+
     if (existingSession) {
-      // User already logged in - just switch to their session
+      // If same device, prevent duplicate login
+      if (existingSession.isSameDevice) {
+        res.clearCookie('mfa_session', { path: '/' });
+
+        logger.warn('Duplicate MFA login attempt from same device', {
+          userId: user.userId,
+          sessionId: existingSession.sessionId,
+          deviceFingerprint: currentFingerprint
+        });
+
+        return res.status(409).json({
+          success: false,
+          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
+        });
+      }
+
+      // Different device - just switch to their session
       res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
       res.clearCookie('mfa_session', { path: '/' });
 
@@ -2790,9 +2824,28 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     });
 
     // Check if this user is already logged in (has existing session in cookies)
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId);
+    const otpDeviceFingerprint = `${uaInfo.deviceType}:${userAgentRaw?.substring(0, 50) || 'unknown'}`;
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, otpDeviceFingerprint);
+
     if (existingSession) {
-      // User already logged in - just switch to their session
+      // If same device, prevent duplicate login
+      if (existingSession.isSameDevice) {
+        res.clearCookie('mfa_session', { path: '/' });
+
+        logger.warn('Duplicate OTP login attempt from same device', {
+          userId: user.userId,
+          sessionId: existingSession.sessionId,
+          deviceFingerprint: otpDeviceFingerprint
+        });
+
+        return res.status(409).json({
+          success: false,
+          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
+        });
+      }
+
+      // Different device - just switch to their session
       res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
       res.clearCookie('mfa_session', { path: '/' });
 

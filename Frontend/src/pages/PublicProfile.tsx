@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { useTheme } from '@/hooks/useTheme';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Briefcase,
   Calendar,
@@ -31,10 +32,10 @@ import {
   Twitter,
   Zap,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { apiFetch, publicApiFetch } from '../lib/apiClient';
+import { apiRequest, publicApiFetch } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 interface ProfileData {
@@ -77,60 +78,42 @@ export default function PublicProfile() {
   const { theme, toggleTheme } = useTheme();
   const { cn } = useDataSaverUtils();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [isReporting, setIsReporting] = useState(false);
-  const [isStarring, setIsStarring] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!userId) return;
+  const { data, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['profile', 'public', userId],
+    queryFn: async () => {
+      const response = await publicApiFetch(`${API_BASE}/api/v1/profile/public/${userId}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-      try {
-        setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await publicApiFetch(`${apiUrl}/api/v1/profile/public/${userId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Profile not found or not public');
-          } else if (response.status === 401) {
-            setError('You must be signed in to view this profile');
-          } else {
-            setError('Failed to load profile');
-          }
-          return;
-        }
-
-        const data = await response.json();
-        setProfile(data.data);
-        setIsOwner(data.meta?.isOwner || false);
-
-        // Show consent dialog if required
-        if (data.meta?.requiresConsent) {
-          setShowConsentDialog(true);
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('Profile not found or not public');
+        if (response.status === 401) throw new Error('You must be signed in to view this profile');
+        throw new Error('Failed to load profile');
       }
-    };
 
-    fetchProfile();
-  }, [userId]);
+      const data = await response.json();
+      setIsOwner(data.meta?.isOwner || false);
+      if (data.meta?.requiresConsent) {
+        setShowConsentDialog(true);
+      }
+      return data.data;
+    },
+    enabled: !!userId,
+    retry: 1,
+  });
+
+  const profile = data;
+  const error = queryError?.message || null;
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -161,128 +144,95 @@ export default function PublicProfile() {
     }
   };
 
-  const handleConsentAccept = async () => {
-    try {
-      if (!profile) return;
-
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await apiFetch(`${apiUrl}/api/v1/profile/${profile.id}/view`, {
-        method: 'POST'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to record profile view');
-      }
-
+  const consentMutation = useMutation({
+    mutationFn: () => apiRequest(`${API_BASE}/api/v1/profile/${profile?.id}/view`, { method: 'POST' }),
+    onSuccess: () => {
       setShowConsentDialog(false);
       toast.success('Thank you for your consent!');
-    } catch (err) {
-      console.error('Error recording profile view:', err);
+    },
+    onError: () => {
       toast.error('Failed to record profile view');
-    }
+    },
+  });
+
+  const handleConsentAccept = () => {
+    if (!profile) return;
+    consentMutation.mutate();
   };
 
   const handleConsentDecline = () => {
     navigate(-1);
   };
 
-  const handleReport = async () => {
-    if (!profile || !reportReason.trim()) return;
-
-    setIsReporting(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await apiFetch(`${apiUrl}/api/v1/reports`, {
+  const reportMutation = useMutation({
+    mutationFn: (data: { reportedEntityId: string; entityType: string; reason: string; details?: string }) =>
+      apiRequest(`${API_BASE}/api/v1/reports`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reportedEntityId: profile.id,
-          entityType: 'profile',
-          reason: reportReason,
-          details: reportDetails.trim() || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit report');
-      }
-
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
       setShowReportDialog(false);
       setReportReason('');
       setReportDetails('');
       toast.success('Report submitted successfully. We will review it shortly.');
-    } catch (err) {
-      console.error('Error submitting report:', err);
+    },
+    onError: () => {
       toast.error('Failed to submit report. Please try again.');
-    } finally {
-      setIsReporting(false);
-    }
+    },
+  });
+
+  const handleReport = () => {
+    if (!profile || !reportReason.trim()) return;
+    reportMutation.mutate({
+      reportedEntityId: profile.id,
+      entityType: 'profile',
+      reason: reportReason,
+      details: reportDetails.trim() || undefined,
+    });
   };
 
-  const handleStar = async () => {
-    if (!profile || !user || isOwner) return;
+  const starMutation = useMutation({
+    mutationFn: ({ endpoint, profileId }: { endpoint: string; profileId: string }) =>
+      apiRequest(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId }),
+      }),
+    onMutate: async ({ endpoint }) => {
+      const wasStarred = endpoint.includes('unstar');
+      await queryClient.cancelQueries({ queryKey: ['profile', 'public', userId] });
+      const previous = queryClient.getQueryData(['profile', 'public', userId]);
 
-    const wasStarred = profile.stars.hasStarred;
-    const newStarCount = wasStarred ? profile.stars.count - 1 : profile.stars.count + 1;
-
-    // Optimistically update UI
-    setProfile((prev) =>
-      prev
-        ? {
-          ...prev,
+      // Optimistic update
+      queryClient.setQueryData(['profile', 'public', userId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
           stars: {
-            count: newStarCount,
+            count: wasStarred ? old.stars.count - 1 : old.stars.count + 1,
             hasStarred: !wasStarred,
             starredAt: wasStarred ? null : new Date().toISOString(),
           },
-        }
-        : null,
-    );
-
-    setIsStarring(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const endpoint = wasStarred ? '/api/v1/stars/unstar' : '/api/v1/stars/star';
-      const response = await apiFetch(`${apiUrl}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          profileId: profile.id,
-        }),
+        };
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to update star');
-      }
-
-      // Since the operation is async, we don't get immediate data back
-      // The optimistic update should be sufficient
+      return { previous };
+    },
+    onSuccess: (_, { endpoint }) => {
+      const wasStarred = endpoint.includes('unstar');
       toast.success(wasStarred ? 'Profile unstarred' : 'Profile starred');
-    } catch (err) {
-      console.error('Error updating star:', err);
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(['profile', 'public', userId], context?.previous);
       toast.error('Failed to update star. Please try again.');
+    },
+  });
 
-      // Revert optimistic update on error
-      setProfile((prev) =>
-        prev
-          ? {
-            ...prev,
-            stars: {
-              count: profile.stars.count,
-              hasStarred: wasStarred,
-              starredAt: profile.stars.starredAt,
-            },
-          }
-          : null,
-      );
-    } finally {
-      setIsStarring(false);
-    }
+  const handleStar = () => {
+    if (!profile || !user || isOwner) return;
+    const endpoint = profile.stars.hasStarred ? '/api/v1/stars/unstar' : '/api/v1/stars/star';
+    starMutation.mutate({ endpoint, profileId: profile.id });
   };
 
   if (loading) {
@@ -565,17 +515,17 @@ export default function PublicProfile() {
                   </Button>
                   {!isOwner && user && (
                     <Button
-                      variant={profile.stars.hasStarred ? 'default' : 'outline'}
+                      variant={profile?.stars?.hasStarred ? 'default' : 'outline'}
                       size="lg"
                       onClick={handleStar}
-                      disabled={isStarring}
+                      disabled={starMutation.isPending}
                       className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
                     >
                       <Star
-                        className={`h-5 w-5 mr-2 ${profile.stars.hasStarred ? 'fill-current' : ''}`}
+                        className={`h-5 w-5 mr-2 ${profile?.stars?.hasStarred ? 'fill-current' : ''}`}
                       />
-                      {isStarring ? 'Updating...' : profile.stars.hasStarred ? 'Starred' : 'Star'} (
-                      {profile.stars.count})
+                      {starMutation.isPending ? 'Updating...' : profile?.stars?.hasStarred ? 'Starred' : 'Star'} (
+                      {profile?.stars?.count || 0})
                     </Button>
                   )}
                   {!isOwner && user && (

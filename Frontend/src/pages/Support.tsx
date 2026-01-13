@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import {
   ChevronDown,
   ChevronUp,
@@ -21,7 +22,7 @@ import { Input } from '../components/ui/input';
 import { Spotlight } from '../components/ui/Spotlight';
 import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 import { useTheme } from '../hooks/useTheme';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 export default function Support() {
@@ -34,7 +35,6 @@ export default function Support() {
     subject: '',
     message: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState('');
@@ -127,7 +127,38 @@ export default function Support() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submitMutation = useMutation({
+    mutationFn: async (submitData: any) => {
+      const { captchaToken: token, ...body } = submitData;
+      return apiRequest<{ message: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Recaptcha-Token': token,
+        },
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: () => {
+      setSubmitMessage('Support request submitted successfully! You will receive a confirmation email shortly.');
+      setFormData({
+        name: '',
+        email: user?.email || '',
+        subject: '',
+        message: '',
+      });
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+    },
+    onError: (error: any) => {
+      console.error('Error submitting support request:', error);
+      setSubmitMessage(error.message || 'Failed to submit support request. Please try again.');
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!captchaToken) {
@@ -135,49 +166,15 @@ export default function Support() {
       return;
     }
 
-    setIsSubmitting(true);
     setSubmitMessage('');
-
-    try {
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Recaptcha-Token': captchaToken,
-        },
-        body: JSON.stringify({
-          subject: formData.subject,
-          message: formData.message,
-          ...(isSignedIn ? {} : { email: formData.email }),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubmitMessage('Support request submitted successfully! You will receive a confirmation email shortly.');
-        setFormData({
-          name: '',
-          email: user?.email || '',
-          subject: '',
-          message: '',
-        });
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      } else {
-        setSubmitMessage(data.message || 'Failed to submit support request. Please try again.');
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      }
-    } catch (error) {
-      console.error('Error submitting support request:', error);
-      setSubmitMessage('An error occurred. Please try again later.');
-      setCaptchaToken(null);
-      recaptchaRef.current?.reset();
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate({
+      ...formData,
+      ...(isSignedIn ? {} : { email: formData.email }),
+      captchaToken,
+    });
   };
+
+  const isSubmitting = submitMutation.isPending;
 
   const handleQuickHelp = (topic: (typeof quickHelpTopics)[0]) => {
     setFormData({

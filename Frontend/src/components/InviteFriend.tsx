@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
+import { useMutation } from '@tanstack/react-query';
 import { Mail, Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { toast } from 'sonner';
-import { apiFetch } from '../lib/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 function InviteFriend() {
@@ -12,7 +13,7 @@ function InviteFriend() {
   const [email, setEmail] = useState('');
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { isSignedIn } = useAuthState();
 
@@ -29,6 +30,36 @@ function InviteFriend() {
     setCaptchaToken(null);
     toast.error('CAPTCHA verification failed. Please try again.');
   }, []);
+
+  const inviteMutation = useMutation({
+    mutationFn: (token: string) => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/platform/invite`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Recaptcha-Token': token,
+      },
+      body: JSON.stringify({ email }),
+    }),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || 'Invitation sent successfully!');
+        setEmail('');
+        setShowCaptchaModal(false);
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
+      } else {
+        toast.error(data.message || 'Failed to send invitation. Please try again.');
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
+      }
+    },
+    onError: (error) => {
+      console.error('Invite error:', error);
+      toast.error('Something went wrong. Please try again later.');
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
+    }
+  });
 
   if (!isSignedIn) {
     return null;
@@ -50,45 +81,14 @@ function InviteFriend() {
     setShowCaptchaModal(true);
   };
 
-  const handleCaptchaSubmit = async () => {
+  const isLoading = inviteMutation.isPending;
+
+  const handleCaptchaSubmit = () => {
     if (!captchaToken) {
       toast.error('Please complete the CAPTCHA verification.');
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/platform/invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Recaptcha-Token': captchaToken,
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        toast.success(data.message || 'Invitation sent successfully!');
-        setEmail('');
-        setShowCaptchaModal(false);
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      } else {
-        toast.error(data.message || 'Failed to send invitation. Please try again.');
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
-      }
-    } catch (error) {
-      console.error('Invite error:', error);
-      toast.error('Something went wrong. Please try again later.');
-      setCaptchaToken(null);
-      recaptchaRef.current?.reset();
-    } finally {
-      setIsLoading(false);
-    }
+    inviteMutation.mutate(captchaToken);
   };
 
   const handleCloseModal = () => {

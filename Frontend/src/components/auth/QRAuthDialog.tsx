@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { publicApiFetch } from '@/lib/apiClient';
+import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -46,43 +47,47 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
         }
     }, []);
 
-    // Generate QR session
-    const generateSession = useCallback(async () => {
-        cleanup();
-        setStatus('loading');
-        setErrorMessage(null);
-        setSession(null);
-
-        try {
+    // Generate QR session mutation
+    const generateMutation = useMutation({
+        mutationFn: async () => {
             const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });
-
             const data = await res.json();
 
             if (!res.ok) {
                 if (res.status === 429) {
-                    setErrorMessage(`Too many requests. Try again in ${data.retryAfter || 60} seconds.`);
-                    setStatus('error');
-                    return;
+                    throw new Error(`Too many requests. Try again in ${data.retryAfter || 60} seconds.`);
                 }
                 throw new Error(data.message || 'Failed to generate QR code');
             }
-
+            return data;
+        },
+        onSuccess: (data) => {
             if (data.success) {
                 setSession(data.data);
                 setTimeLeft(data.data.ttl);
                 setStatus('pending');
                 startStatusStream(data.data.sessionId);
+                setErrorMessage(null);
             }
-        } catch (error) {
+        },
+        onError: (error: Error) => {
             console.error('QR Generate Error:', error);
-            setErrorMessage('Failed to generate QR code. Please try again.');
+            setErrorMessage(error.message || 'Failed to generate QR code. Please try again.');
             setStatus('error');
             toast.error('Failed to generate QR code');
         }
-    }, [apiUrl, cleanup]);
+    });
+
+    const generateSession = useCallback(() => {
+        cleanup();
+        setStatus('loading');
+        setErrorMessage(null);
+        setSession(null);
+        generateMutation.mutate();
+    }, [cleanup]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Start SSE stream for real-time status
     const startStatusStream = useCallback((sessionId: string) => {
@@ -106,7 +111,7 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
                 if (data.status === 'approved' && data.nonce) {
                     setStatus('approved');
                     sse.close();
-                    await claimSession(sessionId, data.nonce);
+                    claimMutation.mutate({ sessionId, nonce: data.nonce });
                 }
             } catch (err) {
                 console.error('SSE Parse Error:', err);
@@ -119,39 +124,40 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
         };
     }, [apiUrl]);
 
-    // Claim the approved session
-    const claimSession = async (sessionId: string, nonce: string) => {
-        try {
+    // Claim the approved session mutation
+    const claimMutation = useMutation({
+        mutationFn: async ({ sessionId, nonce }: { sessionId: string; nonce: string }) => {
             const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/claim`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId, nonce }),
             });
-
             const data = await res.json();
-
-            if (data.success) {
-                setStatus('claimed');
-                toast.success('Signed in successfully!');
-
-                // Small delay for visual feedback
-                setTimeout(() => {
-                    onOpenChange(false);
-                    sessionStorage.removeItem('auth_flow');
-                    window.location.href = getRedirectPath(location);
-                }, 800);
-            } else {
-                toast.error(data.message || 'Failed to complete sign in');
-                setStatus('error');
-                setErrorMessage(data.message || 'Failed to complete sign in');
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to complete sign in');
             }
-        } catch (error) {
+            return data;
+        },
+        onSuccess: () => {
+            setStatus('claimed');
+            toast.success('Signed in successfully!');
+            // Small delay for visual feedback
+            setTimeout(() => {
+                onOpenChange(false);
+                sessionStorage.removeItem('auth_flow');
+                window.location.href = getRedirectPath(location);
+            }, 800);
+        },
+        onError: (error: Error) => {
             console.error('Claim Error:', error);
             toast.error('Failed to complete sign in');
             setStatus('error');
-            setErrorMessage('Connection error. Please try again.');
+            setErrorMessage(error.message || 'Connection error. Please try again.');
         }
-    };
+    });
+
+    // Claim session wrapper (not needed but kept for minimal diff if called elsewhere, but here logic is moved to mutation success/stream)
+    // Actually claimSession was only called in stream, now replaced by mutate.
 
     // Initialize on open
     useEffect(() => {
@@ -164,7 +170,7 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
         }
 
         return cleanup;
-    }, [open, generateSession, cleanup]);
+    }, [open, cleanup]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Countdown timer
     useEffect(() => {

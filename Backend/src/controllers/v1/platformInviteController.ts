@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { prisma } from '../../config/database.js';
 import { RATE_LIMIT_CONFIG, REDIS_KEYS, redis } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
@@ -90,6 +91,21 @@ export async function inviteToPlatform(req: Request, res: Response) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
+      });
+    }
+
+    // Check if user already exists to prevent enumeration
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      logger.info('Platform invite skipped - user already exists', { email, inviterId });
+      // Return success to prevent enumeration
+      return res.status(200).json({
+        success: true,
+        message: 'Platform invite request received!',
       });
     }
 

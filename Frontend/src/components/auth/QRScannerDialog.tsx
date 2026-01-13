@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
+import { DialogDescription } from '@radix-ui/react-dialog';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useTheme } from '../../hooks/useTheme';
 import { QRScanner } from './QRScanner';
-import { DialogDescription } from '@radix-ui/react-dialog';
 
 interface QRScannerDialogProps {
     open: boolean;
@@ -30,7 +31,7 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
 
     const [step, setStep] = useState<'scan' | 'approve'>('scan');
     const [approvalReq, setApprovalReq] = useState<ApprovalRequest | null>(null);
-    const [loading, setLoading] = useState(false);
+
     const [timeLeft, setTimeLeft] = useState(0);
 
     // Countdown timer for approval
@@ -51,6 +52,36 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
     }, [step, approvalReq]);
+
+    const scanMutation = useMutation({
+        mutationFn: (sessionId: string) => apiRequest<{
+            success: boolean,
+            data: { deviceInfo: DeviceInfo, expiresAt: number, createdAt: number },
+            message?: string
+        }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/device-info`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+        }),
+        onSuccess: (data, sessionId) => {
+            if (data.success) {
+                setApprovalReq({
+                    sessionId: sessionId,
+                    deviceInfo: data.data.deviceInfo,
+                    expiresAt: data.data.expiresAt,
+                    createdAt: data.data.createdAt,
+                });
+                setStep('approve');
+                setTimeLeft(Math.floor((data.data.expiresAt - Date.now()) / 1000));
+            } else {
+                toast.error(data.message || 'Could not verify QR code');
+            }
+        },
+        onError: (err: any) => {
+            console.error('Scan Error:', err);
+            toast.error(err.message || 'Failed to process QR code');
+        }
+    });
 
     // Handle successful QR scan
     const handleScan = async (dataString: string) => {
@@ -74,83 +105,39 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
                 return;
             }
 
-            setLoading(true);
-
-            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/device-info`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: data.sessionId }),
-            });
-
-            const textHTML = await response.text();
-            let resData;
-            try {
-                resData = textHTML ? JSON.parse(textHTML) : {};
-            } catch (e) {
-                console.error('Failed to parse device-info response:', textHTML);
-                toast.error('Server returned an invalid response');
-                return;
-            }
-
-            if (resData.success) {
-                setApprovalReq({
-                    sessionId: data.sessionId,
-                    deviceInfo: resData.data.deviceInfo,
-                    expiresAt: resData.data.expiresAt,
-                    createdAt: resData.data.createdAt,
-                });
-                setStep('approve');
-                setTimeLeft(Math.floor((resData.data.expiresAt - Date.now()) / 1000));
-            } else {
-                // Check standard message, global error message, or fallback
-                const msg = resData.message || resData.error?.message || 'Could not verify QR code';
-                toast.error(msg);
-            }
+            scanMutation.mutate(data.sessionId);
         } catch (error: any) {
-            console.error('Scan Error:', error);
-            toast.error(error.message || 'Failed to process QR code');
-        } finally {
-            setLoading(false);
+            console.error('Scan processing error:', error);
         }
     };
 
-    // Handle approval
-    const handleApprove = async () => {
-        if (!approvalReq) return;
-
-        try {
-            setLoading(true);
-
-            const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/approve`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: approvalReq.sessionId }),
-            });
-
-            const textHTML = await response.text();
-            let data;
-            try {
-                data = textHTML ? JSON.parse(textHTML) : {};
-            } catch (e) {
-                console.error('Failed to parse approve response:', textHTML);
-                toast.error('Server returned an invalid response');
-                return;
-            }
-
+    const approveMutation = useMutation({
+        mutationFn: (sessionId: string) => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/qr/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+        }),
+        onSuccess: (data) => {
             if (data.success) {
                 toast.success('Login approved! The other device is now signed in.');
                 handleClose();
             } else {
-                const msg = data.message || data.error?.message || 'Failed to approve login';
-                toast.error(msg);
+                toast.error(data.message || 'Failed to approve login');
             }
-        } catch (error: any) {
-            console.error('Approve Error:', error);
-            toast.error(error.message || 'Failed to approve login');
-        } finally {
-            setLoading(false);
+        },
+        onError: (err: any) => {
+            console.error('Approve Error:', err);
+            toast.error(err.message || 'Failed to approve login');
         }
+    });
+
+    // Handle approval
+    const handleApprove = () => {
+        if (!approvalReq) return;
+        approveMutation.mutate(approvalReq.sessionId);
     };
+
+    const loading = scanMutation.isPending || approveMutation.isPending;
 
     // Handle rejection
     const handleReject = () => {
@@ -164,7 +151,6 @@ export function QRScannerDialog({ open, onOpenChange }: QRScannerDialogProps) {
         setTimeout(() => {
             setStep('scan');
             setApprovalReq(null);
-            setLoading(false);
             setTimeLeft(0);
         }, 200);
     };

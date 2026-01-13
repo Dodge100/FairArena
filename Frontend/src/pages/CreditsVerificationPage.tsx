@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { apiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Check,
@@ -106,45 +107,35 @@ const CreditsVerificationPage = () => {
       country.search.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
+  const { data: eligibilityData, isLoading: checkingEligibility } = useQuery({
+    queryKey: ['credits-eligibility', isSignedIn],
+    queryFn: () => apiRequest<{ success: boolean, data: any }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(res => res.data),
+    enabled: isSignedIn,
+  });
+
   useEffect(() => {
     if (!isSignedIn) {
       navigate('/signin');
       return;
     }
 
-    const checkEligibility = async () => {
-      try {
-
-        const response = await apiFetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`,
-          {
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            if (data.data.hasClaimedFreeCredits) {
-              toast.info('You have already claimed your free credits');
-              navigate('/dashboard/credits');
-              return;
-            }
-            if (data.data.phoneVerified) {
-              setStep('claim');
-            } else {
-              setStep('phone');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking eligibility:', error);
-      } finally {
-        setIsCheckingEligibility(false);
+    if (eligibilityData) {
+      if (eligibilityData.hasClaimedFreeCredits) {
+        toast.info('You have already claimed your free credits');
+        navigate('/dashboard/credits');
+      } else if (eligibilityData.phoneVerified) {
+        setStep('claim');
+      } else {
+        setStep('phone');
       }
-    };
+      setIsCheckingEligibility(false);
+    }
+  }, [isSignedIn, navigate, eligibilityData]);
 
-    checkEligibility();
-  }, [isSignedIn, navigate]);
+  // Sync loading state
+  useEffect(() => {
+    setIsCheckingEligibility(checkingEligibility);
+  }, [checkingEligibility]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -224,13 +215,11 @@ const CreditsVerificationPage = () => {
   };
 
 
-  const performSendOtp = async (method: 'sms' | 'voice', isResend: boolean = false, captcha: string) => {
-    setIsSendingOtp(true);
-    try {
+  const sendOtpMutation = useMutation({
+    mutationFn: async ({ method, isResend, captcha }: { method: 'sms' | 'voice', isResend: boolean, captcha: string }) => {
       const cleanPhone = phoneNumber.trim().replace(/\D/g, '');
       const endpoint = method === 'voice' ? '/api/v1/credits/send-voice-otp' : '/api/v1/credits/send-sms-otp';
-
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+      return apiRequest<{ success: boolean, alreadyVerified?: boolean, retryAfter?: number, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'X-Recaptcha-Token': captcha,
@@ -242,40 +231,48 @@ const CreditsVerificationPage = () => {
           isResend
         }),
       });
-
-      const data = await response.json();
-
+    },
+    onSuccess: (data, variables) => {
       if (data.success) {
-        const methodText = method === 'voice' ? 'voice call' : 'SMS';
-        toast.success(isResend ? `New code sent via ${methodText}` : `Code sent via ${methodText}`);
-        if (!isResend) setStep('otp');
-        if (isResend) setOtp('');
+        const methodText = variables.method === 'voice' ? 'voice call' : 'SMS';
+        toast.success(variables.isResend ? `New code sent via ${methodText}` : `Code sent via ${methodText}`);
+        if (!variables.isResend) setStep('otp');
+        if (variables.isResend) setOtp('');
         setResendTimer(120);
       } else {
-        if (data.alreadyVerified) {
-          toast.info('Phone already verified! You can now claim your credits.');
-          setStep('claim');
-        } else if (data.retryAfter) {
-          setResendTimer(data.retryAfter);
-          toast.error(data.message || `Please wait before requesting a new code`);
-        } else {
-          toast.error(data.message || 'Failed to send verification code');
-        }
+        // This branch might not be reached if apiRequest throws on non-success, but depends on API structure.
+        // If apiRequest throws for 400/500, we handle in onError.
+        // If success is false but status 200 (custom logic), we handle here.
+        // Assuming apiRequest handles non-200.
       }
-    } catch (error) {
-      console.error(`Error sending ${method} OTP:`, error);
-      toast.error('Failed to send verification code. Please try again.');
-    } finally {
+    },
+    onError: (error: any) => {
+      const data = error.data || {};
+      if (data.alreadyVerified) {
+        toast.info('Phone already verified! You can now claim your credits.');
+        setStep('claim');
+      } else if (data.retryAfter) {
+        setResendTimer(data.retryAfter);
+        toast.error(error.message || `Please wait before requesting a new code`);
+      } else {
+        toast.error(error.message || 'Failed to send verification code');
+      }
+    },
+    onSettled: () => {
       setIsSendingOtp(false);
       recaptchaRef.current?.reset();
     }
+  });
+
+  const performSendOtp = async (method: 'sms' | 'voice', isResend: boolean = false, captcha: string) => {
+    setIsSendingOtp(true);
+    sendOtpMutation.mutate({ method, isResend, captcha });
   };
 
-  const performVerifyOtp = async (method: 'sms' | 'voice', captcha: string) => {
-    setIsVerifyingOtp(true);
-    try {
+  const verifyOtpMutation = useMutation({
+    mutationFn: async ({ method, captcha }: { method: 'sms' | 'voice', captcha: string }) => {
       const endpoint = method === 'voice' ? '/api/v1/credits/verify-voice-otp' : '/api/v1/credits/verify-sms-otp';
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+      return apiRequest<{ success: boolean, expired?: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'X-Recaptcha-Token': captcha,
@@ -283,60 +280,62 @@ const CreditsVerificationPage = () => {
         },
         body: JSON.stringify({ otp }),
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Phone verified successfully');
-        setStep('claim');
+    },
+    onSuccess: () => {
+      toast.success('Phone verified successfully');
+      setStep('claim');
+    },
+    onError: (error: any) => {
+      const data = error.data || {};
+      if (data.expired) {
+        toast.error('Code expired. Please request a new one.');
+        setOtp('');
+        setResendTimer(0);
       } else {
-        if (data.expired) {
-          toast.error('Code expired. Please request a new one.');
-          setOtp('');
-          setResendTimer(0);
-        } else {
-          toast.error(data.message || 'Invalid code');
-        }
+        toast.error(error.message || 'Invalid code');
       }
-    } catch (error) {
-      console.error(`Error verifying ${method} OTP:`, error);
-      toast.error('Failed to verify code. Please try again.');
-    } finally {
+    },
+    onSettled: () => {
       setIsVerifyingOtp(false);
       recaptchaRef.current?.reset();
     }
+  });
+
+  const performVerifyOtp = async (method: 'sms' | 'voice', captcha: string) => {
+    setIsVerifyingOtp(true);
+    verifyOtpMutation.mutate({ method, captcha });
   };
 
-  const performClaimCredits = async (captcha: string) => {
-    setIsClaiming(true);
-    try {
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`, {
+  const claimMutation = useMutation({
+    mutationFn: async (captcha: string) => {
+      return apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`, {
         method: 'POST',
         headers: {
           'X-Recaptcha-Token': captcha,
           'Content-Type': 'application/json',
         },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Credits claimed successfully!');
-        setHasClaimed(true);
-        const cacheBuster = Date.now();
-        setTimeout(() => {
-          navigate(`/dashboard/credits?refresh=${cacheBuster}`);
-        }, 1500);
-      } else {
-        toast.error(data.message || 'Failed to claim credits');
-      }
-    } catch (error) {
-      console.error('Error claiming credits:', error);
-      toast.error('Failed to claim credits. Please try again.');
-    } finally {
+    },
+    onSuccess: () => {
+      toast.success('Credits claimed successfully!');
+      setHasClaimed(true);
+      const cacheBuster = Date.now();
+      setTimeout(() => {
+        navigate(`/dashboard/credits?refresh=${cacheBuster}`);
+      }, 1500);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to claim credits');
+    },
+    onSettled: () => {
       setIsClaiming(false);
       recaptchaRef.current?.reset();
     }
+  });
+
+  const performClaimCredits = async (captcha: string) => {
+    setIsClaiming(true);
+    claimMutation.mutate(captcha);
   };
 
   // Reset captcha when modal closes manually

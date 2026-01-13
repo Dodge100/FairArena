@@ -1,6 +1,7 @@
 import { DataSaverImage } from '@/components/ui/DataSaverImage';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { publicApiFetch } from '@/lib/apiClient';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -10,6 +11,31 @@ function Unsubscribe() {
   const [message, setMessage] = useState('');
   const { cn, shouldLoadImage } = useDataSaverUtils();
 
+  const unsubscribeMutation = useMutation({
+    mutationFn: async () => {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
+      const response = await publicApiFetch(`${ apiUrl } /api/v1 / newsletter / unsubscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to unsubscribe');
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      setStatus('success');
+      setMessage(data.message || 'You have been successfully unsubscribed from our newsletter.');
+    },
+    onError: (error: Error) => {
+      console.error('Unsubscribe error:', error);
+      setStatus('error');
+      setMessage(error.message || 'Something went wrong. Please try again later.');
+    },
+  });
+
   useEffect(() => {
     if (!email) {
       setTimeout(() => {
@@ -18,30 +44,7 @@ function Unsubscribe() {
       }, 0);
       return;
     }
-    const unsubscribe = async () => {
-      try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await publicApiFetch(`${apiUrl}/api/v1/newsletter/unsubscribe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const data = await response.json();
-        if (response.ok && data.success) {
-          setStatus('success');
-          setMessage(
-            data.message || 'You have been successfully unsubscribed from our newsletter.',
-          );
-        } else {
-          setStatus('error');
-          setMessage(data.message || 'Failed to unsubscribe. Please try again.');
-        }
-      } catch {
-        setStatus('error');
-        setMessage('Something went wrong. Please try again later.');
-      }
-    };
-    unsubscribe();
+    unsubscribeMutation.mutate();
   }, [email]);
 
   return (

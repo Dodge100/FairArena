@@ -1,6 +1,6 @@
-import { apiFetch } from '@/lib/apiClient';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { toast } from 'sonner';
+import { apiRequest } from '@/lib/apiClient';
+import { useQuery } from '@tanstack/react-query';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useAuthState } from '../lib/auth';
 
 interface Organization {
@@ -44,45 +44,35 @@ interface OrganizationProviderProps {
 }
 
 export const OrganizationProvider = ({ children }: OrganizationProviderProps) => {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const { isSignedIn } = useAuthState();
   const [currentOrganization, setCurrentOrganizationState] = useState<Organization | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { getToken, isSignedIn } = useAuthState();
 
-  const fetchOrganizations = useCallback(async () => {
-    if (!isSignedIn) return;
+  const { data: organizations = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: async () => {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+      if (!isSignedIn) return [];
+      const data = await apiRequest<{ organizations: Organization[] }>(`${API_BASE}/api/v1/organization`);
+      return data.organizations || [];
+    },
+    enabled: isSignedIn,
+  });
 
-    try {
-      const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization`);
-      if (response.ok) {
-        const data = await response.json();
-        setOrganizations(data.organizations);
-
-        // Set current organization to first or null
-        setCurrentOrganizationState(data.organizations[0] || null);
-      } else {
-        toast.error('Failed to load organizations');
-      }
-    } catch (error) {
-      toast.error('An error occurred while loading organizations');
-      console.error(error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (organizations.length > 0 && !currentOrganization) {
+      setCurrentOrganizationState(organizations[0]);
+    } else if (organizations.length === 0) {
+      setCurrentOrganizationState(null);
     }
-  }, [isSignedIn, getToken]);
+  }, [organizations, currentOrganization]);
 
   const setCurrentOrganization = (org: Organization | null) => {
     setCurrentOrganizationState(org);
   };
 
   const refreshOrganizations = async () => {
-    setLoading(true);
-    await fetchOrganizations();
+    await refetch();
   };
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, [isSignedIn, fetchOrganizations]);
 
   const value: OrganizationContextType = {
     organizations,
