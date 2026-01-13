@@ -31,6 +31,7 @@ import {
   deleteOrganization,
   deleteTeamFunction,
   deleteUser,
+  emitSessionRevoked,
   exportUserDataHandler,
   inviteToPlatform,
   markAllNotificationsAsRead,
@@ -45,6 +46,7 @@ import {
   processTeamInviteAcceptance,
   recordProfileView,
   resetSettingsFunction,
+  scheduleTokenRefresh,
   sendBackupCodesRegeneratedEmail,
   sendBackupCodeUsedHandler,
   sendEmailHandler,
@@ -75,9 +77,6 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  emitSessionRevoked,
-  scheduleTokenRefresh,
-
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -112,6 +111,7 @@ import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
 import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
 import logger from './utils/logger.js';
+import githubRouter from './routes/v1/githubRoutes.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -321,6 +321,9 @@ app.use('/api/v1/team', teamRouter);
 
 // API Keys routes
 app.use('/api/v1/api-keys', apiKeysRouter);
+
+// GitHub routes
+app.use('/api/v1/github', githubRouter);
 
 // Inngest serve
 app.use(

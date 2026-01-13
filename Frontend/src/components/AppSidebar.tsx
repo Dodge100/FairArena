@@ -19,6 +19,7 @@ import {
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
 import { useSocket } from '@/contexts/SocketContext';
+import { formatLastUpdated, useGitHubLastUpdated } from '@/hooks/useGitHubLastUpdated';
 import { useTheme } from '@/hooks/useTheme';
 import { apiRequest } from '@/lib/apiClient';
 import { useAuthState } from '@/lib/auth';
@@ -94,6 +95,9 @@ export function AppSidebar() {
   });
 
   const unreadCount = unreadData?.data?.count || 0;
+
+  // Fetch GitHub last updated
+  const { data: githubData } = useGitHubLastUpdated();
 
   // Sound effect
   useEffect(() => {
@@ -284,6 +288,18 @@ export function AppSidebar() {
               />
             </div>
           </SidebarMenuItem>
+          {githubData?.data?.lastUpdated && (
+            <SidebarMenuItem>
+              <div className="px-2 py-0.5 group-data-[collapsible=icon]:px-1 text-[10px] text-muted-foreground text-center">
+                <span className="group-data-[collapsible=icon]:hidden">
+                  Last updated: {formatLastUpdated(githubData.data.lastUpdated)}
+                </span>
+                <span className="hidden group-data-[collapsible=icon]:inline-block">
+                  {formatLastUpdated(githubData.data.lastUpdated)}
+                </span>
+              </div>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

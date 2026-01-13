@@ -1,4 +1,4 @@
-FROM node:20-bullseye-slim
+FROM dhi.io/node:23-alpine3.21-dev
 
 WORKDIR /app
 
@@ -10,8 +10,9 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install pnpm globally
+# Install pnpm globally (force path)
+RUN npm install -g pnpm --prefix /usr/local
 
 # Install dependencies WITHOUT running scripts (to avoid postinstall error)
 RUN pnpm install --ignore-scripts
