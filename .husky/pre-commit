@@ -1,3 +1,4 @@
+node scripts/validate-branch-name.js
 pnpm lint-staged
 pnpm --filter backend run typecheck
 pnpm --filter fairarena run typecheck
