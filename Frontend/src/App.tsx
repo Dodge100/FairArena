@@ -29,6 +29,7 @@ import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
+import IPBlockedPage from './pages/IPBlocked';
 import Maintenance from './pages/Maintenance';
 import MyProfile from './pages/MyProfile';
 import OAuthApplications from './pages/OAuthApplications';
@@ -59,7 +60,7 @@ function App() {
 
   const { showModal, updateConsent, acceptAll, rejectAll } = useCookieConsent();
   const token = useToken();
-  const { isBanned } = useAuth();
+  const { isBanned, isIPBlocked, ipBlockReasons } = useAuth();
 
   useEffect(() => {
     registerAuth(token);
@@ -99,6 +100,21 @@ function App() {
   // Prevent access to maintenance page when not in maintenance mode
   if (!isMaintenanceMode && location.pathname === '/maintenance') {
     return <Navigate to="/" replace />;
+  }
+
+  // Show IP blocked screen if IP is blocked
+  if (isIPBlocked) {
+    return (
+      <>
+        <Toaster richColors position="top-right" />
+        <IPBlockedPage
+          reasons={ipBlockReasons}
+          onRetry={() => {
+            window.location.reload();
+          }}
+        />
+      </>
+    );
   }
 
   // Show banned screen if user is banned

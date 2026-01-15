@@ -22,6 +22,8 @@ export const CSRF_CONFIG = {
     // Routes that don't require CSRF protection
     exemptPaths: [
         '/api/v1/payments/webhook',
+        'api/v1/newsletter/unsubscribe',
+        '/api/v1/auth/verify-email',
         '/api/inngest',
         '/healthz',
         '/api/v1/auth/stream', // Unified SSE stream (read-only)
@@ -235,6 +237,46 @@ export const INTRUSION_DETECTION_CONFIG = {
     ],
 };
 
+// IP Security Configuration
+export const IP_SECURITY_CONFIG = {
+    // Enable/disable IP security checks
+    enabled: ENV.NODE_ENV === 'production',
+
+    // Cache TTL: 24 hours in seconds
+    cacheTTL: 24 * 60 * 60,
+
+    // Redis key prefix
+    cacheKeyPrefix: 'ip-security:',
+
+    // Whitelist for development
+    devWhitelist: ['::1', '127.0.0.1', 'localhost', '::ffff:127.0.0.1'],
+
+    // API timeout in milliseconds
+    apiTimeout: 5000,
+
+    // Security checks to perform
+    checks: {
+        proxy: true,
+        tor: true,
+        vpn: true,
+        crawler: true,
+        threat: true,
+        relay: true,
+        bogon: true,
+        datacenter: true,
+        automation: true,
+        hosting: true,
+    },
+
+    // Paths to exclude from IP security checks
+    excludedPaths: [
+        '/healthz',
+        '/metrics',
+        '/.well-known',
+        '/api/inngest',
+    ],
+};
+
 
 // Export all configurations
 export const SECURITY_CONFIG = {
@@ -246,4 +288,5 @@ export const SECURITY_CONFIG = {
     sanitization: SANITIZATION_CONFIG,
     apiSecurity: API_SECURITY_CONFIG,
     intrusionDetection: INTRUSION_DETECTION_CONFIG,
+    ipSecurity: IP_SECURITY_CONFIG,
 };

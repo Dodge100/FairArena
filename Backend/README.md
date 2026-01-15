@@ -148,7 +148,7 @@ docker compose logs -f backend
 
 | Environment | URL |
 |-------------|-----|
-| **Production** | `https://api.fairarena.app/api/v1` |
+| **Production** | `https://fairarena.sakshamg.me/api/v1` |
 | **Development** | `http://localhost:3000/api/v1` |
 
 ### Authentication
@@ -389,7 +389,7 @@ docker run -p 3000:3000 --env-file .env fairarena-backend
 
 ```bash
 curl -H "X-Health-Check: ${HEALTHZ_HEADER_VALUE}" \
-  https://api.fairarena.app/healthz
+  https://fairarena.sakshamg.me/healthz
 ```
 
 ---

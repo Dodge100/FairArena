@@ -92,6 +92,7 @@ import apiKeysRouter from './routes/v1/apiKeys.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
+import githubRouter from './routes/v1/githubRoutes.js';
 import mfaRouter from './routes/v1/mfa.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
@@ -111,7 +112,7 @@ import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
 import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
 import logger from './utils/logger.js';
-import githubRouter from './routes/v1/githubRoutes.js';
+import { ipSecurityMiddleware } from './middleware/ipSecurity.middleware.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -135,9 +136,6 @@ app.use(requestValidation);
 
 // Apply CSRF token generation (sets token in cookie and header)
 app.use(setCsrfToken);
-
-// Apply intrusion detection
-app.use(intrusionDetection);
 
 // Track authentication failures for brute force protection
 app.use(trackAuthFailures);
@@ -185,6 +183,11 @@ app.use(
     callback(null, corsOptions);
   }),
 );
+
+app.use(ipSecurityMiddleware);
+
+// Apply intrusion detection
+app.use(intrusionDetection);
 
 // JSON middleware
 app.use(express.json());

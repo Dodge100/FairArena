@@ -284,7 +284,7 @@ export const sendWelcomeEmail = inngest.createFunction(
     // Step 2: Send email
     await step.run('send-email', async () => {
       await resend.emails.send({
-        from: 'FairArena <noreply@fairarena.app>',
+        from: 'FairArena <noreply@noreply.sakshamg.me>',
         to: email,
         subject: 'Welcome to FairArena!',
         react: WelcomeEmail({ user }),

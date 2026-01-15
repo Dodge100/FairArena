@@ -324,7 +324,7 @@ For questions about this documentation:
 
 - **Internal:** #engineering-docs Slack channel
 - **Issues:** GitHub Issues
-- **Email:** engineering@fairarena.app
+- **Email:** fairarena.contact@gmail.com
 
 ---
 

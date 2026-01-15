@@ -277,4 +277,6 @@ export const ENV = {
   MAX_REQUEST_SIZE: getEnv('MAX_REQUEST_SIZE', '100kb'),
   SESSION_ABSOLUTE_TIMEOUT: parseInt(getEnv('SESSION_ABSOLUTE_TIMEOUT', '86400000')), // 24 hours
   SESSION_IDLE_TIMEOUT: parseInt(getEnv('SESSION_IDLE_TIMEOUT', '1800000')), // 30 minutes
+  // IP Security (IPRegistry)
+  IPREGISTRY_API_KEY: getEnv('IPREGISTRY_API_KEY', ''),
 };

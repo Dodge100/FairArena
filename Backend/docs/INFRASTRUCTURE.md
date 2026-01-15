@@ -325,7 +325,7 @@ service:
 # Server
 PORT=3000
 NODE_ENV=production
-CORS_URL=fairarena.app
+CORS_URL=fair.sakshamg.me
 
 # Database
 DATABASE_URL=postgresql://user:pass@host:5432/db
@@ -348,7 +348,7 @@ INNGEST_BASE_URL=http://inngest:8288
 
 # Email
 RESEND_API_KEY=re_xxx
-FROM_EMAIL_ADDRESS=noreply@fairarena.app
+FROM_EMAIL_ADDRESS=noreply@noreply.sakshamg.me
 
 # Payments
 RAZORPAY_KEY_ID=rzp_live_xxx

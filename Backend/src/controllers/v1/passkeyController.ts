@@ -30,7 +30,6 @@ import logger from '../../utils/logger.js';
 // --- Configuration ---
 // The Relying Party (RP) configuration
 const rpName = 'FairArena';
-// In production, this should be the actual domain (e.g., 'fairarena.com')
 const rpID = new URL(ENV.FRONTEND_URL).hostname;
 // The expected origin(s) for the WebAuthn requests
 const expectedOrigin = ENV.FRONTEND_URL;
@@ -679,7 +678,7 @@ export async function deletePasskey(req: Request, res: Response) {
             });
         }
 
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         // Find and verify ownership
         const passkey = await prisma.passkey.findFirst({
@@ -781,7 +780,7 @@ export async function renamePasskey(req: Request, res: Response) {
             });
         }
 
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         const validation = renamePasskeySchema.safeParse(req.body);
         if (!validation.success) {

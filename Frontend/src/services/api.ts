@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { getCsrfToken, setCsrfToken } from '../utils/csrfToken';
 
 class ApiClient {
   private baseURL: string;
@@ -9,17 +10,37 @@ class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+    const method = options.method?.toUpperCase() || 'GET';
+    const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as any || {}),
+    };
+
+    // Add CSRF token for state-changing requests
+    if (isStateChanging) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
 
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers,
+      credentials: 'include', // Important: include cookies for CSRF
     };
 
     try {
       const response = await fetch(url, config);
+
+      // Capture CSRF token from response header
+      const newCsrfToken = response.headers.get('X-CSRF-Token');
+      if (newCsrfToken) {
+        setCsrfToken(newCsrfToken);
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

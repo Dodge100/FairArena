@@ -1,7 +1,7 @@
 # FairArena API Reference
 
 > **Version:** 1.0.0
-> **Base URL:** `https://api.fairarena.app/api/v1`
+> **Base URL:** `https://fairarena.sakshamg.me/api/v1`
 > **Last Updated:** 2025-12-30
 
 ---
@@ -1370,54 +1370,6 @@ POST /webhooks/v1/github
 | `INTERNAL_ERROR` | 500 | Unexpected server error |
 | `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
 | `MAINTENANCE` | 503 | System under maintenance |
-
----
-
-## SDK Examples
-
-### JavaScript/TypeScript
-
-```typescript
-import { FairArenaClient } from '@fairarena/sdk';
-
-const client = new FairArenaClient({
-  baseUrl: 'https://api.fairarena.app',
-  getToken: async () => await clerk.getToken()
-});
-
-// Get profile
-const profile = await client.profile.get();
-
-// Update profile
-await client.profile.update({
-  bio: 'Updated bio',
-  skills: ['TypeScript', 'Go']
-});
-
-// Get credit balance
-const { balance } = await client.credits.getBalance();
-
-// Create payment order
-const order = await client.payments.createOrder('plan_pro');
-```
-
-### cURL Examples
-
-```bash
-# Get profile
-curl -X GET https://api.fairarena.app/api/v1/profile \
-  -H "Authorization: Bearer $TOKEN"
-
-# Update profile
-curl -X PUT https://api.fairarena.app/api/v1/profile \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"bio": "New bio"}'
-
-# Get credit balance
-curl -X GET https://api.fairarena.app/api/v1/credits/balance \
-  -H "Authorization: Bearer $TOKEN"
-```
 
 ---
 

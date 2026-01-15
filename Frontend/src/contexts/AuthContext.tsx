@@ -1,4 +1,4 @@
-import { publicApiFetch, registerAuth, registerBanHandler } from '@/lib/apiClient';
+import { publicApiFetch, registerAuth, registerBanHandler, registerIPBlockHandler } from '@/lib/apiClient';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Types
@@ -30,6 +30,8 @@ export interface AuthContextType {
     isAuthenticated: boolean;
     isBanned: boolean; // New prop
     banReason: string | null; // New prop
+    isIPBlocked: boolean; // IP blocking detection
+    ipBlockReasons: string[]; // Reasons for IP block
     login: (email: string, password: string, recaptchaToken?: string) => Promise<AuthResponse>;
     register: (data: RegisterData, recaptchaToken?: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -96,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isBanned, setIsBanned] = useState(false);
     const [banReason, setBanReason] = useState<string | null>(null);
+    const [isIPBlocked, setIsIPBlocked] = useState(false);
+    const [ipBlockReasons, setIPBlockReasons] = useState<string[]>([]);
 
     // Multi-account state
     const [accounts, setAccounts] = useState<AccountSession[]>([]);
@@ -110,6 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Optionally clear user/token if you want to force a "logged out" state visually,
             // but keeping them might be useful for showing "Banned as [User]".
             // For now, let's keep the user data but the UI will block access.
+        });
+
+        // Register IP block handler
+        registerIPBlockHandler((reasons?: string[]) => {
+            setIsIPBlocked(true);
+            setIPBlockReasons(reasons || ['Your IP has been blocked due to security policy violations']);
         });
     }, []);
 
@@ -596,6 +606,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isBanned,
         banReason,
+        isIPBlocked,
+        ipBlockReasons,
         login,
         register,
         logout,

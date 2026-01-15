@@ -1,9 +1,12 @@
+import { AlertCircle, CheckCircle2, Loader2, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { cn } from '../lib/utils';
 import { api } from '../services/api';
 
 interface FeedbackData {
@@ -71,7 +74,7 @@ const Feedback = () => {
             case 1: return 'Poor';
             case 2: return 'Fair';
             case 3: return 'Good';
-            case 4: return 'Very good';
+            case 4: return 'Very Good';
             case 5: return 'Excellent';
             default: return '';
         }
@@ -79,10 +82,10 @@ const Feedback = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-                <div className="flex flex-col items-center gap-3 text-slate-600 dark:text-slate-400 w-full">
-                    <div className="h-10 w-10 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-                    <span className="text-lg font-medium">Loading feedback form…</span>
+            <div className="flex min-h-screen w-full items-center justify-center bg-background text-foreground">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="text-sm font-medium text-muted-foreground">Loading...</span>
                 </div>
             </div>
         );
@@ -90,66 +93,78 @@ const Feedback = () => {
 
     if (!feedback) {
         return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-0">
-                <div className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-none p-8 flex flex-col items-center justify-center min-h-[400px]">
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 text-center">Invalid feedback link</h2>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 mb-4 text-center">This feedback link is not valid or has expired.</p>
-                    <p className="text-base text-slate-500 dark:text-slate-400 mb-6 text-center">If you think this is a mistake, please contact support.</p>
-                    <Button
-                        onClick={() => (window.location.href = '/')}
-                        className="w-full max-w-xs bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white"
-                        variant="outline"
-                    >
-                        Go to homepage
-                    </Button>
-                </div>
+            <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 text-foreground">
+                <Card className="w-full max-w-4xl min-w-[500px] border-border bg-card/50 backdrop-blur-xl">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                            <AlertCircle className="h-6 w-6 text-destructive" />
+                        </div>
+                        <CardTitle className="text-xl">Link Expired</CardTitle>
+                        <CardDescription>
+                            This feedback link is invalid or has already been used.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={() => (window.location.href = '/')}
+                            className="w-full"
+                            variant="secondary"
+                        >
+                            Return Home
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
     if (feedback.isUsed) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4">
-                <Card className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-slate-200 dark:border-slate-700 rounded-none">
-                    <CardHeader className="space-y-2 text-center">
-                        <CardTitle className="text-slate-900 dark:text-slate-100">Thank you</CardTitle>
-                        <CardDescription className="text-slate-600 dark:text-slate-400">
-                            Your feedback has already been recorded.
+            <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 text-foreground">
+                <Card className="w-full max-w-4xl min-w-[500px] border-border bg-card/50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                            <CheckCircle2 className="h-6 w-6 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl">Thank You!</CardTitle>
+                        <CardDescription>
+                            Your feedback has been recorded.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
                         {feedback.rating && (
-                            <div className="flex flex-col items-center gap-1">
+                            <div className="flex flex-col items-center gap-2 rounded-lg border bg-muted/50 p-4">
                                 <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
-                                        <svg
+                                        <Star
                                             key={star}
-                                            className={`h-4 w-4 ${star <= feedback.rating! ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'
-                                                }`}
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                        >
-                                            <path d="M9.049.927c.3-.921 1.603-.921 1.902 0l1.19 3.674a1 1 0 00.95.69h3.862c.969 0 1.371 1.24.588 1.81l-3.125 2.27a1 1 0 00-.364 1.118l1.19 3.674c.3.922-.755 1.688-1.538 1.118l-3.125-2.27a1 1 0 00-1.176 0l-3.125 2.27c-.783.57-1.838-.196-1.538-1.118l1.19-3.674a1 1 0 00-.364-1.118L1.36 7.1c-.783-.57-.38-1.81.588-1.81h3.862a1 1 0 00.95-.69L9.049.927z" />
-                                        </svg>
+                                            className={cn(
+                                                "h-5 w-5",
+                                                star <= feedback.rating!
+                                                    ? "fill-primary text-primary"
+                                                    : "fill-muted text-muted-foreground"
+                                            )}
+                                        />
                                     ))}
                                 </div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    {feedback.rating}/5 · {getRatingText(feedback.rating)}
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    {getRatingText(feedback.rating)}
                                 </p>
                             </div>
                         )}
 
                         {feedback.message && (
-                            <div className="rounded-md border bg-slate-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
-                                “{feedback.message}”
+                            <div className="rounded-lg border bg-muted/30 p-4 text-center text-sm italic text-muted-foreground">
+                                "{feedback.message}"
                             </div>
                         )}
 
                         <Button
                             onClick={() => (window.location.href = '/')}
-                            className="w-full bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white"
+                            className="w-full"
+                            variant="outline"
                         >
-                            Return to FairArena
+                            Back to Home
                         </Button>
                     </CardContent>
                 </Card>
@@ -160,120 +175,99 @@ const Feedback = () => {
     const currentRating = hoveredRating || rating || 0;
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4 py-10">
-            <div className="mx-auto w-full max-w-xl">
-                <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-slate-200 dark:border-slate-700">
-                    <CardHeader className="space-y-2">
-                        <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                            Share your feedback
-                        </CardTitle>
-                        <CardDescription className="text-slate-600 dark:text-slate-400">
-                            Help us improve FairArena with a quick rating and an optional comment.
-                        </CardDescription>
-                    </CardHeader>
+        <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 text-foreground">
+            <Card className="w-full max-w-4xl min-w-[500px] border-border bg-card/50 backdrop-blur-xl">
+                <CardHeader>
+                    <CardTitle className="text-center text-xl font-semibold">Share Feedback</CardTitle>
+                    <CardDescription className="text-center">
+                        How was your experience? We verify every response.
+                    </CardDescription>
+                </CardHeader>
 
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Rating */}
-                            <div className="space-y-2">
-                                <div className="flex items-baseline justify-between">
-                                    <label className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                        Overall experience <span className="text-red-500">*</span>
-                                    </label>
-                                    {currentRating > 0 && (
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                                            {currentRating}/5 · {getRatingText(currentRating)}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center gap-2">
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Rating Section */}
+                        <div className="space-y-4">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <div className="flex items-center gap-1" onMouseLeave={() => setHoveredRating(null)}>
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
                                             key={star}
                                             type="button"
                                             onClick={() => setRating(star)}
                                             onMouseEnter={() => setHoveredRating(star)}
-                                            onMouseLeave={() => setHoveredRating(null)}
-                                            className="group rounded-full p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-900"
-                                            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                                            className="group rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            aria-label={`Rate ${star} stars`}
                                         >
-                                            <svg
-                                                className={`h-6 w-6 transition-colors ${star <= currentRating
-                                                        ? 'text-amber-500'
-                                                        : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500'
-                                                    }`}
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                            >
-                                                <path d="M9.049.927c.3-.921 1.603-.921 1.902 0l1.19 3.674a1 1 0 00.95.69h3.862c.969 0 1.371 1.24.588 1.81l-3.125 2.27a1 1 0 00-.364 1.118l1.19 3.674c.3.922-.755 1.688-1.538 1.118l-3.125-2.27a1 1 0 00-1.176 0l-3.125 2.27c-.783.57-1.838-.196-1.538-1.118l1.19-3.674a1 1 0 00-.364-1.118L1.36 7.1c-.783-.57-.38-1.81.588-1.81h3.862a1 1 0 00.95-.69L9.049.927z" />
-                                            </svg>
+                                            <Star
+                                                className={cn(
+                                                    "h-8 w-8 transition-all duration-200",
+                                                    star <= currentRating
+                                                        ? "fill-primary text-primary scale-110"
+                                                        : "text-muted-foreground hover:text-muted-foreground/80 hover:scale-105"
+                                                )}
+                                                strokeWidth={1.5}
+                                            />
                                         </button>
                                     ))}
                                 </div>
-
-                                {!rating && (
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Click a star to select your rating.
-                                    </p>
-                                )}
+                                <span className={cn(
+                                    "h-6 text-sm font-medium transition-all duration-300",
+                                    currentRating > 0 ? "text-primary" : "text-transparent"
+                                )}>
+                                    {currentRating > 0 ? getRatingText(currentRating) : "Select a rating"}
+                                </span>
                             </div>
 
-                            {/* Message */}
-                            <div className="space-y-2">
-                                <div className="flex items-baseline justify-between">
-                                    <label htmlFor="message" className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                        Additional comments
-                                    </label>
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                        Optional
-                                    </span>
-                                </div>
+                            {!rating && submitting && (
+                                <p className="text-center text-xs text-destructive animate-pulse">
+                                    Please select a rating to continue
+                                </p>
+                            )}
+                        </div>
 
-                                <Textarea
-                                    id="message"
-                                    placeholder="What worked well? What could be improved?"
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
-                                    rows={4}
-                                    className="resize-none bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-                                />
-
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                        {message.length}/1000 characters
-                                    </span>
-                                    {message.length > 900 && (
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                                            {1000 - message.length} remaining
-                                        </span>
-                                    )}
-                                </div>
+                        {/* Comment Section */}
+                        <div className="space-y-3">
+                            <Label htmlFor="message" className="text-sm font-medium">
+                                Additional Details
+                            </Label>
+                            <Textarea
+                                id="message"
+                                placeholder="Tell us what you liked or how we can improve..."
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
+                                rows={4}
+                                className="resize-none bg-background/50 focus:bg-background transition-colors"
+                            />
+                            <div className="flex justify-end">
+                                <span className="text-xs text-muted-foreground">
+                                    {message.length}/1000
+                                </span>
                             </div>
+                        </div>
 
-                            {/* Submit */}
-                            <Button
-                                type="submit"
-                                disabled={submitting || !rating}
-                                className="w-full bg-slate-600 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white disabled:bg-slate-400 dark:disabled:bg-slate-600"
-                            >
-                                {submitting ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                                        <span>Submitting…</span>
-                                    </span>
-                                ) : (
-                                    'Submit feedback'
-                                )}
-                            </Button>
+                        <Button
+                            type="submit"
+                            disabled={submitting || !rating}
+                            className="w-full"
+                            size="lg"
+                        >
+                            {submitting ? (
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Submitting...</span>
+                                </div>
+                            ) : (
+                                'Submit Feedback'
+                            )}
+                        </Button>
 
-                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
-                                Your response is anonymous and used only to improve FairArena.
-                            </p>
-                        </form>
-                    </CardContent>
-                </Card>
-            </div>
+                        <p className="text-center text-xs text-muted-foreground/60">
+                            Your feedback helps us make FairArena better for everyone.
+                        </p>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 };

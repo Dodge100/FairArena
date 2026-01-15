@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "fairarena-api-v1-complete",
     "name": "FairArena API v1 - Complete",
-    "description": "# FairArena API Reference\n\nComplete API documentation for FairArena platform.\n\n## Base URLs\n| Environment | URL |\n|-------------|-----|\n| Production | `https://api.fairarena.app` |\n| Development | `http://localhost:3000` |\n\n## Authentication\nMost endpoints require Clerk JWT authentication:\n```\nAuthorization: Bearer <clerk_jwt_token>\n```\n\n## Rate Limiting\n- Standard: 100 req/min\n- Auth endpoints: 10 req/min\n- OTP: 3 req/24hr",
+    "description": "# FairArena API Reference\n\nComplete API documentation for FairArena platform.\n\n## Base URLs\n| Environment | URL |\n|-------------|-----|\n| Production | `https://fairarena.sakshamg.me` |\n| Development | `http://localhost:3000` |\n\n## Authentication\nMost endpoints require Clerk JWT authentication:\n```\nAuthorization: Bearer <clerk_jwt_token>\n```\n\n## Rate Limiting\n- Standard: 100 req/min\n- Auth endpoints: 10 req/min\n- OTP: 3 req/24hr",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{clerkToken}}", "type": "string" }] },
@@ -199,7 +199,7 @@
         {
           "name": "List user organizations",
           "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/organization", "host": ["{{baseUrl}}"], "path": ["api", "v1", "organization"] } },
-          "response": [{ "name": "Success", "status": "OK", "code": 200, "body": "{\n  \"success\": true,\n  \"organizations\": [\n    {\n      \"id\": \"org_techcorp123\",\n      \"name\": \"TechCorp Solutions\",\n      \"slug\": \"techcorp-solutions\",\n      \"description\": \"Enterprise software development company\",\n      \"role\": \"OWNER\",\n      \"memberCount\": 45,\n      \"teamCount\": 6,\n      \"logoUrl\": \"https://storage.fairarena.app/orgs/techcorp-logo.png\",\n      \"createdAt\": \"2024-01-10T08:00:00.000Z\"\n    },\n    {\n      \"id\": \"org_startup456\",\n      \"name\": \"InnovateTech Startup\",\n      \"slug\": \"innovatetech\",\n      \"description\": \"AI-powered solutions for modern businesses\",\n      \"role\": \"ADMIN\",\n      \"memberCount\": 12,\n      \"teamCount\": 3,\n      \"createdAt\": \"2024-03-15T10:30:00.000Z\"\n    }\n  ]\n}" }]
+          "response": [{ "name": "Success", "status": "OK", "code": 200, "body": "{\n  \"success\": true,\n  \"organizations\": [\n    {\n      \"id\": \"org_techcorp123\",\n      \"name\": \"TechCorp Solutions\",\n      \"slug\": \"techcorp-solutions\",\n      \"description\": \"Enterprise software development company\",\n      \"role\": \"OWNER\",\n      \"memberCount\": 45,\n      \"teamCount\": 6,\n      \"logoUrl\": \"https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png\",\n      \"createdAt\": \"2024-01-10T08:00:00.000Z\"\n    },\n    {\n      \"id\": \"org_startup456\",\n      \"name\": \"InnovateTech Startup\",\n      \"slug\": \"innovatetech\",\n      \"description\": \"AI-powered solutions for modern businesses\",\n      \"role\": \"ADMIN\",\n      \"memberCount\": 12,\n      \"teamCount\": 3,\n      \"createdAt\": \"2024-03-15T10:30:00.000Z\"\n    }\n  ]\n}" }]
         },
         {
           "name": "Create organization",

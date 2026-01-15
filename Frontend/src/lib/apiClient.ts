@@ -1,4 +1,3 @@
-// lib/apiClient.ts
 import { getCsrfToken, setCsrfToken } from '../utils/csrfToken';
 
 let getTokenFn: (() => Promise<string | null>) | null = null;
@@ -12,6 +11,13 @@ let onUserBanned: ((reason?: string) => void) | null = null;
 
 export function registerBanHandler(handler: (reason?: string) => void) {
   onUserBanned = handler;
+}
+
+// Handler for IP blocking detection
+let onIPBlocked: ((reasons?: string[]) => void) | null = null;
+
+export function registerIPBlockHandler(handler: (reasons?: string[]) => void) {
+  onIPBlocked = handler;
 }
 
 export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
@@ -53,29 +59,56 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
     setCsrfToken(newCsrfToken);
   }
 
-  // Check for ban status
+  // Check for ban status or IP blocking
   if (response.status === 403) {
     try {
       const clonedResponse = response.clone();
-      const body = await clonedResponse.json();
-      if (body.code === 'USER_BANNED') {
-        const reason = body.message?.replace('Your account has been suspended. Reason: ', '') || undefined;
-        if (onUserBanned) {
-          onUserBanned(reason);
+      const contentType = response.headers.get('content-type');
+
+      // Check if response is HTML (IP blocking) or JSON (user ban)
+      if (contentType?.includes('text/html')) {
+        // IP blocked - extract reasons from HTML if possible
+        const html = await clonedResponse.text();
+        const reasons: string[] = [];
+
+        // Try to extract reasons from HTML
+        const reasonMatches = html.match(/<li>([^<]+)<\/li>/g);
+        if (reasonMatches) {
+          reasonMatches.forEach(match => {
+            const reason = match.replace(/<\/?li>/g, '').trim();
+            if (reason && !reason.startsWith('→') && reason !== 'Suggestions:') {
+              reasons.push(reason);
+            }
+          });
+        }
+
+        if (onIPBlocked) {
+          onIPBlocked(reasons.length > 0 ? reasons : ['Your IP has been blocked due to security policy violations']);
+        }
+      } else {
+        // Try to parse as JSON for user ban
+        const body = await clonedResponse.json();
+        if (body.code === 'USER_BANNED') {
+          const reason = body.message?.replace('Your account has been suspended. Reason: ', '') || undefined;
+          if (onUserBanned) {
+            onUserBanned(reason);
+          }
+        } else if (body.code === 'IP_BLOCKED') {
+          // Backend might also send JSON for IP blocks
+          if (onIPBlocked) {
+            onIPBlocked(body.reasons || ['Your IP has been blocked due to security policy violations']);
+          }
         }
       }
     } catch (e) {
-      // Ignore JSON parse errors on 403 checks
+      // Ignore parse errors on 403 checks
+      console.warn('Failed to parse 403 response:', e);
     }
   }
 
   return response;
 }
 
-/**
- * Public API fetch for unauthenticated requests
- * Also handles CSRF tokens for public endpoints that require them
- */
 export async function publicApiFetch(input: RequestInfo, init: RequestInit = {}) {
   const method = init.method?.toUpperCase() || 'GET';
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
@@ -103,6 +136,47 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
   const newCsrfToken = response.headers.get('X-CSRF-Token');
   if (newCsrfToken) {
     setCsrfToken(newCsrfToken);
+  }
+
+  // Check for ban status or IP blocking
+  if (response.status === 403) {
+    try {
+      const clonedResponse = response.clone();
+      const contentType = response.headers.get('content-type');
+
+      // Check if response is HTML (IP blocking) or JSON (user ban)
+      if (contentType?.includes('text/html')) {
+        // IP blocked - extract reasons from HTML if possible
+        const html = await clonedResponse.text();
+        const reasons: string[] = [];
+
+        // Try to extract reasons from HTML
+        const reasonMatches = html.match(/<li>([^<]+)<\/li>/g);
+        if (reasonMatches) {
+          reasonMatches.forEach(match => {
+            const reason = match.replace(/<\/?li>/g, '').trim();
+            if (reason && !reason.startsWith('→') && reason !== 'Suggestions:') {
+              reasons.push(reason);
+            }
+          });
+        }
+
+        if (onIPBlocked) {
+          onIPBlocked(reasons.length > 0 ? reasons : ['Your IP has been blocked due to security policy violations']);
+        }
+      } else {
+        // Try to parse as JSON for user ban/block
+        const body = await clonedResponse.json();
+        // Public API usually doesn't have user ban context, but might have IP block JSON
+        if (body.code === 'IP_BLOCKED') {
+          if (onIPBlocked) {
+            onIPBlocked(body.reasons || ['Your IP has been blocked due to security policy violations']);
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
   }
 
   return response;

@@ -702,7 +702,7 @@ export function getDiscoveryDocument(): Record<string, unknown> {
             'email_verified',
         ],
 
-        service_documentation: 'https://docs.fairarena.com/oauth',
+        service_documentation: 'https://docs.fairarena.sakshamg.me/oauth',
 
         // Explicitly document unsupported features
         _note: 'RP-Initiated Logout not yet supported',
