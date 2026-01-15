@@ -1,3 +1,4 @@
+import { OAuthSocials } from '@/components/auth/OAuthSocials';
 import { QRAuthDialog } from '@/components/auth/QRAuthDialog';
 import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +10,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
-import { OAuthSocials } from '@/components/auth/OAuthSocials';
+import { OAuthBanner } from '@/components/auth/OAuthBanner';
 
 type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification';
 type AuthStep = 'credentials' | 'mfa' | 'new_device' | 'webauthn_unsupported';
@@ -96,7 +97,14 @@ export default function Signin() {
   const getRedirectPath = useCallback(() => {
     let path = '/dashboard';
 
-    // First check location state (from ProtectedLayout redirect)
+    // First check for OAuth request parameter (from OAuth consent flow)
+    const params = new URLSearchParams(window.location.search);
+    const oauthRequest = params.get('oauth_request') || sessionStorage.getItem('oauth_request_id');
+    if (oauthRequest) {
+      return `/oauth/consent?request_id=${oauthRequest}`;
+    }
+
+    // Then check location state (from ProtectedLayout redirect)
     if (location.state?.from?.pathname) {
       path = location.state.from.pathname;
     }
@@ -141,9 +149,31 @@ export default function Signin() {
     }
   }, []);
 
+  // Persist and restore OAuth request across redirects (signup, MFA, passkey, etc.)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlOAuthRequest = params.get('oauth_request');
+    const storedOAuthRequest = sessionStorage.getItem('oauth_request_id');
+
+    // If oauth_request is in URL, store it for persistence
+    if (urlOAuthRequest) {
+      sessionStorage.setItem('oauth_request_id', urlOAuthRequest);
+    }
+    // If oauth_request is in storage but not in URL, restore it to URL
+    else if (storedOAuthRequest && !urlOAuthRequest) {
+      params.set('oauth_request', storedOAuthRequest);
+      window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
+    }
+  }, []);
+
   // Clean up flow from sessionStorage on successful login
   const clearAddAccountFlow = useCallback(() => {
     sessionStorage.removeItem('auth_flow');
+  }, []);
+
+  // Clean up OAuth request from sessionStorage
+  const clearOAuthRequest = useCallback(() => {
+    sessionStorage.removeItem('oauth_request_id');
   }, []);
 
   // Clean up URL parameters on mount (in case of old redirects or errors)
@@ -360,6 +390,7 @@ export default function Signin() {
         } else {
           toast.success('Welcome back!');
           clearAddAccountFlow();
+          clearOAuthRequest();
           const redirectPath = getRedirectPath();
           navigate(redirectPath, { replace: true });
         }
@@ -399,6 +430,7 @@ export default function Signin() {
 
         toast.success('Welcome back!');
         clearAddAccountFlow();
+        clearOAuthRequest();
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       }
@@ -545,6 +577,7 @@ export default function Signin() {
         toast.success('Welcome back!');
         // Full page reload to properly set auth state from cookies
         clearAddAccountFlow();
+        clearOAuthRequest();
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       } else if (result.error === 'cancelled') {
@@ -613,6 +646,7 @@ export default function Signin() {
 
       // Clear flow and redirect (full reload to pick up session)
       clearAddAccountFlow();
+      clearOAuthRequest();
       const redirectPath = getRedirectPath();
       window.location.href = redirectPath;
 
@@ -994,228 +1028,231 @@ export default function Signin() {
           getRedirectPath={getRedirectPath}
           lastUsedMethod={lastUsedMethod}
         />
-          {/* Passkey - Prominent full-width button */}
+        {/* Passkey - Prominent full-width button */}
 
-          {/* Passkey - Prominent full-width button */}
-          {passkeySupported && (
-            <button
-              type="button"
-              onClick={handlePasskeyLogin}
-              disabled={isLoading || passkeyLoading}
-              className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'}`}
-            >
-              {lastUsedMethod === 'passkey' && <LastUsedBadge />}
-              {passkeyLoading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Authenticating...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
-                    <path d="M10 11V8a4 4 0 118 0v3" />
-                    <path d="M4 21a8 8 0 0116 0" />
-                  </svg>
-                  Sign in with Passkey
-                </>
-              )}
-            </button>
-          )}
-
-          {/* QR Code Login */}
+        {/* Passkey - Prominent full-width button */}
+        {passkeySupported && (
           <button
             type="button"
-            onClick={() => setShowQRDialog(true)}
-            disabled={isLoading}
-            className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
+            onClick={handlePasskeyLogin}
+            disabled={isLoading || passkeyLoading}
+            className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'}`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
-            </svg>
-            Sign in with QR Code
+            {lastUsedMethod === 'passkey' && <LastUsedBadge />}
+            {passkeyLoading ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Authenticating...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
+                  <path d="M10 11V8a4 4 0 118 0v3" />
+                  <path d="M4 21a8 8 0 0116 0" />
+                </svg>
+                Sign in with Passkey
+              </>
+            )}
           </button>
+        )}
+
+        {/* QR Code Login */}
+        <button
+          type="button"
+          onClick={() => setShowQRDialog(true)}
+          disabled={isLoading}
+          className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
+          </svg>
+          Sign in with QR Code
+        </button>
 
 
         {/* Divider */}
-          <div className="relative my-4">
-            <div className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}>
-              <div className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`} />
+        <div className="relative my-4">
+          <div className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}>
+            <div className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`} />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}>
+              or sign in with email
+            </span>
+          </div>
+        </div>
+
+        <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+          {/* Error display */}
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
+              <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>{error}</span>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}>
-                or sign in with email
-              </span>
-            </div>
+          )}
+
+          {/* Email input */}
+          <div>
+            <label
+              htmlFor="email"
+              className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
+            />
           </div>
 
-          <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-            {/* Error display */}
-            {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
-                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Email input */}
-            <div>
-              <label
-                htmlFor="email"
-                className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError('');
-                }}
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-                className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-              />
-            </div>
-
-            {/* Password input */}
-            <div>
-              <label
-                htmlFor="password"
-                className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-              />
-            </div>
-
-            {/* Forgot password link */}
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className={`text-sm ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-600 hover:text-neutral-900'} transition-colors`}
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              disabled={isLoading || !email || !password}
-              className="relative w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+          {/* Password input */}
+          <div>
+            <label
+              htmlFor="password"
+              className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
             >
-              {lastUsedMethod === 'email' && <LastUsedBadge />}
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Signing in...
-                </span>
-              ) : 'Sign In'}
-            </button>
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError('');
+              }}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
+            />
+          </div>
 
-            {/* Sign up link */}
-            <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-              {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Don't have an account? " : "Want to join? "}
-              <Link
-                to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "/signup" : "/waitlist"}
-                state={location.state}
-                className={`font-medium ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-900 hover:underline'}`}
-              >
-                {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Sign up" : "Join Waitlist"}
-              </Link>
-            </p>
-            <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-              By signing in, you agree to our{' '}
-              <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
-                Privacy Policy
-              </Link>.
-            </p>
-          </form>
+          {/* Forgot password link */}
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className={`text-sm ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-600 hover:text-neutral-900'} transition-colors`}
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={isLoading || !email || !password}
+            className="relative w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+          >
+            {lastUsedMethod === 'email' && <LastUsedBadge />}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Signing in...
+              </span>
+            ) : 'Sign In'}
+          </button>
+
+          {/* Sign up link */}
+          <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+            {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Don't have an account? " : "Want to join? "}
+            <Link
+              to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "/signup" : "/waitlist"}
+              state={location.state}
+              className={`font-medium ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-900 hover:underline'}`}
+            >
+              {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Sign up" : "Join Waitlist"}
+            </Link>
+          </p>
+          <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+            By signing in, you agree to our{' '}
+            <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
+              Privacy Policy
+            </Link>.
+          </p>
+        </form>
       </div>
     </>
   );
 
   return (
-    <div className={`fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}>
-      <div className="w-full h-screen flex flex-col md:flex-row rounded-none overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.2)]">
-        {/* Left side - Auth form */}
-        <div className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
-          {/* Logo was moved inside forms to better handle MFA view vs Credentials view spacing */}
-          {/* Render appropriate form based on auth step */}
-          {isCheckingSession ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
+    <>
+      <OAuthBanner />
+      <div className={`fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}>
+        <div className="w-full h-screen flex flex-col md:flex-row rounded-none overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.2)]">
+          {/* Left side - Auth form */}
+          <div className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
+            {/* Logo was moved inside forms to better handle MFA view vs Credentials view spacing */}
+            {/* Render appropriate form based on auth step */}
+            {isCheckingSession ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
+              </div>
+            ) : (authStep === 'webauthn_unsupported' ? renderWebAuthnUnsupported() : authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
+          </div>
+
+          {/* Right side - Illustration */}
+          <div className={`hidden md:flex w-1/2 items-center justify-center p-8 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}>
+            <div className="relative w-full max-w-md">
+              <h2 className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+                Perfectly Judge Hackathon Teams and View Leaderboards
+              </h2>
+              <p className={`mb-6 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                Sign in to access your dashboard and manage your competitions.
+              </p>
+              <img
+                src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
+                alt="Dashboard Preview"
+                className="rounded-xl shadow-2xl border"
+              />
             </div>
-          ) : (authStep === 'webauthn_unsupported' ? renderWebAuthnUnsupported() : authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
-        </div>
-
-        {/* Right side - Illustration */}
-        <div className={`hidden md:flex w-1/2 items-center justify-center p-8 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}>
-          <div className="relative w-full max-w-md">
-            <h2 className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-              Perfectly Judge Hackathon Teams and View Leaderboards
-            </h2>
-            <p className={`mb-6 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-              Sign in to access your dashboard and manage your competitions.
-            </p>
-            <img
-              src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
-              alt="Dashboard Preview"
-              className="rounded-xl shadow-2xl border"
-            />
           </div>
         </div>
+
+        {/* Captcha Modal */}
+        <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+          <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+            <DialogHeader>
+              <DialogTitle>Security Verification</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center p-4">
+              <ReCAPTCHA
+                sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+                theme={isDark ? 'dark' : 'light'}
+                onChange={handleCaptchaVerify}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <QRAuthDialog
+          open={showQRDialog}
+          onOpenChange={setShowQRDialog}
+        />
       </div>
-
-      {/* Captcha Modal */}
-      <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
-        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
-          <DialogHeader>
-            <DialogTitle>Security Verification</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-center p-4">
-            <ReCAPTCHA
-              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
-              theme={isDark ? 'dark' : 'light'}
-              onChange={handleCaptchaVerify}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <QRAuthDialog
-        open={showQRDialog}
-        onOpenChange={setShowQRDialog}
-      />
-    </div>
+    </>
   );
 }
 

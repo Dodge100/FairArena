@@ -547,7 +547,7 @@ export async function listSecurityKeys(req: Request, res: Response) {
 export async function deleteSecurityKey(req: Request, res: Response) {
     try {
         const userId = req.user?.userId;
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         if (!userId) return res.status(401).json({ message: 'Authentication required' });
 
@@ -647,7 +647,7 @@ export async function deleteSecurityKey(req: Request, res: Response) {
 export async function renameSecurityKey(req: Request, res: Response) {
     try {
         const userId = req.user?.userId;
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         const validation = renameDeviceSchema.safeParse(req.body);
         if (!validation.success) return res.status(400).json({ message: 'Invalid name' });

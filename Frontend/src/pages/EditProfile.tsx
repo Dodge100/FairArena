@@ -52,8 +52,7 @@ interface ProfileData {
 export default function EditProfile() {
   const { user, isLoaded } = useAuthState();
   const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
   const queryClient = useQueryClient();
 
   const [profile, setProfile] = useState<ProfileData>({
@@ -196,6 +195,8 @@ export default function EditProfile() {
       toast.error('Failed to save profile');
     },
   });
+
+  const saving = updateProfileMutation.isPending;
 
   const handleSave = () => {
     if (!user) return;

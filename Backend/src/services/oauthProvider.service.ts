@@ -101,13 +101,27 @@ export async function getPrimarySigningKey(): Promise<{
 
     // Fallback to bootstrap key if no DB key exists
     if (ENV.OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY) {
-        return {
-            kid: 'bootstrap-key-1',
-            privateKey: ENV.OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            algorithm: 'RS256',
-        };
+        // Normalize the key - handle various formats from env vars
+        let normalizedKey = ENV.OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY;
+
+        // Replace literal \n with actual newlines (handles both \\n and \n)
+        normalizedKey = normalizedKey.replace(/\\n/g, '\n');
+
+        // Ensure proper PEM format with headers/footers
+        if (!normalizedKey.includes('-----BEGIN')) {
+            logger.error('Invalid RSA private key format - missing PEM headers');
+            // Continue to auto-generation
+        } else {
+            return {
+                kid: 'bootstrap-key-1',
+                privateKey: normalizedKey.trim(),
+                algorithm: 'RS256',
+            };
+        }
     }
 
+    // No signing key available
+    logger.error('No OAuth signing key available - please configure OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY');
     return null;
 }
 

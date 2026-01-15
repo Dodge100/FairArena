@@ -41,7 +41,7 @@ export const GetOrganizationDetails = async (req: Request, res: Response) => {
     const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
       where: {
         userId,
-        organization: { slug },
+        organization: { slug: slug as string },
       },
       include: {
         organization: {

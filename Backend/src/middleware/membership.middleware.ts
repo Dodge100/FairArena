@@ -23,7 +23,7 @@ export const requireOrganizationMembership = async (
   next: NextFunction,
 ) => {
   try {
-    const { organizationSlug } = req.params;
+    const organizationSlug = req.params.organizationSlug as string;
     const auth = req.user;
 
     if (!auth?.userId) {
@@ -44,7 +44,7 @@ export const requireOrganizationMembership = async (
 
     // Find organization
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true },
     });
 
@@ -88,7 +88,8 @@ export const requireOrganizationMembership = async (
  */
 export const requireTeamMembership = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { organizationSlug, teamSlug } = req.params;
+    const organizationSlug = req.params.organizationSlug as string;
+    const teamSlug = req.params.teamSlug as string;
     const auth = req.user;
 
     if (!auth?.userId) {
@@ -118,7 +119,7 @@ export const requireTeamMembership = async (req: Request, res: Response, next: N
       } else {
         // Fallback to DB query
         const organization = await prisma.organization.findUnique({
-          where: { slug: organizationSlug },
+          where: { slug: organizationSlug as string },
           select: { id: true },
         });
 
@@ -155,7 +156,7 @@ export const requireTeamMembership = async (req: Request, res: Response, next: N
     // Find team using organizationId
     const team = await prisma.team.findFirst({
       where: {
-        slug: teamSlug,
+        slug: teamSlug as string,
         organizationId,
       },
       select: { id: true },

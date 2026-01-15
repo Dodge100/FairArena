@@ -174,7 +174,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
  */
 export const checkWaitlistStatus = async (req: Request, res: Response) => {
     try {
-        const { email } = req.params;
+        const email = req.params.email as string;
         const normalizedEmail = email.toLowerCase().trim();
 
         const entry = await prisma.waitlist.findUnique({

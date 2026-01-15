@@ -322,7 +322,15 @@ export default function OAuthConsent() {
                         </button>
                     </div>
                     <p className="mt-4 text-center text-[10px] text-neutral-400">
-                        You will be redirected to <span className="font-mono text-neutral-500">{new URL(authRequest.redirectUri).hostname}</span>
+                        You will be redirected to <span className="font-mono text-neutral-500">
+                            {(() => {
+                                try {
+                                    return new URL(authRequest.redirectUri).hostname;
+                                } catch {
+                                    return authRequest.redirectUri;
+                                }
+                            })()}
+                        </span>
                     </p>
                 </div>
             </div>

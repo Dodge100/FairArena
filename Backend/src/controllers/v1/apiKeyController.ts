@@ -159,7 +159,7 @@ export const deleteKey = async (req: Request, res: Response) => {
             });
         }
 
-        const revoked = await revokeApiKey(userId, keyId);
+        const revoked = await revokeApiKey(userId, keyId as string);
 
         if (!revoked) {
             return res.status(404).json({
@@ -217,7 +217,7 @@ export const updateKey = async (req: Request, res: Response) => {
 
         const { name } = validation.data;
 
-        const updated = await updateApiKeyName(userId, keyId, name);
+        const updated = await updateApiKeyName(userId, keyId as string, name);
 
         if (!updated) {
             return res.status(404).json({

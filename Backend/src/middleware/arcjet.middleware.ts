@@ -7,8 +7,11 @@ export const arcjetMiddleware = async (req: Request, res: Response, next: NextFu
     req.path.startsWith('/api/inngest') ||
     req.path.startsWith('/healthz') ||
     req.path.startsWith('/api/v1/payments/webhook') ||
+    req.path.startsWith('/api/v1/oauth') ||
+    req.path.startsWith('/api/v1/oauth/token') ||
+    req.path.startsWith('/oauth/token') ||
     req.path.startsWith('/.well-known') ||
-    req.originalUrl.startsWith('/.well-known')
+    req.path.startsWith('/oauth/userinfo')
   ) {
     return next();
   }

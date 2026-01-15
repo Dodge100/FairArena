@@ -2,10 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import { REQUEST_VALIDATION_CONFIG } from '../config/security.config.js';
 import logger from '../utils/logger.js';
 import {
-    detectCommandInjection,
-    detectPathTraversal,
-    detectSqlInjection,
-    detectXss,
     sanitizeObject,
 } from '../utils/sanitization.utils.js';
 
@@ -122,111 +118,10 @@ export const sanitizeRequest = (req: Request, res: Response, next: NextFunction)
 };
 
 /**
- * Middleware to detect injection attacks
- */
-export const detectInjectionAttacks = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const checkValue = (value: any, path: string): boolean => {
-            if (typeof value === 'string') {
-                // Check for SQL injection
-                if (detectSqlInjection(value)) {
-                    logger.warn('SQL injection attempt detected', {
-                        path,
-                        value: value.substring(0, 100), // Log first 100 chars
-                        ip: req.ip,
-                        url: req.url,
-                    });
-                    return true;
-                }
-
-                // Check for XSS
-                if (detectXss(value)) {
-                    logger.warn('XSS attempt detected', {
-                        path,
-                        value: value.substring(0, 100),
-                        ip: req.ip,
-                        url: req.url,
-                    });
-                    return true;
-                }
-
-                // Check for path traversal
-                if (detectPathTraversal(value)) {
-                    logger.warn('Path traversal attempt detected', {
-                        path,
-                        value: value.substring(0, 100),
-                        ip: req.ip,
-                        url: req.url,
-                    });
-                    return true;
-                }
-
-                // Check for command injection
-                if (detectCommandInjection(value)) {
-                    logger.warn('Command injection attempt detected', {
-                        path,
-                        value: value.substring(0, 100),
-                        ip: req.ip,
-                        url: req.url,
-                    });
-                    return true;
-                }
-            } else if (typeof value === 'object' && value !== null) {
-                for (const key in value) {
-                    if (checkValue(value[key], `${path}.${key}`)) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        };
-
-        // Check query parameters
-        if (req.query && checkValue(req.query, 'query')) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid input',
-                message: 'Potentially malicious input detected',
-                code: 'INJECTION_DETECTED',
-            });
-        }
-
-        // Check URL parameters
-        if (req.params && checkValue(req.params, 'params')) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid input',
-                message: 'Potentially malicious input detected',
-                code: 'INJECTION_DETECTED',
-            });
-        }
-
-        // Check request body
-        if (req.body && checkValue(req.body, 'body')) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid input',
-                message: 'Potentially malicious input detected',
-                code: 'INJECTION_DETECTED',
-            });
-        }
-
-        next();
-    } catch (error) {
-        logger.error('Error in detectInjectionAttacks middleware', {
-            error: error instanceof Error ? error.message : String(error),
-        });
-        next(error);
-    }
-};
-
-/**
  * Combined request validation middleware
  */
 export const requestValidation = [
     validateRequestSize,
     validateContentType,
     sanitizeRequest,
-    detectInjectionAttacks,
 ];

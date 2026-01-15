@@ -67,7 +67,7 @@ export async function getConsent(req: Request, res: Response): Promise<void> {
 
     const consent = await prisma.oAuthConsent.findUnique({
         where: {
-            userId_applicationId: { userId, applicationId },
+            userId_applicationId: { userId, applicationId: applicationId as string },
         },
         include: {
             application: {
@@ -122,7 +122,7 @@ export async function getConsent(req: Request, res: Response): Promise<void> {
     // Get active tokens count
     const activeTokensCount = await prisma.oAuthAccessToken.count({
         where: {
-            applicationId,
+            applicationId: applicationId as string,
             userId,
             revokedAt: null,
             expiresAt: { gt: new Date() },
@@ -158,7 +158,7 @@ export async function revokeConsent(req: Request, res: Response): Promise<void> 
 
     const consent = await prisma.oAuthConsent.findUnique({
         where: {
-            userId_applicationId: { userId, applicationId },
+            userId_applicationId: { userId, applicationId: applicationId as string },
         },
     });
 
@@ -181,18 +181,18 @@ export async function revokeConsent(req: Request, res: Response): Promise<void> 
         }),
         // Revoke all access tokens
         prisma.oAuthAccessToken.updateMany({
-            where: { applicationId, userId, revokedAt: null },
+            where: { applicationId: applicationId as string, userId, revokedAt: null },
             data: { revokedAt: new Date() },
         }),
         // Revoke all refresh tokens
         prisma.oAuthRefreshToken.updateMany({
-            where: { applicationId, userId, revokedAt: null },
+            where: { applicationId: applicationId as string, userId, revokedAt: null },
             data: { revokedAt: new Date() },
         }),
     ]);
 
     await logOAuthEvent('consent_revoked', {
-        applicationId,
+        applicationId: applicationId as string,
         userId,
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
@@ -259,7 +259,7 @@ export async function revokeOAuthSession(req: Request, res: Response): Promise<v
     }
 
     const token = await prisma.oAuthAccessToken.findFirst({
-        where: { id: tokenId, userId },
+        where: { id: tokenId as string, userId },
     });
 
     if (!token) {
@@ -268,7 +268,7 @@ export async function revokeOAuthSession(req: Request, res: Response): Promise<v
     }
 
     await prisma.oAuthAccessToken.update({
-        where: { id: tokenId },
+        where: { id: tokenId as string },
         data: { revokedAt: new Date() },
     });
 

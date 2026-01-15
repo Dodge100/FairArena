@@ -102,7 +102,7 @@ export const getPlanByPlanId = async (req: Request, res: Response) => {
     // If not in cache, fetch from database
     const readOnlyPrisma = await getReadOnlyPrisma();
     const plan = await readOnlyPrisma.plan.findUnique({
-      where: { planId, isActive: true },
+      where: { planId: planId as string, isActive: true },
       select: {
         id: true,
         planId: true,

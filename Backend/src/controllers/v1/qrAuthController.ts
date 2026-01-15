@@ -252,7 +252,7 @@ export async function generateQRSession(req: Request, res: Response) {
  * Streams real-time status updates until session is approved, claimed, or expired.
  */
 export async function streamQRStatus(req: Request, res: Response) {
-    const { sessionId } = req.params;
+    const sessionId = req.params.sessionId as string;
 
     if (!sessionId || !sessionId.startsWith('qr_')) {
         return res.status(400).json({

@@ -1859,7 +1859,7 @@ export const revokeSession = async (req: Request, res: Response) => {
       },
     });
 
-    await destroySession(sessionId);
+    await destroySession(sessionId as string);
 
     // If revoking current session, clear cookies
     if (sessionId === currentSessionId) {

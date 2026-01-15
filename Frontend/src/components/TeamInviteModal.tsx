@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Upload, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -151,7 +151,6 @@ export const TeamInviteModal = ({
     const loading = singleInviteMutation.isPending || bulkInviteMutation.isPending || csvUploadMutation.isPending || jsonValidateMutation.isPending || jsonSendMutation.isPending;
     const [activeTab, setActiveTab] = useState('single');
     const [selectedTeamSlug, setSelectedTeamSlug] = useState<string | undefined>();
-    const queryClient = useQueryClient();
 
     const { data: teams = [], isLoading: loadingTeams } = useQuery({
         queryKey: ['teams', organizationSlug],

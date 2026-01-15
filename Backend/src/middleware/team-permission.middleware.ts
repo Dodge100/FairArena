@@ -90,7 +90,7 @@ export const teamPermissionMiddleware = async (req: Request, res: Response, next
 
     // First get the organization
     const organization = await readOnlyPrisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true, slug: true },
     });
 
@@ -103,7 +103,7 @@ export const teamPermissionMiddleware = async (req: Request, res: Response, next
       where: {
         organizationId_slug: {
           organizationId: organization.id,
-          slug: teamSlug,
+          slug: teamSlug as string,
         },
       },
       select: { id: true, slug: true, organizationId: true },

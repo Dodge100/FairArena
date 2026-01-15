@@ -16,7 +16,7 @@ export const getInvitationDetails = async (req: Request, res: Response) => {
 
     // Find the invitation
     const invitation = await prisma.inviteCode.findUnique({
-      where: { code: inviteCode },
+      where: { code: inviteCode as string },
       include: {
         team: {
           select: {
@@ -59,11 +59,11 @@ export const getInvitationDetails = async (req: Request, res: Response) => {
       invitation: {
         id: invitation.id,
         email: invitation.email,
-        organizationName: invitation.team.organization.name,
-        organizationSlug: invitation.team.organization.slug,
-        teamName: invitation.team.name,
-        teamSlug: invitation.team.slug,
-        roleName: invitation.role.roleName,
+        organizationName: (invitation as any).team.organization.name,
+        organizationSlug: (invitation as any).team.organization.slug,
+        teamName: (invitation as any).team.name,
+        teamSlug: (invitation as any).team.slug,
+        roleName: (invitation as any).role.roleName,
         expiresAt: invitation.expiresAt,
         createdAt: invitation.createdAt,
       },
@@ -107,7 +107,7 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
 
     // Find the invitation
     const invitation = await prisma.inviteCode.findUnique({
-      where: { code: inviteCode },
+      where: { code: inviteCode as string },
       include: {
         team: {
           select: {
@@ -161,7 +161,7 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
     const existingMembership = await prisma.userTeam.findFirst({
       where: {
         userId: user.userId,
-        teamId: invitation.team.id,
+        teamId: (invitation as any).team.id,
       },
     });
 
@@ -174,8 +174,8 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
 
       return res.status(400).json({
         error: 'You are already a member of this team',
-        teamSlug: invitation.team.slug,
-        organizationSlug: invitation.team.organization.slug,
+        teamSlug: (invitation as any).team.slug,
+        organizationSlug: (invitation as any).team.organization.slug,
       });
     }
 
@@ -192,19 +192,19 @@ export const acceptTeamInvitation = async (req: Request, res: Response) => {
     logger.info('Team invitation acceptance queued', {
       inviteId: invitation.id,
       userId: user.userId,
-      teamId: invitation.team.id,
+      teamId: (invitation as any).team.id,
     });
 
     res.status(202).json({
       message: 'Your request to join the team is being processed',
       team: {
-        id: invitation.team.id,
-        name: invitation.team.name,
-        slug: invitation.team.slug,
-        organizationSlug: invitation.team.organization.slug,
-        roleName: invitation.role.roleName,
+        id: (invitation as any).team.id,
+        name: (invitation as any).team.name,
+        slug: (invitation as any).team.slug,
+        organizationSlug: (invitation as any).team.organization.slug,
+        roleName: (invitation as any).role.roleName,
       },
-      redirectUrl: `/organization/${invitation.team.organization.slug}/team/${invitation.team.slug}`,
+      redirectUrl: `/organization/${(invitation as any).team.organization.slug}/team/${(invitation as any).team.slug}`,
     });
   } catch (error) {
     const err = error as Error;
@@ -246,7 +246,7 @@ export const declineTeamInvitation = async (req: Request, res: Response) => {
 
     // Find the invitation
     const invitation = await prisma.inviteCode.findUnique({
-      where: { code: inviteCode },
+      where: { code: inviteCode as string },
       include: {
         team: {
           select: {
@@ -282,7 +282,7 @@ export const declineTeamInvitation = async (req: Request, res: Response) => {
     await inngest.send({
       name: 'team/audit-log.create',
       data: {
-        teamId: invitation.team.id,
+        teamId: (invitation as any).team.id,
         userId,
         action: 'INVITATION_DECLINED',
         level: 'INFO',
@@ -292,7 +292,7 @@ export const declineTeamInvitation = async (req: Request, res: Response) => {
     logger.info('Team invitation declined', {
       inviteId: invitation.id,
       userId,
-      teamId: invitation.team.id,
+      teamId: (invitation as any).team.id,
     });
 
     res.json({ message: 'Invitation declined successfully' });

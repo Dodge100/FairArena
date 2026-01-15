@@ -166,7 +166,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
     }
 
     const profile = await readOnlyPrisma.profile.findUnique({
-      where: { userId },
+      where: { userId: userId as string },
     });
 
     if (!profile) {

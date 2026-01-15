@@ -370,7 +370,7 @@ export async function consentEndpoint(req: Request, res: Response): Promise<void
         validApprovedScopes.push('openid');
     }
 
-    await processConsent(req, res, authRequest.id, validApprovedScopes, false);
+    await processConsent(req, res, authRequest.id, validApprovedScopes, false, true);
 }
 
 /**
@@ -382,6 +382,7 @@ async function processConsent(
     authRequestId: string,
     scopes: string[],
     isAutoApproved: boolean,
+    returnJson = false,
 ): Promise<void> {
     const userId = (req as unknown as { user?: { userId: string } }).user?.userId;
 
@@ -454,18 +455,18 @@ async function processConsent(
         redirectUrl.searchParams.set('state', authRequest.state);
     }
 
-    res.redirect(redirectUrl.toString());
+    if (returnJson) {
+        res.json({ success: true, redirectUrl: redirectUrl.toString() });
+    } else {
+        res.redirect(redirectUrl.toString());
+    }
 }
 
-/**
- * Get Authorization Request Details (for consent UI)
- * GET /oauth/authorize/request/:requestId
- */
 export async function getAuthorizationRequest(req: Request, res: Response): Promise<void> {
     const { requestId } = req.params;
 
     const authRequest = await prisma.oAuthAuthorizationRequest.findUnique({
-        where: { requestId },
+        where: { requestId: requestId as string },
         include: {
             application: {
                 select: {

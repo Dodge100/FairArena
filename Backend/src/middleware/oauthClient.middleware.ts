@@ -52,8 +52,8 @@ export async function oauthClientAuth(
 
     // Fall back to POST body parameters
     if (!clientId) {
-        clientId = req.body.client_id;
-        if (req.body.client_secret) {
+        clientId = req.body?.client_id;
+        if (req.body?.client_secret) {
             clientSecret = req.body.client_secret;
             authMethod = 'client_secret_post';
         }

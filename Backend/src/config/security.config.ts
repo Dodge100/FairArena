@@ -29,6 +29,8 @@ export const CSRF_CONFIG = {
         '/api/v1/auth/stream', // Unified SSE stream (read-only)
         '/metrics',
         '/.well-known',
+        '/api/v1/oauth/token',
+        '/oauth/token',
     ],
     // Safe HTTP methods that don't require CSRF protection
     safeMethods: ['GET', 'HEAD', 'OPTIONS'],
@@ -240,7 +242,7 @@ export const INTRUSION_DETECTION_CONFIG = {
 // IP Security Configuration
 export const IP_SECURITY_CONFIG = {
     // Enable/disable IP security checks
-    enabled: ENV.NODE_ENV === 'production',
+    enabled: ENV.IP_CHECK,
 
     // Cache TTL: 24 hours in seconds
     cacheTTL: 24 * 60 * 60,

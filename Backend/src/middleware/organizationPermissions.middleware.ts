@@ -109,7 +109,7 @@ export const loadOrganizationPermissions = async (
     const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
       where: {
         userId,
-        organization: { slug: orgSlug },
+        organization: { slug: orgSlug as string },
       },
       include: {
         role: true,
@@ -122,7 +122,7 @@ export const loadOrganizationPermissions = async (
       },
     });
 
-    if (!userOrganization) {
+    if (!userOrganization || !userOrganization.role || !userOrganization.organization) {
       return res.status(404).json({ error: 'Organization not found or access denied' });
     }
 

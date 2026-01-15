@@ -21,12 +21,6 @@ interface Team {
     createdAt: string;
 }
 
-interface OrganizationTeam {
-    organizationSlug: string;
-    organizationName: string;
-    teams: Team[];
-}
-
 interface Organization {
     slug: string;
     name: string;

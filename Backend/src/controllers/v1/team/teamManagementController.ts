@@ -244,7 +244,7 @@ export const getTeamDetails = async (req: Request, res: Response) => {
 
 export const listOrganizationTeams = async (req: Request, res: Response) => {
   try {
-    const { organizationSlug } = req.params;
+    const organizationSlug = req.params.organizationSlug as string;
     const auth = req.user;
 
     if (!auth?.userId) {
@@ -265,7 +265,7 @@ export const listOrganizationTeams = async (req: Request, res: Response) => {
 
     if (!organizationId) {
       const organization = await prisma.organization.findUnique({
-        where: { slug: organizationSlug },
+        where: { slug: organizationSlug as string },
         select: { id: true },
       });
 

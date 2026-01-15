@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { apiRequest } from '../lib/apiClient';
 import { CreateTeamModal } from './CreateTeamModal';
 import { TeamInviteModal } from './TeamInviteModal';
+import { useState } from 'react';
 
 interface Team {
     id: string;

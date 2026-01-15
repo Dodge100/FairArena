@@ -10,7 +10,8 @@ export const getTeamRoles = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
     const userId = auth?.userId;
-    const { teamSlug, organizationSlug } = req.params;
+    const organizationSlug = req.params.organizationSlug as string;
+    const teamSlug = req.params.teamSlug as string;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -18,7 +19,7 @@ export const getTeamRoles = async (req: Request, res: Response) => {
 
     // Get organization
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true },
     });
 
@@ -31,7 +32,7 @@ export const getTeamRoles = async (req: Request, res: Response) => {
       where: {
         organizationId_slug: {
           organizationId: organization.id,
-          slug: teamSlug,
+          slug: teamSlug as string,
         },
       },
       select: { id: true, name: true },

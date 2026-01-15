@@ -303,7 +303,7 @@ export const getProfileStars = async (req: Request, res: Response) => {
 
     // Find the profile by userId
     const profile = await prisma.profile.findUnique({
-      where: { userId },
+      where: { userId: userId as string },
       select: { id: true, isPublic: true },
     });
 
@@ -424,7 +424,7 @@ export const checkStarStatus = async (req: Request, res: Response) => {
     }
 
     const profile = await prisma.profile.findUnique({
-      where: { id: profileId },
+      where: { id: profileId as string },
       select: { userId: true },
     });
 
@@ -436,14 +436,14 @@ export const checkStarStatus = async (req: Request, res: Response) => {
 
     const star = await prisma.profileStars.findFirst({
       where: {
-        profileId,
+        profileId: profileId as string,
         userId,
       },
       select: { id: true, createdAt: true },
     });
 
     const starCount = await prisma.profileStars.count({
-      where: { profileId },
+      where: { profileId: profileId as string },
     });
 
     res.json({

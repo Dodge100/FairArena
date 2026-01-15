@@ -164,7 +164,7 @@ export async function createApplication(req: Request, res: Response): Promise<vo
             allowedAudiences: [],
             grantTypes,
             responseTypes: ['code'],
-            tokenEndpointAuthMethod: data.isPublic ? 'none' : 'client_secret_basic',
+            tokenEndpointAuthMethod: data.isPublic ? 'none' : 'client_secret_basic,client_secret_post',
             isPublic: data.isPublic || false,
             isConfidential: !data.isPublic,
             requirePkce: true, // Always require PKCE
@@ -221,7 +221,7 @@ export async function getApplication(req: Request, res: Response): Promise<void>
     }
 
     const application = await prisma.oAuthApplication.findFirst({
-        where: { id, ownerId: userId },
+        where: { id: id as string, ownerId: userId },
         select: {
             id: true,
             clientId: true,
@@ -296,7 +296,7 @@ export async function updateApplication(req: Request, res: Response): Promise<vo
 
     // Verify ownership
     const existing = await prisma.oAuthApplication.findFirst({
-        where: { id, ownerId: userId },
+        where: { id: id as string, ownerId: userId },
     });
 
     if (!existing) {
@@ -307,7 +307,7 @@ export async function updateApplication(req: Request, res: Response): Promise<vo
     const data = validation.data;
 
     const application = await prisma.oAuthApplication.update({
-        where: { id },
+        where: { id: id as string },
         data: {
             name: data.name,
             description: data.description,
@@ -332,7 +332,7 @@ export async function updateApplication(req: Request, res: Response): Promise<vo
     });
 
     await logOAuthEvent('application_updated', {
-        applicationId: id,
+        applicationId: id as string,
         userId,
         ipAddress: req.ip,
         metadata: { changes: Object.keys(data) },
@@ -356,7 +356,7 @@ export async function deleteApplication(req: Request, res: Response): Promise<vo
 
     // Verify ownership
     const existing = await prisma.oAuthApplication.findFirst({
-        where: { id, ownerId: userId },
+        where: { id: id as string, ownerId: userId },
     });
 
     if (!existing) {
@@ -366,7 +366,7 @@ export async function deleteApplication(req: Request, res: Response): Promise<vo
 
     // Delete cascades to all related tokens and consents
     await prisma.oAuthApplication.delete({
-        where: { id },
+        where: { id: id as string },
     });
 
     await logOAuthEvent('application_deleted', {
@@ -393,7 +393,7 @@ export async function regenerateSecret(req: Request, res: Response): Promise<voi
 
     // Verify ownership
     const existing = await prisma.oAuthApplication.findFirst({
-        where: { id, ownerId: userId },
+        where: { id: id as string, ownerId: userId },
     });
 
     if (!existing) {
@@ -414,18 +414,18 @@ export async function regenerateSecret(req: Request, res: Response): Promise<voi
     const clientSecretHash = await hashClientSecret(clientSecret);
 
     await prisma.oAuthApplication.update({
-        where: { id },
+        where: { id: id as string },
         data: { clientSecretHash },
     });
 
     // Revoke all existing refresh tokens (security measure)
     await prisma.oAuthRefreshToken.updateMany({
-        where: { applicationId: id, revokedAt: null },
+        where: { applicationId: id as string, revokedAt: null },
         data: { revokedAt: new Date() },
     });
 
     await logOAuthEvent('client_secret_regenerated', {
-        applicationId: id,
+        applicationId: id as string,
         userId,
         ipAddress: req.ip,
         metadata: { refreshTokensRevoked: true },
@@ -445,7 +445,7 @@ export async function getApplicationPublicInfo(req: Request, res: Response): Pro
     const { clientId } = req.params;
 
     const application = await prisma.oAuthApplication.findUnique({
-        where: { clientId, isActive: true },
+        where: { clientId: clientId as string, isActive: true },
         select: {
             name: true,
             description: true,

@@ -22,7 +22,7 @@ export const GetOrganizationMembers = async (req: Request, res: Response) => {
     const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
       where: {
         userId,
-        organization: { slug },
+        organization: { slug: slug as string },
       },
     });
 
@@ -33,7 +33,7 @@ export const GetOrganizationMembers = async (req: Request, res: Response) => {
     // Get members for the organization
     const members = await readOnlyPrisma.organizationUserRole.findMany({
       where: {
-        organization: { slug },
+        organization: { slug: slug as string },
       },
       include: {
         user: {

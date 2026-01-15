@@ -60,11 +60,20 @@ export function getOAuthUrl(providerId: string, options?: {
     if (options?.preserveFlow) {
         const params = new URLSearchParams(window.location.search);
         const flow = params.get('flow') || sessionStorage.getItem('auth_flow');
+        const oauthRequest = params.get('oauth_request') || sessionStorage.getItem('oauth_request_id');
 
+        // Add flow parameter
         if (flow === 'add_account') {
             finalRedirect = finalRedirect.includes('?')
                 ? `${finalRedirect}&flow=add_account`
                 : `${finalRedirect}?flow=add_account`;
+        }
+
+        // Add oauth_request parameter (for OAuth consent flow)
+        if (oauthRequest) {
+            finalRedirect = finalRedirect.includes('?')
+                ? `${finalRedirect}&oauth_request=${oauthRequest}`
+                : `${finalRedirect}?oauth_request=${oauthRequest}`;
         }
     }
 

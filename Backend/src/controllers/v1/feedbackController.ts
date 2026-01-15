@@ -26,7 +26,7 @@ export const getFeedback = async (req: Request, res: Response) => {
     }
 
     const feedback = await readOnlyPrisma.feedback.findUnique({
-      where: { feedbackCode },
+      where: { feedbackCode: feedbackCode as string },
       select: {
         id: true,
         feedbackCode: true,
@@ -103,7 +103,7 @@ export const submitFeedback = async (req: Request, res: Response) => {
 
     // Check if feedback exists and is not used
     const existingFeedback = await readOnlyPrisma.feedback.findUnique({
-      where: { feedbackCode },
+      where: { feedbackCode: feedbackCode as string },
       select: { id: true, isUsed: true },
     });
 

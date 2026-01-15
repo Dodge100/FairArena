@@ -17,7 +17,6 @@ export default function VerifyEmail() {
     const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
     const [resendMessage, setResendMessage] = useState('');
     const recaptchaRef = useRef<ReCAPTCHA>(null);
-    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
     const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
@@ -29,7 +28,6 @@ export default function VerifyEmail() {
 
     const handleCaptchaChange = async (token: string | null) => {
         if (!token) return;
-        setRecaptchaToken(token);
 
         setResendStatus('sending');
         try {
@@ -37,14 +35,12 @@ export default function VerifyEmail() {
             setResendStatus('success');
             setResendMessage('Verification link sent! Please check your email.');
             setShowCaptchaModal(false);
-            setRecaptchaToken(null);
             // Reset happens automatically on unmount or we can force it if using same ref
             setTimeout(() => recaptchaRef.current?.reset(), 500);
         } catch (err) {
             setResendStatus('error');
             setResendMessage(err instanceof Error ? err.message : 'Failed to send link');
             setShowCaptchaModal(false);
-            setRecaptchaToken(null);
             recaptchaRef.current?.reset();
         }
     };

@@ -38,40 +38,6 @@ import { toast } from 'sonner';
 import { apiRequest, publicApiFetch } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
-interface ProfileData {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  bio: string | null;
-  avatarUrl: string | null;
-  email: string | null;
-  gender: string | null;
-  dateOfBirth: string | null;
-  location: string | null;
-  jobTitle: string | null;
-  company: string | null;
-  yearsOfExperience: number | null;
-  experiences: string[];
-  education: string[];
-  skills: string[];
-  languages: string[];
-  interests: string[];
-  certifications: string[];
-  awards: string[];
-  githubUsername: string | null;
-  twitterHandle: string | null;
-  linkedInProfile: string | null;
-  resumeUrl: string | null;
-  portfolioUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-  stars: {
-    count: number;
-    hasStarred: boolean;
-    starredAt: string | null;
-  };
-}
-
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuthState();
@@ -83,7 +49,6 @@ export default function PublicProfile() {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
-  const [isReporting, setIsReporting] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const queryClient = useQueryClient();
@@ -223,7 +188,7 @@ export default function PublicProfile() {
       const wasStarred = endpoint.includes('unstar');
       toast.success(wasStarred ? 'Profile unstarred' : 'Profile starred');
     },
-    onError: (err, _, context) => {
+    onError: (context: any) => {
       queryClient.setQueryData(['profile', 'public', userId], context?.previous);
       toast.error('Failed to update star. Please try again.');
     },
@@ -326,7 +291,7 @@ export default function PublicProfile() {
       : profile.firstName || profile.lastName || 'Anonymous User';
   const initials = fullName
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .toUpperCase();
 
@@ -580,7 +545,7 @@ export default function PublicProfile() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="flex flex-wrap gap-3">
-                      {profile.skills.map((skill, index) => (
+                      {profile.skills.map((skill: string, index: number) => (
                         <Badge
                           key={skill}
                           variant="secondary"
@@ -606,7 +571,7 @@ export default function PublicProfile() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <ul className="space-y-3">
-                      {profile.education.map((edu, index) => (
+                      {profile.education.map((edu: string, index: number) => (
                         <li
                           key={index}
                           className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
@@ -631,7 +596,7 @@ export default function PublicProfile() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <ul className="space-y-3">
-                      {profile.experiences.map((exp, index) => (
+                      {profile.experiences.map((exp: string, index: number) => (
                         <li
                           key={index}
                           className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
@@ -656,7 +621,7 @@ export default function PublicProfile() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <ul className="space-y-3">
-                      {profile.certifications.map((cert, index) => (
+                      {profile.certifications.map((cert: string, index: number) => (
                         <li
                           key={index}
                           className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
@@ -681,7 +646,7 @@ export default function PublicProfile() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <ul className="space-y-3">
-                      {profile.awards.map((award, index) => (
+                      {profile.awards.map((award: string, index: number) => (
                         <li
                           key={index}
                           className="text-muted-foreground text-base flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
@@ -707,7 +672,7 @@ export default function PublicProfile() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="flex flex-wrap gap-2">
-                        {profile.languages.map((lang) => (
+                        {profile.languages.map((lang: string) => (
                           <Badge
                             key={lang}
                             variant="outline"
@@ -731,7 +696,7 @@ export default function PublicProfile() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="flex flex-wrap gap-2">
-                        {profile.interests.map((interest) => (
+                        {profile.interests.map((interest: string) => (
                           <Badge
                             key={interest}
                             variant="outline"
@@ -984,16 +949,16 @@ export default function PublicProfile() {
                 setReportReason('');
                 setReportDetails('');
               }}
-              disabled={isReporting}
+              disabled={reportMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               onClick={handleReport}
-              disabled={!reportReason.trim() || isReporting}
+              disabled={!reportReason.trim() || reportMutation.isPending}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
-              {isReporting ? 'Submitting...' : 'Submit Report'}
+              {reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
             </Button>
           </DialogFooter>
         </DialogContent>

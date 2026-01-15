@@ -31,7 +31,7 @@ const sendVoiceCall = async (userId: string, phoneNumber: string, otp: string) =
     });
 
     // Send voice call via NotificationAPI
-    const notificationResult = await notificationapi.send({
+    await notificationapi.send({
       type: 'credit_call',
       to: {
         id: userId, // Use userId as identifier

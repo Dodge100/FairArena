@@ -116,7 +116,7 @@ export const sendTeamInvite = async (req: Request, res: Response) => {
 
     // Get organization and team
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true, name: true },
     });
 
@@ -128,7 +128,7 @@ export const sendTeamInvite = async (req: Request, res: Response) => {
       where: {
         organizationId_slug: {
           organizationId: organization.id,
-          slug: teamSlug,
+          slug: teamSlug as string,
         },
       },
       select: { id: true, name: true, organizationId: true },
@@ -231,7 +231,7 @@ export const sendBulkTeamInvites = async (req: Request, res: Response) => {
 
     // Get organization and team
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true, name: true },
     });
 
@@ -243,7 +243,7 @@ export const sendBulkTeamInvites = async (req: Request, res: Response) => {
       where: {
         organizationId_slug: {
           organizationId: organization.id,
-          slug: teamSlug,
+          slug: teamSlug as string,
         },
       },
       select: { id: true, name: true },
@@ -515,7 +515,7 @@ export const getTeamInvitations = async (req: Request, res: Response) => {
 
     // Get organization and team
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true },
     });
 
@@ -527,7 +527,7 @@ export const getTeamInvitations = async (req: Request, res: Response) => {
       where: {
         organizationId_slug: {
           organizationId: organization.id,
-          slug: teamSlug,
+          slug: teamSlug as string,
         },
       },
       select: { id: true },
@@ -621,7 +621,7 @@ export const revokeTeamInvitation = async (req: Request, res: Response) => {
 
     // Get the invitation
     const invitation = await prisma.inviteCode.findUnique({
-      where: { id: inviteId },
+      where: { id: inviteId as string },
       include: {
         team: {
           select: {
@@ -644,8 +644,8 @@ export const revokeTeamInvitation = async (req: Request, res: Response) => {
 
     // Verify team and organization match
     if (
-      invitation.team.slug !== teamSlug ||
-      invitation.team.organization.slug !== organizationSlug
+      (invitation as any).team.slug !== teamSlug ||
+      (invitation as any).team.organization.slug !== organizationSlug
     ) {
       return res.status(404).json({ error: 'Invitation not found' });
     }
@@ -663,14 +663,14 @@ export const revokeTeamInvitation = async (req: Request, res: Response) => {
 
     // Delete the invitation
     await prisma.inviteCode.delete({
-      where: { id: inviteId },
+      where: { id: inviteId as string },
     });
 
     // Create audit log
     await inngest.send({
       name: 'team/audit-log.create',
       data: {
-        teamId: invitation.team.id,
+        teamId: invitation.teamId,
         userId,
         action: 'INVITATION_REVOKED',
         level: 'INFO',
@@ -679,7 +679,7 @@ export const revokeTeamInvitation = async (req: Request, res: Response) => {
 
     logger.info('Team invitation revoked', {
       inviteId,
-      teamId: invitation.team.id,
+      teamId: invitation.teamId,
       userId,
     });
 

@@ -20,7 +20,7 @@ export const GetOrganizationTeams = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Organization slug is required' });
     }
 
-    const cacheKey = CACHE_KEY(slug, userId);
+    const cacheKey = CACHE_KEY(slug as string, userId);
 
     // Try cache first
     try {
@@ -44,7 +44,7 @@ export const GetOrganizationTeams = async (req: Request, res: Response) => {
     const userOrganization = await readOnlyPrisma.organizationUserRole.findFirst({
       where: {
         userId,
-        organization: { slug },
+        organization: { slug: slug as string },
       },
     });
 
@@ -55,7 +55,7 @@ export const GetOrganizationTeams = async (req: Request, res: Response) => {
     // Get teams for the organization
     const teams = await readOnlyPrisma.team.findMany({
       where: {
-        organization: { slug },
+        organization: { slug: slug as string },
       },
       select: {
         id: true,

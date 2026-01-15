@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ENV } from '../config/env.js';
 import { redis } from '../config/redis.js';
+import { IP_SECURITY_CONFIG } from '../config/security.config.js';
 import logger from '../utils/logger.js';
 import { logSecurityEvent, SecurityEventType } from '../utils/securityLogger.js';
 
@@ -8,247 +9,224 @@ import { logSecurityEvent, SecurityEventType } from '../utils/securityLogger.js'
  * IPRegistry API Response Interface
  */
 interface IPRegistryResponse {
-    ip: string;
-    security?: {
-        is_proxy?: boolean;
-        is_tor?: boolean;
-        is_vpn?: boolean;
-        is_crawler?: boolean;
-        is_threat?: boolean;
-        is_relay?: boolean;
-        is_bogon?: boolean;
-        is_datacenter?: boolean;
-        threat_types?: string[];
+  ip: string;
+  security?: {
+    is_proxy?: boolean;
+    is_tor?: boolean;
+    is_vpn?: boolean;
+    is_crawler?: boolean;
+    is_threat?: boolean;
+    is_relay?: boolean;
+    is_bogon?: boolean;
+    is_datacenter?: boolean;
+    threat_types?: string[];
+  };
+  company?: {
+    type?: string;
+    name?: string;
+    domain?: string;
+  };
+  location?: {
+    country?: {
+      name?: string;
+      code?: string;
     };
-    company?: {
-        type?: string;
-        name?: string;
-        domain?: string;
-    };
-    location?: {
-        country?: {
-            name?: string;
-            code?: string;
-        };
-        city?: string;
-    };
+    city?: string;
+  };
 }
 
 /**
  * Cached IP Security Result
  */
 interface CachedIPResult {
-    ip: string;
-    isBlocked: boolean;
-    reasons: string[];
-    timestamp: number;
-    location?: string;
+  ip: string;
+  isBlocked: boolean;
+  reasons: string[];
+  timestamp: number;
+  location?: string;
 }
 
 /**
  * Configuration for IP security
  */
-const IP_SECURITY_CONFIG = {
-    // Cache TTL: 24 hours in seconds
-    cacheTTL: 24 * 60 * 60,
-
-    // Redis key prefix
-    cacheKeyPrefix: 'ip-security:',
-
-    // Whitelist for development
-    devWhitelist: ['::1', '127.0.0.1', 'localhost', '::ffff:127.0.0.1'],
-
-    // Security checks to perform
-    checks: {
-        proxy: true,
-        tor: true,
-        vpn: true,
-        crawler: true,
-        threat: true,
-        relay: true,
-        bogon: true,
-        datacenter: true,
-        automation: true,
-        hosting: true,
-    },
-};
+// Local config removed in favor of shared config
 
 /**
  * Fetch IP security data from IPRegistry with error handling
  */
 async function fetchIPSecurityData(ip: string): Promise<IPRegistryResponse | null> {
-    const apiKey = ENV.IPREGISTRY_API_KEY;
+  const apiKey = ENV.IPREGISTRY_API_KEY;
 
-    if (!apiKey) {
-        logger.warn('IPREGISTRY_API_KEY not configured - IP security checks disabled');
-        return null;
+  if (!apiKey) {
+    logger.warn('IPREGISTRY_API_KEY not configured - IP security checks disabled');
+    return null;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch(
+      `https://api.ipregistry.co/${ip}?key=${apiKey}`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      logger.error('IPRegistry API error', {
+        status: response.status,
+        statusText: response.statusText,
+        ip,
+      });
+      return null;
     }
 
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-        const response = await fetch(
-            `https://api.ipregistry.co/${ip}?key=${apiKey}`,
-            { signal: controller.signal }
-        );
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            logger.error('IPRegistry API error', {
-                status: response.status,
-                statusText: response.statusText,
-                ip,
-            });
-            return null;
-        }
-
-        const data = await response.json() as IPRegistryResponse;
-        return data;
-    } catch (error) {
-        if (error instanceof Error) {
-            if (error.name === 'AbortError') {
-                logger.error('IPRegistry API timeout', { ip });
-            } else {
-                logger.error('IPRegistry API request failed', {
-                    error: error.message,
-                    ip,
-                });
-            }
-        }
-        return null;
+    const data = await response.json() as IPRegistryResponse;
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        logger.error('IPRegistry API timeout', { ip });
+      } else {
+        logger.error('IPRegistry API request failed', {
+          error: error.message,
+          ip,
+        });
+      }
     }
+    return null;
+  }
 }
 
 /**
  * Analyze IP security data and determine if it should be blocked
  */
 function analyzeIPSecurity(data: IPRegistryResponse): CachedIPResult {
-    const reasons: string[] = [];
-    const { security, company } = data;
+  const reasons: string[] = [];
+  const { security, company } = data;
 
-    // Perform security checks
-    if (IP_SECURITY_CONFIG.checks.proxy && security?.is_proxy) {
-        reasons.push('Proxy detected');
-    }
+  // Perform security checks
+  if (IP_SECURITY_CONFIG.checks.proxy && security?.is_proxy) {
+    reasons.push('Proxy detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.tor && security?.is_tor) {
-        reasons.push('Tor network detected');
-    }
+  if (IP_SECURITY_CONFIG.checks.tor && security?.is_tor) {
+    reasons.push('Tor network detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.vpn && security?.is_vpn) {
-        reasons.push('VPN detected');
-    }
+  if (IP_SECURITY_CONFIG.checks.vpn && security?.is_vpn) {
+    reasons.push('VPN detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.crawler && security?.is_crawler) {
-        reasons.push('Bot or crawler detected');
-    }
+  if (IP_SECURITY_CONFIG.checks.crawler && security?.is_crawler) {
+    reasons.push('Bot or crawler detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.threat && security?.is_threat) {
-        reasons.push('Known threat actor IP');
-    }
+  if (IP_SECURITY_CONFIG.checks.threat && security?.is_threat) {
+    reasons.push('Known threat actor IP');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.relay && security?.is_relay) {
-        reasons.push('Relay/Anonymizer network detected');
-    }
+  if (IP_SECURITY_CONFIG.checks.relay && security?.is_relay) {
+    reasons.push('Relay/Anonymizer network detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.bogon && security?.is_bogon) {
-        reasons.push('Bogon IP (non-routable)');
-    }
+  if (IP_SECURITY_CONFIG.checks.bogon && security?.is_bogon) {
+    reasons.push('Bogon IP (non-routable)');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.datacenter && security?.is_datacenter) {
-        reasons.push('Cloud provider or VM environment');
-    }
+  if (IP_SECURITY_CONFIG.checks.datacenter && security?.is_datacenter) {
+    reasons.push('Cloud provider or VM environment');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.automation && security?.threat_types?.includes('automation')) {
-        reasons.push('Automation tools detected');
-    }
+  if (IP_SECURITY_CONFIG.checks.automation && security?.threat_types?.includes('automation')) {
+    reasons.push('Automation tools detected');
+  }
 
-    if (IP_SECURITY_CONFIG.checks.hosting && company?.type === 'hosting') {
-        reasons.push('Hosting provider IP');
-    }
+  if (IP_SECURITY_CONFIG.checks.hosting && company?.type === 'hosting') {
+    reasons.push('Hosting provider IP');
+  }
 
-    // Check for specific cloud providers
-    if (company?.name?.toLowerCase().includes('aws')) {
-        reasons.push('AWS server');
-    }
+  // Check for specific cloud providers
+  if (company?.name?.toLowerCase().includes('aws')) {
+    reasons.push('AWS server');
+  }
 
-    if (company?.domain?.includes('digitalocean')) {
-        reasons.push('DigitalOcean server');
-    }
+  if (company?.domain?.includes('digitalocean')) {
+    reasons.push('DigitalOcean server');
+  }
 
-    // Build location string
-    const location = data.location?.city
-        ? `${data.location.city}, ${data.location.country?.name || 'Unknown'}`
-        : data.location?.country?.name || 'Unknown';
+  // Build location string
+  const location = data.location?.city
+    ? `${data.location.city}, ${data.location.country?.name || 'Unknown'}`
+    : data.location?.country?.name || 'Unknown';
 
-    return {
-        ip: data.ip,
-        isBlocked: reasons.length > 0,
-        reasons,
-        timestamp: Date.now(),
-        location,
-    };
+  return {
+    ip: data.ip,
+    isBlocked: reasons.length > 0,
+    reasons,
+    timestamp: Date.now(),
+    location,
+  };
 }
 
 /**
  * Get IP security result from cache or fetch from API
  */
 async function getIPSecurityResult(ip: string): Promise<CachedIPResult | null> {
-    const cacheKey = `${IP_SECURITY_CONFIG.cacheKeyPrefix}${ip}`;
+  const cacheKey = `${IP_SECURITY_CONFIG.cacheKeyPrefix}${ip}`;
 
-    try {
-        // Try to get from cache first
-        const cached = await redis.get(cacheKey);
+  try {
+    // Try to get from cache first
+    const cached = await redis.get(cacheKey);
 
-        if (cached) {
-            const result = JSON.parse(cached as string) as CachedIPResult;
-            logger.debug('IP security result from cache', { ip, isBlocked: result.isBlocked });
-            return result;
-        }
-
-        // Not in cache - fetch from API
-        logger.debug('Fetching IP security data from IPRegistry', { ip });
-        const data = await fetchIPSecurityData(ip);
-
-        if (!data) {
-            // API failed - allow request but don't cache
-            return null;
-        }
-
-        // Analyze the data
-        const result = analyzeIPSecurity(data);
-
-        // Cache the result for 24 hours
-        await redis.setex(
-            cacheKey,
-            IP_SECURITY_CONFIG.cacheTTL,
-            JSON.stringify(result)
-        );
-
-        logger.info('IP security result cached', {
-            ip,
-            isBlocked: result.isBlocked,
-            reasons: result.reasons,
-            location: result.location,
-        });
-
-        return result;
-    } catch (error) {
-        logger.error('Error getting IP security result', {
-            error: error instanceof Error ? error.message : String(error),
-            ip,
-        });
-        return null;
+    if (cached) {
+      const result = JSON.parse(cached as string) as CachedIPResult;
+      logger.debug('IP security result from cache', { ip, isBlocked: result.isBlocked });
+      return result;
     }
+
+    // Not in cache - fetch from API
+    logger.debug('Fetching IP security data from IPRegistry', { ip });
+    const data = await fetchIPSecurityData(ip);
+
+    if (!data) {
+      // API failed - allow request but don't cache
+      return null;
+    }
+
+    // Analyze the data
+    const result = analyzeIPSecurity(data);
+
+    // Cache the result for 24 hours
+    await redis.setex(
+      cacheKey,
+      IP_SECURITY_CONFIG.cacheTTL,
+      JSON.stringify(result)
+    );
+
+    logger.info('IP security result cached', {
+      ip,
+      isBlocked: result.isBlocked,
+      reasons: result.reasons,
+      location: result.location,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Error getting IP security result', {
+      error: error instanceof Error ? error.message : String(error),
+      ip,
+    });
+    return null;
+  }
 }
 
 /**
  * Create HTML blocked overlay response
  */
 function createBlockedOverlay(title: string, messages: string[]): string {
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -426,85 +404,90 @@ function createBlockedOverlay(title: string, messages: string[]): string {
 }
 
 export const ipSecurityMiddleware = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-    try {
-        // Extract IP address
-        const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
-            || req.ip
-            || 'unknown';
+  // Check if IP security is enabled
+  if (!IP_SECURITY_CONFIG.enabled) {
+    return next();
+  }
 
-        // Skip check for unknown IPs
-        if (ip === 'unknown') {
-            return next();
-        }
+  try {
+    // Extract IP address
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+      || req.ip
+      || 'unknown';
 
-        // Whitelist localhost in development
-        if (ENV.NODE_ENV === 'development' && IP_SECURITY_CONFIG.devWhitelist.includes(ip)) {
-            return next();
-        }
-
-        // Get security result (from cache or API)
-        const result = await getIPSecurityResult(ip);
-
-        // If API failed or no result, allow request (fail open)
-        if (!result) {
-            return next();
-        }
-
-        // If IP is blocked, return blocked overlay
-        if (result.isBlocked) {
-            logSecurityEvent(
-                SecurityEventType.IP_BLOCKED,
-                'IP blocked by security middleware',
-                {
-                    ip,
-                    path: req.path,
-                    method: req.method,
-                    userAgent: req.headers['user-agent'],
-                    details: {
-                        reasons: result.reasons,
-                        location: result.location,
-                    },
-                }
-            );
-
-            res.status(403).send(
-                createBlockedOverlay(
-                    'Your request has been blocked due to security policy violations.',
-                    result.reasons
-                )
-            );
-            return;
-        }
-
-        // IP is clean - allow request
-        next();
-    } catch (error) {
-        logger.error('Error in IP security middleware', {
-            error: error instanceof Error ? error.message : String(error),
-            path: req.path,
-        });
-
-        // Fail open - allow request on error
-        next();
+    // Skip check for unknown IPs
+    if (ip === 'unknown') {
+      return next();
     }
+
+    // Whitelist localhost in development
+    if (ENV.NODE_ENV === 'development' && IP_SECURITY_CONFIG.devWhitelist.includes(ip)) {
+      return next();
+    }
+
+    // Get security result (from cache or API)
+    const result = await getIPSecurityResult(ip);
+
+    // If API failed or no result, allow request (fail open)
+    if (!result) {
+      return next();
+    }
+
+    // If IP is blocked, return blocked overlay
+    if (result.isBlocked) {
+      logSecurityEvent(
+        SecurityEventType.IP_BLOCKED,
+        'IP blocked by security middleware',
+        {
+          ip,
+          path: req.path,
+          method: req.method,
+          userAgent: req.headers['user-agent'],
+          details: {
+            reasons: result.reasons,
+            location: result.location,
+          },
+        }
+      );
+
+      res.status(403).send(
+        createBlockedOverlay(
+          'Your request has been blocked due to security policy violations.',
+          result.reasons
+        )
+      );
+      return;
+    }
+
+    // IP is clean - allow request
+    next();
+  } catch (error) {
+    logger.error('Error in IP security middleware', {
+      error: error instanceof Error ? error.message : String(error),
+      path: req.path,
+    });
+
+    // Fail open - allow request on error
+    next();
+  }
 };
 
 /**
  * Utility function to manually check an IP (for testing/admin purposes)
  */
 export async function checkIP(ip: string): Promise<CachedIPResult | null> {
-    return getIPSecurityResult(ip);
+  return getIPSecurityResult(ip);
 }
 
 /**
  * Utility function to clear IP cache (for testing/admin purposes)
  */
 export async function clearIPCache(ip: string): Promise<void> {
-    const cacheKey = `${IP_SECURITY_CONFIG.cacheKeyPrefix}${ip}`;
-    await redis.del(cacheKey);
-    logger.info('IP cache cleared', { ip });
+  const cacheKey = `${IP_SECURITY_CONFIG.cacheKeyPrefix}${ip}`;
+  await redis.del(cacheKey);
+  logger.info('IP cache cleared', { ip });
 }

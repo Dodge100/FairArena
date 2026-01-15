@@ -279,4 +279,5 @@ export const ENV = {
   SESSION_IDLE_TIMEOUT: parseInt(getEnv('SESSION_IDLE_TIMEOUT', '1800000')), // 30 minutes
   // IP Security (IPRegistry)
   IPREGISTRY_API_KEY: getEnv('IPREGISTRY_API_KEY', ''),
+  IP_CHECK: getEnv('IP_CHECK') === 'true',
 };

@@ -224,7 +224,7 @@ Message: {message}`;
                 const classification = await this.classifySupportTicket(ticket.subject, ticket.message);
                 results.set(ticket.id, classification);
                 await new Promise((resolve) => setTimeout(resolve, 100));
-            } catch (error) {
+            } catch {
                 results.set(ticket.id, this.getFallbackClassification(ticket.subject, ticket.message));
             }
         }

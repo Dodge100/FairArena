@@ -83,6 +83,7 @@ import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { setCsrfToken, validateCsrfToken } from './middleware/csrf.middleware.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware.js';
 import { intrusionDetection, trackAuthFailures } from './middleware/intrusionDetection.middleware.js';
+import { ipSecurityMiddleware } from './middleware/ipSecurity.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import { requestValidation } from './middleware/requestValidation.middleware.js';
 import { securityHeaders } from './middleware/securityHeaders.middleware.js';
@@ -112,7 +113,6 @@ import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
 import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
 import logger from './utils/logger.js';
-import { ipSecurityMiddleware } from './middleware/ipSecurity.middleware.js';
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -131,8 +131,6 @@ app.set('trust proxy', true);
 // Apply enhanced security headers
 app.use(securityHeaders);
 
-// Apply request validation (size limits, content-type, sanitization)
-app.use(requestValidation);
 
 // Apply CSRF token generation (sets token in cookie and header)
 app.use(setCsrfToken);
@@ -189,8 +187,10 @@ app.use(ipSecurityMiddleware);
 // Apply intrusion detection
 app.use(intrusionDetection);
 
-// JSON middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(requestValidation);
 
 // Cookie parser middleware
 app.use(cookieParser());
@@ -251,6 +251,7 @@ app.use(validateCsrfToken);
 // Well-known endpoints (for OIDC discovery)
 app.use('/.well-known', oauthRouter);
 // OAuth endpoints
+app.use('/api/v1/oauth', oauthRouter);
 app.use('/oauth', oauthRouter);
 
 // Authentication routes (public)

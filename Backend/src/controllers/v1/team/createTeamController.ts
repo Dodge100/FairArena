@@ -52,7 +52,7 @@ export const createTeam = async (req: Request, res: Response) => {
 
     // Check if organization exists
     const organization = await prisma.organization.findUnique({
-      where: { slug: organizationSlug },
+      where: { slug: organizationSlug as string },
       select: { id: true, slug: true },
     });
 

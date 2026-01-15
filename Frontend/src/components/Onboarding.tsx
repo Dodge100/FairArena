@@ -16,7 +16,7 @@ import {
 const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
-    const { theme, isDark } = useTheme();
+    const { isDark } = useTheme();
     const { user } = useAuth();
     const navigate = useNavigate();
     const { currentStep, setCurrentStep, completeOnboarding, skipOnboarding, trackStep } = useOnboarding();
