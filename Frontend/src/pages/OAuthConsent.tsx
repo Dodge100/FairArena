@@ -1,3 +1,4 @@
+import { AccountSwitcher } from '@/components/auth/AccountSwitcher';
 import { useAuthState } from '@/contexts/AuthContext';
 import { type AuthorizationRequest, getAuthorizationRequest, type OAuthScope, submitConsent } from '@/services/oauthService';
 import {
@@ -186,9 +187,10 @@ export default function OAuthConsent() {
                         {application.name} wants access
                     </h1>
 
-                    <p className="text-sm text-neutral-500">
-                        <span className="font-medium text-neutral-900 dark:text-neutral-200">{user?.email}</span>
-                    </p>
+                    {/* Account Switcher */}
+                    <div className="w-full mt-4">
+                        <AccountSwitcher requestId={requestId || undefined} />
+                    </div>
                 </div>
 
                 {/* Content Section */}
