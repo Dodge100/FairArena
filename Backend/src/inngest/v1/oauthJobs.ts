@@ -171,3 +171,229 @@ export const archiveOldAuditLogs = inngest.createFunction(
         };
     }
 );
+
+/**
+ * Send email notification when user authorizes a new OAuth app
+ */
+export const sendOAuthAppAuthorizedEmail = inngest.createFunction(
+    {
+        id: 'oauth-app-authorized-email',
+        name: 'OAuth: Send App Authorized Email',
+        retries: 3,
+    },
+    { event: 'oauth/app-authorized' },
+    async ({ event, step }) => {
+        const {
+            userId,
+            applicationId,
+            permissions,
+            ipAddress,
+            userAgent,
+            isFirstAuthorization
+        } = event.data;
+
+        // Only send email for first-time authorizations
+        if (!isFirstAuthorization) {
+            return { success: true, skipped: true, reason: 'Not first authorization' };
+        }
+
+        return await step.run('send-oauth-app-authorized-email', async () => {
+            try {
+                // Fetch user details
+                const user = await prisma.user.findUnique({
+                    where: { userId },
+                    select: { email: true, firstName: true },
+                });
+
+                if (!user || !user.email) {
+                    logger.warn('User not found for OAuth app authorized email', { userId });
+                    return { success: false, reason: 'User not found' };
+                }
+
+                // Fetch application details
+                const application = await prisma.oAuthApplication.findUnique({
+                    where: { id: applicationId },
+                    select: {
+                        name: true,
+                        logoUrl: true,
+                        owner: {
+                            select: { firstName: true, lastName: true }
+                        }
+                    },
+                });
+
+                if (!application) {
+                    logger.warn('Application not found for OAuth app authorized email', { applicationId });
+                    return { success: false, reason: 'Application not found' };
+                }
+
+                // Parse user agent for device info
+                const { parseUserAgent } = await import('../../services/auth.service.js');
+                const { deviceName } = parseUserAgent(userAgent);
+
+                // Get location from IP
+                const { getLocationFromIP, formatLocationString } = await import('../../utils/location.utils.js');
+                const locationData = await getLocationFromIP(ipAddress || 'unknown');
+                const location = formatLocationString(locationData, ipAddress || 'unknown');
+
+                // Get frontend URL
+                const { ENV } = await import('../../config/env.js');
+
+                // Send email using the template
+                const { sendEmail } = await import('../../email/v1/send-mail.js');
+                await sendEmail({
+                    to: user.email,
+                    subject: `${application.name} was granted access to your account`,
+                    templateType: 'oauth-app-authorized',
+                    templateData: {
+                        firstName: user.firstName || 'there',
+                        appName: application.name,
+                        appLogoUrl: application.logoUrl ?? undefined,
+                        appDeveloper: application.owner
+                            ? `${application.owner.firstName || ''} ${application.owner.lastName || ''}`.trim()
+                            : undefined,
+                        permissions: permissions || ['Access your basic profile'],
+                        authorizedAt: new Date().toISOString(),
+                        ipAddress: ipAddress || 'Unknown',
+                        location,
+                        deviceName: deviceName || 'Unknown device',
+                        revokeUrl: `${ENV.FRONTEND_URL}/dashboard/settings/connected-apps`,
+                        securityUrl: `${ENV.FRONTEND_URL}/dashboard/account-settings`,
+                    },
+                });
+
+                logger.info('OAuth app authorized email sent', {
+                    userId,
+                    email: user.email,
+                    applicationId,
+                    appName: application.name
+                });
+
+                return { success: true };
+            } catch (error) {
+                logger.error('Failed to send OAuth app authorized email', { error, userId, applicationId });
+                throw error;
+            }
+        });
+    }
+);
+
+/**
+ * Create in-app notification when user authorizes a new OAuth app
+ */
+export const createOAuthAppAuthorizedNotification = inngest.createFunction(
+    {
+        id: 'oauth-app-authorized-notification',
+        name: 'OAuth: Create App Authorized In-App Notification',
+        retries: 3,
+    },
+    { event: 'oauth/app-authorized' },
+    async ({ event, step }) => {
+        const { userId, applicationId, isFirstAuthorization } = event.data;
+
+        // Only create notification for first-time authorizations
+        if (!isFirstAuthorization) {
+            return { success: true, skipped: true, reason: 'Not first authorization' };
+        }
+
+        return await step.run('create-oauth-app-authorized-notification', async () => {
+            try {
+                // Fetch application details
+                const application = await prisma.oAuthApplication.findUnique({
+                    where: { id: applicationId },
+                    select: { name: true, logoUrl: true },
+                });
+
+                if (!application) {
+                    logger.warn('Application not found for OAuth notification', { applicationId });
+                    return { success: false, reason: 'Application not found' };
+                }
+
+                // Import notification service
+                const notificationService = (await import('../../services/v1/notification.service.js')).default;
+                const { ENV } = await import('../../config/env.js');
+
+                // Create notification
+                await notificationService.createNotification({
+                    userId,
+                    type: 'ALERT',
+                    title: 'New App Connected',
+                    message: `${application.name} was granted access to your account`,
+                    description: 'You can manage connected apps in your security settings.',
+                    actionUrl: `${ENV.FRONTEND_URL}/dashboard/settings/connected-apps`,
+                    actionLabel: 'Manage Apps',
+                    metadata: {
+                        applicationId,
+                        appName: application.name,
+                        appLogoUrl: application.logoUrl,
+                        type: 'oauth_app_authorized',
+                    },
+                });
+
+                logger.info('OAuth app authorized notification created', {
+                    userId,
+                    applicationId,
+                    appName: application.name
+                });
+
+                return { success: true };
+            } catch (error) {
+                logger.error('Failed to create OAuth app authorized notification', { error, userId, applicationId });
+                throw error;
+            }
+        });
+    }
+);
+
+/**
+ * Log OAuth data access event
+ */
+export const logOAuthDataAccess = inngest.createFunction(
+    {
+        id: 'oauth-log-data-access',
+        name: 'OAuth: Log Data Access',
+        retries: 2,
+    },
+    { event: 'oauth/data-accessed' },
+    async ({ event, step }) => {
+        const {
+            userId,
+            applicationId,
+            endpoint,
+            scopes,
+            ipAddress,
+            userAgent
+        } = event.data;
+
+        return await step.run('log-oauth-data-access', async () => {
+            try {
+                // Create audit log entry
+                await prisma.oAuthAuditLog.create({
+                    data: {
+                        eventType: 'data_access',
+                        applicationId,
+                        userId,
+                        ipAddress,
+                        userAgent,
+                        metadata: {
+                            endpoint,
+                            scopes,
+                            accessedAt: new Date().toISOString(),
+                        },
+                    },
+                });
+
+                logger.debug('OAuth data access logged', {
+                    userId,
+                    applicationId,
+                    endpoint
+                });
+
+                return { success: true };
+            } catch (error) {
+                logger.error('Failed to log OAuth data access', { error, userId, applicationId });
+                throw error;
+            }
+        });
+    }
+);

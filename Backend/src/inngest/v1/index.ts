@@ -66,7 +66,9 @@ export {
 
 // OAuth background jobs
 export {
-  archiveOldAuditLogs, calculateApplicationStats, cleanupExpiredTokens
+  archiveOldAuditLogs, calculateApplicationStats, cleanupExpiredTokens, sendOAuthAppAuthorizedEmail,
+  createOAuthAppAuthorizedNotification,
+  logOAuthDataAccess,
 } from './oauthJobs.js';
 
 // Auth stream functions

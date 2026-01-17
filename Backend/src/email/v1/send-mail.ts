@@ -18,6 +18,7 @@ import { mfaDisabledTemplate } from '../templates/mfaDisabled.js';
 import { mfaEnabledTemplate } from '../templates/mfaEnabled.js';
 import { mfaOtpTemplate } from '../templates/mfaOtp.js';
 import { newDeviceLoginTemplate } from '../templates/newDeviceLogin.js';
+import { oauthAppAuthorizedTemplate } from '../templates/oauthAppAuthorized.js';
 import { otpEmailTemplate } from '../templates/otp.js';
 import { passkeyAddedTemplate } from '../templates/passkeyAdded.js';
 import { passkeyRemovedTemplate } from '../templates/passkeyRemoved.js';
@@ -241,6 +242,19 @@ type BackupCodeUsedParams = {
   remainingCodes: number;
   securityUrl: string;
 };
+type OAuthAppAuthorizedParams = {
+  firstName: string;
+  appName: string;
+  appLogoUrl?: string;
+  appDeveloper?: string;
+  permissions: string[];
+  authorizedAt: string;
+  ipAddress: string;
+  location: string;
+  deviceName: string;
+  revokeUrl: string;
+  securityUrl: string;
+};
 // Collect all templates with correct types
 export const emailTemplates = {
   welcome: welcomeEmailTemplate as (params: WelcomeEmailParams) => string,
@@ -303,6 +317,7 @@ export const emailTemplates = {
   'security-key-added': securityKeyAddedTemplate as (params: SecurityKeyAddedParams) => string,
   'security-key-removed': securityKeyRemovedTemplate as (params: SecurityKeyRemovedParams) => string,
   'backup-code-used': backupCodeUsedTemplate as (params: BackupCodeUsedParams) => string,
+  'oauth-app-authorized': oauthAppAuthorizedTemplate as (params: OAuthAppAuthorizedParams) => string,
 };
 
 type TemplateType = keyof typeof emailTemplates;

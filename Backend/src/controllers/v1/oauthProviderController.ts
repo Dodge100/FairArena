@@ -8,6 +8,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
+import { inngest } from '../../inngest/v1/client.js';
 import {
     generateAccessToken,
     generateAuthorizationCode,
@@ -446,6 +447,42 @@ async function processConsent(
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
         metadata: { scopes, isAutoApproved },
+    });
+
+    // Check if this is a first-time authorization for notifications
+    const existingConsent = await prisma.oAuthConsent.findFirst({
+        where: {
+            userId,
+            applicationId: authRequest.applicationId,
+            revokedAt: null,
+        },
+        orderBy: { createdAt: 'asc' },
+    });
+
+    // Emit notification event for Inngest to process
+    const scopeLabels = scopes.map(scope => {
+        switch (scope) {
+            case 'openid': return 'Verify your identity';
+            case 'profile': return 'View your profile information';
+            case 'email': return 'View your email address';
+            case 'offline_access': return 'Access your data when you\'re not using the app';
+            default: return scope;
+        }
+    });
+
+    await inngest.send({
+        name: 'oauth/app-authorized',
+        data: {
+            userId,
+            applicationId: authRequest.applicationId,
+            permissions: scopeLabels,
+            ipAddress: req.ip || 'unknown',
+            userAgent: req.get('user-agent') || 'unknown',
+            // Consider it first authorization if consent was just created (within last 5 seconds)
+            isFirstAuthorization: existingConsent
+                ? (Date.now() - new Date(existingConsent.createdAt).getTime()) < 5000
+                : false,
+        },
     });
 
     // Redirect with code

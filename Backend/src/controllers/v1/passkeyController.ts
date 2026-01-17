@@ -18,8 +18,10 @@ import { inngest } from '../../inngest/v1/client.js';
 import {
     createSession,
     generateAccessToken,
+    generateBindingToken,
     generateRefreshToken,
     parseUserAgent,
+    storeSessionBinding
 } from '../../services/auth.service.js';
 import {
     REFRESH_TOKEN_COOKIE_OPTIONS,
@@ -577,9 +579,13 @@ export async function verifyAuthentication(req: Request, res: Response) {
             });
         }
 
-        // Set cookies
-        res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
-        res.cookie('sessionId', sessionId, SESSION_COOKIE_OPTIONS);
+        // Generate binding token for session security (multi-account support)
+        const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+        await storeSessionBinding(sessionId, bindingHash);
+
+        // Set multi-session cookies (must match /auth/accounts endpoint expectations)
+        res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
 
         logger.info('Passkey authentication successful', { userId: user.userId, passkeyId: passkey.id });
 

@@ -77,6 +77,9 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
+  sendOAuthAppAuthorizedEmail,
+  createOAuthAppAuthorizedNotification,
+  logOAuthDataAccess,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -398,6 +401,9 @@ app.use(
       cleanupExpiredTokens,
       emitSessionRevoked,
       scheduleTokenRefresh,
+      sendOAuthAppAuthorizedEmail,
+      createOAuthAppAuthorizedNotification,
+      logOAuthDataAccess,
     ],
   }),
 );
