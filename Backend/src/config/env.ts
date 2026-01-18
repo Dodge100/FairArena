@@ -280,4 +280,7 @@ export const ENV = {
   // IP Security (IPRegistry)
   IPREGISTRY_API_KEY: getEnv('IPREGISTRY_API_KEY', ''),
   IP_CHECK: getEnv('IP_CHECK') === 'true',
+  // Pinecone Vector Database
+  PINECONE_API_KEY: getEnv('PINECONE_API_KEY', ''),
+  PINECONE_INDEX_NAME: getEnv('PINECONE_INDEX_NAME', 'fairarena-docs'),
 };
