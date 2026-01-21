@@ -73,6 +73,10 @@ export function useOAuthLogin(options?: {
     const handleDropboxLogin = useCallback(() => handleOAuthLogin('dropbox'), [handleOAuthLogin]);
     const handleGitLabLogin = useCallback(() => handleOAuthLogin('gitlab'), [handleOAuthLogin]);
     const handleHuggingFaceLogin = useCallback(() => handleOAuthLogin('huggingface'), [handleOAuthLogin]);
+    const handleVercelLogin = useCallback(() => handleOAuthLogin('vercel'), [handleOAuthLogin]);
+    const handleFigmaLogin = useCallback(() => handleOAuthLogin('figma'), [handleOAuthLogin]);
+    const handleZoomLogin = useCallback(() => handleOAuthLogin('zoom'), [handleOAuthLogin]);
+    const handleAtlassianLogin = useCallback(() => handleOAuthLogin('atlassian'), [handleOAuthLogin]);
 
     // Check if a specific provider is loading
     const isProviderLoading = useCallback((providerId: string) => {
@@ -110,6 +114,10 @@ export function useOAuthLogin(options?: {
         handleDropboxLogin,
         handleGitLabLogin,
         handleHuggingFaceLogin,
+        handleVercelLogin,
+        handleFigmaLogin,
+        handleZoomLogin,
+        handleAtlassianLogin,
 
         // Utilities
         isProviderLoading,

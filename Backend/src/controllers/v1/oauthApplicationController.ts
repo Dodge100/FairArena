@@ -28,9 +28,9 @@ const createApplicationSchema = z.object({
     redirectUris: z.array(z.string().url()).min(1).max(10),
     isPublic: z.boolean().optional().default(false),
     grantTypes: z
-        .array(z.enum(['authorization_code', 'refresh_token', 'client_credentials']))
+        .array(z.enum(['authorization_code', 'refresh_token', 'client_credentials', 'urn:ietf:params:oauth:grant-type:device_code']))
         .optional()
-        .default(['authorization_code', 'refresh_token']),
+        .default(['authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:device_code']),
 });
 
 const updateApplicationSchema = z.object({
@@ -146,7 +146,7 @@ export async function createApplication(req: Request, res: Response): Promise<vo
 
     // Public clients can't use client_credentials
     const grantTypes = data.isPublic
-        ? data.grantTypes?.filter((g) => g !== 'client_credentials') || ['authorization_code', 'refresh_token']
+        ? data.grantTypes?.filter((g) => g !== 'client_credentials') || ['authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:device_code']
         : data.grantTypes;
 
     const application = await prisma.oAuthApplication.create({

@@ -1,3 +1,4 @@
+import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
 import { QRAuthDialog } from '@/components/auth/QRAuthDialog';
 import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyManager';
@@ -10,7 +11,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
-import { OAuthBanner } from '@/components/auth/OAuthBanner';
 
 type MfaMethod = 'authenticator' | 'backup' | 'email' | 'notification';
 type AuthStep = 'credentials' | 'mfa' | 'new_device' | 'webauthn_unsupported';

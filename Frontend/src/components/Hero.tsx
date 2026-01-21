@@ -1,16 +1,16 @@
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from "@/components/ui/avatar";
 import { ArrowRight, Play, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
 import { cn } from '../lib/utils';
-import {AnimatedShinyText} from './ui/animated-shiny-text';
+import { AnimatedShinyText } from './ui/animated-shiny-text';
 import { Spotlight } from './ui/Spotlight';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
 
 export default function Hero() {
     const { isDark } = useTheme();
@@ -81,47 +81,50 @@ export default function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
                 >
-                    FairArena automates judging with AI-powered analysis and real-time insights, ensuring every participant gets a fair shot.
+                    The AI-powered hackathon platform for organizers, judges, and participants. FairArena automates judging with analysis and real-time insights, ensuring fair evaluations for everyone.
                 </motion.p>
 
                 {/* Buttons */}
                 <motion.div
-                    className="flex flex-col sm:flex-row items-center gap-4"
+                    className="flex flex-col items-center gap-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' }}
                 >
-                    {!isSignedIn ? (
-                        <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
-                            <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
-                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
-                                <div className="flex items-center gap-2 pr-6">
-                                    {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </button>
-                        </Link>
-                    ) : (
-                        <Link to="/dashboard">
-                            <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
-                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
-                                <div className="flex items-center gap-2 pr-6">
-                                    Go to Dashboard
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </button>
-                        </Link>
-                    )}
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        {!isSignedIn ? (
+                            <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
+                                <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
+                                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
+                                    <div className="flex items-center gap-2 pr-6">
+                                        {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </div>
+                                </button>
+                            </Link>
+                        ) : (
+                            <Link to="/dashboard">
+                                <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
+                                    <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
+                                    <div className="flex items-center gap-2 pr-6">
+                                        Go to Dashboard
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </div>
+                                </button>
+                            </Link>
+                        )}
 
-                    <a href="#demo" className={cn(
-                        "h-14 px-8 rounded-full flex items-center gap-2 font-medium transition-all border",
-                        isDark
-                            ? "border-neutral-700 hover:bg-neutral-800 text-white"
-                            : "border-neutral-300 hover:bg-neutral-100 text-gray-900"
-                    )}>
-                        <Play className="w-4 h-4 fill-current" />
-                        Watch Demo
-                    </a>
+                        <a href="#demo" className={cn(
+                            "h-14 px-8 rounded-full flex items-center gap-2 font-medium transition-all border",
+                            isDark
+                                ? "border-neutral-700 hover:bg-neutral-800 text-white"
+                                : "border-neutral-300 hover:bg-neutral-100 text-gray-900"
+                        )}>
+                            <Play className="w-4 h-4 fill-current" />
+                            Watch Demo
+                        </a>
+                    </div>
+
                 </motion.div>
 
                 <motion.div
@@ -130,56 +133,56 @@ export default function Hero() {
                     transition={{ duration: 1, delay: 0.8 }}
                     className="mt-20 flex flex-col items-center gap-4"
                 >
-                        <div className="flex flex-row flex-wrap items-center gap-12">
-      <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
-        <Avatar>
-          <AvatarImage src="https://github.com/saksham-goel1107.png" alt="Saksham-Goel1107" />
-          <AvatarFallback>SG</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/fairarena.png"
-            alt="FairArena"
-          />
-          <AvatarFallback>FA</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/sachinpal11.png"
-            alt="@sachinpal11"
-          />
-          <AvatarFallback>SP</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/Harsh091234.png"
-            alt="@Harsh091234"
-          />
-          <AvatarFallback>HS</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/prabsingh005.png"
-            alt="@prabsingh005"
-          />
-          <AvatarFallback>PS</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/rohitshandilya01.png"
-            alt="@rohitshandilya01"
-          />
-          <AvatarFallback>RS</AvatarFallback>
-        </Avatar>
-        <Avatar>
-          <AvatarImage
-            src="https://github.com/arsh118.png"
-            alt="@arsh118"
-          />
-          <AvatarFallback>AA</AvatarFallback>
-        </Avatar>
-      </div>
-    </div>
+                    <div className="flex flex-row flex-wrap items-center gap-12">
+                        <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
+                            <Avatar>
+                                <AvatarImage src="https://github.com/saksham-goel1107.png" alt="Saksham-Goel1107" />
+                                <AvatarFallback>SG</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/fairarena.png"
+                                    alt="FairArena"
+                                />
+                                <AvatarFallback>FA</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/sachinpal11.png"
+                                    alt="@sachinpal11"
+                                />
+                                <AvatarFallback>SP</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/Harsh091234.png"
+                                    alt="@Harsh091234"
+                                />
+                                <AvatarFallback>HS</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/prabsingh005.png"
+                                    alt="@prabsingh005"
+                                />
+                                <AvatarFallback>PS</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/rohitshandilya01.png"
+                                    alt="@rohitshandilya01"
+                                />
+                                <AvatarFallback>RS</AvatarFallback>
+                            </Avatar>
+                            <Avatar>
+                                <AvatarImage
+                                    src="https://github.com/arsh118.png"
+                                    alt="@arsh118"
+                                />
+                                <AvatarFallback>AA</AvatarFallback>
+                            </Avatar>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2">
                         <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((_, i) => (

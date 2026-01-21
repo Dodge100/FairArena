@@ -215,6 +215,68 @@ export function OAuthSocials({ getRedirectPath, children, lastUsedMethod }: OAut
                     </svg>
                 </button>
             </div>
+
+            <div className="grid grid-cols-4 gap-2 mb-3">
+                {/* Vercel */}
+                <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('vercel')}
+                    disabled={isLoading}
+                    title="Vercel"
+                    className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-neutral-800 text-white'}`}
+                >
+                    {lastUsedMethod === 'vercel' && <LastUsedBadge />}
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 22.525H0l12-21.05 12 21.05z" />
+                    </svg>
+                </button>
+
+                {/* Figma */}
+                <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('figma')}
+                    disabled={isLoading}
+                    title="Figma"
+                    className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-gradient-to-br from-[#F24E1E] via-[#A259FF] to-[#0ACF83] hover:opacity-90 text-white"
+                >
+                    {lastUsedMethod === 'figma' && <LastUsedBadge />}
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 24c2.208 0 4-1.792 4-4v-4H8c-2.208 0-4 1.792-4 4s1.792 4 4 4z" />
+                        <path d="M4 12c0-2.208 1.792-4 4-4h4v8H8c-2.208 0-4-1.792-4-4z" />
+                        <path d="M4 4c0-2.208 1.792-4 4-4h4v8H8C5.792 8 4 6.208 4 4z" />
+                        <path d="M12 0h4c2.208 0 4 1.792 4 4s-1.792 4-4 4h-4V0z" />
+                        <path d="M20 12c0 2.208-1.792 4-4 4s-4-1.792-4-4 1.792-4 4-4 4 1.792 4 4z" />
+                    </svg>
+                </button>
+
+                {/* Zoom */}
+                <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('zoom')}
+                    disabled={isLoading}
+                    title="Zoom"
+                    className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#2D8CFF] hover:bg-[#1A73E8] text-white"
+                >
+                    {lastUsedMethod === 'zoom' && <LastUsedBadge />}
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M0 6.503c0-1.162.942-2.103 2.103-2.103h13.334c1.162 0 2.103.94 2.103 2.103v10.994c0 1.162-.94 2.103-2.103 2.103H2.103C.942 19.6 0 18.66 0 17.5V6.503zm19.65 3.3l4.35-3.3v11l-4.35-3.3v-4.4z" />
+                    </svg>
+                </button>
+
+                {/* Atlassian */}
+                <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('atlassian')}
+                    disabled={isLoading}
+                    title="Atlassian"
+                    className="relative p-2.5 rounded-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 bg-[#0052CC] hover:bg-[#0747A6] text-white"
+                >
+                    {lastUsedMethod === 'atlassian' && <LastUsedBadge />}
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14.65 12.63l-5.02-8.58A3.33 3.33 0 0 0 6.63 2.5C4.82 2.5 3.35 4 3.35 5.82c0 .59.16 1.15.45 1.64l5 8.58a4.67 4.67 0 0 0 4.05 2.34c1.66 0 3.16-.9 4.05-2.27-.76-1.29-2.26-2.09-3.79-2.09-.15 0-.3 0-.46.03zm2.73.24c0 .01 0 .01 0 0l-5-8.58A3.33 3.33 0 0 0 9.61 2.59a3.31 3.31 0 0 0-2.86 1.67l7.63 13.06c.26.45.69.75 1.17.84a4.67 4.67 0 0 0 4.38-1.89c.75-1.28.99-2.9.99-4.48 0-.31-.04-.61-.1-.9-.13 0-.27-.01-.41-.01z" />
+                    </svg>
+                </button>
+            </div>
         </>
     );
 }

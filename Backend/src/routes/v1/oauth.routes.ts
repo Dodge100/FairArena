@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { optionalAuth, protectRoute } from '../../middleware/auth.middleware.js';
+import { deviceAuthRateLimit, deviceConsentRateLimit, deviceVerifyRateLimit } from '../../middleware/deviceAuthRateLimit.middleware.js';
 import { oauthBearerAuth } from '../../middleware/oauthBearer.middleware.js';
 import { oauthClientAuth, requireConfidentialClient } from '../../middleware/oauthClient.middleware.js';
 
@@ -13,8 +14,11 @@ import { oauthClientAuth, requireConfidentialClient } from '../../middleware/oau
 import {
     authorizeEndpoint,
     consentEndpoint,
+    deviceAuthorizeEndpoint,
+    deviceConsentEndpoint,
     discoveryEndpoint,
     getAuthorizationRequest,
+    getDeviceRequest,
     introspectEndpoint,
     jwksEndpoint,
     revokeEndpoint,
@@ -81,6 +85,19 @@ router.post('/revoke', oauthClientAuth, revokeEndpoint);
 
 // Token introspection - requires confidential client
 router.post('/introspect', oauthClientAuth, requireConfidentialClient, introspectEndpoint);
+
+// ============================================
+// DEVICE AUTHORIZATION FLOW (RFC 8628)
+// ============================================
+
+// Device authorization endpoint - client initiates device flow
+router.post('/device/authorize', oauthClientAuth, deviceAuthRateLimit, deviceAuthorizeEndpoint);
+
+// Device verification endpoint - get device request details for consent UI (requires auth)
+router.get('/device/verify', deviceVerifyRateLimit, protectRoute, getDeviceRequest);
+
+// Device consent endpoint - user approves/denies device authorization
+router.post('/device/consent', protectRoute, deviceConsentRateLimit, deviceConsentEndpoint);
 
 // ============================================
 // APPLICATION MANAGEMENT (Requires session auth)

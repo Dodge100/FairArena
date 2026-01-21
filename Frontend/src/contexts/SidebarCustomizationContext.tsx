@@ -56,6 +56,7 @@ const defaultMainItems: SidebarItem[] = [
         items: [
             { id: 'oauth-apps', title: 'My Applications', url: '/dashboard/oauth/applications', icon: '', visible: true, order: 0 },
             { id: 'authorized-apps', title: 'Authorized Apps', url: '/dashboard/oauth/authorized', icon: '', visible: true, order: 1 },
+            { id: 'device-auth', title: 'Device Authorization', url: '/dashboard/device', icon: '', visible: true, order: 2 },
         ]
     },
 ];

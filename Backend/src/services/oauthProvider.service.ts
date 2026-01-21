@@ -284,6 +284,192 @@ export function generateAuthorizationCode(): string {
     return crypto.randomBytes(32).toString('base64url');
 }
 
+// ============================================
+// DEVICE AUTHORIZATION FLOW (RFC 8628)
+// ============================================
+
+/**
+ * Generate device code (long opaque string for client polling)
+ */
+export function generateDeviceCode(): string {
+    return crypto.randomBytes(64).toString('base64url'); // ~86 chars
+}
+
+/**
+ * Generate user code (short human-readable code for user entry)
+ * Format: ABCD-1234 (8 chars with hyphen)
+ */
+export function generateUserCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous chars (I, O, 0, 1)
+    let code = '';
+
+    for (let i = 0; i < 8; i++) {
+        if (i === 4) {
+            code += '-'; // Add hyphen in middle
+        }
+        const randomIndex = crypto.randomInt(0, chars.length);
+        code += chars[randomIndex];
+    }
+
+    return code;
+}
+
+/**
+ * Generate unique user code with collision detection
+ * Retries up to 5 times if collision detected
+ */
+export async function generateUniqueUserCode(): Promise<string> {
+    const { redis } = await import('../config/redis.js');
+    const maxRetries = 5;
+
+    for (let i = 0; i < maxRetries; i++) {
+        const userCode = generateUserCode();
+
+        // Check if user code already exists
+        const exists = await redis.exists(`user_code:${userCode}`);
+        if (!exists) {
+            return userCode;
+        }
+
+        logger.warn('User code collision detected, retrying...', { userCode, attempt: i + 1 });
+    }
+
+    throw new Error('Failed to generate unique user code after multiple attempts');
+}
+
+/**
+ * Hash device code for storage (using SHA-256)
+ */
+export function hashDeviceCode(deviceCode: string): string {
+    return crypto.createHash('sha256').update(deviceCode).digest('hex');
+}
+
+/**
+ * Store device code in Redis with hashed device_code
+ * Redis key: device_code:{hash}
+ * Redis key: user_code:{USER_CODE}
+ */
+export async function storeDeviceCode(params: {
+    deviceCode: string;
+    userCode: string;
+    applicationId: string;
+    scope: string;
+    verificationUri: string;
+}): Promise<void> {
+    const { redis } = await import('../config/redis.js');
+    const { deviceCode, userCode, applicationId, scope, verificationUri } = params;
+
+    const deviceCodeHash = hashDeviceCode(deviceCode);
+    const expiresIn = ENV.OAUTH_DEVICE_CODE_EXPIRY;
+
+    const data = {
+        applicationId,
+        scope,
+        status: 'pending',
+        verificationUri,
+        interval: ENV.OAUTH_DEVICE_POLL_INTERVAL,
+        createdAt: Date.now(),
+    };
+
+    // Store by hashed device_code (for polling)
+    await redis.setex(`device_code:${deviceCodeHash}`, expiresIn, JSON.stringify(data));
+
+    // Store mapping from user_code to device_code_hash (for user authorization)
+    await redis.setex(`user_code:${userCode}`, expiresIn, deviceCodeHash);
+}
+
+/**
+ * Get device code data by hashed device code
+ */
+export async function getDeviceCodeByHash(deviceCodeHash: string): Promise<{
+    applicationId: string;
+    scope: string;
+    status: string;
+    userId?: string;
+    verificationUri: string;
+    interval: number;
+    createdAt: number;
+    lastPolledAt?: number;
+    authorizedAt?: number;
+} | null> {
+    const { redis } = await import('../config/redis.js');
+    const data = await redis.get(`device_code:${deviceCodeHash}`);
+
+    if (!data) {
+        return null;
+    }
+
+    // Handle case where Redis returns object instead of string
+    if (typeof data === 'object') {
+        return data as any;
+    }
+
+    try {
+        return JSON.parse(data as string);
+    } catch (error) {
+        logger.error('Failed to parse device code data from Redis', { deviceCodeHash, data, error });
+        return null;
+    }
+}
+
+/**
+ * Get device code hash by user code
+ */
+export async function getDeviceCodeHashByUserCode(userCode: string): Promise<string | null> {
+    const { redis } = await import('../config/redis.js');
+    const hash = await redis.get(`user_code:${userCode}`);
+    return hash as string | null;
+}
+
+/**
+ * Update device code status (authorize/deny)
+ */
+export async function updateDeviceCodeStatus(
+    deviceCodeHash: string,
+    status: 'authorized' | 'denied',
+    userId?: string,
+): Promise<void> {
+    const { redis } = await import('../config/redis.js');
+    const key = `device_code:${deviceCodeHash}`;
+
+    const data = await getDeviceCodeByHash(deviceCodeHash);
+    if (!data) {
+        throw new Error('Device code not found');
+    }
+
+    data.status = status;
+    if (userId) {
+        data.userId = userId;
+    }
+    data.authorizedAt = Date.now();
+
+    // Update with remaining TTL
+    const ttl = await redis.ttl(key);
+    if (ttl > 0) {
+        await redis.setex(key, ttl, JSON.stringify(data));
+    }
+}
+
+/**
+ * Update last polled time (for slow_down detection)
+ */
+export async function updateDeviceCodePollTime(deviceCodeHash: string): Promise<void> {
+    const { redis } = await import('../config/redis.js');
+    const key = `device_code:${deviceCodeHash}`;
+
+    const data = await getDeviceCodeByHash(deviceCodeHash);
+    if (!data) {
+        return;
+    }
+
+    data.lastPolledAt = Date.now();
+
+    const ttl = await redis.ttl(key);
+    if (ttl > 0) {
+        await redis.setex(key, ttl, JSON.stringify(data));
+    }
+}
+
 /**
  * Generate access token (JWT)
  */
@@ -689,12 +875,13 @@ export function getDiscoveryDocument(): Record<string, unknown> {
         userinfo_endpoint: `${issuer}/oauth/userinfo`,
         revocation_endpoint: `${issuer}/oauth/revoke`,
         introspection_endpoint: `${issuer}/oauth/introspect`,
+        device_authorization_endpoint: `${issuer}/oauth/device/authorize`,
         jwks_uri: `${issuer}/.well-known/jwks.json`,
 
         scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
         response_types_supported: ['code'],
         response_modes_supported: ['query'],
-        grant_types_supported: ['authorization_code', 'refresh_token', 'client_credentials'],
+        grant_types_supported: ['authorization_code', 'refresh_token', 'client_credentials', 'urn:ietf:params:oauth:grant-type:device_code'],
         subject_types_supported: ['public'],
 
         id_token_signing_alg_values_supported: ['RS256'],

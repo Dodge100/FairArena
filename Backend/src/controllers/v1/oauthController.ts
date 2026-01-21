@@ -168,6 +168,46 @@ export const getLinkedInAuthUrl = async (req: Request, res: Response) => {
     }
 };
 
+export const getVercelAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const authUrl = generateOAuthUrl('vercel', req.query.redirect as string);
+        return res.status(200).json({ success: true, data: { url: authUrl } });
+    } catch (error) {
+        logger.error('Failed to generate Vercel auth URL', { error: error instanceof Error ? error.message : String(error) });
+        return res.status(500).json({ success: false, message: 'Failed to initiate Vercel authentication' });
+    }
+};
+
+export const getFigmaAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const authUrl = generateOAuthUrl('figma', req.query.redirect as string);
+        return res.status(200).json({ success: true, data: { url: authUrl } });
+    } catch (error) {
+        logger.error('Failed to generate Figma auth URL', { error: error instanceof Error ? error.message : String(error) });
+        return res.status(500).json({ success: false, message: 'Failed to initiate Figma authentication' });
+    }
+};
+
+export const getZoomAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const authUrl = generateOAuthUrl('zoom', req.query.redirect as string);
+        return res.status(200).json({ success: true, data: { url: authUrl } });
+    } catch (error) {
+        logger.error('Failed to generate Zoom auth URL', { error: error instanceof Error ? error.message : String(error) });
+        return res.status(500).json({ success: false, message: 'Failed to initiate Zoom authentication' });
+    }
+};
+
+export const getAtlassianAuthUrl = async (req: Request, res: Response) => {
+    try {
+        const authUrl = generateOAuthUrl('atlassian', req.query.redirect as string);
+        return res.status(200).json({ success: true, data: { url: authUrl } });
+    } catch (error) {
+        logger.error('Failed to generate Atlassian auth URL', { error: error instanceof Error ? error.message : String(error) });
+        return res.status(500).json({ success: false, message: 'Failed to initiate Atlassian authentication' });
+    }
+};
+
 // =====================================================
 // GENERIC OAuth CALLBACK HANDLERS
 // =====================================================
@@ -222,6 +262,22 @@ export const handleDropboxCallback = async (req: Request, res: Response) => {
 
 export const handleLinkedInCallback = async (req: Request, res: Response) => {
     return handleGenericOAuthCallback('linkedin', req, res);
+};
+
+export const handleVercelCallback = async (req: Request, res: Response) => {
+    return handleGenericOAuthCallback('vercel', req, res);
+};
+
+export const handleFigmaCallback = async (req: Request, res: Response) => {
+    return handleGenericOAuthCallback('figma', req, res);
+};
+
+export const handleZoomCallback = async (req: Request, res: Response) => {
+    return handleGenericOAuthCallback('zoom', req, res);
+};
+
+export const handleAtlassianCallback = async (req: Request, res: Response) => {
+    return handleGenericOAuthCallback('atlassian', req, res);
 };
 
 // =====================================================

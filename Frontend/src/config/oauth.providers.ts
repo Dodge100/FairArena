@@ -30,6 +30,10 @@ export const OAUTH_PROVIDERS: OAuthProvider[] = [
     { id: 'dropbox', name: 'Dropbox', supportsRedirect: true },
     { id: 'gitlab', name: 'GitLab' },
     { id: 'huggingface', name: 'Hugging Face' },
+    { id: 'vercel', name: 'Vercel', supportsRedirect: true },
+    { id: 'figma', name: 'Figma', supportsRedirect: true },
+    { id: 'zoom', name: 'Zoom', supportsRedirect: true },
+    { id: 'atlassian', name: 'Atlassian', supportsRedirect: true },
 ];
 
 /**

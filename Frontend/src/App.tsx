@@ -24,6 +24,7 @@ import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
 import CreditsVerificationPage from './pages/CreditsVerificationPage';
 import Dashboard from './pages/Dashboard';
+import DeviceAuthorization from './pages/DeviceAuthorization';
 import EditProfile from './pages/EditProfile';
 import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
@@ -171,6 +172,7 @@ function App() {
             <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
             <Route path="/dashboard/oauth/applications" element={<OAuthApplications />} />
             <Route path="/dashboard/oauth/authorized" element={<AuthorizedApps />} />
+            <Route path="/dashboard/device" element={<DeviceAuthorization />} />
           </Route>
           <Route path="/feedback/:feedbackCode" element={<Feedback />} />
           <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />

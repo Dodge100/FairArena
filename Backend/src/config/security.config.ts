@@ -31,6 +31,7 @@ export const CSRF_CONFIG = {
         '/.well-known',
         '/api/v1/oauth/token',
         '/oauth/token',
+        '/api/v1/oauth/device/authorize',
     ],
     // Safe HTTP methods that don't require CSRF protection
     safeMethods: ['GET', 'HEAD', 'OPTIONS'],

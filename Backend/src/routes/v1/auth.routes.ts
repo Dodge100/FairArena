@@ -707,8 +707,10 @@ router.post('/accounts/logout-all', logoutAllAccounts);
 
 // OAuth Routes
 import {
+    getAtlassianAuthUrl,
     getDiscordAuthUrl,
     getDropboxAuthUrl,
+    getFigmaAuthUrl,
     getGithubAuthUrl,
     getGitLabAuthUrl,
     getGoogleAuthUrl,
@@ -718,10 +720,14 @@ import {
     getMicrosoftAuthUrl,
     getNotionAuthUrl,
     getSlackAuthUrl,
+    getVercelAuthUrl,
     getXAuthUrl,
     getZohoAuthUrl,
+    getZoomAuthUrl,
+    handleAtlassianCallback,
     handleDiscordCallback,
     handleDropboxCallback,
+    handleFigmaCallback,
     handleGithubCallback,
     handleGitLabCallback,
     handleGoogleCallback,
@@ -732,8 +738,10 @@ import {
     handleMicrosoftCallback,
     handleNotionCallback,
     handleSlackCallback,
+    handleVercelCallback,
     handleXCallback,
-    handleZohoCallback
+    handleZohoCallback,
+    handleZoomCallback
 } from '../../controllers/v1/oauthController.js';
 import { approveQRSession, claimQRSession, generateQRSession, getQRDeviceInfo, streamQRStatus } from '../../controllers/v1/qrAuthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
@@ -1075,6 +1083,110 @@ router.get('/linkedin', getLinkedInAuthUrl);
  *         description: Redirect to frontend
  */
 router.get('/linkedin/callback', handleLinkedInCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/vercel:
+ *   get:
+ *     summary: Get Vercel OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Vercel OAuth URL
+ */
+router.get('/vercel', getVercelAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/vercel/callback:
+ *   get:
+ *     summary: Vercel OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/vercel/callback', handleVercelCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/figma:
+ *   get:
+ *     summary: Get Figma OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Figma OAuth URL
+ */
+router.get('/figma', getFigmaAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/figma/callback:
+ *   get:
+ *     summary: Figma OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/figma/callback', handleFigmaCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/zoom:
+ *   get:
+ *     summary: Get Zoom OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Zoom OAuth URL
+ */
+router.get('/zoom', getZoomAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/zoom/callback:
+ *   get:
+ *     summary: Zoom OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/zoom/callback', handleZoomCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/atlassian:
+ *   get:
+ *     summary: Get Atlassian OAuth URL
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Atlassian OAuth URL
+ */
+router.get('/atlassian', getAtlassianAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/atlassian/callback:
+ *   get:
+ *     summary: Atlassian OAuth callback
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend
+ */
+router.get('/atlassian/callback', handleAtlassianCallback);
 
 /**
  * @swagger

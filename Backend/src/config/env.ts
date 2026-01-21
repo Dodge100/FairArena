@@ -208,6 +208,22 @@ export const ENV = {
   LINKEDIN_CLIENT_ID: getEnv('LINKEDIN_CLIENT_ID', ''),
   LINKEDIN_CLIENT_SECRET: getEnv('LINKEDIN_CLIENT_SECRET', ''),
   LINKEDIN_CALLBACK_URL: getEnv('LINKEDIN_CALLBACK_URL'),
+  // Vercel OAuth
+  VERCEL_CLIENT_ID: getEnv('VERCEL_CLIENT_ID', ''),
+  VERCEL_CLIENT_SECRET: getEnv('VERCEL_CLIENT_SECRET', ''),
+  VERCEL_CALLBACK_URL: getEnv('VERCEL_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/vercel/callback'),
+  // Figma OAuth
+  FIGMA_CLIENT_ID: getEnv('FIGMA_CLIENT_ID', ''),
+  FIGMA_CLIENT_SECRET: getEnv('FIGMA_CLIENT_SECRET', ''),
+  FIGMA_CALLBACK_URL: getEnv('FIGMA_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/figma/callback'),
+  // Zoom OAuth
+  ZOOM_CLIENT_ID: getEnv('ZOOM_CLIENT_ID', ''),
+  ZOOM_CLIENT_SECRET: getEnv('ZOOM_CLIENT_SECRET', ''),
+  ZOOM_CALLBACK_URL: getEnv('ZOOM_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/zoom/callback'),
+  // Atlassian OAuth
+  ATLASSIAN_CLIENT_ID: getEnv('ATLASSIAN_CLIENT_ID', ''),
+  ATLASSIAN_CLIENT_SECRET: getEnv('ATLASSIAN_CLIENT_SECRET', ''),
+  ATLASSIAN_CALLBACK_URL: getEnv('ATLASSIAN_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/atlassian/callback'),
   ACCESS_TOKEN_EXPIRY: getEnv('ACCESS_TOKEN_EXPIRY', '15m'),
   COOKIE_DOMAIN: getEnv('COOKIE_DOMAIN', ''),
   REFRESH_TOKEN_EXPIRY_DAYS: parseInt(getEnv('REFRESH_TOKEN_EXPIRY_DAYS', '30')),
@@ -271,6 +287,9 @@ export const ENV = {
   OAUTH_ID_TOKEN_EXPIRY: parseInt(getEnv('OAUTH_ID_TOKEN_EXPIRY', '3600')), // 1 hour in seconds
   OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY', ''),
   OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY', ''),
+  // Device Authorization Flow (RFC 8628)
+  OAUTH_DEVICE_CODE_EXPIRY: parseInt(getEnv('OAUTH_DEVICE_CODE_EXPIRY', '1800')), // 30 minutes in seconds
+  OAUTH_DEVICE_POLL_INTERVAL: parseInt(getEnv('OAUTH_DEVICE_POLL_INTERVAL', '5')), // 5 seconds
   // Security Configuration
   CSRF_SECRET: getEnv('CSRF_SECRET'),
   SESSION_FINGERPRINT_SECRET: getEnv('SESSION_FINGERPRINT_SECRET', ''),

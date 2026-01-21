@@ -99,7 +99,7 @@ model OAuthApplication {
   redirectUris            String[]
   allowedScopes           String[]
   allowedAudiences        String[]
-  grantTypes              String[]                    @default(["authorization_code", "refresh_token"])
+  grantTypes              String[]                    @default(["authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code"])
   responseTypes           String[]                    @default(["code"])
   tokenEndpointAuthMethod String                      @default("client_secret_basic")
   isPublic                Boolean                     @default(false)
