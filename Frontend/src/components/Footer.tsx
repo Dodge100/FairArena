@@ -60,7 +60,7 @@ function Footer() {
               { label: 'About', path: 'about' },
               { label: 'Why Choose Us', path: 'why-choose-us' },
               { label: 'Pricing', path: '#pricing', hash: true },
-              { label: 'Status', path: 'https://fairarena.betteruptime.com', external: true },
+              { label: 'Status', path: 'https://status.fairarena.sakshamg.me', external: true },
             ].map((item) => (
               <li
                 key={item.path}

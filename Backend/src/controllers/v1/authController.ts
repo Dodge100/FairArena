@@ -3140,6 +3140,253 @@ export const logoutAllAccounts = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Exchange OAuth Access Token for Session
+ * POST /api/v1/auth/oauth/session
+ *
+ * This endpoint allows clients to exchange an OAuth access token (from device flow, etc.)
+ * for a session cookie. This is needed because OAuth flows return JWT tokens but the
+ * application uses HTTP-only session cookies for authentication.
+ */
+export const exchangeOAuthTokenForSession = async (req: Request, res: Response) => {
+  try {
+    const { access_token } = req.body;
+
+    if (!access_token) {
+      return res.status(400).json({
+        success: false,
+        message: 'access_token is required',
+      });
+    }
+
+    // Verify the OAuth access token
+    let tokenPayload: any;
+    try {
+      const jwt = await import('jsonwebtoken');
+
+      // Decode without verification first to check issuer
+      const decoded = jwt.default.decode(access_token) as any;
+
+      // Only accept tokens issued by our own OAuth provider
+      if (!decoded || decoded.iss !== ENV.OAUTH_ISSUER) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token issuer',
+        });
+      }
+
+      // Now verify the token signature
+      tokenPayload = jwt.default.verify(access_token, ENV.OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY || ENV.JWT_SECRET, {
+        issuer: ENV.OAUTH_ISSUER,
+        algorithms: ['RS256', 'HS256'],
+      });
+
+    } catch (jwtError) {
+      logger.warn('OAuth token verification failed', {
+        error: jwtError instanceof Error ? jwtError.message : 'Unknown error',
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired access token',
+      });
+    }
+
+    // Extract user ID from token (sub claim in OAuth tokens)
+    const userId = tokenPayload.sub;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token missing user identifier',
+      });
+    }
+
+    // Check if token has been revoked (check jti against database)
+    if (tokenPayload.jti) {
+      const { prisma } = await import('../../config/database.js');
+      const accessToken = await prisma.oAuthAccessToken.findUnique({
+        where: { jti: tokenPayload.jti },
+      });
+
+      if (!accessToken || accessToken.revokedAt) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token has been revoked',
+        });
+      }
+    }
+
+    // Get user details
+    const { prisma } = await import('../../config/database.js');
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        profileImageUrl: true,
+        emailVerified: true,
+        isDeleted: true,
+        isBanned: true,
+        banReason: true,
+      },
+    });
+
+    if (!user || user.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        message: `Your account has been suspended. Reason: ${user.banReason || 'Violation of terms'}`,
+        code: 'USER_BANNED',
+      });
+    }
+
+    // Get device info
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    const { deviceType, deviceName } = parseUserAgent(userAgent);
+
+    // Check if user already has a session (multi-account support)
+    const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
+    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, deviceFingerprint);
+
+    if (existingSession) {
+      // User already has a session, just switch to it
+      res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
+
+      logger.info('OAuth token exchanged - switched to existing session', {
+        userId: user.userId,
+        sessionId: existingSession.sessionId,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Session created successfully',
+        data: {
+          user: {
+            userId: user.userId,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl,
+            emailVerified: user.emailVerified,
+          },
+          accessToken: generateAccessToken(user.userId, existingSession.sessionId),
+        },
+      });
+    }
+
+    // Check account limit
+    const currentSessionCount = parseSessionCookies(req.cookies || {}).length;
+    if (currentSessionCount >= ENV.MAX_CONCURRENT_ACCOUNTS) {
+      return res.status(409).json({
+        success: false,
+        message: `Maximum ${ENV.MAX_CONCURRENT_ACCOUNTS} accounts allowed. Please logout from an account first.`,
+        code: 'MAX_ACCOUNTS_REACHED',
+      });
+    }
+
+    // Create new session
+    const refreshToken = generateRefreshToken();
+    const sessionId = await createSession(
+      user.userId,
+      refreshToken,
+      {
+        deviceName,
+        deviceType,
+        userAgent,
+        ipAddress,
+      },
+      { isBanned: user.isBanned, banReason: user.banReason },
+    );
+    const newAccessToken = generateAccessToken(user.userId, sessionId);
+
+    // Generate binding token for session security
+    const { token: bindingToken, hash: bindingHash } = generateBindingToken();
+    await storeSessionBinding(sessionId, bindingHash);
+
+    // Update last login
+    await prisma.user.update({
+      where: { userId: user.userId },
+      data: {
+        lastLoginAt: new Date(),
+        lastLoginIp: ipAddress,
+      },
+    });
+
+    // Set multi-session cookies
+    res.cookie(`session_${sessionId}`, bindingToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+    res.cookie('active_session', sessionId, SESSION_COOKIE_OPTIONS);
+
+    // Track device
+    const recentDeviceKey = `recent_device:${user.userId}:${deviceFingerprint}`;
+    await redis.setex(recentDeviceKey, 7 * 24 * 60 * 60, '1');
+
+    logger.info('OAuth token exchanged for session successfully', {
+      userId: user.userId,
+      sessionId,
+      deviceType,
+    });
+
+    // Log activity
+    await inngest.send({
+      name: 'log.create',
+      data: {
+        userId: user.userId,
+        action: 'oauth_session_created',
+        level: 'INFO',
+        metadata: {
+          deviceName,
+          deviceType,
+          ipAddress,
+          sessionId,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+
+    // Schedule token refresh
+    await inngest.send({
+      name: 'auth/session.created',
+      data: {
+        sessionId,
+        userId: user.userId,
+        accessToken: newAccessToken,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Session created successfully',
+      data: {
+        user: {
+          userId: user.userId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+          emailVerified: user.emailVerified,
+        },
+        accessToken: newAccessToken,
+      },
+    });
+  } catch (error) {
+    logger.error('OAuth session exchange error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create session',
+    });
+  }
+};
+
 // Extend Express Request type
 declare global {
   namespace Express {

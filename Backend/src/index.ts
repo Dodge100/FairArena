@@ -1,3 +1,5 @@
+import AgentAPI from 'apminsight';
+AgentAPI.config();
 import * as Sentry from '@sentry/node';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';

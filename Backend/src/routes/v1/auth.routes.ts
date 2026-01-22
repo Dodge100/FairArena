@@ -1,29 +1,30 @@
-import { Router } from 'express';
+import { Router, text } from 'express';
 import {
-    changePassword,
-    checkMfaSession,
-    forgotPassword,
-    getCurrentUser,
-    getLoggedInAccounts,
-    getMfaPreferences,
-    getRecentActivity,
-    invalidateMfaSession,
-    listSessions,
-    login,
-    logout,
-    logoutAll,
-    logoutAllAccounts,
-    register,
-    resendVerificationEmail,
-    resetPassword,
-    revokeSession,
-    sendEmailOtp,
-    sendNotificationOtp,
-    switchAccount,
-    updateMfaPreferences,
-    verifyEmail,
-    verifyLoginMFA,
-    verifyMfaOtp
+  changePassword,
+  checkMfaSession,
+  exchangeOAuthTokenForSession,
+  forgotPassword,
+  getCurrentUser,
+  getLoggedInAccounts,
+  getMfaPreferences,
+  getRecentActivity,
+  invalidateMfaSession,
+  listSessions,
+  login,
+  logout,
+  logoutAll,
+  logoutAllAccounts,
+  register,
+  resendVerificationEmail,
+  resetPassword,
+  revokeSession,
+  sendEmailOtp,
+  sendNotificationOtp,
+  switchAccount,
+  updateMfaPreferences,
+  verifyEmail,
+  verifyLoginMFA,
+  verifyMfaOtp,
 } from '../../controllers/v1/authController.js';
 import { protectRoute, protectStreamRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
@@ -33,33 +34,33 @@ const router = Router();
 
 // Rate limiters for different endpoints
 const registerLimiter = createAuthRateLimiter({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5, // 5 registrations per hour per IP
-    message: 'Too many registration attempts. Please try again later.',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 registrations per hour per IP
+  message: 'Too many registration attempts. Please try again later.',
 });
 
 const loginLimiter = createAuthRateLimiter({
-    windowMs: 60 * 1000, // 1 minute
-    max: 10, // 10 login attempts per minute per IP
-    message: 'Too many login attempts. Please try again later.',
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 login attempts per minute per IP
+  message: 'Too many login attempts. Please try again later.',
 });
 
 const passwordResetLimiter = createAuthRateLimiter({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 password reset requests per hour per email
-    message: 'Too many password reset attempts. Please try again later.',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 password reset requests per hour per email
+  message: 'Too many password reset attempts. Please try again later.',
 });
 
 const refreshLimiter = createAuthRateLimiter({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 60, // 60 refresh requests per hour
-    message: 'Too many refresh attempts.',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 60, // 60 refresh requests per hour
+  message: 'Too many refresh attempts.',
 });
 
 const resendVerificationLimiter = createAuthRateLimiter({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 resend attempts per hour
-    message: 'Too many verification email requests. Please try again later.',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 resend attempts per hour
+  message: 'Too many verification email requests. Please try again later.',
 });
 
 /**
@@ -228,7 +229,6 @@ router.post('/verify-mfa', loginLimiter, verifyRecaptcha, verifyLoginMFA);
  */
 router.get('/check-mfa-session', checkMfaSession);
 
-
 /**
  * @swagger
  * /api/v1/auth/logout:
@@ -370,7 +370,12 @@ router.post('/verify-email', verifyEmail);
  *       200:
  *         description: Verification email sent (if account exists and unverified)
  */
-router.post('/resend-verification', resendVerificationLimiter, verifyRecaptcha, resendVerificationEmail);
+router.post(
+  '/resend-verification',
+  resendVerificationLimiter,
+  verifyRecaptcha,
+  resendVerificationEmail,
+);
 
 /**
  * @swagger
@@ -705,45 +710,80 @@ router.post('/accounts/switch', switchAccount);
  */
 router.post('/accounts/logout-all', logoutAllAccounts);
 
+/**
+ * @swagger
+ * /api/v1/auth/oauth/session:
+ *   post:
+ *     summary: Exchange OAuth access token for session cookies
+ *     tags: [Authentication, OAuth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [access_token]
+ *             properties:
+ *               access_token:
+ *                 type: string
+ *                 description: OAuth access token from device flow or other OAuth grants
+ *     responses:
+ *       200:
+ *         description: Session created successfully
+ *       401:
+ *         description: Invalid or expired token
+ *       403:
+ *         description: User banned
+ */
+router.post('/oauth/session', loginLimiter, exchangeOAuthTokenForSession);
+
 // OAuth Routes
 import {
-    getAtlassianAuthUrl,
-    getDiscordAuthUrl,
-    getDropboxAuthUrl,
-    getFigmaAuthUrl,
-    getGithubAuthUrl,
-    getGitLabAuthUrl,
-    getGoogleAuthUrl,
-    getHuggingFaceAuthUrl,
-    getLinearAuthUrl,
-    getLinkedInAuthUrl,
-    getMicrosoftAuthUrl,
-    getNotionAuthUrl,
-    getSlackAuthUrl,
-    getVercelAuthUrl,
-    getXAuthUrl,
-    getZohoAuthUrl,
-    getZoomAuthUrl,
-    handleAtlassianCallback,
-    handleDiscordCallback,
-    handleDropboxCallback,
-    handleFigmaCallback,
-    handleGithubCallback,
-    handleGitLabCallback,
-    handleGoogleCallback,
-    handleGoogleToken,
-    handleHuggingFaceCallback,
-    handleLinearCallback,
-    handleLinkedInCallback,
-    handleMicrosoftCallback,
-    handleNotionCallback,
-    handleSlackCallback,
-    handleVercelCallback,
-    handleXCallback,
-    handleZohoCallback,
-    handleZoomCallback
+  getAtlassianAuthUrl,
+  getDiscordAuthUrl,
+  getDropboxAuthUrl,
+  getFigmaAuthUrl,
+  getGithubAuthUrl,
+  getGitLabAuthUrl,
+  getGoogleAuthUrl,
+  getHuggingFaceAuthUrl,
+  getLinearAuthUrl,
+  getLinkedInAuthUrl,
+  getMicrosoftAuthUrl,
+  getNotionAuthUrl,
+  getSlackAuthUrl,
+  getVercelAuthUrl,
+  getXAuthUrl,
+  getZohoAuthUrl,
+  getZoomAuthUrl,
+  handleAtlassianCallback,
+  handleDiscordCallback,
+  handleDropboxCallback,
+  handleFigmaCallback,
+  handleGithubCallback,
+  handleGitLabCallback,
+  handleGoogleCallback,
+  handleGoogleRiscEvent,
+  handleGoogleToken,
+  handleHuggingFaceCallback,
+  handleLinearCallback,
+  handleLinkedInCallback,
+  handleMicrosoftCallback,
+  handleNotionCallback,
+  handleSlackCallback,
+  handleVercelCallback,
+  handleXCallback,
+  handleZohoCallback,
+  handleZoomCallback,
 } from '../../controllers/v1/oauthController.js';
-import { approveQRSession, claimQRSession, generateQRSession, getQRDeviceInfo, streamQRStatus } from '../../controllers/v1/qrAuthController.js';
+import {
+  approveQRSession,
+  claimQRSession,
+  generateQRSession,
+  getQRDeviceInfo,
+  streamQRStatus,
+} from '../../controllers/v1/qrAuthController.js';
 import { requireSettingsVerification } from '../../middleware/verification.middleware.js';
 
 /**
@@ -758,6 +798,26 @@ import { requireSettingsVerification } from '../../middleware/verification.middl
  *         description: GitHub OAuth URL
  */
 router.get('/github', getGithubAuthUrl);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/risc:
+ *   post:
+ *     summary: Handle Google RISC events (Cross-Account Protection)
+ *     tags: [Authentication, Google]
+ *     security: []
+ *     requestBody:
+ *       content:
+ *         application/secevent+jwt:
+ *           schema:
+ *             type: string
+ *     responses:
+ *       202:
+ *         description: Event accepted
+ *       400:
+ *         description: Invalid event
+ */
+router.post('/google/risc', text({ type: 'application/secevent+jwt' }), handleGoogleRiscEvent);
 
 /**
  * @swagger

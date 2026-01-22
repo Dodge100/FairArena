@@ -1,3 +1,4 @@
+import { DeviceAuthModal } from '@/components/auth/DeviceAuthModal';
 import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
 import { QRAuthDialog } from '@/components/auth/QRAuthDialog';
@@ -48,7 +49,7 @@ export default function Signin() {
 
   // Form state
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('')
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -72,10 +73,16 @@ export default function Signin() {
     notificationMfaEnabled: boolean;
     webauthnMfaAvailable?: boolean;
     superSecureAccountEnabled?: boolean;
-  }>({ emailMfaEnabled: false, notificationMfaEnabled: false, webauthnMfaAvailable: false, superSecureAccountEnabled: false });
+  }>({
+    emailMfaEnabled: false,
+    notificationMfaEnabled: false,
+    webauthnMfaAvailable: false,
+    superSecureAccountEnabled: false,
+  });
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showQRDialog, setShowQRDialog] = useState(false);
+  const [showDeviceAuth, setShowDeviceAuth] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   const passkeySupported = usePasskeySupport();
@@ -145,7 +152,11 @@ export default function Signin() {
     // If flow is in storage but not in URL, restore it to URL
     else if (storedFlow === 'add_account' && !urlFlow) {
       params.set('flow', 'add_account');
-      window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}?${params.toString()}`,
+      );
     }
   }, []);
 
@@ -162,7 +173,11 @@ export default function Signin() {
     // If oauth_request is in storage but not in URL, restore it to URL
     else if (storedOAuthRequest && !urlOAuthRequest) {
       params.set('oauth_request', storedOAuthRequest);
-      window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}?${params.toString()}`,
+      );
     }
   }, []);
 
@@ -232,7 +247,8 @@ export default function Signin() {
                 emailMfaEnabled: result.data.mfaPreferences.emailMfaEnabled || false,
                 notificationMfaEnabled: result.data.mfaPreferences.notificationMfaEnabled || false,
                 webauthnMfaAvailable: result.data.mfaPreferences.webauthnMfaAvailable || false,
-                superSecureAccountEnabled: result.data.mfaPreferences.superSecureAccountEnabled || false,
+                superSecureAccountEnabled:
+                  result.data.mfaPreferences.superSecureAccountEnabled || false,
               });
 
               if (isNewDevice) {
@@ -240,7 +256,9 @@ export default function Signin() {
                   setMfaMethod(result.data.activeOtpMethod);
                   setOtpSent(true);
                 } else {
-                  setMfaMethod(result.data.mfaPreferences.emailMfaEnabled ? 'email' : 'notification');
+                  setMfaMethod(
+                    result.data.mfaPreferences.emailMfaEnabled ? 'email' : 'notification',
+                  );
                 }
               }
             }
@@ -356,7 +374,8 @@ export default function Signin() {
             });
 
             // Check if only WebAuthn is available (no email/notification fallback)
-            const onlyWebAuthn = result.mfaPreferences.webauthnMfaAvailable &&
+            const onlyWebAuthn =
+              result.mfaPreferences.webauthnMfaAvailable &&
               !result.mfaPreferences.emailMfaEnabled &&
               !result.mfaPreferences.notificationMfaEnabled;
 
@@ -417,7 +436,7 @@ export default function Signin() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Recaptcha-Token': token
+            'X-Recaptcha-Token': token,
           },
           body: JSON.stringify(body),
         });
@@ -439,12 +458,15 @@ export default function Signin() {
       setError(message);
 
       if (authStep === 'mfa') {
-        if (message.toLowerCase().includes('expired') || message.toLowerCase().includes('session')) {
+        if (
+          message.toLowerCase().includes('expired') ||
+          message.toLowerCase().includes('session')
+        ) {
           handleResetToCredentials();
           return;
         }
 
-        setMfaSession(prev => ({
+        setMfaSession((prev) => ({
           ...prev,
           attemptsRemaining: Math.max(0, prev.attemptsRemaining - 1),
         }));
@@ -469,43 +491,48 @@ export default function Signin() {
   };
 
   // Send OTP for alternative MFA methods
-  const handleSendOtp = useCallback(async (method: 'email' | 'notification') => {
-    setIsLoading(true);
-    setError('');
+  const handleSendOtp = useCallback(
+    async (method: 'email' | 'notification') => {
+      setIsLoading(true);
+      setError('');
 
-    try {
-      const endpoint = method === 'email'
-        ? `${apiUrl}/api/v1/auth/mfa/send-email-otp`
-        : `${apiUrl}/api/v1/auth/mfa/send-notification-otp`;
+      try {
+        const endpoint =
+          method === 'email'
+            ? `${apiUrl}/api/v1/auth/mfa/send-email-otp`
+            : `${apiUrl}/api/v1/auth/mfa/send-notification-otp`;
 
-      const response = await publicApiFetch(endpoint, {
-        method: 'POST',
-      });
+        const response = await publicApiFetch(endpoint, {
+          method: 'POST',
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to send verification code');
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Failed to send verification code');
+        }
+
+        setMfaMethod(method);
+        setOtpSent(true);
+        setMfaCode('');
+        toast.success(result.message || `Verification code sent to your ${method}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to send code';
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
       }
-
-      setMfaMethod(method);
-      setOtpSent(true);
-      setMfaCode('');
-      toast.success(result.message || `Verification code sent to your ${method}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send code';
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiUrl]);
+    },
+    [apiUrl],
+  );
 
   // Auto-send OTP for new device flow (only if email/notification is available)
   // Also auto-trigger WebAuthn if that's the only option
   useEffect(() => {
     if (authStep === 'new_device' && !isLoading) {
       // Check if only WebAuthn is available
-      const onlyWebAuthn = mfaPreferences.webauthnMfaAvailable &&
+      const onlyWebAuthn =
+        mfaPreferences.webauthnMfaAvailable &&
         !mfaPreferences.emailMfaEnabled &&
         !mfaPreferences.notificationMfaEnabled;
 
@@ -553,11 +580,6 @@ export default function Signin() {
     setError('');
     setIsLoading(false);
   };
-
-
-
-
-
 
   // Passkey login
   const handlePasskeyLogin = async () => {
@@ -614,10 +636,13 @@ export default function Signin() {
       setIsLoading(true);
 
       // Step 1: Get authentication options
-      const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/mfa/webauthn/authenticate/options`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const optionsRes = await publicApiFetch(
+        `${apiUrl}/api/v1/mfa/webauthn/authenticate/options`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
       const optionsData = await optionsRes.json();
 
       if (!optionsData.success) {
@@ -649,12 +674,15 @@ export default function Signin() {
       clearOAuthRequest();
       const redirectPath = getRedirectPath();
       window.location.href = redirectPath;
-
     } catch (error) {
       console.error('WebAuthn MFA error:', error);
       const message = error instanceof Error ? error.message : 'Authentication failed';
 
-      if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
+      if (
+        message.includes('cancelled') ||
+        message.includes('canceled') ||
+        message.includes('AbortError')
+      ) {
         // User cancelled, just stop loading
       } else {
         setError(message);
@@ -680,8 +708,18 @@ export default function Signin() {
 
           <div className="flex justify-center mb-8">
             <div className={`p-6 rounded-full ${isDark ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
-              <svg className={`w-12 h-12 ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              <svg
+                className={`w-12 h-12 ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900'}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                />
               </svg>
             </div>
           </div>
@@ -695,12 +733,25 @@ export default function Signin() {
             {passkeyLoading || isLoading ? (
               <>
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 Verifying...
               </>
-            ) : 'Use Security Key'}
+            ) : (
+              'Use Security Key'
+            )}
           </button>
         </div>
       );
@@ -720,17 +771,21 @@ export default function Signin() {
           2-Step Verification
         </h1>
 
-        <p className={`text-center max-w-md mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+        <p
+          className={`text-center max-w-md mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+        >
           {isBackupCode
             ? 'Enter one of your 8-character backup codes'
             : isOtpMethod
               ? `Enter the 6-digit code sent to your ${mfaMethod}`
-              : "Enter the 6-digit code from your authenticator app"}
+              : 'Enter the 6-digit code from your authenticator app'}
         </p>
 
         {/* Session timer */}
         {timeRemaining > 0 && (
-          <p className={`text-xs mb-4 ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+          <p
+            className={`text-xs mb-4 ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          >
             Session expires in {formatTimeRemaining(timeRemaining)}
           </p>
         )}
@@ -741,7 +796,11 @@ export default function Signin() {
             {error && (
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
                 <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span>{error}</span>
               </div>
@@ -763,7 +822,12 @@ export default function Signin() {
                   const val = e.target.value;
                   if (isBackupCode) {
                     // Allow alphanumeric, strip dashes, max 10 chars
-                    setMfaCode(val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10));
+                    setMfaCode(
+                      val
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9]/g, '')
+                        .slice(0, 10),
+                    );
                   } else {
                     setMfaCode(val.replace(/\D/g, '').slice(0, 6));
                   }
@@ -778,21 +842,27 @@ export default function Signin() {
                     w-full px-4 py-4 rounded-xl border-2 transition-all font-mono text-center text-2xl tracking-[0.4em]
                     ${isDark
                     ? 'bg-neutral-800/50 text-neutral-100 border-neutral-700 focus:border-[#DDEF00] focus:bg-neutral-800'
-                    : 'bg-neutral-50 text-neutral-900 border-neutral-200 focus:border-[#DDEF00] focus:bg-white'}
+                    : 'bg-neutral-50 text-neutral-900 border-neutral-200 focus:border-[#DDEF00] focus:bg-white'
+                  }
                     focus:outline-none focus:ring-4 focus:ring-[#DDEF00]/20
                     ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}
                   `}
               />
               {mfaSession.attemptsRemaining < 5 && (
-                <p className={`text-xs mt-2 ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                  {mfaSession.attemptsRemaining} attempt{mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
+                <p
+                  className={`text-xs mt-2 ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+                >
+                  {mfaSession.attemptsRemaining} attempt
+                  {mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
                 </p>
               )}
             </div>
 
             {/* Help section */}
             {showMfaHelp && !isBackupCode && !isOtpMethod && (
-              <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}>
+              <div
+                className={`p-3 rounded-lg text-sm ${isDark ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}
+              >
                 <p className="font-medium mb-1">Having trouble?</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Make sure your device's time is synced correctly</li>
@@ -811,12 +881,25 @@ export default function Signin() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Verifying...
                 </span>
-              ) : 'Verify'}
+              ) : (
+                'Verify'
+              )}
             </button>
 
             {/* Alternative methods section */}
@@ -832,7 +915,9 @@ export default function Signin() {
               ) : (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                    <span
+                      className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+                    >
                       Choose a method
                     </span>
                     <button
@@ -844,48 +929,76 @@ export default function Signin() {
                     </button>
                   </div>
 
-                  {mfaMethod !== 'authenticator' && authStep !== 'new_device' && !mfaPreferences.superSecureAccountEnabled && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMfaMethod('authenticator');
-                        setMfaCode('');
-                        setError('');
-                        setOtpSent(false);
-                        setShowAlternatives(false);
-                      }}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
-                    >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </div>
-                      Authenticator App
-                    </button>
-                  )}
+                  {mfaMethod !== 'authenticator' &&
+                    authStep !== 'new_device' &&
+                    !mfaPreferences.superSecureAccountEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMfaMethod('authenticator');
+                          setMfaCode('');
+                          setError('');
+                          setOtpSent(false);
+                          setShowAlternatives(false);
+                        }}
+                        className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                      >
+                        <div
+                          className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                            />
+                          </svg>
+                        </div>
+                        Authenticator App
+                      </button>
+                    )}
 
-                  {mfaMethod !== 'backup' && authStep !== 'new_device' && !mfaPreferences.superSecureAccountEnabled && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMfaMethod('backup');
-                        setMfaCode('');
-                        setError('');
-                        setShowMfaHelp(false);
-                        setOtpSent(false);
-                        setShowAlternatives(false);
-                      }}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
-                    >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                      </div>
-                      Backup Code
-                    </button>
-                  )}
+                  {mfaMethod !== 'backup' &&
+                    authStep !== 'new_device' &&
+                    !mfaPreferences.superSecureAccountEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMfaMethod('backup');
+                          setMfaCode('');
+                          setError('');
+                          setShowMfaHelp(false);
+                          setOtpSent(false);
+                          setShowAlternatives(false);
+                        }}
+                        className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                      >
+                        <div
+                          className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                            />
+                          </svg>
+                        </div>
+                        Backup Code
+                      </button>
+                    )}
 
                   {/* Security Key Option */}
                   {mfaPreferences.webauthnMfaAvailable && (
@@ -898,9 +1011,21 @@ export default function Signin() {
                       disabled={isLoading}
                       className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
                     >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      <div
+                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                          />
                         </svg>
                       </div>
                       Use Security Key
@@ -917,9 +1042,21 @@ export default function Signin() {
                       disabled={isLoading}
                       className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
                     >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <div
+                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
                         </svg>
                       </div>
                       Email Verification
@@ -936,16 +1073,26 @@ export default function Signin() {
                       disabled={isLoading}
                       className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
                     >
-                      <div className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      <div
+                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                          />
                         </svg>
                       </div>
                       In-App Notification
                     </button>
                   )}
-
-
                 </div>
               )}
 
@@ -975,8 +1122,18 @@ export default function Signin() {
       />
       <div className="w-full max-w-sm px-4 text-center">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            className="w-8 h-8 text-red-600 dark:text-red-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
         </div>
 
@@ -985,15 +1142,19 @@ export default function Signin() {
         </h1>
 
         <p className={`mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-          This account requires a security key for verification, but your current device or browser does not support WebAuthn.
+          This account requires a security key for verification, but your current device or browser
+          does not support WebAuthn.
         </p>
 
-        <div className={`p-4 rounded-xl text-left text-sm mb-8 ${isDark ? 'bg-neutral-800/50 border border-neutral-700' : 'bg-neutral-100 border border-neutral-200'}`}>
+        <div
+          className={`p-4 rounded-xl text-left text-sm mb-8 ${isDark ? 'bg-neutral-800/50 border border-neutral-700' : 'bg-neutral-100 border border-neutral-200'}`}
+        >
           <p className={`font-medium mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>
             Recommended Action:
           </p>
           <p className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
-            Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a different device.
+            Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a
+            different device.
           </p>
         </div>
 
@@ -1024,10 +1185,7 @@ export default function Signin() {
 
       <div className="w-full max-w-sm px-4">
         {/* Primary OAuth - Google */}
-        <OAuthSocials
-          getRedirectPath={getRedirectPath}
-          lastUsedMethod={lastUsedMethod}
-        />
+        <OAuthSocials getRedirectPath={getRedirectPath} lastUsedMethod={lastUsedMethod} />
         {/* Passkey - Prominent full-width button */}
 
         {/* Passkey - Prominent full-width button */}
@@ -1042,14 +1200,33 @@ export default function Signin() {
             {passkeyLoading ? (
               <>
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 Authenticating...
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
                   <path d="M10 11V8a4 4 0 118 0v3" />
                   <path d="M4 21a8 8 0 0116 0" />
@@ -1068,19 +1245,54 @@ export default function Signin() {
           className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2"
+            />
           </svg>
           Sign in with QR Code
         </button>
 
+        {/* Device Authorization */}
+        <button
+          type="button"
+          onClick={() => setShowDeviceAuth(true)}
+          disabled={isLoading}
+          className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"
+            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 11V8a4 4 0 118 0v3" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 21a8 8 0 0116 0" />
+          </svg>
+          Sign in with Device Code
+        </button>
 
         {/* Divider */}
         <div className="relative my-4">
-          <div className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}>
-            <div className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`} />
+          <div
+            className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}
+          >
+            <div
+              className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`}
+            />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}>
+            <span
+              className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}
+            >
               or sign in with email
             </span>
           </div>
@@ -1091,7 +1303,11 @@ export default function Signin() {
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
               <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span>{error}</span>
             </div>
@@ -1163,34 +1379,55 @@ export default function Signin() {
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 Signing in...
               </span>
-            ) : 'Sign In'}
+            ) : (
+              'Sign In'
+            )}
           </button>
 
           {/* Sign up link */}
           <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-            {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Don't have an account? " : "Want to join? "}
+            {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true'
+              ? "Don't have an account? "
+              : 'Want to join? '}
             <Link
-              to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "/signup" : "/waitlist"}
+              to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? '/signup' : '/waitlist'}
               state={location.state}
               className={`font-medium ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-900 hover:underline'}`}
             >
-              {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? "Sign up" : "Join Waitlist"}
+              {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? 'Sign up' : 'Join Waitlist'}
             </Link>
           </p>
-          <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+          <p
+            className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          >
             By signing in, you agree to our{' '}
-            <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
+            <Link
+              to="/terms-and-conditions"
+              className="underline hover:text-[#DDEF00] transition-colors"
+            >
               Terms of Service
             </Link>{' '}
             and{' '}
             <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
               Privacy Policy
-            </Link>.
+            </Link>
+            .
           </p>
         </form>
       </div>
@@ -1200,23 +1437,37 @@ export default function Signin() {
   return (
     <>
       <OAuthBanner />
-      <div className={`fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}>
+      <div
+        className={`fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}
+      >
         <div className="w-full h-screen flex flex-col md:flex-row rounded-none overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.2)]">
           {/* Left side - Auth form */}
-          <div className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
+          <div
+            className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}
+          >
             {/* Logo was moved inside forms to better handle MFA view vs Credentials view spacing */}
             {/* Render appropriate form based on auth step */}
             {isCheckingSession ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
               </div>
-            ) : (authStep === 'webauthn_unsupported' ? renderWebAuthnUnsupported() : authStep === 'mfa' || authStep === 'new_device' ? renderMfaForm() : renderCredentialsForm())}
+            ) : authStep === 'webauthn_unsupported' ? (
+              renderWebAuthnUnsupported()
+            ) : authStep === 'mfa' || authStep === 'new_device' ? (
+              renderMfaForm()
+            ) : (
+              renderCredentialsForm()
+            )}
           </div>
 
           {/* Right side - Illustration */}
-          <div className={`hidden md:flex w-1/2 items-center justify-center p-8 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}>
+          <div
+            className={`hidden md:flex w-1/2 items-center justify-center p-8 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}
+          >
             <div className="relative w-full max-w-md">
-              <h2 className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+              <h2
+                className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}
+              >
                 Perfectly Judge Hackathon Teams and View Leaderboards
               </h2>
               <p className={`mb-6 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
@@ -1233,7 +1484,9 @@ export default function Signin() {
 
         {/* Captcha Modal */}
         <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
-          <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogContent
+            className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}
+          >
             <DialogHeader>
               <DialogTitle>Security Verification</DialogTitle>
             </DialogHeader>
@@ -1247,12 +1500,9 @@ export default function Signin() {
           </DialogContent>
         </Dialog>
 
-        <QRAuthDialog
-          open={showQRDialog}
-          onOpenChange={setShowQRDialog}
-        />
+        <QRAuthDialog open={showQRDialog} onOpenChange={setShowQRDialog} />
+        <DeviceAuthModal open={showDeviceAuth} onOpenChange={setShowDeviceAuth} />
       </div>
     </>
   );
 }
-
