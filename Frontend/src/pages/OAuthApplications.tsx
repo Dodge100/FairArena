@@ -361,6 +361,9 @@ function CreateAppModal({
         name: '',
         description: '',
         websiteUrl: '',
+        logoUrl: '',
+        privacyPolicyUrl: '',
+        termsOfServiceUrl: '',
         redirectUris: [''],
         isPublic: false,
     });
@@ -399,6 +402,9 @@ function CreateAppModal({
                 name: formData.name,
                 description: formData.description || undefined,
                 websiteUrl: formData.websiteUrl || undefined,
+                logoUrl: formData.logoUrl || undefined,
+                privacyPolicyUrl: formData.privacyPolicyUrl || undefined,
+                termsOfServiceUrl: formData.termsOfServiceUrl || undefined,
                 redirectUris,
                 isPublic: formData.isPublic,
             });
@@ -454,6 +460,40 @@ function CreateAppModal({
                                 onChange={(e) => setFormData((d) => ({ ...d, websiteUrl: e.target.value }))}
                                 className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
                                 placeholder="https://example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Logo URL</label>
+                            <input
+                                type="url"
+                                value={formData.logoUrl}
+                                onChange={(e) => setFormData((d) => ({ ...d, logoUrl: e.target.value }))}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/logo.png"
+                            />
+                            <p className="text-xs text-neutral-500 mt-1">Displayed when users authorize your app</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Privacy Policy URL</label>
+                            <input
+                                type="url"
+                                value={formData.privacyPolicyUrl}
+                                onChange={(e) => setFormData((d) => ({ ...d, privacyPolicyUrl: e.target.value }))}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/privacy"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Terms of Service URL</label>
+                            <input
+                                type="url"
+                                value={formData.termsOfServiceUrl}
+                                onChange={(e) => setFormData((d) => ({ ...d, termsOfServiceUrl: e.target.value }))}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/terms"
                             />
                         </div>
 
@@ -555,6 +595,9 @@ function EditAppModal({
         name: app.name,
         description: app.description || '',
         websiteUrl: app.websiteUrl || '',
+        logoUrl: app.logoUrl || '',
+        privacyPolicyUrl: app.privacyPolicyUrl || '',
+        termsOfServiceUrl: app.termsOfServiceUrl || '',
         redirectUris: app.redirectUris,
         isActive: app.isActive,
     });
@@ -574,6 +617,9 @@ function EditAppModal({
                 name: formData.name,
                 description: formData.description || undefined,
                 websiteUrl: formData.websiteUrl || undefined,
+                logoUrl: formData.logoUrl || undefined,
+                privacyPolicyUrl: formData.privacyPolicyUrl || undefined,
+                termsOfServiceUrl: formData.termsOfServiceUrl || undefined,
                 redirectUris,
                 isActive: formData.isActive,
             });
@@ -625,6 +671,39 @@ function EditAppModal({
                                 value={formData.websiteUrl}
                                 onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
                                 className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Logo URL</label>
+                            <input
+                                type="url"
+                                value={formData.logoUrl}
+                                onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/logo.png"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Privacy Policy URL</label>
+                            <input
+                                type="url"
+                                value={formData.privacyPolicyUrl}
+                                onChange={(e) => setFormData({ ...formData, privacyPolicyUrl: e.target.value })}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/privacy"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-neutral-900 dark:text-white mb-2">Terms of Service URL</label>
+                            <input
+                                type="url"
+                                value={formData.termsOfServiceUrl}
+                                onChange={(e) => setFormData({ ...formData, termsOfServiceUrl: e.target.value })}
+                                className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+                                placeholder="https://example.com/terms"
                             />
                         </div>
 

@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 export default function OAuthConsent() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { isSignedIn, user } = useAuthState();
+    const { isSignedIn } = useAuthState();
 
     const requestId = searchParams.get('request_id');
 
@@ -165,10 +165,10 @@ export default function OAuthConsent() {
                 {/* Header Section */}
                 <div className="p-8 pb-6 flex flex-col items-center text-center border-b border-neutral-100 dark:border-neutral-900">
                     <div className="mb-6 relative">
-                        {application.logoUrl ? (
+                        {application?.logoUrl ? (
                             <img
                                 src={application.logoUrl}
-                                alt={application.name}
+                                alt={application.name || 'Application'}
                                 className="w-20 h-20 rounded-2xl object-cover border border-neutral-200 dark:border-neutral-800 shadow-sm"
                             />
                         ) : (
@@ -176,7 +176,7 @@ export default function OAuthConsent() {
                                 <Shield className="w-8 h-8 text-neutral-400" />
                             </div>
                         )}
-                        {application.isVerified && (
+                        {application?.isVerified && (
                             <div className="absolute -bottom-2 -right-2 bg-white dark:bg-black p-1 rounded-full border border-neutral-100 dark:border-neutral-800 shadow-sm">
                                 <CheckCircle2 className="w-5 h-5 text-neutral-900 dark:text-white fill-neutral-100 dark:fill-neutral-800" />
                             </div>
@@ -184,8 +184,14 @@ export default function OAuthConsent() {
                     </div>
 
                     <h1 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                        {application.name} wants access
+                        {application?.name || 'FairArena'} wants access
                     </h1>
+
+                    {application?.description && (
+                        <p className="text-sm text-neutral-500 mb-4">
+                            {application.description}
+                        </p>
+                    )}
 
                     {/* Account Switcher */}
                     <div className="w-full mt-4">

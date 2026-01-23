@@ -22,7 +22,7 @@ function CookiePolicy() {
             text-[#ddef00] [-webkit-text-stroke:1px_black]
           `}
                 >
-                    FairArena — Cookie Policy
+                    Cookie Policy
                 </h1>
 
                 {/* Last Updated */}
@@ -32,239 +32,106 @@ function CookiePolicy() {
             ${isDark ? 'text-neutral-400' : 'text-neutral-600'}
           `}
                 >
-                    Last Updated: November 2025
+                    Last Updated: January 23, 2026
                 </p>
 
                 <p className="mb-10">
-                    This Cookie Policy explains how FairArena ("we", "our", "us") uses cookies and similar
-                    technologies on our AI-powered hackathon management platform. By using our website, you
-                    consent to the use of cookies in accordance with this policy.
+                    This Cookie Policy explains what Cookies are and how We use them. You should read this policy so You can understand what type of cookies We use, or the information We collect using Cookies and how that information is used. This Cookie Policy has been created with the help of the Cookies Policy Generator.
+                    <br /><br />
+                    Cookies do not typically contain any information that personally identifies a user, but personal information that we store about You may be linked to the information stored in and obtained from Cookies. For further information on how We use, store and keep your personal data secure, see our Privacy Policy.
                 </p>
 
                 {/* --------------------------------------------- */}
                 {/* SECTION 1 */}
                 {/* --------------------------------------------- */}
-                <LegalSection title="1. What Are Cookies" isDark={isDark}>
+                <LegalSection title="1. Interpretation and Definitions" isDark={isDark}>
+                    <h3 className="text-xl font-semibold mb-2">1.1 Interpretation</h3>
                     <p className="mb-4">
-                        Cookies are small text files that are stored on your device when you visit our website.
-                        They help us provide you with a better browsing experience by remembering your preferences
-                        and understanding how you use our platform.
+                        The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.
                     </p>
-                    <p className="mb-4">
-                        We also use similar technologies such as web beacons, pixels, and local storage to collect
-                        information about your interaction with our platform.
-                    </p>
+                    <h3 className="text-xl font-semibold mb-2">1.2 Definitions</h3>
+                    <LegalList
+                        isDark={isDark}
+                        items={[
+                            '“Company” (referred to as either "the Company", "We", "Us" or "Our" in this Cookies Policy) refers to FairArena.',
+                            '“Cookies” means small files that are placed on Your computer, mobile device or any other device by a website, containing details of Your browsing history on that website among its many uses.',
+                            '“Website” refers to FairArena, accessible from fair.sakshamg.me',
+                            '“You” means the individual accessing or using the Website, or a company, or any legal entity on behalf of which such individual is accessing or using the Website, as applicable.',
+                        ]}
+                    />
                 </LegalSection>
 
                 {/* --------------------------------------------- */}
                 {/* SECTION 2 */}
                 {/* --------------------------------------------- */}
-                <LegalSection title="2. Types of Cookies We Use" isDark={isDark}>
-                    <h3 className="text-xl font-semibold mb-2">2.1 Necessary Cookies</h3>
+                <LegalSection title="2. The Use of the Cookies" isDark={isDark}>
+                    <h3 className="text-xl font-semibold mb-2">2.1 Type of Cookies We Use</h3>
                     <p className="mb-2">
-                        These cookies are essential for the website to function properly. They enable core
-                        functionality such as security, network management, and accessibility. You cannot opt
-                        out of these cookies without severely affecting the functionality of our platform.
+                        Cookies can be "Persistent" or "Session" Cookies. Persistent Cookies remain on your personal computer or mobile device when You go offline, while Session Cookies are deleted as soon as You close your web browser.
                     </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Authentication and session management',
-                            'Security and fraud prevention',
-                            'Load balancing and performance optimization',
-                            'Basic website functionality and navigation',
-                        ]}
-                    />
+                    <p className="mb-4">
+                        We use both session and persistent Cookies for the purposes set out below:
+                    </p>
 
-                    <h3 className="text-xl font-semibold mb-2 mt-6">2.2 Analytics Cookies</h3>
-                    <p className="mb-2">
-                        These cookies help us understand how visitors interact with our website by collecting
-                        and reporting information anonymously. This helps us improve our platform's performance
-                        and user experience.
+                    <h4 className="text-lg font-semibold mb-2 mt-4 text-[#ddef00]">Necessary / Essential Cookies</h4>
+                    <p className="mb-2">Type: Session Cookies</p>
+                    <p className="mb-2">Administered by: Us</p>
+                    <p className="mb-4">
+                        Purpose: These Cookies are essential to provide You with services available through the Website and to enable You to use some of its features. They help to authenticate users and prevent fraudulent use of user accounts. Without these Cookies, the services that You have asked for cannot be provided, and We only use these Cookies to provide You with those services.
                     </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Page views and user journey tracking',
-                            'Feature usage and interaction patterns',
-                            'Performance metrics and error reporting',
-                            'User behavior analytics (anonymized)',
-                        ]}
-                    />
 
-                    <h3 className="text-xl font-semibold mb-2 mt-6">2.3 Functional Cookies</h3>
-                    <p className="mb-2">
-                        These cookies enable enhanced functionality and personalization. They remember your
-                        preferences and settings to provide a more tailored experience.
+                    <h4 className="text-lg font-semibold mb-2 mt-4 text-[#ddef00]">Functionality Cookies</h4>
+                    <p className="mb-2">Type: Persistent Cookies</p>
+                    <p className="mb-2">Administered by: Us</p>
+                    <p className="mb-4">
+                        Purpose: These Cookies allow us to remember choices You make when You use the Website, such as remembering your login details or language preference. The purpose of these Cookies is to provide You with a more personal experience and to avoid You having to re-enter your preferences every time You use the Website.
                     </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Theme and display preferences',
-                            'Language settings',
-                            'Data saver mode preferences',
-                            'User interface customizations',
-                        ]}
-                    />
 
-                    <h3 className="text-xl font-semibold mb-2 mt-6">2.4 Marketing Cookies</h3>
-                    <p className="mb-2">
-                        These cookies are used to track visitors across websites to display relevant advertisements
-                        and measure the effectiveness of our marketing campaigns. We only use these with your explicit consent.
+                    <h4 className="text-lg font-semibold mb-2 mt-4 text-[#ddef00]">Tracking and Performance Cookies</h4>
+                    <p className="mb-2">Type: Persistent Cookies</p>
+                    <p className="mb-2">Administered by: Third-Parties</p>
+                    <p className="mb-4">
+                        Purpose: These Cookies are used to track information about traffic to the Website and how users use the Website. The information gathered via these Cookies may directly or indirectly identify you as an individual visitor. This is because the information collected is typically linked to a pseudonymous identifier associated with the device you use to access the Website. We may also use these Cookies to test new advertisements, pages, features or new functionality of the Website to see how our users react to them.
                     </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Advertising targeting and retargeting',
-                            'Campaign performance measurement',
-                            'Cross-platform marketing analytics',
-                            'Lead generation and conversion tracking',
-                        ]}
-                    />
                 </LegalSection>
 
                 {/* --------------------------------------------- */}
                 {/* SECTION 3 */}
                 {/* --------------------------------------------- */}
-                <LegalSection title="3. Third-Party Cookies" isDark={isDark}>
+                <LegalSection title="3. Your Choices Regarding Cookies" isDark={isDark}>
                     <p className="mb-4">
-                        We may use third-party services that set their own cookies. These include:
+                        If You prefer to avoid the use of Cookies on the Website, first You must disable the use of Cookies in your browser and then delete the Cookies saved in your browser associated with this website. You may use this option for preventing the use of Cookies at any time.
                     </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Microsoft Clarity (analytics and user behavior tracking)',
-                            'Payment processors (Stripe, Razorpay) for secure transactions',
-                            'Content delivery networks (CDNs) for faster loading',
-                            'Error monitoring and performance tracking services',
-                        ]}
-                    />
                     <p className="mb-4">
-                        These third parties have their own privacy policies and cookie practices. We recommend
-                        reviewing their policies to understand how they handle your data.
+                        If You do not accept Our Cookies, You may experience some inconvenience in your use of the Website and some features may not function properly.
+                    </p>
+                    <p className="mb-4">
+                        For more information on how to manage and delete Cookies, visit the official support documents for your specific web browser (Chrome, Safari, Firefox, Edge, etc.).
                     </p>
                 </LegalSection>
 
                 {/* --------------------------------------------- */}
                 {/* SECTION 4 */}
                 {/* --------------------------------------------- */}
-                <LegalSection title="4. Cookie Management" isDark={isDark}>
+                <LegalSection title="4. More Information about Cookies" isDark={isDark}>
                     <p className="mb-4">
-                        You have control over how we use cookies on our platform. You can:
-                    </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Accept or reject different categories of cookies through our consent banner',
-                            'Change your cookie preferences at any time via your account settings',
-                            'Use your browser settings to block or delete cookies',
-                            'Enable our data saver mode to reduce non-essential cookie usage',
-                        ]}
-                    />
-                    <p className="mb-4">
-                        Please note that disabling certain cookies may affect the functionality of our platform
-                        and limit your user experience.
+                        You can learn more about cookies: <a href="https://www.termsfeed.com/blog/cookies/" target="_blank" rel="noreferrer" className="underline decoration-[#ddef00] underline-offset-4 hover:opacity-80">What Are Cookies?</a>.
                     </p>
                 </LegalSection>
 
                 {/* --------------------------------------------- */}
                 {/* SECTION 5 */}
                 {/* --------------------------------------------- */}
-                <LegalSection title="5. Data Saver Mode" isDark={isDark}>
+                <LegalSection title="5. Contact Us" isDark={isDark}>
                     <p className="mb-4">
-                        Our platform includes a Data Saver mode that automatically reduces non-essential cookie
-                        usage and disables certain tracking features to minimize data consumption and enhance privacy.
-                    </p>
-                    <p className="mb-4">
-                        When Data Saver is enabled:
+                        If you have any questions about this Cookie Policy, You can contact us:
                     </p>
                     <LegalList
                         isDark={isDark}
                         items={[
-                            'Analytics cookies are automatically disabled',
-                            'Marketing cookies are blocked',
-                            'Some functional cookies may be limited',
-                            'Automatic content refreshing is disabled',
-                            'Image loading may be optimized',
+                            'By email: fairarena.contact@gmail.com',
                         ]}
                     />
-                </LegalSection>
-
-                {/* --------------------------------------------- */}
-                {/* SECTION 6 */}
-                {/* --------------------------------------------- */}
-                <LegalSection title="6. Cookie Retention" isDark={isDark}>
-                    <p className="mb-4">
-                        Cookies have different lifespans depending on their purpose:
-                    </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Session cookies: Deleted when you close your browser',
-                            'Persistent cookies: Remain until deleted or expired (typically 1-2 years)',
-                            'Authentication cookies: Usually expire after 30 days of inactivity',
-                            'Preference cookies: May persist until you change your settings',
-                        ]}
-                    />
-                    <p className="mb-4">
-                        You can delete cookies at any time through your browser settings.
-                    </p>
-                </LegalSection>
-
-                {/* --------------------------------------------- */}
-                {/* SECTION 7 */}
-                {/* --------------------------------------------- */}
-                <LegalSection title="7. Updates to This Policy" isDark={isDark}>
-                    <p className="mb-4">
-                        We may update this Cookie Policy from time to time to reflect changes in our practices
-                        or for legal reasons. When we make significant changes, we will notify you through our
-                        platform or via email.
-                    </p>
-                    <p className="mb-4">
-                        Your continued use of our platform after any changes indicates your acceptance of the
-                        updated policy.
-                    </p>
-                </LegalSection>
-
-                {/* --------------------------------------------- */}
-                {/* SECTION 8 */}
-                {/* --------------------------------------------- */}
-                <LegalSection title="8. Contact Us" isDark={isDark}>
-                    <p className="mb-4">
-                        If you have any questions about this Cookie Policy or our use of cookies, please contact us:
-                    </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'Email: fairarena.contact@gmail.com',
-                            'Through our support system in the platform',
-                            'Via our website contact form',
-                        ]}
-                    />
-                    <p className="mb-4">
-                        We are committed to addressing your concerns and will respond to your inquiries promptly.
-                    </p>
-                </LegalSection>
-
-                {/* --------------------------------------------- */}
-                {/* SECTION 9 */}
-                {/* --------------------------------------------- */}
-                <LegalSection title="9. Legal Compliance" isDark={isDark}>
-                    <p className="mb-4">
-                        This Cookie Policy complies with applicable data protection laws including:
-                    </p>
-                    <LegalList
-                        isDark={isDark}
-                        items={[
-                            'General Data Protection Regulation (GDPR)',
-                            'California Consumer Privacy Act (CCPA)',
-                            'ePrivacy Directive and national implementations',
-                            'Other applicable privacy and cookie regulations',
-                        ]}
-                    />
-                    <p className="mb-4">
-                        We regularly review and update our practices to ensure ongoing compliance with these regulations.
-                    </p>
                 </LegalSection>
             </div>
         </div>

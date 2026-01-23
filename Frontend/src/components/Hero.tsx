@@ -81,7 +81,7 @@ export default function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
                 >
-                    The AI-powered hackathon platform for organizers, judges, and participants. FairArena automates judging with analysis and real-time insights, ensuring fair evaluations for everyone.
+                    FairArena is the AI-powered hackathon platform for organizers, judges, and participants. We automate judging with analysis and real-time insights, ensuring fair evaluations for everyone.
                 </motion.p>
 
                 {/* Buttons */}
