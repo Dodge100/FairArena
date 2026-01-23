@@ -175,12 +175,17 @@ export default function DeviceAuthorization() {
             <Card className="w-full max-w-md">
                 <CardHeader>
                     {deviceRequest.application?.logoUrl && (
-                        <div className="mx-auto mb-4">
+                        <div className="mx-auto mb-4 relative h-16 w-16">
                             <img
                                 src={deviceRequest.application.logoUrl}
                                 alt={deviceRequest.application.name}
                                 className="h-16 w-16 rounded-lg object-cover"
                             />
+                            {deviceRequest.application.isVerified && (
+                                <div className="absolute -bottom-2 -right-2 bg-background p-1 rounded-full border border-border shadow-sm">
+                                    <CheckCircle2 className="h-5 w-5 text-primary fill-background" />
+                                </div>
+                            )}
                         </div>
                     )}
                     <CardTitle className="text-center">{deviceRequest.application?.name || 'Unknown Application'}</CardTitle>

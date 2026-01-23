@@ -106,7 +106,11 @@ model OAuthApplication {
   isConfidential          Boolean                     @default(true)
   requirePkce             Boolean                     @default(true)
   isActive                Boolean                     @default(true)
-  isVerified              Boolean                     @default(false)
+  verificationStatus      String                      @default("unverified") // unverified, pending, verified, rejected
+  verificationSubmittedAt DateTime?
+  verificationVerifiedAt  DateTime?
+  verificationRejectionReason String?
+  isVerified              Boolean                     @default(false) // Deprecated, computed from verificationStatus
   isTrusted               Boolean                     @default(false)
   ownerId                 String
   createdAt               DateTime                    @default(now())

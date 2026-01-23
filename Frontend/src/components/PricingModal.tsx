@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -61,6 +62,7 @@ interface RazorpayOptions {
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const { isSignedIn, getToken } = useAuthState();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -199,6 +201,11 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               );
 
               if (verifyResult.success && verifyResult.data) {
+                // Invalidate queries to refresh data
+                queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+                queryClient.invalidateQueries({ queryKey: ['credits-history'] });
+                queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
+
                 // Show success modal with payment details
                 setSuccessPaymentData({
                   planName: verifyResult.data.planName,

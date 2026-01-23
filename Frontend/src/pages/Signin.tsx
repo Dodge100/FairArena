@@ -1,3 +1,4 @@
+import { AuthIllustration } from '@/components/auth/AuthIllustration';
 import { DeviceAuthModal } from '@/components/auth/DeviceAuthModal';
 import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
@@ -6,6 +7,8 @@ import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyMan
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { publicApiFetch } from '@/lib/apiClient';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+import { LayoutDashboard, RefreshCw, Shield, Zap } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -86,6 +89,32 @@ export default function Signin() {
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   const passkeySupported = usePasskeySupport();
+
+  // SSO State
+  const [ssoState, setSsoState] = useState<{
+    enabled: boolean;
+    providerType?: string;
+    loginUrl?: string;
+    checking: boolean;
+  }>({ enabled: false, checking: false });
+
+  const checkSSO = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val || !val.includes('@')) return;
+
+    setSsoState(p => ({ ...p, checking: true }));
+    try {
+      const res = await publicApiFetch(`${apiUrl}/api/v1/auth/sso/check?email=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.ssoEnabled) {
+        setSsoState({ enabled: true, providerType: data.providerType, loginUrl: data.ssoUrl, checking: false });
+      } else {
+        setSsoState({ enabled: false, checking: false });
+      }
+    } catch {
+      setSsoState({ enabled: false, checking: false });
+    }
+  };
 
   // Helper to get cookie value
   const getCookie = (name: string): string | null => {
@@ -327,6 +356,10 @@ export default function Signin() {
   // Trigger Captcha on submit
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (ssoState.enabled && ssoState.loginUrl) {
+      window.location.href = ssoState.loginUrl;
+      return;
+    }
     setError('');
     setShowCaptcha(true);
   };
@@ -698,18 +731,18 @@ export default function Signin() {
     // Super Secure Account Enforcement UI
     if (mfaPreferences.superSecureAccountEnabled) {
       return (
-        <div className="text-center w-full px-4">
-          <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+        <div className="text-center w-full px-4 flex flex-col justify-center h-full">
+          <h1 className="text-3xl font-bold mb-2 text-white">
             Security Check
           </h1>
-          <p className={`mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+          <p className="mb-8 text-neutral-400">
             Super Secure Account enabled. Only security keys are allowed.
           </p>
 
           <div className="flex justify-center mb-8">
-            <div className={`p-6 rounded-full ${isDark ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
+            <div className="p-6 rounded-full bg-neutral-800 border border-neutral-700">
               <svg
-                className={`w-12 h-12 ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900'}`}
+                className="w-12 h-12 text-[#DDEF00]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -728,7 +761,7 @@ export default function Signin() {
             type="button"
             onClick={handleWebAuthnMfaVerification}
             disabled={passkeyLoading || isLoading}
-            className={`w-full py-3.5 px-4 mb-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+            className="w-full py-3.5 px-4 mb-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {passkeyLoading || isLoading ? (
               <>
@@ -765,33 +798,31 @@ export default function Signin() {
     const codeLength = isBackupCode ? 10 : 6;
 
     return (
-      <>
+      <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full">
         {/* Header */}
-        <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-          2-Step Verification
-        </h1>
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold mb-2 text-white">
+            2-Step Verification
+          </h1>
 
-        <p
-          className={`text-center max-w-md mb-2 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-        >
-          {isBackupCode
-            ? 'Enter one of your 8-character backup codes'
-            : isOtpMethod
-              ? `Enter the 6-digit code sent to your ${mfaMethod}`
-              : 'Enter the 6-digit code from your authenticator app'}
-        </p>
-
-        {/* Session timer */}
-        {timeRemaining > 0 && (
-          <p
-            className={`text-xs mb-4 ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-          >
-            Session expires in {formatTimeRemaining(timeRemaining)}
+          <p className="text-center max-w-md mb-2 text-neutral-400">
+            {isBackupCode
+              ? 'Enter one of your 8-character backup codes'
+              : isOtpMethod
+                ? `Enter the 6-digit code sent to your ${mfaMethod}`
+                : 'Enter the 6-digit code from your authenticator app'}
           </p>
-        )}
 
-        <div className="w-full max-w-sm px-4">
-          <form onSubmit={handleMfaSubmit} className="space-y-4">
+          {/* Session timer */}
+          {timeRemaining > 0 && (
+            <p className={`text-xs ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : 'text-neutral-500'}`}>
+              Session expires in {formatTimeRemaining(timeRemaining)}
+            </p>
+          )}
+        </div>
+
+        <div className="w-full">
+          <form onSubmit={handleMfaSubmit} className="space-y-6">
             {/* Error display */}
             {error && (
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
@@ -810,9 +841,9 @@ export default function Signin() {
             <div>
               <label
                 htmlFor="mfaCode"
-                className={`block text-sm font-medium mb-2 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
+                className="block text-sm font-medium mb-3 text-neutral-300 text-center uppercase tracking-wide"
               >
-                {isBackupCode ? 'Backup Code' : 'Verification Code'}
+                {isBackupCode ? 'Backup Code' : 'Enter Verification Code'}
               </label>
               <input
                 id="mfaCode"
@@ -838,20 +869,10 @@ export default function Signin() {
                 inputMode={isBackupCode ? 'text' : 'numeric'}
                 required
                 placeholder={isBackupCode ? 'XXXX-XXXX-XX' : '123456'}
-                className={`
-                    w-full px-4 py-4 rounded-xl border-2 transition-all font-mono text-center text-2xl tracking-[0.4em]
-                    ${isDark
-                    ? 'bg-neutral-800/50 text-neutral-100 border-neutral-700 focus:border-[#DDEF00] focus:bg-neutral-800'
-                    : 'bg-neutral-50 text-neutral-900 border-neutral-200 focus:border-[#DDEF00] focus:bg-white'
-                  }
-                    focus:outline-none focus:ring-4 focus:ring-[#DDEF00]/20
-                    ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}
-                  `}
+                className="w-full px-4 py-5 rounded-2xl border-2 transition-all font-mono text-center text-3xl tracking-[0.5em] bg-white/5 text-white border-neutral-800 focus:border-[#DDEF00] focus:bg-neutral-900 focus:outline-none focus:ring-4 focus:ring-[#DDEF00]/10 placeholder:text-neutral-700"
               />
               {mfaSession.attemptsRemaining < 5 && (
-                <p
-                  className={`text-xs mt-2 ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-                >
+                <p className={`text-xs mt-3 text-center ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : 'text-neutral-500'}`}>
                   {mfaSession.attemptsRemaining} attempt
                   {mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
                 </p>
@@ -860,11 +881,9 @@ export default function Signin() {
 
             {/* Help section */}
             {showMfaHelp && !isBackupCode && !isOtpMethod && (
-              <div
-                className={`p-3 rounded-lg text-sm ${isDark ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}
-              >
+              <div className="p-3 rounded-lg text-sm bg-blue-500/10 border border-blue-500/20 text-blue-400">
                 <p className="font-medium mb-1">Having trouble?</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
+                <ul className="list-disc list-inside space-y-1 text-xs opacity-80">
                   <li>Make sure your device's time is synced correctly</li>
                   <li>Wait for the next code if the current one is about to expire</li>
                   <li>Try using a backup code or email verification below</li>
@@ -876,7 +895,7 @@ export default function Signin() {
             <button
               type="submit"
               disabled={isLoading || mfaCode.length !== codeLength}
-              className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#DDEF00] shadow-sm hover:shadow-md"
+              className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -908,22 +927,20 @@ export default function Signin() {
                 <button
                   type="button"
                   onClick={() => setShowAlternatives(true)}
-                  className={`w-full text-sm font-medium hover:underline ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900'}`}
+                  className="w-full text-sm font-medium hover:underline text-[#DDEF00] transition-colors"
                 >
                   Try another way
                 </button>
               ) : (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-                    >
+                    <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                       Choose a method
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowAlternatives(false)}
-                      className={`text-xs hover:underline ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+                      className="text-xs hover:underline text-neutral-400 hover:text-white"
                     >
                       Hide
                     </button>
@@ -941,11 +958,9 @@ export default function Signin() {
                           setOtpSent(false);
                           setShowAlternatives(false);
                         }}
-                        className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                        className="w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white"
                       >
-                        <div
-                          className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
-                        >
+                        <div className="p-1.5 rounded-lg bg-neutral-700">
                           <svg
                             className="w-4 h-4"
                             fill="none"
@@ -977,11 +992,9 @@ export default function Signin() {
                           setOtpSent(false);
                           setShowAlternatives(false);
                         }}
-                        className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                        className="w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white"
                       >
-                        <div
-                          className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
-                        >
+                        <div className="p-1.5 rounded-lg bg-neutral-700">
                           <svg
                             className="w-4 h-4"
                             fill="none"
@@ -1009,11 +1022,9 @@ export default function Signin() {
                         setShowAlternatives(false);
                       }}
                       disabled={isLoading}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                      className="w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white"
                     >
-                      <div
-                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
-                      >
+                      <div className="p-1.5 rounded-lg bg-neutral-700">
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -1040,11 +1051,9 @@ export default function Signin() {
                         setShowAlternatives(false);
                       }}
                       disabled={isLoading}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                      className="w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white"
                     >
-                      <div
-                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
-                      >
+                      <div className="p-1.5 rounded-lg bg-neutral-700">
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -1071,11 +1080,9 @@ export default function Signin() {
                         setShowAlternatives(false);
                       }}
                       disabled={isLoading}
-                      className={`w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 ${isDark ? 'bg-neutral-800/50 hover:bg-neutral-800 text-neutral-200 hover:text-white' : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 hover:text-black'}`}
+                      className="w-full py-3 px-4 text-sm font-medium rounded-xl transition-all flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white"
                     >
-                      <div
-                        className={`p-1.5 rounded-lg ${isDark ? 'bg-neutral-700' : 'bg-white shadow-sm'}`}
-                      >
+                      <div className="p-1.5 rounded-lg bg-neutral-700">
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -1101,249 +1108,236 @@ export default function Signin() {
                 type="button"
                 onClick={handleResetToCredentials}
                 disabled={isLoading}
-                className={`w-full text-sm py-2 ${isDark ? 'text-neutral-500 hover:text-neutral-400' : 'text-neutral-600 hover:text-neutral-800'} transition-colors`}
+                className="w-full text-sm py-2 text-neutral-500 hover:text-neutral-400 transition-colors"
               >
                 ← Back to sign in
               </button>
             </div>
           </form>
         </div>
-      </>
+      </div>
     );
   };
 
   // Render message when WebAuthn is required but not supported
   const renderWebAuthnUnsupported = () => (
-    <>
+    <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full text-center">
       <img
         src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
-        className="w-30 mb-8"
+        className="h-10 mx-auto mb-6"
         alt="FairArena Logo"
       />
-      <div className="w-full max-w-sm px-4 text-center">
-        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg
-            className="w-8 h-8 text-red-600 dark:text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-        </div>
 
-        <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-          Device Not Supported
-        </h1>
-
-        <p className={`mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-          This account requires a security key for verification, but your current device or browser
-          does not support WebAuthn.
-        </p>
-
-        <div
-          className={`p-4 rounded-xl text-left text-sm mb-8 ${isDark ? 'bg-neutral-800/50 border border-neutral-700' : 'bg-neutral-100 border border-neutral-200'}`}
+      <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg
+          className="w-8 h-8 text-red-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <p className={`font-medium mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>
-            Recommended Action:
-          </p>
-          <p className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
-            Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a
-            different device.
-          </p>
-        </div>
-
-        <button
-          onClick={handleResetToCredentials}
-          className={`w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-xl font-semibold transition-all active:scale-[0.98] shadow-sm hover:shadow-md`}
-        >
-          Back to Sign In
-        </button>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
       </div>
-    </>
+
+      <h1 className="text-2xl font-bold mb-3 text-white">
+        Device Not Supported
+      </h1>
+
+      <p className="mb-8 text-neutral-400">
+        This account requires a security key for verification, but your current device or browser
+        does not support WebAuthn.
+      </p>
+
+      <div className="p-4 rounded-xl text-left text-sm mb-8 bg-neutral-900 border border-neutral-800">
+        <p className="font-medium mb-1 text-neutral-200">
+          Recommended Action:
+        </p>
+        <p className="text-neutral-400">
+          Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a
+          different device.
+        </p>
+      </div>
+
+      <button
+        onClick={handleResetToCredentials}
+        className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
+      >
+        Back to Check In
+      </button>
+    </div>
   );
 
   // Render credentials form
   const renderCredentialsForm = () => (
-    <>
-      <img
-        src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
-        className="w-30 mb-2"
-        alt="FairArena Logo"
-      />
-      <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-        Welcome Back
-      </h1>
-      <p className={`mb-4 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-        Sign in to your FairArena account
-      </p>
+    <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full">
+      <div className="mb-8 text-center">
+        <img
+          src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+          className="h-10 mx-auto mb-6"
+          alt="FairArena Logo"
+        />
+        <h1 className="text-3xl font-bold mb-2 text-white">
+          Welcome back
+        </h1>
+        <p className="text-neutral-400">
+          Sign in to your FairArena account
+        </p>
+      </div>
 
-      <div className="w-full max-w-sm px-4">
-        {/* Primary OAuth - Google */}
-        <OAuthSocials getRedirectPath={getRedirectPath} lastUsedMethod={lastUsedMethod} />
-        {/* Passkey - Prominent full-width button */}
+      {/* Primary OAuth - Google */}
+      <OAuthSocials getRedirectPath={getRedirectPath} lastUsedMethod={lastUsedMethod} />
 
-        {/* Passkey - Prominent full-width button */}
-        {passkeySupported && (
-          <button
-            type="button"
-            onClick={handlePasskeyLogin}
-            disabled={isLoading || passkeyLoading}
-            className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'}`}
-          >
-            {lastUsedMethod === 'passkey' && <LastUsedBadge />}
-            {passkeyLoading ? (
-              <>
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Authenticating...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
+      {/* Passkey - Prominent full-width button */}
+      {passkeySupported && (
+        <button
+          type="button"
+          onClick={handlePasskeyLogin}
+          disabled={isLoading || passkeyLoading}
+          className="relative w-full mb-3 py-3 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 bg-white/5 hover:bg-white/10 border border-white/10 text-white"
+        >
+          {lastUsedMethod === 'passkey' && <LastUsedBadge />}
+          {passkeyLoading ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
                   stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
-                  <path d="M10 11V8a4 4 0 118 0v3" />
-                  <path d="M4 21a8 8 0 0116 0" />
-                </svg>
-                Sign in with Passkey
-              </>
-            )}
-          </button>
-        )}
-
-        {/* QR Code Login */}
-        <button
-          type="button"
-          onClick={() => setShowQRDialog(true)}
-          disabled={isLoading}
-          className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2"
-            />
-          </svg>
-          Sign in with QR Code
-        </button>
-
-        {/* Device Authorization */}
-        <button
-          type="button"
-          onClick={() => setShowDeviceAuth(true)}
-          disabled={isLoading}
-          className={`relative w-full mb-3 py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all active:scale-[0.98] disabled:opacity-50 border ${isDark ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white' : 'bg-white hover:bg-neutral-50 border-neutral-200 text-neutral-900'}`}
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"
-            />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 11V8a4 4 0 118 0v3" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 21a8 8 0 0116 0" />
-          </svg>
-          Sign in with Device Code
-        </button>
-
-        {/* Divider */}
-        <div className="relative my-4">
-          <div
-            className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}
-          >
-            <div
-              className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`}
-            />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span
-              className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}
-            >
-              or sign in with email
-            </span>
-          </div>
-        </div>
-
-        <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-          {/* Error display */}
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
-              <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  strokeWidth="4"
+                />
                 <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              <span>{error}</span>
-            </div>
+              Authenticating...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4 text-[#DDEF00]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
+                <path d="M10 11V8a4 4 0 118 0v3" />
+                <path d="M4 21a8 8 0 0116 0" />
+              </svg>
+              Sign in with Passkey
+            </>
           )}
+        </button>
+      )}
 
-          {/* Email input */}
-          <div>
-            <label
-              htmlFor="email"
-              className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError('');
-              }}
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-            />
+      {/* Additional Options Container */}
+      {(showQRDialog || showDeviceAuth) && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <button
+            type="button"
+            onClick={() => setShowQRDialog(true)}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
+            </svg>
+            QR Code
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDeviceAuth(true)}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 11V8a4 4 0 118 0v3" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 21a8 8 0 0116 0" />
+            </svg>
+            Device Code
+          </button>
+        </div>
+      )}
+
+      {!showQRDialog && !showDeviceAuth && (
+        <div className="flex gap-3 mb-4">
+          <button onClick={() => setShowQRDialog(true)} className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Sign in with QR</button>
+          <span className="text-neutral-700">|</span>
+          <button onClick={() => setShowDeviceAuth(true)} className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Device Code</button>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center opacity-20">
+          <div className="w-full border-t border-neutral-200"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase tracking-wide">
+          <span className="px-4 bg-[#0a0a0a] text-neutral-500">
+            Or continue with email
+          </span>
+        </div>
+      </div>
+
+      <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+        {/* Error display */}
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
+            <span>{error}</span>
           </div>
+        )}
 
-          {/* Password input */}
-          <div>
-            <label
-              htmlFor="password"
-              className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-            >
-              Password
-            </label>
+        {/* Email input */}
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-neutral-300">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              const val = e.target.value;
+              setEmail(val);
+              setError('');
+              if (ssoState.enabled && !val.includes('@')) {
+                setSsoState({ enabled: false, checking: false });
+              }
+            }}
+            onBlur={checkSSO}
+            required
+            autoComplete="email"
+            placeholder="name@company.com"
+            className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+          />
+        </div>
+
+        {/* Password input */}
+        {!ssoState.enabled && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="block text-sm font-medium text-neutral-300">
+                Password
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-[#DDEF00] hover:text-[#f0ff33] transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
@@ -1352,134 +1346,117 @@ export default function Signin() {
                 setPassword(e.target.value);
                 setError('');
               }}
-              required
+              required={!ssoState.enabled}
               autoComplete="current-password"
-              placeholder="••••••••"
-              className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
+              placeholder="Enter your password"
+              className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
             />
           </div>
+        )}
 
-          {/* Forgot password link */}
-          <div className="flex justify-end">
-            <Link
-              to="/forgot-password"
-              className={`text-sm ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-600 hover:text-neutral-900'} transition-colors`}
-            >
-              Forgot password?
-            </Link>
-          </div>
+        {/* Submit button */}
+        <button
+          type="submit"
+          disabled={isLoading || !email || (!ssoState.enabled && !password)}
+          className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
+        >
+          {lastUsedMethod === 'email' && <LastUsedBadge />}
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Signing in...
+            </span>
+          ) : ssoState.enabled ? (
+            'Continue with SSO'
+          ) : (
+            'Sign In'
+          )}
+        </button>
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={isLoading || !email || !password}
-            className="relative w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-          >
-            {lastUsedMethod === 'email' && <LastUsedBadge />}
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Signing in...
-              </span>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-
-          {/* Sign up link */}
-          <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+        {/* Sign up link */}
+        <div className="pt-4 text-center">
+          <p className="text-sm text-neutral-500">
             {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true'
               ? "Don't have an account? "
               : 'Want to join? '}
             <Link
               to={import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? '/signup' : '/waitlist'}
               state={location.state}
-              className={`font-medium ${isDark ? 'text-[#DDEF00] hover:text-[#f0ff33]' : 'text-neutral-900 hover:underline'}`}
+              className="font-medium text-[#DDEF00] hover:text-[#efff5e] transition-colors"
             >
               {import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true' ? 'Sign up' : 'Join Waitlist'}
             </Link>
           </p>
-          <p
-            className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-          >
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-neutral-800 text-center">
+          <p className="text-xs text-neutral-600">
             By signing in, you agree to our{' '}
-            <Link
-              to="/terms-and-conditions"
-              className="underline hover:text-[#DDEF00] transition-colors"
-            >
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
-              Privacy Policy
-            </Link>
-            .
+            <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms of Service</Link>
+            {' '}and{' '}
+            <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
           </p>
-        </form>
-      </div>
-    </>
+        </div>
+      </form>
+    </div>
   );
 
   return (
     <>
       <OAuthBanner />
-      <div
-        className={`fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}`}
-      >
-        <div className="w-full h-screen flex flex-col md:flex-row rounded-none overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.2)]">
-          {/* Left side - Auth form */}
-          <div
-            className={`w-full md:w-1/2 flex flex-col py-6 items-center justify-start h-full overflow-y-auto overflow-x-hidden ${isDark ? 'bg-neutral-900' : 'bg-white'}`}
-          >
-            {/* Logo was moved inside forms to better handle MFA view vs Credentials view spacing */}
-            {/* Render appropriate form based on auth step */}
-            {isCheckingSession ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
+      <div className="fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+        <div className="w-full h-screen flex flex-col md:flex-row overflow-hidden">
+          {/* LEFT SIDE — AUTH FORM */}
+          <div className="w-full md:w-1/2 flex flex-col items-center justify-center h-full relative z-10 bg-[#0a0a0a]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="w-full h-full overflow-y-auto no-scrollbar py-8 px-6 flex flex-col items-center"
+            >
+              <div className="w-full mt-auto mb-auto">
+                {/* Render appropriate form based on auth step */}
+                {isCheckingSession ? (
+                  <div className="flex justify-center items-center py-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DDEF00]"></div>
+                  </div>
+                ) : authStep === 'webauthn_unsupported' ? (
+                  renderWebAuthnUnsupported()
+                ) : authStep === 'mfa' || authStep === 'new_device' ? (
+                  renderMfaForm()
+                ) : (
+                  renderCredentialsForm()
+                )}
               </div>
-            ) : authStep === 'webauthn_unsupported' ? (
-              renderWebAuthnUnsupported()
-            ) : authStep === 'mfa' || authStep === 'new_device' ? (
-              renderMfaForm()
-            ) : (
-              renderCredentialsForm()
-            )}
+            </motion.div>
           </div>
 
-          {/* Right side - Illustration */}
-          <div
-            className={`hidden md:flex w-1/2 items-center justify-center p-8 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}
-          >
-            <div className="relative w-full max-w-md">
-              <h2
-                className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}
-              >
-                Perfectly Judge Hackathon Teams and View Leaderboards
-              </h2>
-              <p className={`mb-6 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                Sign in to access your dashboard and manage your competitions.
-              </p>
-              <img
-                src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
-                alt="Dashboard Preview"
-                className="rounded-xl shadow-2xl border"
-              />
-            </div>
-          </div>
+          {/* RIGHT SIDE — ILLUSTRATION */}
+          <AuthIllustration
+            title="Secure access to FairArena"
+            subtitle="Manage your projects, track progress, and collaborate with your team in one centralized platform."
+            icon={<Shield className="w-10 h-10 text-black font-bold" />}
+            features={[
+              { icon: Shield, text: "Secure Access", desc: "MFA Protected" },
+              { icon: LayoutDashboard, text: "Smart Dashboard", desc: "Project overview" },
+              { icon: RefreshCw, text: "Live Updates", desc: "Real-time sync" },
+              { icon: Zap, text: "Quick Login", desc: "Passkey support" }
+            ]}
+          />
         </div>
 
         {/* Captcha Modal */}

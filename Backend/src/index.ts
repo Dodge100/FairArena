@@ -1,6 +1,5 @@
-import AgentAPI from 'apminsight';
-AgentAPI.config();
 import * as Sentry from '@sentry/node';
+import AgentAPI from 'apminsight';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -20,6 +19,7 @@ import {
   calculateApplicationStats,
   cleanupExpiredTokens,
   createLog,
+  createOAuthAppAuthorizedNotification,
   createOrganizationAuditLog,
   createReport,
   createTeamAuditLog,
@@ -36,6 +36,7 @@ import {
   emitSessionRevoked,
   exportUserDataHandler,
   inviteToPlatform,
+  logOAuthDataAccess,
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
@@ -59,6 +60,7 @@ import {
   sendMfaOtpEmail,
   sendNewDeviceLoginEmail,
   sendNotification,
+  sendOAuthAppAuthorizedEmail,
   sendOtpForAccountSettings,
   sendPasskeyAddedHandler,
   sendPasskeyRemovedHandler,
@@ -79,9 +81,6 @@ import {
   updateSettingsFunction,
   updateTeamFunction,
   updateUser,
-  sendOAuthAppAuthorizedEmail,
-  createOAuthAppAuthorizedNotification,
-  logOAuthDataAccess,
 } from './inngest/v1/index.js';
 import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
@@ -111,13 +110,16 @@ import plansRouter from './routes/v1/plans.js';
 import platformInviteRouter from './routes/v1/platformInvite.js';
 import profileRouter from './routes/v1/profile.js';
 import reportsRouter from './routes/v1/reports.js';
+import scimRouter from './routes/v1/scim.routes.js';
 import settingsRouter from './routes/v1/settings.js';
+
 import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
 import webauthnMfaRouter from './routes/v1/webauthnMfa.routes.js';
 import logger from './utils/logger.js';
+AgentAPI.config();
 
 const app = express();
 const PORT = ENV.PORT || 3000;
@@ -258,6 +260,11 @@ app.use('/.well-known', oauthRouter);
 // OAuth endpoints
 app.use('/api/v1/oauth', oauthRouter);
 app.use('/oauth', oauthRouter);
+
+// SCIM 2.0 routes
+app.use('/api/v1/scim/v2', scimRouter);
+
+
 
 // Authentication routes (public)
 app.use('/api/v1/auth', authRouter);

@@ -29,6 +29,9 @@ export interface OAuthApplication {
     updatedAt: string;
     activeUsers?: number;
     activeTokens?: number;
+    verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+    verificationSubmittedAt?: string | null;
+    verificationRejectionReason?: string | null;
 }
 
 export interface OAuthScope {
@@ -131,6 +134,16 @@ export async function deleteApplication(id: string): Promise<void> {
 
 export async function regenerateSecret(id: string): Promise<{ clientSecret: string; message: string }> {
     return apiRequest(`${API_BASE_URL || ''}/api/v1/oauth/applications/${id}/secret`, {
+        method: 'POST',
+    });
+}
+
+// ============================================
+// VERIFICATION
+// ============================================
+
+export async function verifyApplication(id: string): Promise<{ success: boolean; message: string }> {
+    return apiRequest(`${API_BASE_URL || ''}/api/v1/oauth/applications/${id}/verify`, {
         method: 'POST',
     });
 }

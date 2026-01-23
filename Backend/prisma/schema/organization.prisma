@@ -20,6 +20,7 @@ model Organization {
   organizationUserRoles OrganizationUserRole[]
   teams                 Team[]
   userOrganizations     UserOrganization[]
+  ssoConfig             OrganizationSSOConfig?
 
   @@index([name])
   @@index([slug])
@@ -416,4 +417,41 @@ model ProjectAuditLog {
   @@index([createdAt])
   @@index([projectId, createdAt])
   @@index([projectId, userId, createdAt])
+}
+
+model OrganizationSSOConfig {
+  id              String       @id @default(cuid())
+  organizationId  String       @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  domain          String?      @unique
+  providerType    String       @default("oidc") // oidc, saml
+
+  // OIDC Config
+  issuerUrl       String?
+  authorizationUrl String?
+  tokenUrl        String?
+  userInfoUrl     String?
+  clientId        String?
+  clientSecret    String?
+
+  // SCIM Config
+  scimEnabled     Boolean      @default(false)
+  scimToken       String?
+
+  isActive        Boolean      @default(false)
+
+  // Domain Verification
+  domainVerified              Boolean   @default(false)
+  domainVerificationToken     String?
+  domainVerificationAttempts  Int       @default(0)
+  domainVerifiedAt            DateTime?
+  domainVerificationExpiresAt DateTime?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([domain])
+  @@index([isActive])
+  @@index([domainVerified])
 }

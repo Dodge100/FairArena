@@ -676,3 +676,215 @@ export const handleGoogleRiscEvent = async (req: Request, res: Response) => {
     });
   }
 };
+
+// =====================================================
+// ENTERPRISE SSO (OIDC/SAML)
+// =====================================================
+
+export const ssoCheck = async (req: Request, res: Response) => {
+  try {
+    const emailParam = req.query.email;
+    const email = Array.isArray(emailParam) ? emailParam[0] : (emailParam as string);
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Invalid email' });
+    }
+
+    const domain = email.split('@')[1];
+    const ssoConfig = await prisma.organizationSSOConfig.findFirst({
+      where: { domain, isActive: true }
+    });
+
+    if (ssoConfig) {
+      return res.json({
+        success: true,
+        ssoEnabled: true,
+        providerType: ssoConfig.providerType,
+        ssoUrl: `${ENV.BASE_URL}/api/v1/auth/sso/login?email=${encodeURIComponent(email)}`
+      });
+    }
+
+    return res.json({ success: true, ssoEnabled: false });
+  } catch (error) {
+    logger.error('SSO check error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const ssoLogin = async (req: Request, res: Response) => {
+  try {
+    const emailParam = req.query.email;
+    const email = Array.isArray(emailParam) ? emailParam[0] : emailParam;
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).send('Invalid email');
+    }
+
+    const domain = email.split('@')[1];
+
+    if (!domain) return res.status(400).send('Invalid email domain');
+
+    const ssoConfig = await prisma.organizationSSOConfig.findFirst({
+      where: { domain, isActive: true }
+    });
+
+    if (!ssoConfig) return res.status(404).send('SSO not configured for this domain');
+
+    if (ssoConfig.providerType === 'oidc') {
+      const state = req.query.redirect || '/dashboard';
+      const redirectUri = `${ENV.BASE_URL}/api/v1/auth/sso/callback`;
+
+      const stateData = JSON.stringify({ configId: ssoConfig.id, target: state });
+      const encodedState = Buffer.from(stateData).toString('base64');
+
+      const params = new URLSearchParams({
+        client_id: ssoConfig.clientId!,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid profile email',
+        state: encodedState
+      });
+
+      return res.redirect(`${ssoConfig.authorizationUrl}?${params.toString()}`);
+    }
+
+    return res.status(501).send('SSO provider type not supported');
+  } catch (error) {
+    logger.error('SSO login error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(500).send('Server error');
+  }
+};
+
+export const ssoCallback = async (req: Request, res: Response) => {
+  try {
+    const { code, state } = req.query;
+    if (!code || !state) {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=invalid_request`);
+    }
+
+    let configId, target;
+    try {
+      const decoded = Buffer.from(state as string, 'base64').toString('utf-8');
+      const json = JSON.parse(decoded);
+      configId = json.configId;
+      target = json.target;
+    } catch {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=invalid_state`);
+    }
+
+    const ssoConfig = await prisma.organizationSSOConfig.findUnique({
+      where: { id: configId }
+    });
+
+    if (!ssoConfig) {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=config_not_found`);
+    }
+
+    // Exchange Code
+    const redirectUri = `${ENV.BASE_URL}/api/v1/auth/sso/callback`;
+    const tokenResponse = await fetch(ssoConfig.tokenUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        client_id: ssoConfig.clientId!,
+        client_secret: ssoConfig.clientSecret!,
+        grant_type: 'authorization_code',
+        code: code as string,
+        redirect_uri: redirectUri
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=sso_token_failed`);
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    // Extract User Info
+    let email, firstName, lastName, profileImageUrl;
+
+    if (tokenData.id_token) {
+      const jwt = await import('jsonwebtoken');
+      const decoded: any = jwt.default.decode(tokenData.id_token);
+      email = decoded.email;
+      firstName = decoded.given_name;
+      lastName = decoded.family_name;
+      profileImageUrl = decoded.picture;
+    } else if (ssoConfig.userInfoUrl) {
+      const uiRes = await fetch(ssoConfig.userInfoUrl, {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      if (uiRes.ok) {
+        const ui = await uiRes.json();
+        email = ui.email;
+        firstName = ui.given_name;
+        lastName = ui.family_name;
+        profileImageUrl = ui.picture;
+      }
+    }
+
+    if (!email) {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=email_missing`);
+    }
+
+    // Check if email domain matches config
+    const emailDomain = email.split('@')[1]?.toLowerCase();
+    const configDomain = ssoConfig.domain?.toLowerCase();
+
+    if (configDomain && emailDomain !== configDomain) {
+      return res.redirect(`${ENV.FRONTEND_URL}/signin?error=domain_mismatch`);
+    }
+
+    // Reuse findOrCreateOAuthUser logic from oauth.service.ts
+    // Since we can't easily reusing oauth.service.ts's logic which accepts OAuthUserData, we'll just check directly.
+
+    let user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (!user) {
+      if (!ENV.NEW_SIGNUP_ENABLED) {
+        return res.redirect(`${ENV.FRONTEND_URL}/signin?error=signup_disabled`);
+      }
+
+      const { createId } = await import('@paralleldrive/cuid2');
+      user = await prisma.user.create({
+        data: {
+          userId: createId(),
+          email: email.toLowerCase(),
+          firstName: firstName || null,
+          lastName: lastName || null,
+          profileImageUrl: profileImageUrl || null,
+          emailVerified: true
+        }
+      });
+
+      // Link to Org
+      if (ssoConfig.organizationId) {
+        try {
+          await prisma.userOrganization.create({
+            data: { userId: user.userId, organizationId: ssoConfig.organizationId }
+          });
+        } catch (e) {
+          // Ignore unique constraint violation if exists
+        }
+      }
+    }
+
+    const { handleSuccessfulOAuthLogin } = await import('../../services/oauth.service.js');
+    await handleSuccessfulOAuthLogin(user, req, res, target || '/dashboard');
+
+  } catch (error) {
+    logger.error('SSO callback error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.redirect(`${ENV.FRONTEND_URL}/signin?error=server_error`);
+  }
+};

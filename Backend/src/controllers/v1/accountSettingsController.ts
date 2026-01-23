@@ -11,7 +11,7 @@ import logger from '../../utils/logger.js';
 import { Verifier } from '../../utils/settings-token-verfier.js';
 
 // Constants for OTP verification
-const TOKEN_EXPIRY_MINUTES = ENV.NODE_ENV === 'production' ? 10 : 120;
+const TOKEN_EXPIRY_MINUTES = ENV.NODE_ENV === 'production' ? 30 : 120;
 const OTP_EXPIRY_SECONDS = 600; // 10 minutes
 const MAX_OTP_SEND_ATTEMPTS = 5; // Maximum 5 OTP requests
 const OTP_SEND_WINDOW_SECONDS = 1800; // Within 30 minutes

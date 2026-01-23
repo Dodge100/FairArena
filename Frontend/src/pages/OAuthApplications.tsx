@@ -5,6 +5,7 @@ import {
     type OAuthApplication,
     regenerateSecret,
     updateApplication,
+    verifyApplication,
 } from '@/services/oauthService';
 import {
     Activity,
@@ -36,6 +37,7 @@ export default function OAuthApplications() {
     const [newSecret, setNewSecret] = useState<string | null>(null);
     const [selectedApp, setSelectedApp] = useState<OAuthApplication | null>(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +85,25 @@ export default function OAuthApplications() {
             toast.success('Client secret regenerated');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Failed to regenerate secret');
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function handleVerifyApp() {
+        if (!selectedApp) return;
+
+        setSubmitting(true);
+        try {
+            await verifyApplication(selectedApp.id);
+            toast.success('Verification request submitted');
+            setApplications((apps) =>
+                apps.map((a) => (a.id === selectedApp.id ? { ...a, verificationStatus: 'pending', verificationSubmittedAt: new Date().toISOString() } : a))
+            );
+            setShowVerifyModal(false);
+            setSelectedApp(null);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to submit verification');
         } finally {
             setSubmitting(false);
         }
@@ -216,6 +237,25 @@ export default function OAuthApplications() {
                                                     <span className={`inline-block w-2 h-2 rounded-full ${app.isActive ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-300 dark:bg-neutral-700'}`} />
                                                     <span className="text-xs text-neutral-500">{app.isActive ? 'Active' : 'Inactive'}</span>
                                                 </div>
+
+                                                {/* Verification Status */}
+                                                <div className="mt-1">
+                                                    {app.verificationStatus === 'verified' && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-medium rounded-full">
+                                                            <CheckCircle2 className="w-3 h-3" /> Verified
+                                                        </span>
+                                                    )}
+                                                    {app.verificationStatus === 'pending' && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 text-[10px] font-medium rounded-full">
+                                                            <Loader2 className="w-3 h-3 animate-spin" /> Pending Review
+                                                        </span>
+                                                    )}
+                                                    {app.verificationStatus === 'rejected' && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] font-medium rounded-full" title={app.verificationRejectionReason || 'Verification rejected'}>
+                                                            <AlertTriangle className="w-3 h-3" /> Rejected
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -252,6 +292,19 @@ export default function OAuthApplications() {
 
                                 {/* Actions Footer */}
                                 <div className="px-6 py-4 bg-neutral-50/50 dark:bg-neutral-900/30 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-2">
+                                    {(app.verificationStatus === 'unverified' || app.verificationStatus === 'rejected') && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedApp(app);
+                                                setShowVerifyModal(true);
+                                            }}
+                                            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 text-neutral-500 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                                            title="Request Verification"
+                                        >
+                                            <Shield className="w-3.5 h-3.5" />
+                                            Verify
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => {
                                             setSelectedApp(app);
@@ -343,8 +396,21 @@ export default function OAuthApplications() {
                         submitting={submitting}
                     />
                 )}
+
+                {showVerifyModal && selectedApp && (
+                    <VerificationRequestModal
+                        appName={selectedApp.name}
+                        onConfirm={handleVerifyApp}
+                        onCancel={() => {
+                            setShowVerifyModal(false);
+                            setSelectedApp(null);
+                        }}
+                        submitting={submitting}
+                    />
+                )}
             </div>
         </div>
+
     );
 }
 
@@ -878,6 +944,54 @@ function DeleteConfirmModal({
                         className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                     >
                         {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Delete'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VerificationRequestModal({
+    appName,
+    onConfirm,
+    onCancel,
+    submitting,
+}: {
+    appName: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    submitting: boolean;
+}) {
+    return (
+        <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-black rounded-2xl p-6 md:p-8 max-w-md w-full border border-neutral-200 dark:border-neutral-800 shadow-xl">
+                <div className="mb-6">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-500">
+                        <Shield className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">Request Verification</h2>
+                    <p className="text-neutral-500 dark:text-neutral-400">
+                        Verify <span className="font-semibold text-neutral-900 dark:text-white">{appName}</span> to show a verified badge on the consent screen and increase user trust.
+                    </p>
+                    <div className="mt-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg text-sm text-neutral-600 dark:text-neutral-400">
+                        <p>Our team will review your application logic, privacy policy, and terms of service. This process usually takes 1-2 business days.</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        disabled={submitting}
+                        className="flex-1 px-4 py-2.5 bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white rounded-lg font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={submitting}
+                        className="flex-1 px-4 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Request'}
                     </button>
                 </div>
             </div>

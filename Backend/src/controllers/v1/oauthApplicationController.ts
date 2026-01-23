@@ -86,6 +86,7 @@ export async function listApplications(req: Request, res: Response): Promise<voi
       isPublic: true,
       isActive: true,
       isVerified: true,
+      verificationStatus: true,
       isTrusted: true,
       grantTypes: true,
       createdAt: true,
@@ -160,10 +161,10 @@ export async function createApplication(req: Request, res: Response): Promise<vo
   // Public clients can't use client_credentials
   const grantTypes = data.isPublic
     ? data.grantTypes?.filter((g) => g !== 'client_credentials') || [
-        'authorization_code',
-        'refresh_token',
-        'urn:ietf:params:oauth:grant-type:device_code',
-      ]
+      'authorization_code',
+      'refresh_token',
+      'urn:ietf:params:oauth:grant-type:device_code',
+    ]
     : data.grantTypes;
 
   const application = await prisma.oAuthApplication.create({
@@ -258,6 +259,10 @@ export async function getApplication(req: Request, res: Response): Promise<void>
       requirePkce: true,
       isActive: true,
       isVerified: true,
+      verificationStatus: true,
+      verificationSubmittedAt: true,
+      verificationVerifiedAt: true,
+      verificationRejectionReason: true,
       isTrusted: true,
       createdAt: true,
       updatedAt: true,
@@ -458,6 +463,52 @@ export async function regenerateSecret(req: Request, res: Response): Promise<voi
 }
 
 /**
+ * Submit application for verification
+ * POST /oauth/applications/:id/verify
+ */
+export async function verifyApplication(req: Request, res: Response): Promise<void> {
+  const userId = (req as unknown as { user?: { userId: string } }).user?.userId;
+  const { id } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const existing = await prisma.oAuthApplication.findFirst({
+    where: { id: id as string, ownerId: userId },
+  });
+
+  if (!existing) {
+    res.status(404).json({ error: 'Application not found' });
+    return;
+  }
+
+  if (existing.verificationStatus === 'pending' || existing.verificationStatus === 'verified') {
+    res.status(400).json({ error: 'Application is already pending verification or verified' });
+    return;
+  }
+
+  // Update status
+  await prisma.oAuthApplication.update({
+    where: { id: id as string },
+    data: {
+      verificationStatus: 'pending',
+      verificationSubmittedAt: new Date(),
+    }
+  });
+
+  await logOAuthEvent('application_verification_submitted', {
+    applicationId: id as string,
+    userId,
+    ipAddress: req.ip,
+    metadata: { status: 'pending' }
+  });
+
+  res.json({ success: true, message: 'Verification request submitted' });
+}
+
+/**
  * Get application public info (for consent screen)
  * GET /oauth/applications/:clientId/public
  */
@@ -474,6 +525,7 @@ export async function getApplicationPublicInfo(req: Request, res: Response): Pro
       privacyPolicyUrl: true,
       termsOfServiceUrl: true,
       isVerified: true,
+      verificationStatus: true,
     },
   });
 

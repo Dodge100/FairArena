@@ -776,6 +776,9 @@ import {
   handleXCallback,
   handleZohoCallback,
   handleZoomCallback,
+  ssoCallback,
+  ssoCheck,
+  ssoLogin,
 } from '../../controllers/v1/oauthController.js';
 import {
   approveQRSession,
@@ -1415,3 +1418,10 @@ import { streamController } from '../../controllers/v1/streamController.js';
 router.get('/stream', protectStreamRoute, streamController.stream);
 
 export default router;
+
+// ============================================
+// ENTERPRISE SSO ROUTES
+// ============================================
+router.get('/sso/check', ssoCheck);
+router.get('/sso/login', ssoLogin);
+router.get('/sso/callback', ssoCallback);

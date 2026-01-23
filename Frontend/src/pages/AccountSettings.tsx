@@ -3,6 +3,7 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { apiRequest } from '@/lib/apiClient';
@@ -28,6 +29,7 @@ import {
   X
 } from 'lucide-react';
 import { useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { toast } from 'sonner';
 import AccountSettingsComponent from '../components/AccountSettings';
 import { SecurityKeyManager } from '../components/SecurityKeyManager';
@@ -111,6 +113,7 @@ function AccountSettings() {
   const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
   const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
   const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<'disableOtp' | 'superSecure' | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
   const queryClient = useQueryClient();
@@ -369,10 +372,13 @@ function AccountSettings() {
   };
 
   const passwordResetMutation = useMutation({
-    mutationFn: async (email: string) => {
+    mutationFn: async ({ email, captchaToken }: { email: string, captchaToken?: string }) => {
       return apiRequest<{ success: boolean, message?: string }>(`${API_BASE}/api/v1/auth/forgot-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(captchaToken ? { 'X-Recaptcha-Token': captchaToken } : {})
+        },
         body: JSON.stringify({ email }),
       });
     },
@@ -391,7 +397,13 @@ function AccountSettings() {
       toast.error('Unable to send password reset email');
       return;
     }
-    passwordResetMutation.mutate(user.email);
+    setShowCaptcha(true);
+  };
+
+  const handleCaptchaVerify = (token: string | null) => {
+    if (!token || !user?.email) return;
+    setShowCaptcha(false);
+    passwordResetMutation.mutate({ email: user.email, captchaToken: token });
   };
 
   const getDeviceIcon = (deviceType: string) => {
@@ -1223,6 +1235,21 @@ function AccountSettings() {
 
       {activeTab === 'settings' && <AccountSettingsComponent />}
 
+      {/* Captcha Modal */}
+      <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
+        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle>Security Verification</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+              theme={isDark ? 'dark' : 'light'}
+              onChange={handleCaptchaVerify}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

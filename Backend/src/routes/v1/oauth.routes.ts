@@ -35,6 +35,7 @@ import {
     listApplications,
     regenerateSecret,
     updateApplication,
+    verifyApplication,
 } from '../../controllers/v1/oauthApplicationController.js';
 
 // Consent management
@@ -120,6 +121,9 @@ router.delete('/applications/:id', protectRoute, deleteApplication);
 
 // Regenerate client secret
 router.post('/applications/:id/secret', protectRoute, regenerateSecret);
+
+// Submit for verification
+router.post('/applications/:id/verify', protectRoute, verifyApplication);
 
 // Get public info for consent screen (no auth required)
 router.get('/applications/:clientId/public', getApplicationPublicInfo);

@@ -7,6 +7,7 @@ import { GetOrganizationMembers } from '../../controllers/v1/organization/getOrg
 import { GetOrganizationTeams } from '../../controllers/v1/organization/getOrganizationTeamsController.js';
 import { GetUserOrganizations } from '../../controllers/v1/organization/getUserOrganizationsController.js';
 import { UpdateOrganizationSettings } from '../../controllers/v1/organization/updateOrganizationSettingsController.js';
+import * as ssoController from '../../controllers/v1/ssoConfigController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import {
     loadOrganizationPermissions,
@@ -15,6 +16,18 @@ import {
 import { rateLimiters } from '../../middleware/organizationRateLimit.middleware.js';
 
 const router = Router();
+
+// SSO Configuration
+router.get('/:orgId/sso-config', protectRoute, ssoController.getSSOConfig);
+router.post('/:orgId/sso-config', protectRoute, ssoController.upsertSSOConfig);
+router.post('/:orgId/sso-config/scim-token', protectRoute, ssoController.regenerateSCIMToken);
+router.post('/:orgId/sso-config/test', protectRoute, ssoController.testSSOConnection);
+
+// Domain verification
+router.get('/:orgId/sso-config/verification-status', protectRoute, ssoController.getVerificationStatus);
+router.post('/:orgId/sso-config/verify-domain/initiate', protectRoute, ssoController.initiateDomainVerification);
+router.post('/:orgId/sso-config/verify-domain/check', protectRoute, ssoController.checkDomainVerification);
+
 
 /**
  * @swagger

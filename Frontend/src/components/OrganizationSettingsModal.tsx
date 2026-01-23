@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Building2, Globe, Lock, Save, Settings, Trash2, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -24,7 +25,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { apiRequest } from '../lib/apiClient';
-import { useEffect, useState } from 'react';
+import { SSOConfigSettings } from './organization/SSOConfigSettings';
 
 interface OrganizationPermissions {
   organization: {
@@ -253,6 +254,11 @@ export const OrganizationSettingsModal = ({
                 onCheckedChange={(checked) => setFormData({ ...formData, joinEnabled: checked })}
               />
             </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h4 className="font-medium mb-4">Enterprise SSO</h4>
+            <SSOConfigSettings organizationId={organization.id} />
           </div>
 
           {/* Actions */}

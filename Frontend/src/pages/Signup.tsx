@@ -1,3 +1,5 @@
+import { AuthIllustration } from '@/components/auth/AuthIllustration';
+import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
 import {
   Dialog,
@@ -5,13 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { motion } from 'framer-motion';
+import { FolderCode, Globe, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
-import { OAuthBanner } from '@/components/auth/OAuthBanner';
 
 export default function Signup() {
   const { isDark } = useTheme();
@@ -173,191 +176,178 @@ export default function Signup() {
   return (
     <>
       <OAuthBanner />
-      <div
-        className={`
-        fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden
-        ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}
-      `}
-      >
-        <div
-          className={`
-          w-full h-screen
-          flex flex-col md:flex-row rounded-none overflow-hidden
-          shadow-[0_0_80px_rgba(0,0,0,0.2)]
-        `}
-        >
+      <div className="fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+        <div className="w-full h-screen flex flex-col md:flex-row overflow-hidden">
           {/* LEFT SIDE — AUTH FORM */}
-          <div
-            className={`
-            w-full md:w-1/2 flex flex-col py-5 items-center justify-start h-auto overflow-scroll overflow-x-hidden no-scrollbar
-            ${isDark ? 'bg-neutral-900' : 'bg-white'}
-          `}
-          >
-            <img
-              src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
-              className="w-30"
-              alt="FairArena Logo"
-            />
-            <h1 className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-              Create Your Account
-            </h1>
-            <p className={`mb-4 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-              Sign up to access your dashboard and tools.
-            </p>
-
-            <div className="w-full max-w-sm px-4">
-
-              <OAuthSocials
-                getRedirectPath={() => location.state?.from?.pathname || '/dashboard'}
-                lastUsedMethod={lastUsedMethod}
-              />
-
-              <div className="relative my-4">
-                <div className={`absolute inset-0 flex items-center ${isDark ? 'opacity-30' : 'opacity-20'}`}>
-                  <div className={`w-full border-t ${isDark ? 'border-neutral-600' : 'border-neutral-300'}`}></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className={`px-4 ${isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-white text-neutral-500'}`}>
-                    or sign up with email
-                  </span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
-                    {error}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="firstName" className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                      First Name
-                    </label>
-                    <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                      Last Name
-                    </label>
-                    <input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="email" className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    placeholder="you@example.com"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
+          <div className="w-full md:w-1/2 flex flex-col items-center justify-center h-full relative z-10 bg-[#0a0a0a]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 1.8 }}
+              className="w-full h-full overflow-y-auto no-scrollbar py-8 px-6 flex flex-col items-center"
+            >
+              <div className="w-full max-w-sm mt-auto mb-auto">
+                <div className="mb-8 text-center">
+                  <img
+                    src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+                    className="h-10 mx-auto mb-6"
+                    alt="FairArena Logo"
                   />
-                </div>
-
-                <div>
-                  <label htmlFor="password" className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-                  />
-                  <p className={`text-xs mt-1 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                    Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+                  <h1 className="text-3xl font-bold mb-2 text-white">
+                    Create your account
+                  </h1>
+                  <p className="text-neutral-400">
+                    Join thousands of developers building on FairArena
                   </p>
                 </div>
 
-                <div>
-                  <label htmlFor="confirmPassword" className={`block text-sm font-medium mb-1 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                    Confirm Password
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] focus:border-[#DDEF00]' : 'bg-white text-neutral-900 border-[#e6e6e6] focus:border-[#DDEF00]'} focus:outline-none`}
-                  />
+                <OAuthSocials
+                  getRedirectPath={() => location.state?.from?.pathname || '/dashboard'}
+                  lastUsedMethod={lastUsedMethod}
+                />
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center opacity-20">
+                    <div className="w-full border-t border-neutral-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wide">
+                    <span className="px-4 bg-[#0a0a0a] text-neutral-500">
+                      Or continue with email
+                    </span>
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-[#DDEF00] hover:bg-[#c7db00] text-black rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {isLoading ? 'Creating account...' : 'Create Account'}
-                </button>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
+                      {error}
+                    </div>
+                  )}
 
-                <p className={`text-center text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                  Already have an account?{' '}
-                  <Link to="/signin" className={`font-medium ${isDark ? 'text-[#DDEF00]' : 'text-neutral-900 hover:underline'}`}>
-                    Sign in
-                  </Link>
-                </p>
-                <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                  By creating an account, you agree to our{' '}
-                  <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
-                    Privacy Policy
-                  </Link>.
-                </p>
-              </form>
-            </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label htmlFor="firstName" className="block text-sm font-medium text-neutral-300">
+                        First Name
+                      </label>
+                      <input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="lastName" className="block text-sm font-medium text-neutral-300">
+                        Last Name
+                      </label>
+                      <input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className="block text-sm font-medium text-neutral-300">
+                      Email address
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      placeholder="name@company.com"
+                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="password" className="block text-sm font-medium text-neutral-300">
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      placeholder="Create a password"
+                      autoComplete="new-password"
+                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                    />
+                    <p className="text-xs text-neutral-500">
+                      Must contain at least 8 characters, 1 uppercase, 1 lowercase, and 1 number
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-300">
+                      Confirm Password
+                    </label>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      placeholder="Confirm your password"
+                      autoComplete="new-password"
+                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
+                  >
+                    {isLoading ? 'Creating account...' : 'Create account'}
+                  </button>
+
+                  <p className="text-center text-sm text-neutral-500 pt-4">
+                    Already have an account?{' '}
+                    <Link to="/signin" className="font-medium text-[#DDEF00] hover:text-[#efff5e] transition-colors">
+                      Sign in here
+                    </Link>
+                  </p>
+                </form>
+
+                <div className="mt-8 pt-6 border-t border-neutral-800 text-center">
+                  <p className="text-xs text-neutral-600">
+                    By clicking create account, you agree to our{' '}
+                    <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           {/* RIGHT SIDE — ILLUSTRATION */}
-          <div className={`hidden md:flex w-1/2 items-center justify-center p-6 ${isDark ? 'bg-[#0f0f0f] border-l border-neutral-800' : 'bg-[#EEF0FF] border-l border-neutral-200'}`}>
-            <div className="relative w-full max-w-md">
-              <h2 className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-                Perfectly Judge Hackathon Teams and View LeaderBoards.
-              </h2>
-              <p className={`mb-6 text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                Log in to access your CRM dashboard and manage your team.
-              </p>
-              <img
-                src="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
-                alt="Dashboard Preview"
-                className="rounded-xl shadow-lg border"
-              />
-            </div>
-          </div>
+          <AuthIllustration
+            title="Join the FairArena community"
+            subtitle="Connect with thousands of developers, find your ideal team, and build projects that matter."
+            icon={<Users className="w-10 h-10 text-black font-bold" />}
+            features={[
+              { icon: User, text: "Developer Profiles", desc: "Showcase your skills" },
+              { icon: Users, text: "Team Matching", desc: "Find collaborators" },
+              { icon: FolderCode, text: "Project Hub", desc: "Manage submissions" },
+              { icon: Globe, text: "Global Access", desc: "Work from anywhere" }
+            ]}
+          />
         </div>
 
         {/* Captcha Modal */}
@@ -375,7 +365,7 @@ export default function Signup() {
             </div>
           </DialogContent>
         </Dialog>
-      </div >
+      </div>
     </>
   );
 }

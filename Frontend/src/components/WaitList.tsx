@@ -1,18 +1,23 @@
+import { AuthIllustration } from '@/components/auth/AuthIllustration';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { publicApiFetch } from '@/lib/apiClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { Bell, CheckCircle2, Clock, Loader2, Sparkles, Trophy, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
-import { Spotlight } from './ui/Spotlight';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -125,176 +130,173 @@ function WaitList() {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center py-12">
-      {/* Spotlight */}
-      <Spotlight
-        className="-top-40 left-0 md:-top-20 md:left-60"
-        fill={isDark ? '#DDFF00' : '#b5c800'}
-      />
-
-      {/* Content */}
-      <div className="max-w-9xl flex flex-col items-center relative z-20 gap-6 px-4">
-        {/* Logo */}
-        <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-40" alt="FairArena Logo" />
-
-        {/* Heading */}
-        <h2
-          className={`
-            text-3xl md:text-5xl font-semibold text-center
-            ${isDark ? 'text-neutral-100' : 'text-neutral-900'}
-          `}
-        >
-          Join the Future of{' '}
-          <span className={`${isDark ? 'text-[#ddef00]' : 'text-[#1f1f1f]'}`}>Collaboration!</span>
-        </h2>
-
-        {/* Subtitle */}
-        {totalWaitlist !== null && (
-          <p className={`text-lg ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-            Join <span className="font-bold">{totalWaitlist.toLocaleString()}+</span> people already on the waitlist
-          </p>
-        )}
-
-        {/* Waitlist Card Wrapper */}
-        <div className="w-full flex justify-center">
-          <div
-            className={`
-              p-1 rounded-4xl backdrop-blur-md w-auto max-w-md border
-              ${isDark ? 'bg-[#ddef00] border-neutral-800' : 'bg-black border-neutral-300'}
-            `}
+    <div className="fixed inset-0 w-full min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+      <div className="w-full h-screen flex flex-col md:flex-row overflow-hidden">
+        {/* LEFT SIDE — FORM */}
+        <div className="w-full md:w-1/2 flex flex-col items-center justify-center h-full relative z-10 bg-[#0a0a0a]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.8 }}
+            className="w-full h-full overflow-y-auto no-scrollbar py-8 px-6 flex flex-col items-center"
           >
-            {/* Custom Waitlist Form */}
-            <div
-              className={`
-                ${isDark ? 'bg-neutral-900' : 'bg-white'}
-                rounded-4xl shadow-none p-6
-              `}
-            >
-              {isSubmitted ? (
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}>
-                    You're on the list!
-                  </h3>
-                  {position && (
-                    <p className={`text-lg font-medium mb-2 ${isDark ? 'text-[#ddef00]' : 'text-primary'}`}>
-                      Position #{position}
-                    </p>
+            <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full">
+
+              {/* Header */}
+              {!isSubmitted && (
+                <div className="mb-8 text-center">
+                  <img
+                    src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+                    className="h-10 mx-auto mb-6"
+                    alt="FairArena Logo"
+                  />
+                  <h1 className="text-3xl font-bold mb-2 text-white">
+                    Join the Waitlist
+                  </h1>
+                  <p className="text-neutral-400">
+                    Be the first to experience the future
+                  </p>
+                  {totalWaitlist !== null && (
+                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mx-auto">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DDEF00] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#DDEF00]"></span>
+                      </span>
+                      <span className="text-xs text-neutral-300">
+                        <strong className="text-white">{totalWaitlist.toLocaleString()}</strong> people waiting
+                      </span>
+                    </div>
                   )}
-                  <p className={`${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                    We'll notify you when FairArena launches.
-                  </p>
-                  <p className={`text-sm mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                    Check your email for confirmation.
-                  </p>
+                </div>
+              )}
+
+              {/* Success State */}
+              {isSubmitted ? (
+                <div className="text-center py-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-[#DDEF00]/10 flex items-center justify-center ring-1 ring-[#DDEF00]/20">
+                    <CheckCircle2 className="w-10 h-10 text-[#DDEF00]" />
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-bold text-white">You're on the list!</h3>
+                    {position && (
+                      <div className="inline-block px-4 py-1.5 rounded-full bg-[#DDEF00]/10 text-[#DDEF00] font-medium border border-[#DDEF00]/20">
+                        Position #{position.toLocaleString()}
+                      </div>
+                    )}
+                    <p className="text-neutral-400 max-w-xs mx-auto">
+                      We'll send an email to <span className="font-semibold text-white">{email}</span> when your spot opens up.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/')}
+                      variant="outline"
+                      className="mt-6 border-neutral-800 bg-transparent text-white hover:bg-neutral-800 hover:text-white"
+                    >
+                      Return Home
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}>
-                    Join the Waitlist
-                  </h3>
-                  <p className={`text-sm mb-4 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                    Be the first to know when we launch. Get early access and exclusive features.
-                  </p>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                /* Form State */
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="name" className="block text-sm font-medium text-neutral-300">
+                      Name <span className="text-neutral-500 font-normal">(Optional)</span>
+                    </label>
                     <input
+                      id="name"
                       type="text"
-                      placeholder="Your name (optional)"
+                      placeholder="John Doe"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className={`
-                        w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[#DDEF00] focus:border-transparent outline-none transition-all
-                        ${isDark
-                          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-[#777]'
-                          : 'bg-white text-neutral-900 border-neutral-300'}
-                      `}
+                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className="block text-sm font-medium text-neutral-300">
+                      Email address
+                    </label>
                     <input
+                      id="email"
                       type="email"
-                      placeholder="Your email address"
+                      placeholder="name@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className={`
-                        w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[#DDEF00] focus:border-transparent outline-none transition-all
-                        ${isDark
-                          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-[#777]'
-                          : 'bg-white text-neutral-900 border-neutral-300'}
-                      `}
+                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
                     />
-                    <label className="flex items-start gap-3 px-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={marketingConsent}
-                        onChange={(e) => {
-                          const newValue = e.target.checked;
-                          setMarketingConsent(newValue);
-                        }}
-                        className={`
-                        mt-1 w-4 h-4 rounded border outline-none cursor-pointer
-                        ${isDark ? 'border-neutral-600 bg-neutral-800' : 'border-neutral-300 bg-white'}
-                        accent-[#DDEF00]
-                      `}
-                      />
-                      <span className={`text-sm select-none ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                        I agree to receive updates about FairArena.
-                      </span>
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`
-                        w-full py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2
-                        ${isDark ? 'bg-[#DDEF00] text-black hover:bg-[#DDEF00]/90' : 'bg-black text-white hover:bg-black/90'}
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                      `}
-                    >
-                      {isLoading ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          Joining...
-                        </>
-                      ) : (
-                        'Join Waitlist'
-                      )}
-                    </button>
-                  </form>
-                  <p className={`text-xs text-center mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                    No spam, ever. We respect your privacy.
-                  </p>
-                  <p className={`text-center text-xs mt-2 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                    By joining, you agree to our{' '}
-                    <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
-                      Privacy Policy
-                    </Link>.
-                  </p>
-                </>
+                  </div>
+
+                  <div className="flex items-start gap-3 py-2">
+                    <Checkbox
+                      id="marketing"
+                      checked={marketingConsent}
+                      onCheckedChange={(checked) => setMarketingConsent(checked as boolean)}
+                      className="mt-1 data-[state=checked]:bg-[#DDEF00] data-[state=checked]:border-[#DDEF00] data-[state=checked]:text-black border-neutral-600"
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <Label
+                        htmlFor="marketing"
+                        className="text-sm font-medium leading-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-neutral-400"
+                      >
+                        I want to receive product updates and announcements.
+                      </Label>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)] flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Joining...
+                      </>
+                    ) : (
+                      'Join Waitlist'
+                    )}
+                  </button>
+
+                  <div className="pt-4 text-center">
+                    <p className="text-sm text-neutral-500">
+                      Already have an account?{' '}
+                      <Link
+                        to="/signin"
+                        className="font-medium text-[#DDEF00] hover:text-[#efff5e] transition-colors"
+                      >
+                        Sign in
+                      </Link>
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-neutral-800 text-center">
+                    <p className="text-xs text-neutral-600">
+                      By joining, you agree to our{' '}
+                      <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms</Link>
+                      {' '}and{' '}
+                      <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
+                    </p>
+                  </div>
+                </form>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Already have an account? */}
-        <p className={`text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-          Already have an account?{' '}
-          <button
-            onClick={() => navigate('/signin')}
-            className={`font-medium underline ${isDark ? 'text-[#ddef00]' : 'text-black'}`}
-          >
-            Sign in
-          </button>
-        </p>
+        {/* RIGHT SIDE — ILLUSTRATION */}
+        <AuthIllustration
+          title="Secure your early access"
+          subtitle="Join the exclusive early access program and be the first to experience the next level of project management."
+          icon={<Sparkles className="w-10 h-10 text-black font-bold" />}
+          features={[
+            { icon: Clock, text: "Priority Access", desc: "First in line" },
+            { icon: Trophy, text: "Founder Badge", desc: "Exclusive reward" },
+            { icon: Bell, text: "Live Updates", desc: "Status alerts" },
+            { icon: Zap, text: "Beta Testing", desc: "Try new features" }
+          ]}
+        />
       </div>
 
       {/* Captcha Modal */}
@@ -312,7 +314,7 @@ function WaitList() {
           </div>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 }
 
