@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="/var/log/fairarena-deploy.log"
+LOG_FILE="/tmp/fairarena-deploy.log"
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 TEMP_LOG_FILE="/tmp/fairarena-deploy-$(date +%Y%m%d%H%M%S).log"
