@@ -33,15 +33,18 @@ jobs:
         run: |
           python Frontend/scripts/translate_locales.py
 
-      - name: Commit and Push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Frontend/src/i18n/locales/*.json
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore(i18n): auto-translate locales [skip ci]"
-            git push
-          fi
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GIT_HUB_TOKEN }}
+          commit-message: "chore(i18n): auto-translate locales"
+          title: "chore(i18n): auto-translate locales"
+          body: |
+            Automated translation updates for missing keys in locale files.
+
+            Key changes:
+            - Auto-translated missing keys using deep-translator
+            - Synced structure with en.json
+          branch: i18n-auto-translate
+          base: main
+          delete-branch: true

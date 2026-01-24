@@ -1,122 +1,186 @@
-
 import json
 import os
+import time
 from deep_translator import GoogleTranslator
-from copy import deepcopy
 
 # Configuration
 SOURCE_FILE = 'Frontend/src/i18n/locales/en.json'
 LOCALES_DIR = 'Frontend/src/i18n/locales'
 TARGET_LANGS = ['fr', 'es', 'de', 'hi']
+BATCH_SIZE = 50
+
+# Global translators cache
+TRANSLATORS = {}
+
+def get_translator(lang):
+    if lang not in TRANSLATORS:
+        TRANSLATORS[lang] = GoogleTranslator(source='en', target=lang)
+    return TRANSLATORS[lang]
 
 def load_json(path):
     if not os.path.exists(path):
         return {}
-    with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"Error reading {path}: {e}")
+        return {}
 
 def save_json(path, data):
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write('\n') # Add trailing newline
+        f.write('\n')
 
-def translate_text(text, target_lang):
-    try:
-        # Use GoogleTranslator from deep_translator
-        # It's a free scraper, might be slow or rate limited for large batches
-        translator = GoogleTranslator(source='en', target=target_lang)
-        return translator.translate(text)
-    except Exception as e:
-        print(f"Error translating '{text}' to {target_lang}: {e}")
-        return text
-
-def sync_keys(source, target, target_lang):
+def extract_missing_keys(source, target, prefix=''):
     """
-    Recursively sync keys from source to target.
-    If key missing in target, translate from source.
-    If key exists, keep target (preserve manual edits).
+    Recursively find keys present in source but missing in target.
+    Returns a list of tuples: (dot_notation_key, text_to_translate)
     """
-    updated = False
+    missing = []
 
-    # Handle dictionary (nested keys)
     if isinstance(source, dict):
-        if not isinstance(target, dict):
-            target = {} # Mismatch type, overwrite/reset to dict
-            updated = True
+        target_dict = target if isinstance(target, dict) else {}
 
         for key, value in source.items():
-            if key not in target:
-                print(f"[{target_lang}] New key found: {key}")
+            full_key = f"{prefix}.{key}" if prefix else key
+
+            if key not in target_dict:
                 if isinstance(value, (dict, list)):
-                    # Initialize empty and recurse
-                    target[key] = {} if isinstance(value, dict) else []
-                    _, sub_updated = sync_keys(value, target[key], target_lang)
+                    missing.extend(extract_missing_keys(value, {}, full_key))
                 else:
-                    # Translate leaf value
-                    target[key] = translate_text(str(value), target_lang)
-                updated = True
+                    missing.append((full_key, str(value)))
             else:
-                # Key exists, recurse to check sub-keys
-                _, sub_updated = sync_keys(value, target[key], target_lang)
-                if sub_updated:
-                    updated = True
+                missing.extend(extract_missing_keys(value, target_dict[key], full_key))
 
-        return target, updated
-
-    # Handle lists
     elif isinstance(source, list):
-        if not isinstance(target, list):
-            target = []
-            updated = True
-
-        # Basic list handling:
-        # If source list is longer, translate new items.
-        # If strict matching is needed, it's harder.
-        # We will assume list indices correspond.
+        target_list = target if isinstance(target, list) else []
 
         for i, item in enumerate(source):
-            if i >= len(target):
-                print(f"[{target_lang}] New list item at index {i}")
-                if isinstance(item, (dict, list)):
-                     # Initialize and recurse
-                    new_item = {} if isinstance(item, dict) else []
-                    synced_item, _ = sync_keys(item, new_item, target_lang)
-                    target.append(synced_item)
-                else:
-                    target.append(translate_text(str(item), target_lang))
-                updated = True
-            else:
-                 # Item exists, recurse
-                _, sub_updated = sync_keys(item, target[i], target_lang)
-                if sub_updated:
-                    updated = True
+            full_key = f"{prefix}[{i}]"
 
-        return target, updated
+            if i >= len(target_list):
+                 if isinstance(item, (dict, list)):
+                    missing.extend(extract_missing_keys(item, {}, full_key))
+                 else:
+                    missing.append((full_key, str(item)))
+            else:
+                missing.extend(extract_missing_keys(item, target_list[i], full_key))
 
     else:
-        # Leaf node (string/number/etc)
-        # If we reached here in recursion but target exists, we preserve it.
-        # This function is usually called with collections, but if called with scalar, just return it.
-        return target, updated
+        # Scalar value not in list/dict handled by parent calls
+        pass
+
+    return missing
+
+def set_nested_value(data, key_path, value):
+    """
+    Sets a value in a nested dict/list using dot notation (e.g. "a.b[0].c")
+    Autocreates intermediate dicts/lists if missing.
+    """
+    parts = []
+    current_part = ""
+    for char in key_path:
+        if char == '.':
+            if current_part: parts.append(current_part)
+            current_part = ""
+        elif char == '[':
+            if current_part: parts.append(current_part)
+            current_part = ""
+        elif char == ']':
+            pass
+        else:
+            current_part += char
+    if current_part: parts.append(current_part)
+
+    current = data
+    for i, part in enumerate(parts[:-1]):
+        next_part = parts[i+1]
+        next_is_idx = next_part.isdigit()
+
+        if part.isdigit():
+            part_idx = int(part)
+            while len(current) <= part_idx:
+                current.append({})
+
+            # Type check correction if needed could happen here
+            # For now assume structure matches source
+            current = current[part_idx]
+        else:
+            if part not in current:
+                current[part] = [] if next_is_idx else {}
+            current = current[part]
+
+    # Set final value
+    last_part = parts[-1]
+    if last_part.isdigit():
+        idx = int(last_part)
+        while len(current) <= idx:
+            current.append(None)
+        current[idx] = value
+    else:
+        current[last_part] = value
+
+def batch_translate(texts, target_lang):
+    """
+    Translates a list of texts in batches.
+    """
+    if not texts:
+        return []
+
+    translator = get_translator(target_lang)
+    translated = []
+
+    print(f"  Translating {len(texts)} strings in batches of {BATCH_SIZE}...")
+
+    for i in range(0, len(texts), BATCH_SIZE):
+        batch = texts[i:i + BATCH_SIZE]
+        try:
+            results = translator.translate_batch(batch)
+            translated.extend(results)
+            print(f"    Batch {i//BATCH_SIZE + 1} done")
+            time.sleep(1) # Be nice to the scraper
+        except Exception as e:
+            print(f"    Error in batch {i}: {e}. Skipping batch.")
+            translated.extend(batch) # Fallback to original
+
+    return translated
 
 def main():
     print(f"Loading source: {SOURCE_FILE}")
     source_data = load_json(SOURCE_FILE)
+    if not source_data:
+        print("Source file empty or missing!")
+        return
 
     for lang in TARGET_LANGS:
         target_file = os.path.join(LOCALES_DIR, f"{lang}.json")
-        print(f"Processing {lang} ({target_file})...")
+        print(f"Processing {lang}...")
 
         target_data = load_json(target_file)
 
-        # Sync
-        synced_data, updated = sync_keys(source_data, target_data, lang)
+        # 1. Identify missing content
+        missing_entries = extract_missing_keys(source_data, target_data)
 
-        if updated:
-            print(f"Saving updates to {target_file}")
-            save_json(target_file, synced_data)
-        else:
-            print(f"No changes for {lang}")
+        if not missing_entries:
+            print(f"  No missing keys for {lang}. Skipping.")
+            continue
+
+        print(f"  Found {len(missing_entries)} missing keys.")
+
+        # 2. Extract texts to translate
+        keys_to_update = [entry[0] for entry in missing_entries]
+        texts_to_translate = [entry[1] for entry in missing_entries]
+
+        # 3. Batch translate
+        translated_texts = batch_translate(texts_to_translate, lang)
+
+        # 4. Apply back to target data
+        for key, text in zip(keys_to_update, translated_texts):
+            set_nested_value(target_data, key, text)
+
+        print(f"  Saving updates to {target_file}")
+        save_json(target_file, target_data)
 
 if __name__ == "__main__":
     main()

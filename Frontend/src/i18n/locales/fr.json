@@ -16,12 +16,10 @@
       "desc": "Suivez-nous et ne manquez aucune mise à jour sur les dernières technologies, la productivité et la croissance numérique."
     },
     "menu": {
-      "title": "Menu",
       "items": {
         "about": "À propos",
         "whyChooseUs": "Pourquoi nous choisir",
         "changelog": "Journal des modifications",
-        "faq": "FAQ",
         "pricing": "Tarification",
         "status": "Statut"
       }
@@ -35,8 +33,6 @@
       }
     },
     "contact": {
-      "title": "Contact",
-      "support": "Support",
       "location": "Delhi, Inde"
     },
     "bottom": {
@@ -46,8 +42,7 @@
         "privacyPolicy": "Politique de confidentialité",
         "termsAndConditions": "Termes et conditions",
         "cookiePolicy": "Politique de cookies",
-        "refund": "Remboursement",
-        "dmca": "DMCA"
+        "refund": "Remboursement"
       }
     }
   },
@@ -320,217 +315,7 @@
       "bugfix": "Correctif",
       "security": "Sécurité",
       "breaking": "Changement Majeur"
-    },
-    "entries": [
-      {
-        "version": "2.1.0",
-        "date": "2026-01-23",
-        "title": "Enterprise SSO & Advanced Security",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Added Enterprise SSO with domain verification and SAML 2.0 support for organizations"
-          },
-          {
-            "type": "feature",
-            "description": "Implemented OAuth 2.0 Device Authorization Flow for CLI and IoT devices"
-          },
-          {
-            "type": "feature",
-            "description": "Added support for multiple OAuth providers: GitHub, Google, Atlassian, Figma, Vercel, and Zoom"
-          },
-          {
-            "type": "security",
-            "description": "Enhanced CSRF protection with dedicated token endpoint and automatic refresh"
-          },
-          {
-            "type": "improvement",
-            "description": "Migrated to TanStack DB for sub-millisecond reactive updates in Inbox"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed authentication token refresh causing unexpected logouts"
-          }
-        ]
-      },
-      {
-        "version": "1.5.0",
-        "date": "2026-01-20",
-        "title": "Device Authorization & Multi-Provider OAuth",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Implemented OAuth 2.0 Device Authorization Flow for headless devices"
-          },
-          {
-            "type": "feature",
-            "description": "Added Atlassian OAuth integration with environment configuration"
-          },
-          {
-            "type": "improvement",
-            "description": "Updated frontend sign-in/sign-up pages to display all OAuth providers"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed \"Unknown Application\" error on device consent page"
-          },
-          {
-            "type": "bugfix",
-            "description": "Resolved authentication issues with /device/verify endpoint"
-          }
-        ]
-      },
-      {
-        "version": "1.6.0",
-        "date": "2026-01-19",
-        "title": "Database Migrations & Team Features",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Applied database migrations with Prisma for schema updates"
-          },
-          {
-            "type": "feature",
-            "description": "Added team invitation system with email notifications"
-          },
-          {
-            "type": "improvement",
-            "description": "Enhanced backend server restart handling after configuration changes"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed authentication flow with proper token refresh and session invalidation"
-          }
-        ]
-      },
-      {
-        "version": "1.7.0",
-        "date": "2026-01-18",
-        "title": "MCP Server Production Deployment",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Refactored MCP server to use HTTP/SSE transport instead of stdio"
-          },
-          {
-            "type": "feature",
-            "description": "Added production-ready Dockerfile for containerized deployment"
-          },
-          {
-            "type": "security",
-            "description": "Implemented rate limiting, CORS, and authentication for MCP server"
-          },
-          {
-            "type": "security",
-            "description": "Secured Pinecone credentials server-side with client-provided Gemini API keys"
-          },
-          {
-            "type": "improvement",
-            "description": "Created comprehensive README.md and mcp-config.example.json"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed TypeScript errors in production feature implementation"
-          }
-        ]
-      },
-      {
-        "version": "1.8.0",
-        "date": "2026-01-17",
-        "title": "AI Documentation Search & Pinecone Integration",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Integrated Pinecone vector database for AI-powered documentation search"
-          },
-          {
-            "type": "feature",
-            "description": "Added search_documentation tool with embedding-based retrieval"
-          },
-          {
-            "type": "improvement",
-            "description": "Moved AI system prompt to separate file for better maintainability"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed Pinecone dimension mismatch by using 384-dimensional embeddings"
-          },
-          {
-            "type": "bugfix",
-            "description": "Resolved sharp module installation error for @xenova/transformers"
-          }
-        ]
-      },
-      {
-        "version": "1.8.5",
-        "date": "2026-01-15",
-        "title": "OAuth & Authorization Improvements",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Launched OAuth authorization endpoint with consent flow"
-          },
-          {
-            "type": "feature",
-            "description": "Added OAuth application management dashboard"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed 404 error for /oauth/authorize endpoint"
-          },
-          {
-            "type": "security",
-            "description": "Added SECURITY notification type for security-related alerts"
-          }
-        ]
-      },
-      {
-        "version": "1.9.0",
-        "date": "2026-01-14",
-        "title": "UI/UX Redesign & Image Optimization",
-        "changes": [
-          {
-            "type": "improvement",
-            "description": "Redesigned feedback and unsubscribe pages with minimal blackish theme using Shadcn UI"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed upstream image response timeout errors during development"
-          },
-          {
-            "type": "bugfix",
-            "description": "Resolved Docker build failures with pnpm installation"
-          }
-        ]
-      },
-      {
-        "version": "2.0.0",
-        "date": "2026-01-13",
-        "title": "Real-Time Features & GitHub Integration",
-        "changes": [
-          {
-            "type": "feature",
-            "description": "Added real-time GitHub repository stats display in sidebar and footer"
-          },
-          {
-            "type": "feature",
-            "description": "Implemented Redis caching with 6-hour TTL for GitHub data"
-          },
-          {
-            "type": "feature",
-            "description": "Added TanStack Query with 2-hour staleTime for optimized data fetching"
-          },
-          {
-            "type": "improvement",
-            "description": "Enhanced authentication state caching after login and MFA verification"
-          },
-          {
-            "type": "bugfix",
-            "description": "Fixed infinite loop in Axios interceptor when token refresh fails"
-          }
-        ]
-      }
-    ]
+    }
   },
   "accessibility": {
     "title": "Déclaration d'Accessibilité",
@@ -583,7 +368,6 @@
       "title": "Retours & Contact",
       "text": "Nous accueillons vos commentaires sur l'accessibilité de FairArena. Si vous rencontrez des obstacles à l'accessibilité, veuillez nous le faire savoir :",
       "emailLabel": "E-mail",
-      "supportLabel": "Support",
       "supportButton": "Contacter le Support",
       "response": "Nous visons à répondre aux commentaires sur l'accessibilité dans les 2 jours ouvrables et à proposer une solution dans les 10 jours ouvrables."
     },
@@ -707,8 +491,7 @@
       "title": "Divulgation Responsable",
       "text": "Nous apprécions les efforts de la communauté de recherche en sécurité pour aider à garder FairArena sécurisé. Si vous découvrez une vulnérabilité de sécurité, veuillez la signaler de manière responsable :",
       "email": {
-        "label": "E-mail",
-        "value": "fairarena.contact@gmail.com"
+        "label": "E-mail"
       },
       "pgp": {
         "label": "Clé PGP",
@@ -751,219 +534,6 @@
       }
     },
     "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
-  },
-  "privacyPolicy": {
-    "title": "Privacy Policy",
-    "lastUpdated": "Last Updated: January 23, 2026",
-    "intro": "FairArena (\"us\", \"we\", or \"our\") operates the FairArena website (the \"Service\"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data. We use your data to provide and improve the Service. By using the Service, you agree to the collection and use of information in accordance with this policy.",
-    "sections": {
-      "collection": {
-        "title": "1. Information We Collect",
-        "description": "We collect several different types of information for various purposes to provide and improve our Service to you.",
-        "subsections": {
-          "personalData": {
-            "title": "1.1 Personal Data",
-            "description": "While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you (\"Personal Data\"). Personally identifiable information may include, but is not limited to:",
-            "list": [
-              "Email address",
-              "First name and last name",
-              "Phone number",
-              "Address, State, Province, ZIP/Postal code, City",
-              "Cookies and Usage Data",
-              "Social Media Profile information (if you log in via 3rd party services like Google or GitHub)"
-            ]
-          },
-          "usageData": {
-            "title": "1.2 Usage Data",
-            "description": "We may also collect information how the Service is accessed and used (\"Usage Data\"). This Usage Data may include information such as:",
-            "list": [
-              "Your computer's Internet Protocol address (e.g. IP address)",
-              "Browser type and browser version",
-              "The pages of our Service that you visit",
-              "The time and date of your visit",
-              "The time spent on those pages",
-              "Unique device identifiers and other diagnostic data"
-            ]
-          },
-          "tracking": {
-            "title": "1.3 Tracking & Cookies Data",
-            "description": "We use cookies and similar tracking technologies to track the activity on our Service and hold certain information.",
-            "list": [
-              "Session Cookies: We use Session Cookies to operate our Service.",
-              "Preference Cookies: We use Preference Cookies to remember your preferences and various settings.",
-              "Security Cookies: We use Security Cookies for security purposes."
-            ]
-          }
-        }
-      },
-      "usage": {
-        "title": "2. How We Use Your Data",
-        "intro": "FairArena uses the collected data for various purposes:",
-        "list": [
-          "To provide and maintain the Service",
-          "To notify you about changes to our Service",
-          "To allow you to participate in interactive features of our Service when you choose to do so",
-          "To provide customer care and support",
-          "To provide analysis or valuable information so that we can improve the Service",
-          "To monitor the usage of the Service",
-          "To detect, prevent and address technical issues",
-          "To process payments and manage billing (via secure third-party processors)"
-        ]
-      },
-      "retention": {
-        "title": "3. Retention of Data",
-        "content1": "FairArena will retain your Personal Data only for as long as is necessary for the purposes set out in this Privacy Policy. We will retain and use your Personal Data to the extent necessary to comply with our legal obligations (for example, if we are required to retain your data to comply with applicable laws), resolve disputes, and enforce our legal agreements and policies.",
-        "content2": "FairArena will also retain Usage Data for internal analysis purposes. Usage Data is generally retained for a shorter period of time, except when this data is used to strengthen the security or to improve the functionality of our Service, or we are legally obligated to retain this data for longer time periods."
-      },
-      "transfer": {
-        "title": "4. Transfer of Data",
-        "content1": "Your information, including Personal Data, may be transferred to — and maintained on — computers located outside of your state, province, country or other governmental jurisdiction where the data protection laws may differ than those from your jurisdiction.",
-        "content2": "If you are located outside India and choose to provide information to us, please note that we transfer the data, including Personal Data, to India and process it there.",
-        "content3": "Your consent to this Privacy Policy followed by your submission of such information represents your agreement to that transfer."
-      },
-      "disclosure": {
-        "title": "5. Disclosure of Data",
-        "subtitle": "5.1 Legal Requirements",
-        "description": "FairArena may disclose your Personal Data in the good faith belief that such action is necessary to:",
-        "list": [
-          "To comply with a legal obligation",
-          "To protect and defend the rights or property of FairArena",
-          "To prevent or investigate possible wrongdoing in connection with the Service",
-          "To protect the personal safety of users of the Service or the public",
-          "To protect against legal liability"
-        ]
-      },
-      "security": {
-        "title": "6. Security of Data",
-        "content": "The security of your data is important to us, but remember that no method of transmission over the Internet, or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we cannot guarantee its absolute security."
-      },
-      "providers": {
-        "title": "7. Service Providers",
-        "content1": "We may employ third party companies and individuals to facilitate our Service (\"Service Providers\"), to provide the Service on our behalf, to perform Service-related services or to assist us in analyzing how our Service is used.",
-        "content2": "These third parties have access to your Personal Data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose."
-      },
-      "links": {
-        "title": "8. Links to Other Sites",
-        "content1": "Our Service may contain links to other sites that are not operated by us. If you click on a third party link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit.",
-        "content2": "We have no control over and assume no responsibility for the content, privacy policies or practices of any third party sites or services."
-      },
-      "children": {
-        "title": "9. Children's Privacy",
-        "content1": "Our Service does not address anyone under the age of 13 (\"Children\").",
-        "content2": "We do not knowingly collect personally identifiable information from anyone under the age of 13. If you are a parent or guardian and you are aware that your Children has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers."
-      },
-      "changes": {
-        "title": "10. Changes to This Privacy Policy",
-        "content1": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.",
-        "content2": "We will let you know via email and/or a prominent notice on our Service, prior to the change becoming effective and update the \"effective date\" at the top of this Privacy Policy.",
-        "content3": "You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page."
-      },
-      "contact": {
-        "title": "11. Contact Us",
-        "description": "If you have any questions about this Privacy Policy, please contact us:",
-        "email": "By email: fairarena.contact@gmail.com"
-      }
-    }
-  },
-  "termsAndConditions": {
-    "title": "Terms and Conditions",
-    "lastUpdated": "Last Updated: January 23, 2026",
-    "intro": "Please read these Terms and Conditions (\"Terms\", \"Terms and Conditions\") carefully before using the FairArena website and service (the \"Service\") operated by FairArena (\"us\", \"we\", or \"our\"). Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.",
-    "sections": {
-      "definitions": {
-        "title": "1. Interpretation and Definitions",
-        "content": "The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.",
-        "list": [
-          "“Company”, “We”, “Us”, or “Our” refers to FairArena, the provider of the Service.",
-          "“Service” refers to the FairArena hackathon management platform, website, and related services managed by the Company.",
-          "“User”, “You”, or “Your” refers to the individual accessing or using the Service, or the company, or other legal entity on behalf of which such individual is accessing or using the Service, as applicable.",
-          "“Account” means a unique account created for You to access our Service or parts of our Service.",
-          "“Organiser” refers to a User who creates and manages hackathons via the Service.",
-          "“Participant” refers to a User who registers for and submits projects to hackathons.",
-          "“Judge” refers to a User invited to evaluate submissions.",
-          "“Content” refers to content such as text, images, or other information that can be posted, uploaded, linked to or otherwise made available by You, regardless of the form of that content."
-        ]
-      },
-      "accounts": {
-        "title": "2. Accounts and Registration",
-        "content": "When You create an account with Us, You must provide us information that is accurate, complete, and current at all times.",
-        "list": [
-          "You must provide accurate, complete, and current information at all times. Failure to do so constitutes a breach of the Terms.",
-          "You are responsible for safeguarding the password that You use to access the Service and for any activities or actions under Your password.",
-          "You agree not to disclose Your password to any third party. You must notify Us immediately upon becoming aware of any breach of security or unauthorized use of Your Account.",
-          "We reserve the right to refuse service, terminate accounts, remove or edit content, or cancel orders in our sole discretion."
-        ]
-      },
-      "usage": {
-        "title": "3. Use of Service and Restrictions",
-        "list": [
-          "You agree not to use the Service for any unlawful purpose or in any way that interrupts, damages, impairs, or renders the Service less efficient.",
-          "You must not attempt to gain unauthorized access to our Service, the server on which our Service is stored or any server, computer or database connected to our Service.",
-          "You must not use the Service to transmit any unsolicited or unauthorized advertising, promotional materials, or spam.",
-          "Organisers are solely responsible for the administration of their hackathons, including the verification of Participants and Judges."
-        ]
-      },
-      "intellectualProperty": {
-        "title": "4. Intellectual Property Rights",
-        "list": [
-          "The Service and its original content (excluding Content provided by You or other Users), features and functionality are and will remain the exclusive property of the Company and its licensors.",
-          "The Service is protected by copyright, trademark, and other laws of both the Country and foreign countries.",
-          "Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of the Company.",
-          "By submitting Content (including project submissions), You grant Us a right to use, modify, perform, display, reproduce, and distribute such Content on and through the Service for the purpose of operating and improving the Service."
-        ]
-      },
-      "aiDisclaimer": {
-        "title": "5. AI Analysis and Disclaimers",
-        "list": [
-          "FairArena utilizes Artificial Intelligence (AI) technologies to provide insights, analysis, and scoring assistance.",
-          "AI-generated results are advisory in nature and may not be 100% accurate or free from bias.",
-          "Organisers and Judges retain full discretion and responsibility for final decision-making and scoring.",
-          "We do not guarantee the accuracy, completeness, or usefulness of any AI-generated analysis."
-        ]
-      },
-      "links": {
-        "title": "6. Links to Other Websites",
-        "content": "Our Service may contain links to third-party web sites or services that are not owned or controlled by the Company. The Company has no control over, and assumes no responsibility for, the content, privacy policies, or practices of any third-party web sites or services. You further acknowledge and agree that the Company shall not be responsible or liable, directly or indirectly, for any damage or loss caused or alleged to be caused by or in connection with the use of or reliance on any such content, goods or services available on or through any such web sites or services."
-      },
-      "termination": {
-        "title": "7. Termination",
-        "list": [
-          "We may terminate or suspend Your Account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if You breach these Terms.",
-          "Upon termination, Your right to use the Service will cease immediately.",
-          "If You wish to terminate Your Account, You may simply discontinue using the Service or delete your account through the settings."
-        ]
-      },
-      "liability": {
-        "title": "8. Limitation of Liability",
-        "list": [
-          "To the maximum extent permitted by applicable law, in no event shall the Company be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, loss of data or other information, for business interruption, for personal injury, loss of privacy arising out of or in any way related to the use of or inability to use the Service).",
-          "Our total liability to You for any claims arising out of or relating to these Terms or Your use of the Service is limited to the amount You paid us to use the Service in the 12 months prior to the act that gave rise to the liability."
-        ]
-      },
-      "disclaimer": {
-        "title": "9. Disclaimer",
-        "content1": "The Service is provided to You \"AS IS\" and \"AS AVAILABLE\" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, the Company expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the Service, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement.",
-        "content2": "Without limiting the foregoing, neither the Company nor any of the company's provider makes any representation or warranty of any kind, express or implied: (i) as to the operation or availability of the Service, or the information, content, and materials or products included thereon; (ii) that the Service will be uninterrupted or error-free; (iii) as to the accuracy, reliability, or currency of any information or content provided through the Service."
-      },
-      "governing": {
-        "title": "10. Governing Law",
-        "content": "The laws of India, excluding its conflicts of law rules, shall govern this Terms and Your use of the Service. Your use of the Application may also be subject to other local, state, national, or international laws."
-      },
-      "disputes": {
-        "title": "11. Disputes Resolution",
-        "content": "If You have any concern or dispute about the Service, You agree to first try to resolve the dispute informally by contacting the Company."
-      },
-      "changes": {
-        "title": "12. Changes to These Terms",
-        "content1": "We reserve the right, at Our sole discretion, to modify or replace these Terms at any time. If a revision is material We will make reasonable efforts to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at Our sole discretion.",
-        "content2": "By continuing to access or use Our Service after those revisions become effective, You agree to be bound by the revised terms. If You do not agree to the new terms, in whole or in part, please stop using the website and the Service."
-      },
-      "contact": {
-        "title": "13. Contact Us",
-        "description": "If you have any questions about these Terms, You can contact us:",
-        "email": "By email: fairarena.contact@gmail.com"
-      }
-    }
   },
   "cookiePolicy": {
     "title": "Politique de Cookies",
@@ -1030,7 +600,6 @@
     "title": "Politique DMCA",
     "subtitle": "Conformité au Digital Millennium Copyright Act",
     "intro": {
-      "title": "Introduction",
       "text": "FairArena respecte les droits de propriété intellectuelle d'autrui et attend de ses utilisateurs qu'ils fassent de même. Conformément au Digital Millennium Copyright Act de 1998 (DMCA), nous répondrons rapidement aux réclamations pour violation du droit d'auteur commise en utilisant notre service."
     },
     "notification": {
@@ -1073,7 +642,6 @@
     "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
   },
   "faq": {
-    "title": "FAQ",
     "subtitle": "Trouvez des réponses aux questions fréquemment posées sur FairArena",
     "searchPlaceholder": "Rechercher des questions...",
     "categories": {
@@ -1083,8 +651,7 @@
       "features": "Fonctionnalités",
       "security": "Sécurité & Confidentialité",
       "pricing": "Tarification & Facturation",
-      "technical": "Technique",
-      "support": "Support"
+      "technical": "Technique"
     },
     "noResults": "Aucune question trouvée correspondant à votre recherche.",
     "contact": {

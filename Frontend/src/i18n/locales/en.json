@@ -1208,5 +1208,139 @@
       "liability": "Please note that under Section 512(f) of the DMCA, any person who knowingly materially misrepresents that material or activity is infringing may be subject to liability."
     },
     "lastUpdated": "Last updated: January 24, 2026"
+  },
+  "maintenance": {
+    "title": "Site Under Maintenance",
+    "description": "We're currently performing scheduled maintenance to improve your experience",
+    "duration": {
+      "title": "Expected Duration",
+      "text": "We expect to be back online shortly. Thank you for your patience."
+    },
+    "assistance": {
+      "title": "Need Assistance?",
+      "text": "For urgent matters, please contact our support team.",
+      "button": "Contact Support"
+    },
+    "checkStatus": "Check Status"
+  },
+  "ipBlocked": {
+    "title": "Access Restricted",
+    "description": "Our security system has detected unusual activity from your connection",
+    "flagsTitle": "Security Flags Detected",
+    "resolution": {
+      "title": "How to Resolve This",
+      "steps": [
+        "Disable VPN or proxy if active",
+        "Avoid using Tor or anonymous browsers",
+        "Ensure your browser is not flagged as an automation tool",
+        "Try using a standard, residential network",
+        "Clear your browser cache and cookies"
+      ]
+    },
+    "retry": "Retry Connection",
+    "contact": "Contact Support",
+    "footer": "If you believe this is an error, please contact our support team at",
+    "autoRetry": "Auto-retrying connection..."
+  },
+  "banned": {
+    "title": "Account Suspended",
+    "description": "Your account has been suspended due to a violation of our terms of service or community guidelines.",
+    "reason": "Reason for suspension:",
+    "contact": "If you believe this is a mistake, please contact our support team.",
+    "signOut": "Sign Out"
+  },
+  "unsubscribe": {
+    "title": "Newsletter Unsubscribe",
+    "description": "We'll miss you, but we respect your inbox.",
+    "processing": "Processing request...",
+    "success": {
+      "title": "Unsubscribed",
+      "defaultMessage": "You have been successfully unsubscribed from our newsletter."
+    },
+    "error": {
+      "title": "Error",
+      "defaultMessage": "Something went wrong. Please try again later.",
+      "invalidEmail": "Invalid email address"
+    },
+    "returnHome": "Return to Home",
+    "rightsReserved": "All rights reserved."
+  },
+  "oauthError": {
+    "title": "Authorization Error",
+    "defaultDescription": "An error occurred during the authorization process.",
+    "fixTitle": "How to fix this",
+    "technicalDetails": "Technical details",
+    "tryAgain": "Try Again",
+    "goHome": "Go Home",
+    "securedBy": "Secured by FairArena OAuth",
+    "errors": {
+      "invalid_request": {
+        "title": "Invalid Request",
+        "description": "The authorization request is missing required parameters or contains invalid values.",
+        "solutions": [
+          "Check that the application is using the correct authorization URL",
+          "Ensure all required parameters (client_id, redirect_uri, scope) are included",
+          "Verify that the redirect_uri matches exactly what was registered"
+        ]
+      },
+      "invalid_client": {
+        "title": "Invalid Client",
+        "description": "The application could not be verified or is not authorized to make this request.",
+        "solutions": [
+          "Contact the application developer to verify their OAuth configuration",
+          "Ensure the application is registered with FairArena",
+          "Check that the client_id is correct"
+        ]
+      },
+      "access_denied": {
+        "title": "Access Denied",
+        "description": "You denied the authorization request or the request was cancelled.",
+        "solutions": [
+          "Try authorizing again if this was a mistake",
+          "Contact the application support if you believe this is an error"
+        ]
+      },
+      "invalid_scope": {
+        "title": "Invalid Scope",
+        "description": "The application requested permissions that are not available or not allowed.",
+        "solutions": [
+          "Contact the application developer about the requested permissions",
+          "The application may need to update its OAuth configuration"
+        ]
+      },
+      "server_error": {
+        "title": "Server Error",
+        "description": "An unexpected error occurred on our servers while processing your request.",
+        "solutions": [
+          "Try again in a few moments",
+          "If the problem persists, contact FairArena support",
+          "Check our status page for any ongoing incidents"
+        ]
+      },
+      "temporarily_unavailable": {
+        "title": "Service Temporarily Unavailable",
+        "description": "Our authorization service is temporarily unavailable due to maintenance or high load.",
+        "solutions": [
+          "Wait a few minutes and try again",
+          "Check our status page for maintenance updates"
+        ]
+      },
+      "expired": {
+        "title": "Request Expired",
+        "description": "This authorization request has expired and is no longer valid.",
+        "solutions": [
+          "Return to the application and start the sign-in process again",
+          "Authorization requests expire after 10 minutes for security"
+        ]
+      },
+      "already_used": {
+        "title": "Request Already Used",
+        "description": "This authorization request has already been completed.",
+        "solutions": [
+          "If you need to authorize again, start a new sign-in from the application",
+          "Check if you already have an active session with the application"
+        ]
+      }
+    }
   }
 }

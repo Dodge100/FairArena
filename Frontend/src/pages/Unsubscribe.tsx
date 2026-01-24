@@ -14,9 +14,11 @@ import { publicApiFetch } from '@/lib/apiClient';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
 function Unsubscribe() {
+  const { t } = useTranslation();
   const { email } = useParams<{ email: string }>();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -38,12 +40,12 @@ function Unsubscribe() {
     },
     onSuccess: (data) => {
       setStatus('success');
-      setMessage(data.message || 'You have been successfully unsubscribed from our newsletter.');
+      setMessage(data.message || t('unsubscribe.success.defaultMessage'));
     },
     onError: (error: Error) => {
       console.error('Unsubscribe error:', error);
       setStatus('error');
-      setMessage(error.message || 'Something went wrong. Please try again later.');
+      setMessage(error.message || t('unsubscribe.error.defaultMessage'));
     },
   });
 
@@ -51,7 +53,7 @@ function Unsubscribe() {
     if (!email) {
       setTimeout(() => {
         setStatus('error');
-        setMessage('Invalid email address');
+        setMessage(t('unsubscribe.error.invalidEmail'));
       }, 0);
       return;
     }
@@ -84,16 +86,16 @@ function Unsubscribe() {
 
         <Card className="w-full bg-zinc-900 border-zinc-800 text-zinc-100 shadow-2xl backdrop-blur-xl bg-opacity-80">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold tracking-tight text-white mb-2">Newsletter Unsubscribe</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-white mb-2">{t('unsubscribe.title')}</CardTitle>
             <CardDescription className="text-zinc-400">
-              We'll miss you, but we respect your inbox.
+              {t('unsubscribe.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-6 min-h-[160px]">
             {status === 'loading' && (
               <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-500">
                 <Loader2 className={cn("h-10 w-10 text-zinc-500", shouldLoadImage && "animate-spin")} />
-                <p className="text-zinc-500 text-sm font-medium">Processing request...</p>
+                <p className="text-zinc-500 text-sm font-medium">{t('unsubscribe.processing')}</p>
               </div>
             )}
 
@@ -101,7 +103,7 @@ function Unsubscribe() {
               <div className="flex flex-col items-center space-y-4 animate-in zoom-in-95 duration-500">
                 <CheckCircle2 className="h-12 w-12 text-green-500" />
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg font-semibold text-white">Unsubscribed</h3>
+                  <h3 className="text-lg font-semibold text-white">{t('unsubscribe.success.title')}</h3>
                   <p className="text-zinc-400 text-sm max-w-[280px] mx-auto">{message}</p>
                 </div>
               </div>
@@ -111,7 +113,7 @@ function Unsubscribe() {
               <div className="flex flex-col items-center space-y-4 animate-in zoom-in-95 duration-500">
                 <XCircle className="h-12 w-12 text-red-500" />
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg font-semibold text-white">Error</h3>
+                  <h3 className="text-lg font-semibold text-white">{t('unsubscribe.error.title')}</h3>
                   <p className="text-zinc-400 text-sm max-w-[280px] mx-auto">{message}</p>
                 </div>
               </div>
@@ -125,7 +127,7 @@ function Unsubscribe() {
             >
               <Link to="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Return to Home
+                {t('unsubscribe.returnHome')}
               </Link>
             </Button>
           </CardFooter>
@@ -133,7 +135,7 @@ function Unsubscribe() {
 
         <div className="mt-8 text-center">
           <p className="text-xs text-zinc-600">
-            © {new Date().getFullYear()} FairArena. All rights reserved.
+            © {new Date().getFullYear()} FairArena. {t('unsubscribe.rightsReserved')}
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, Mail, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface IPBlockedPageProps {
     reasons?: string[];
@@ -9,6 +10,7 @@ interface IPBlockedPageProps {
 }
 
 const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
+    const { t } = useTranslation();
     const [countdown, setCountdown] = useState(30);
 
     useEffect(() => {
@@ -54,10 +56,10 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                         <Shield className="h-10 w-10 text-white" />
                     </div>
                     <CardTitle className="text-3xl font-bold text-white">
-                        Access Restricted
+                        {t('ipBlocked.title')}
                     </CardTitle>
                     <CardDescription className="text-slate-300 text-lg">
-                        Our security system has detected unusual activity from your connection
+                        {t('ipBlocked.description')}
                     </CardDescription>
                 </CardHeader>
 
@@ -68,7 +70,7 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                             <div className="flex items-center gap-2 mb-3">
                                 <AlertTriangle className="h-5 w-5 text-red-400" />
                                 <h3 className="text-sm font-semibold text-red-300 uppercase tracking-wide">
-                                    Security Flags Detected
+                                    {t('ipBlocked.flagsTitle')}
                                 </h3>
                             </div>
                             <ul className="space-y-2">
@@ -87,30 +89,16 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                         <div className="flex items-center gap-2 mb-3">
                             <CheckCircle2 className="h-5 w-5 text-blue-400" />
                             <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wide">
-                                How to Resolve This
+                                {t('ipBlocked.resolution.title')}
                             </h3>
                         </div>
                         <ul className="space-y-2">
-                            <li className="flex items-start gap-2 text-sm text-slate-300">
-                                <span className="text-blue-400 mt-0.5">→</span>
-                                <span>Disable VPN or proxy if active</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-slate-300">
-                                <span className="text-blue-400 mt-0.5">→</span>
-                                <span>Avoid using Tor or anonymous browsers</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-slate-300">
-                                <span className="text-blue-400 mt-0.5">→</span>
-                                <span>Ensure your browser is not flagged as an automation tool</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-slate-300">
-                                <span className="text-blue-400 mt-0.5">→</span>
-                                <span>Try using a standard, residential network</span>
-                            </li>
-                            <li className="flex items-start gap-2 text-sm text-slate-300">
-                                <span className="text-blue-400 mt-0.5">→</span>
-                                <span>Clear your browser cache and cookies</span>
-                            </li>
+                            {(t('ipBlocked.resolution.steps', { returnObjects: true }) as string[]).map((step, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                                    <span className="text-blue-400 mt-0.5">→</span>
+                                    <span>{step}</span>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
@@ -121,7 +109,7 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                             className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold shadow-lg"
                             size="lg"
                         >
-                            Retry Connection
+                            {t('ipBlocked.retry')}
                             {countdown > 0 && (
                                 <span className="ml-2 text-xs opacity-80">({countdown}s)</span>
                             )}
@@ -133,14 +121,14 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                             size="lg"
                         >
                             <Mail className="mr-2 h-4 w-4" />
-                            Contact Support
+                            {t('ipBlocked.contact')}
                         </Button>
                     </div>
 
                     {/* Footer */}
                     <div className="text-center pt-4 border-t border-slate-700">
                         <p className="text-xs text-slate-400">
-                            If you believe this is an error, please contact our support team at{' '}
+                            {t('ipBlocked.footer')}{' '}
                             <a
                                 href="mailto:fairarena.contact@gmail.com"
                                 className="text-blue-400 hover:text-blue-300 underline"
@@ -154,7 +142,7 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                     {countdown === 0 && (
                         <div className="text-center">
                             <p className="text-sm text-slate-400 animate-pulse">
-                                Auto-retrying connection...
+                                {t('ipBlocked.autoRetry')}
                             </p>
                         </div>
                     )}
