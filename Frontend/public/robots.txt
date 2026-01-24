@@ -1,0 +1,31 @@
+# FairArena Robots.txt
+# https://fair.sakshamg.me/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /reset-password/
+Disallow: /verify-email/
+Disallow: /unsubscribe/
+Disallow: /invite/
+Disallow: /oauth/
+
+# Crawl-delay for all bots
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://fair.sakshamg.me/sitemap.xml
+
+# Block bad bots
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+Crawl-delay: 10
+
+# Allow search engines
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Slurp
+User-agent: DuckDuckBot
+Allow: /

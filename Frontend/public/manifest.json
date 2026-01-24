@@ -1,0 +1,47 @@
+{
+  "name": "FairArena - AI-Powered Hackathon Management Platform",
+  "short_name": "FairArena",
+  "description": "AI-Powered Hackathon Management and Project Evaluation Platform for organizers, judges, and participants",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Access your FairArena dashboard",
+      "url": "/dashboard",
+      "icons": []
+    },
+    {
+      "name": "Support",
+      "short_name": "Support",
+      "description": "Get help and support",
+      "url": "/support",
+      "icons": []
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "lang": "en-US",
+  "dir": "ltr"
+}

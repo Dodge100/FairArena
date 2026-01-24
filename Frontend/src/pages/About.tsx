@@ -1,8 +1,11 @@
 import { useTheme } from '@/hooks/useTheme';
 import { ArrowRight, Brain, Handshake, Heart, Rocket, Star, Target, Zap } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+
 function About() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <div
@@ -20,7 +23,7 @@ function About() {
       `}
       >
         <span className="text-4xl sm:text-5xl text-[#ddef00] [-webkit-text-stroke:_1px_black] font-bold">
-          About FairArena
+          {t('about.heading')}
         </span>
       </h1>
 
@@ -30,21 +33,19 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Rocket className="w-6 h-6" />
-            Empowering Hackathons With Transparency, Speed, and AI
+            {t('about.intro.title')}
           </h2>
           <p>
-            FairArena was created with a simple mission:
+            {t('about.intro.part1')}
             <br />
             <span className="font-semibold">
-              to make hackathons fair, data-driven, and effortless for everyone.
+              {t('about.intro.highlight')}
             </span>
           </p>
           <p className="mt-4">
-            No more Excel sheets. No more confused judges. No more participants waiting hours for
-            results.
+            {t('about.intro.part2')}
             <br />
-            We built a platform where organisers, judges, and participants experience hackathons the
-            way they’re meant to be — <strong>fast, transparent, and exciting.</strong>
+            {t('about.intro.part3')} <strong>{t('about.intro.bold')}</strong>
           </p>
         </section>
 
@@ -54,12 +55,11 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Target className="w-6 h-6" />
-            Our Mission
+            {t('about.mission.title')}
           </h2>
-          <p>To bring fairness, accuracy, and automation to every hackathon in the world.</p>
+          <p>{t('about.mission.desc1')}</p>
           <p className="mt-3">
-            We believe every team deserves unbiased scoring, every judge deserves a simple workflow,
-            and every organiser deserves a stress-free dashboard.
+            {t('about.mission.desc2')}
           </p>
         </section>
 
@@ -67,20 +67,17 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Star className="w-6 h-6" />
-            Our Vision
+            {t('about.vision.title')}
           </h2>
           <p>
-            To become the world’s most trusted hackathon platform — combining AI, transparency, and
-            technology to create unforgettable innovation events.
+            {t('about.vision.desc1')}
           </p>
 
-          <p className="mt-3">We imagine a future where:</p>
+          <p className="mt-3">{t('about.vision.listTitle')}</p>
           <ul className="list-disc ml-6 mt-2 space-y-2">
-            <li>Every hackathon is AI-assisted</li>
-            <li>Participants see real-time rankings</li>
-            <li>Organisers run events effortlessly</li>
-            <li>Judges get better insights</li>
-            <li>Every decision is backed by data</li>
+            {(t('about.vision.list', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </section>
 
@@ -88,37 +85,16 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Zap className="w-6 h-6" />
-            What Makes FairArena Different?
+            {t('about.different.title')}
           </h2>
 
           <ol className="list-decimal ml-6 space-y-4">
-            <li>
-              <strong>All-in-One Hackathon Operating System</strong>
-              <br />
-              Manage, score, analyse, and finalise winners — all in one dashboard.
-            </li>
-
-            <li>
-              <strong>AI-Powered Project Analysis</strong>
-              <br />
-              Performance, SEO, UI/UX, accessibility, bugs, uniqueness — analysed instantly.
-            </li>
-
-            <li>
-              <strong>Transparent Real-Time Leaderboards</strong>
-              <br />
-              Participants always know where they stand.
-            </li>
-
-            <li>
-              <strong>Zero Manual Error Workflow</strong>
-              <br />
-              No mismatched scores. No spreadsheet chaos.
-            </li>
-
-            <li>
-              <strong>Built for Organisers — Free for Judges & Participants</strong>
-            </li>
+            {(t('about.different.list', { returnObjects: true }) as Array<{ title: string, desc: string }>).map((item, i) => (
+              <li key={i}>
+                <strong>{item.title}</strong>
+                {item.desc && <><br />{item.desc}</>}
+              </li>
+            ))}
           </ol>
         </section>
 
@@ -126,21 +102,18 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Handshake className="w-6 h-6" />
-            Who Uses FairArena?
+            {t('about.whoUses.title')}
           </h2>
-          <p>FairArena is trusted by:</p>
+          <p>{t('about.whoUses.desc1')}</p>
 
           <ul className="list-disc ml-6 mt-2 space-y-2">
-            <li>Colleges & universities</li>
-            <li>Tech communities</li>
-            <li>Startups & companies</li>
-            <li>Hackathon organisers</li>
-            <li>Developer groups</li>
-            <li>Innovation events</li>
+            {(t('about.whoUses.list', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
 
           <p className="mt-4">
-            Whether it’s 50 students or 5000 developers — FairArena scales instantly.
+            {t('about.whoUses.desc2')}
           </p>
         </section>
 
@@ -148,29 +121,22 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Brain className="w-6 h-6" />
-            Our Technology
+            {t('about.tech.title')}
           </h2>
 
-          <p>FairArena blends:</p>
+          <p>{t('about.tech.desc1')}</p>
           <ul className="list-disc ml-6 mt-2 space-y-2">
-            <li>Real-time scoring</li>
-            <li>Automated leaderboard calculations</li>
-            <li>AI website analysis</li>
-            <li>Multi-round judge panels</li>
-            <li>High-speed cloud infrastructure</li>
-            <li>Secure data systems</li>
+            {(t('about.tech.list1', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
 
-          <p className="mt-4">Our AI models analyse projects for:</p>
+          <p className="mt-4">{t('about.tech.desc2')}</p>
 
           <ul className="list-disc ml-6 mt-2 space-y-2">
-            <li>Performance</li>
-            <li>SEO</li>
-            <li>UI/UX</li>
-            <li>Accessibility</li>
-            <li>Uniqueness</li>
-            <li>Potential bugs</li>
-            <li>Improvement suggestions</li>
+            {(t('about.tech.list2', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </section>
 
@@ -178,17 +144,16 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Heart className="w-6 h-6" />
-            Built With Passion for Innovation
+            {t('about.passion.title')}
           </h2>
 
           <p>
-            FairArena exists because we love hackathons. We've participated in them, organised them,
-            and judged them. We know what makes a great event — and what ruins one.
+            {t('about.passion.desc1')}
           </p>
 
           <p className="mt-4">
-            <strong>Our promise:</strong>
-            Fair decisions. Clear scoring. No confusion. Pure innovation.
+            <strong>{t('about.passion.promise.label')}</strong>
+            {t('about.passion.promise.text')}
           </p>
         </section>
 
@@ -196,31 +161,30 @@ function About() {
         <section>
           <h2 className="text-2xl font-semibold text-[#ddef00] mb-4 flex items-center gap-2">
             <Rocket className="w-6 h-6" />
-            Join Us in Reimagining Hackathons
+            {t('about.cta.title')}
           </h2>
 
           <p>
-            FairArena is more than a tool — it’s a movement to make innovation accessible,
-            transparent, and thrilling.
+            {t('about.cta.desc')}
           </p>
 
           <ul className="list-none ml-0 mt-3 space-y-2">
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              Host your next hackathon with FairArena
+              {t('about.cta.item1')}
             </li>
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              Schedule a Demo
+              {t('about.cta.item2')}
             </li>
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              Contact Us: <span className="text-[#ddef00]">fairarena.contact@gmail.com</span>
+              {t('about.cta.contact')} <span className="text-[#ddef00]">fairarena.contact@gmail.com</span>
             </li>
           </ul>
         </section>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 

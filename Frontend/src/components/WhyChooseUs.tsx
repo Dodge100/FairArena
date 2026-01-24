@@ -1,4 +1,5 @@
 import { BarChart3, Lightbulb, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
@@ -6,25 +7,26 @@ import { DataSaverImage } from './ui/DataSaverImage';
 
 function WhyChooseUs() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   // DATA ARRAY
   const benefits = [
     {
       id: 1,
-      title: 'AI-Powered Website Analysis',
-      desc: 'Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.',
+      title: t('home.whyChooseUs.cards.0.title'),
+      desc: t('home.whyChooseUs.cards.0.desc'),
       icon: Lightbulb,
     },
     {
       id: 2,
-      title: 'Fair & Transparent Scoring',
-      desc: 'Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.',
+      title: t('home.whyChooseUs.cards.1.title'),
+      desc: t('home.whyChooseUs.cards.1.desc'),
       icon: Users,
     },
     {
       id: 3,
-      title: 'One Dashboard for Entire Hackathon',
-      desc: 'Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.',
+      title: t('home.whyChooseUs.cards.2.title'),
+      desc: t('home.whyChooseUs.cards.2.desc'),
       icon: BarChart3,
     },
   ];
@@ -38,7 +40,7 @@ function WhyChooseUs() {
           ${isDark ? 'bg-neutral-900 text-[#d9ff00] border border-neutral-800' : 'bg-neutral-100 text-neutral-800 border border-neutral-200'}
         `}
       >
-        Why Choose
+        {t('home.whyChooseUs.badge')}
         <DataSaverImage
           src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
           alt="FairArena Logo"
@@ -59,7 +61,7 @@ function WhyChooseUs() {
           ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
         `}
       >
-        Key Benefits Of Using <span className="text-neutral-500">FairArena</span>
+        {t('home.whyChooseUs.title')}
       </p>
 
       {/* Cards Grid */}
@@ -84,7 +86,7 @@ function WhyChooseUs() {
 
       <Link to="/why-choose-us">
         <button className="mt-10 px-8 py-4 rounded-full bg-[#d9ff00] text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.4)] transition-all duration-300 hover:scale-105">
-          Read More
+          {t('home.whyChooseUs.cta')}
         </button>
       </Link>
     </div>

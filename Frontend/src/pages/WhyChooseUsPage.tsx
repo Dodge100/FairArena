@@ -1,68 +1,47 @@
 import BenefitCard from '@/components/BenefitCard';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  Lightbulb,
-  Users,
-  LayoutDashboard,
   BarChart3,
-  LineChart,
   CheckCircle2,
+  LayoutDashboard,
+  Lightbulb,
+  LineChart,
+  Users,
 } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 function HowItWorks() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setIsDark(theme === 'dark');
   }, [theme]);
 
-  const benefits = [
-    {
-      id: 1,
-      title: 'AI-Powered Website Analysis',
-      desc: 'Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions.',
-      icon: Lightbulb,
-    },
-    {
-      id: 2,
-      title: 'Fair & Transparent Scoring',
-      desc: 'Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers.',
-      icon: Users,
-    },
-    {
-      id: 3,
-      title: 'One Dashboard for Entire Hackathon',
-      desc: 'Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard.',
-      icon: LayoutDashboard,
-    },
-    {
-      id: 4,
-      title: 'Real-Time Leaderboards',
-      desc: 'Participants can track their ranking live. Organisers can highlight top performers instantly.',
-      icon: BarChart3,
-    },
-    {
-      id: 5,
-      title: 'Automated Reports & Analytics',
-      desc: 'Get detailed performance insights, scoring patterns, judge analytics, and final score breakdown.',
-      icon: LineChart,
-    },
-    {
-      id: 6,
-      title: 'Zero Confusion, Zero Errors',
-      desc: 'No more spreadsheets. No more manual calculations. FairArena automates everything.',
-      icon: CheckCircle2,
-    },
-  ];
+  const benefits = t('home.whyChooseUsPage.benefits', { returnObjects: true }) as Array<{
+    id: number;
+    title: string;
+    desc: string;
+    iconName: string;
+  }>;
+  const iconMap: Record<number, any> = {
+    1: Lightbulb,
+    2: Users,
+    3: LayoutDashboard,
+    4: BarChart3,
+    5: LineChart,
+    6: CheckCircle2
+  }
 
   return (
     <div className="w-full h-auto mb-40 flex flex-col items-center justify-center">
       <h1 className="text-center mt-40 text-neutral-400 text-sm sm:text-base md:text-lg gap-2 flex flex-col px-4 md:px-0 max-w-[90%] sm:max-w-[80%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%] mx-auto">
         <span className="text-4xl sm:text-5xl text-[#ddef00] [-webkit-text-stroke:_0.7px_black] font-bold">
-          Why Choose Us
+          {t('home.whyChooseUsPage.title')}
         </span>
       </h1>
 
@@ -78,7 +57,7 @@ function HowItWorks() {
           <BenefitCard
             key={item.id}
             isDark={isDark}
-            icon={item.icon}
+            icon={iconMap[item.id]} // map back using ID
             title={item.title}
             desc={item.desc}
           />

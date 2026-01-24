@@ -16,16 +16,21 @@ import PublicLayout from './layout/PublicLayout';
 import { registerAuth } from './lib/apiClient';
 import { useAuth, useToken } from './lib/auth';
 import About from './pages/About';
+import Accessibility from './pages/Accessibility';
 import AccountLogs from './pages/AccountLogs';
 import AccountSettings from './pages/AccountSettings';
 import AuthorizedApps from './pages/AuthorizedApps';
 import BannedAccount from './pages/BannedAccount';
+import Changelog from './pages/Changelog';
+import CommunityGuidelines from './pages/CommunityGuidelines';
 import CookiePolicy from './pages/CookiePolicy';
 import CreditsPage from './pages/CreditsPage';
 import CreditsVerificationPage from './pages/CreditsVerificationPage';
 import Dashboard from './pages/Dashboard';
 import DeviceAuthorization from './pages/DeviceAuthorization';
+import DMCA from './pages/DMCA';
 import EditProfile from './pages/EditProfile';
+import FAQ from './pages/FAQ';
 import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
@@ -41,6 +46,7 @@ import ProfileViews from './pages/ProfileViews';
 import PublicProfile from './pages/PublicProfile';
 import RefundPage from './pages/RefundPage';
 import ResetPassword from './pages/ResetPassword';
+import SecurityPolicy from './pages/SecurityPolicy';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Support from './pages/Support';
@@ -154,6 +160,12 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/why-choose-us" element={<HowItWorks />} />
             <Route path="/about" element={<About />} />
+            <Route path="/changelog" element={<Changelog />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/accessibility" element={<Accessibility />} />
+            <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+            <Route path="/security-policy" element={<SecurityPolicy />} />
+            <Route path="/dmca" element={<DMCA />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/refund" element={<RefundPage />} />

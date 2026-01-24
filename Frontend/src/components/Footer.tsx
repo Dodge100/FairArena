@@ -3,8 +3,11 @@ import { Github, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
 
+import { useTranslation } from 'react-i18next';
+
 function Footer() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <footer
@@ -27,8 +30,7 @@ function Footer() {
             className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
               }`}
           >
-            Follow us and never miss an update on the latest tech, productivity, and digital growth
-            insights.
+            {t('footer.brand.desc')}
           </p>
 
           {/* Social Icons */}
@@ -54,13 +56,15 @@ function Footer() {
 
         {/* Menu */}
         <div>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Menu</h3>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{t('footer.menu.title')}</h3>
           <ul className="mt-4 space-y-2 text-sm">
             {[
-              { label: 'About', path: 'about' },
-              { label: 'Why Choose Us', path: 'why-choose-us' },
-              { label: 'Pricing', path: '#pricing', hash: true },
-              { label: 'Status', path: 'https://status.fairarena.sakshamg.me', external: true },
+              { label: t('footer.menu.items.about'), path: 'about' },
+              { label: t('footer.menu.items.whyChooseUs'), path: 'why-choose-us' },
+              { label: t('footer.menu.items.changelog'), path: 'changelog' },
+              { label: t('footer.menu.items.faq'), path: 'faq' },
+              { label: t('footer.menu.items.pricing'), path: '#pricing', hash: true },
+              { label: t('footer.menu.items.status'), path: 'status' },
             ].map((item) => (
               <li
                 key={item.path}
@@ -71,10 +75,6 @@ function Footer() {
               >
                 {item.hash ? (
                   <a href={item.path}>{item.label}</a>
-                ) : item.external ? (
-                  <a href={item.path} target="_blank" rel="noopener noreferrer">
-                    {item.label}
-                  </a>
                 ) : (
                   <Link to={`/${item.path}`}>{item.label}</Link>
                 )}
@@ -86,24 +86,31 @@ function Footer() {
         {/* Resources */}
         <div>
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-            Resources
+            {t('footer.resources.title')}
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            <li
-              className={`
-                cursor-pointer
-                ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-              `}
-            >
-              <a href={import.meta.env.VITE_DOCS_URL} target="_blank" rel="noopener noreferrer">Docs</a>
-            </li>
+            {[
+              { label: t('footer.resources.items.accessibility'), path: 'accessibility' },
+              { label: t('footer.resources.items.communityGuidelines'), path: 'community-guidelines' },
+              { label: t('footer.resources.items.securityPolicy'), path: 'security-policy' },
+            ].map((item) => (
+              <li
+                key={item.path}
+                className={`
+                  cursor-pointer
+                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
+                `}
+              >
+                <Link to={`/${item.path}`}>{item.label}</Link>
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* Contact */}
         <div>
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-            Contact
+            {t('footer.contact.title')}
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
             <li>
@@ -114,7 +121,7 @@ function Footer() {
                   ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
                 `}
               >
-                Support
+                {t('footer.contact.support')}
               </Link>
             </li>
             <li>
@@ -135,7 +142,7 @@ function Footer() {
                 ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
               `}
             >
-              Delhi, India
+              {t('footer.contact.location')}
             </li>
           </ul>
         </div>
@@ -154,25 +161,31 @@ function Footer() {
       {/* Bottom Section */}
       <div className="flex flex-col md:flex-row justify-between items-center mt-6 text-sm gap-4 md:gap-0">
         <p className={`${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-          © {new Date().getFullYear()} FairArena. All rights reserved.
+          © {new Date().getFullYear()} FairArena. {t('footer.bottom.rights')}
         </p>
 
         <div className="flex gap-6">
-          {['privacy-policy', 'terms-and-conditions', 'cookie-policy'].map((item) => (
+          {[
+            { key: 'privacy-policy', label: t('footer.bottom.links.privacyPolicy') },
+            { key: 'terms-and-conditions', label: t('footer.bottom.links.termsAndConditions') },
+            { key: 'cookie-policy', label: t('footer.bottom.links.cookiePolicy') },
+            { key: 'refund', label: t('footer.bottom.links.refund') },
+            { key: 'dmca', label: t('footer.bottom.links.dmca') }
+          ].map((item) => (
             <p
-              key={item}
+              key={item.key}
               className={`
                 cursor-pointer capitalize
                 ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
               `}
             >
-              <Link to={`/${item}`}>{item.replace(/-/g, ' ')}</Link>
+              <Link to={`/${item.key}`}>{item.label}</Link>
             </p>
           ))}
         </div>
 
         <p className={`${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-          Built with ❤️ by FairArena Team
+          {t('footer.bottom.builtWith')}
         </p>
       </div>
     </footer>

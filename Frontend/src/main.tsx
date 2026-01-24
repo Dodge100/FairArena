@@ -16,6 +16,7 @@ import { DataSaverProvider } from './contexts/DataSaverContext.tsx';
 import { SidebarCustomizationProvider } from './contexts/SidebarCustomizationContext.tsx';
 import { SocketProvider } from './contexts/SocketContext.tsx';
 import { StreamProvider } from './contexts/StreamContext.tsx';
+import './i18n/config';
 import './index.css';
 import { ThemeProvider } from './theme-context.tsx';
 

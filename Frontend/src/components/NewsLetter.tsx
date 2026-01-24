@@ -5,10 +5,12 @@ import { useMutation } from '@tanstack/react-query';
 import { Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 function Newsletter() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -118,7 +120,7 @@ function Newsletter() {
           ${isDark ? 'text-neutral-100' : 'text-neutral-800'}
         `}
       >
-        Stay Updated With <span className="text-neutral-500">FairArena</span>
+        {t('home.newsletter.title')}
       </p>
 
       {/* Description */}
@@ -129,8 +131,7 @@ function Newsletter() {
           ${isDark ? 'text-neutral-400' : 'text-neutral-600'}
         `}
       >
-        Subscribe to our newsletter and get updates about new features, upcoming hackathon tools, AI
-        scoring upgrades, and more.
+        {t('home.newsletter.desc')}
       </p>
 
       {/* Input + Button */}
@@ -146,7 +147,7 @@ function Newsletter() {
           onChange={(e) => setEmail(e.target.value)}
           onKeyPress={handleKeyPress}
           type="email"
-          placeholder="Enter your email"
+          placeholder={t('home.newsletter.placeholder')}
           disabled={isLoading}
           className={`
             w-full sm:flex-1
@@ -171,7 +172,7 @@ function Newsletter() {
             disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
-          {isLoading ? 'Subscribing...' : 'Subscribe'}
+          {isLoading ? t('home.newsletter.subscribing') : t('home.newsletter.button')}
         </button>
       </div>
 

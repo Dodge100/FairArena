@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
@@ -60,6 +61,7 @@ interface RazorpayOptions {
 }
 
 export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
+  const { t } = useTranslation();
   const { isSignedIn, getToken } = useAuthState();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -113,7 +115,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
   const handlePayment = async (plan: PaymentPlan) => {
     if (!paymentsEnabled) {
-      toast.error('Payments are currently disabled. Please contact support.');
+      toast.error(t('pricing.disabled'));
       return;
     }
     if (navigator.vibrate) {
@@ -279,15 +281,15 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-[#d9ff00]">
-              Choose Your Plan
+              {t('pricing.title')}
             </DialogTitle>
             <p className="text-center text-muted-foreground">
-              Select the perfect plan for your hackathon needs
+              {t('pricing.subtitle')}
             </p>
             {!paymentsEnabled && (
               <div className="text-center mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <p className="text-yellow-600 dark:text-yellow-400 font-medium">
-                  Payments are currently disabled. Please contact support for assistance.
+                  {t('pricing.disabled')}
                 </p>
               </div>
             )}
@@ -300,7 +302,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               </div>
             ) : plans.length === 0 ? (
               <div className="col-span-3 text-center py-12">
-                <p className="text-muted-foreground">No pricing plans available at the moment.</p>
+                <p className="text-muted-foreground">{t('pricing.empty')}</p>
               </div>
             ) : (
               plans.map((plan) => (
@@ -312,7 +314,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                   {plan.planId === 'business_plan' && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <span className="bg-[#d9ff00] text-black px-3 py-1 rounded-full text-sm font-semibold">
-                        Most Popular
+                        {t('pricing.popular')}
                       </span>
                     </div>
                   )}
@@ -322,11 +324,11 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     <CardDescription>{plan.description}</CardDescription>
                     <div className="mt-4">
                       {plan.amount === 0 ? (
-                        <div className="text-3xl font-bold">Custom</div>
+                        <div className="text-3xl font-bold">{t('pricing.custom')}</div>
                       ) : (
                         <>
                           <div className="text-3xl font-bold">₹{plan.amount / 100}</div>
-                          <div className="text-sm text-muted-foreground">one-time payment</div>
+                          <div className="text-sm text-muted-foreground">{t('pricing.oneTime')}</div>
                         </>
                       )}
                     </div>
@@ -354,20 +356,20 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       {loadingPlan === plan.id ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {t('pricing.buttons.processing')}
                         </>
                       ) : !paymentsEnabled ? (
-                        'Payments Disabled'
+                        t('pricing.buttons.disabled')
                       ) : plan.amount === 0 ? (
-                        'Contact Sales'
+                        t('pricing.buttons.contactSales')
                       ) : (
-                        'Purchase Now'
+                        t('pricing.buttons.purchase')
                       )}
                     </Button>
 
                     {plan.credits > 0 && (
                       <p className="text-xs text-center text-muted-foreground mt-2">
-                        Includes {plan.credits} hackathon credit{plan.credits > 1 ? 's' : ''} (1 credit = 1 memeber in hackathon event)
+                        {t('pricing.creditsInfo', { count: plan.credits })}
                       </p>
                     )}
                   </CardContent>
@@ -378,12 +380,12 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
           <div className="text-center mt-6 text-sm text-muted-foreground">
             <p>
-              Need help choosing?{' '}
+              {t('pricing.help.text')}{' '}
               <a
                 href="mailto:fairarena.contact@gmail.com"
                 className="text-[#d9ff00] hover:underline"
               >
-                Contact our team
+                {t('pricing.help.link')}
               </a>
             </p>
           </div>

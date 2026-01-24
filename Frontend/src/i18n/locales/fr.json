@@ -1,0 +1,1208 @@
+{
+  "navbar": {
+    "menu": {
+      "whyChooseUs": "Pourquoi nous choisir",
+      "pricing": "Tarification",
+      "about": "À propos"
+    },
+    "cta": {
+      "getStarted": "Commencer",
+      "joinWaitlist": "Rejoindre la liste d'attente",
+      "dashboard": "Aller au tableau de bord"
+    }
+  },
+  "footer": {
+    "brand": {
+      "desc": "Suivez-nous et ne manquez aucune mise à jour sur les dernières technologies, la productivité et la croissance numérique."
+    },
+    "menu": {
+      "title": "Menu",
+      "items": {
+        "about": "À propos",
+        "whyChooseUs": "Pourquoi nous choisir",
+        "changelog": "Journal des modifications",
+        "faq": "FAQ",
+        "pricing": "Tarification",
+        "status": "Statut"
+      }
+    },
+    "resources": {
+      "title": "Ressources",
+      "items": {
+        "accessibility": "Accessibilité",
+        "communityGuidelines": "Directives communautaires",
+        "securityPolicy": "Politique de sécurité"
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "support": "Support",
+      "location": "Delhi, Inde"
+    },
+    "bottom": {
+      "rights": "Tous droits réservés.",
+      "builtWith": "Construit avec ❤️ par l'équipe FairArena",
+      "links": {
+        "privacyPolicy": "Politique de confidentialité",
+        "termsAndConditions": "Termes et conditions",
+        "cookiePolicy": "Politique de cookies",
+        "refund": "Remboursement",
+        "dmca": "DMCA"
+      }
+    }
+  },
+  "home": {
+    "hero": {
+      "badge": "FairArena v1.0 est maintenant en ligne",
+      "title_prefix": "La plateforme pour",
+      "title_highlight": "des décisions équitables",
+      "subtitle": "FairArena est la plateforme de hackathon alimentée par l'IA pour les organisateurs, les juges et les participants. Nous automatisons le jugement avec des analyses et des informations en temps réel, garantissant des évaluations équitables pour tous.",
+      "ctaPrimary": {
+        "getStarted": "Commencer gratuitement",
+        "joinWaitlist": "Rejoindre la liste d'attente",
+        "dashboard": "Aller au tableau de bord"
+      },
+      "ctaSecondary": "Voir la démo",
+      "trustedBy": "Approuvé par les organisateurs du monde entier"
+    },
+    "whyChooseUs": {
+      "badge": "Pourquoi choisir FairArena",
+      "title": "Principaux avantages de l'utilisation de FairArena",
+      "cta": "En savoir plus",
+      "cards": [
+        {
+          "title": "Analyse de site Web alimentée par l'IA",
+          "desc": "Obtenez des informations automatisées sur chaque projet : performances, qualité UI/UX, score SEO, accessibilité, unicité du code et suggestions d'amélioration."
+        },
+        {
+          "title": "Notation équitable et transparente",
+          "desc": "Les juges notent les entrées avec des grilles prédéfinies. Tous les scores sont enregistrés, sécurisés et visibles par les organisateurs."
+        },
+        {
+          "title": "Un tableau de bord pour tout le hackathon",
+          "desc": "Gérez les soumissions, les scores, les juges, les participants, les prix, les gagnants, les catégories et les tours, le tout à partir d'un tableau de bord clair."
+        }
+      ]
+    },
+    "faq": {
+      "badge": "Des questions ? Nous avons des réponses",
+      "title": "Questions fréquemment posées",
+      "subtitle": "Trouvez des réponses rapides à certaines des questions les plus courantes sur FairArena.",
+      "items": [
+        {
+          "q": "Qu'est-ce que FairArena ?",
+          "a": "FairArena est une plateforme de gestion de hackathon alimentée par l'IA qui aide les organisateurs à gérer les événements en douceur grâce à la notation automatisée, aux classements en direct, aux jurys, à l'analyse de site Web par IA et au suivi complet des événements."
+        },
+        {
+          "q": "Qui peut utiliser FairArena ?",
+          "a": "Organisateurs (payant), juges (gratuit) et participants (gratuit)."
+        },
+        {
+          "q": "Que vérifie l'analyseur d'IA ?",
+          "a": "Il vérifie les performances, l'UI/UX, la vitesse, le SEO, l'accessibilité, l'unicité, les bugs et génère des suggestions d'amélioration."
+        },
+        {
+          "q": "Plusieurs juges peuvent-ils noter le même projet ?",
+          "a": "Oui. Les notes de tous les juges sont combinées automatiquement."
+        },
+        {
+          "q": "FairArena prend-il en charge les hackathons à plusieurs tours ?",
+          "a": "Oui — tours préliminaires, demi-finales et finales."
+        },
+        {
+          "q": "Y a-t-il une version gratuite ?",
+          "a": "Les juges et les participants utilisent toujours FairArena gratuitement pendant les hackathons. Les organisateurs choisissent un plan payant."
+        },
+        {
+          "q": "Les organisateurs peuvent-ils télécharger des rapports ?",
+          "a": "Oui — rapports de score détaillés, analyses et feuilles de gagnants."
+        }
+      ]
+    },
+    "newsletter": {
+      "title": "Restez à jour avec FairArena",
+      "desc": "Abonnez-vous à notre newsletter et recevez des mises à jour sur les nouvelles fonctionnalités, les outils de hackathon à venir, les mises à niveau de notation IA et plus encore.",
+      "placeholder": "Entrez votre e-mail",
+      "button": "S'abonner",
+      "subscribing": "Abonnement en cours..."
+    },
+    "whyChooseUsPage": {
+      "title": "Pourquoi nous choisir",
+      "benefits": [
+        {
+          "id": 1,
+          "title": "Analyse de site Web alimentée par l'IA",
+          "desc": "Obtenez des informations automatisées sur chaque projet : performances, qualité UI/UX, score SEO, accessibilité, unicité du code et suggestions d'amélioration.",
+          "iconName": "Lightbulb"
+        },
+        {
+          "id": 2,
+          "title": "Notation équitable et transparente",
+          "desc": "Les juges notent les entrées avec des grilles prédéfinies. Tous les scores sont enregistrés, sécurisés et visibles par les organisateurs.",
+          "iconName": "Users"
+        },
+        {
+          "id": 3,
+          "title": "Un tableau de bord pour tout le hackathon",
+          "desc": "Gérez les soumissions, les scores, les juges, les participants, les prix, les gagnants, les catégories et les tours, le tout à partir d'un tableau de bord clair.",
+          "iconName": "LayoutDashboard"
+        },
+        {
+          "id": 4,
+          "title": "Classements en temps réel",
+          "desc": "Les participants peuvent suivre leur classement en direct. Les organisateurs peuvent mettre en avant les meilleurs performeurs instantanément.",
+          "iconName": "BarChart3"
+        },
+        {
+          "id": 5,
+          "title": "Rapports et analyses automatisés",
+          "desc": "Obtenez des informations détaillées sur les performances, les modèles de notation, l'analyse des juges et la répartition du score final.",
+          "iconName": "LineChart"
+        },
+        {
+          "id": 6,
+          "title": "Zéro confusion, zéro erreur",
+          "desc": "Plus de feuilles de calcul. Plus de calculs manuels. FairArena automatise tout.",
+          "iconName": "CheckCircle2"
+        }
+      ]
+    }
+  },
+  "refund": {
+    "title": "Politique de Remboursement",
+    "subtitle": "FairArena n'offre généralement pas de remboursement pour les services numériques. Veuillez lire attentivement cette politique avant d'effectuer tout achat.",
+    "policyTitle": "Politique de Remboursement",
+    "policyText": "FairArena se réserve le droit de refuser les demandes de remboursement à sa seule discrétion. Les remboursements ne sont pas garantis et peuvent être refusés pour n'importe quelle raison.",
+    "disclaimer": "En achetant des crédits ou des services auprès de FairArena, vous reconnaissez et acceptez expressément que toutes les ventes sont finales.",
+    "criteria": {
+      "h1": "Critères de Détermination du Remboursement",
+      "list": [
+        "Suspension ou résiliation du compte",
+        "Violation des conditions d'utilisation",
+        "Changement d'avis ou remords de l'acheteur",
+        "Difficultés techniques ou problèmes de service",
+        "Crédits déjà consommés ou utilisés"
+      ]
+    },
+    "exceptions": {
+     "h1": "Exceptions Limitées",
+     "list": [
+        "Paiements en double ou accidentels",
+        "Complications liées aux services tiers",
+        "Périodes prolongées depuis l'achat",
+        "Indisponibilité complète et prolongée de la plateforme dépassant trente (30) jours consécutifs",
+        "Compromis de sécurité critique affectant directement les systèmes de traitement des paiements"
+     ]
+    },
+    "contact": {
+      "title": "Soumission de Demande de Remboursement",
+      "desc": "Les demandes de remboursement peuvent être soumises via le canal de communication désigné. FairArena se réserve le droit de déterminer les protocoles de réponse.",
+      "button": "Envoyer une demande"
+    },
+    "date": "Effectif à partir de décembre 2025",
+    "footer": "Toutes les déterminations de remboursement sont prises à la seule discrétion de FairArena et sont définitives."
+  },
+  "about": {
+    "heading": "À propos de FairArena",
+    "intro": {
+      "title": "Donner du pouvoir aux hackathons avec transparence, rapidité et IA",
+      "part1": "FairArena a été créé avec une mission simple :",
+      "highlight": "rendre les hackathons équitables, axés sur les données et sans effort pour tous.",
+      "part2": "Plus de fichiers Excel. Plus de juges confus. Plus de participants qui attendent des heures pour les résultats.",
+      "part3": "Nous avons construit une plateforme où les organisateurs, les juges et les participants vivent les hackathons comme ils devraient l'être —",
+      "bold": "rapides, transparents et passionnants."
+    },
+    "mission": {
+      "title": "Notre Mission",
+      "desc1": "Apporter équité, précision et automatisation à chaque hackathon dans le monde.",
+      "desc2": "Nous croyons que chaque équipe mérite une notation impartiale, chaque juge mérite un flux de travail simple et chaque organisateur mérite un tableau de bord sans stress."
+    },
+    "vision": {
+      "title": "Notre Vision",
+      "desc1": "Devenir la plateforme de hackathon la plus fiable au monde — combinant IA, transparence et technologie pour créer des événements d'innovation inoubliables.",
+      "listTitle": "Nous imaginons un futur où :",
+      "list": [
+        "Chaque hackathon est assisté par IA",
+        "Les participants voient les classements en temps réel",
+        "Les organisateurs gèrent les événements sans effort",
+        "Les juges obtiennent de meilleures informations",
+        "Chaque décision est soutenue par des données"
+      ]
+    },
+    "different": {
+      "title": "Qu'est-ce qui rend FairArena différent ?",
+      "list": [
+        {
+          "title": "Système d'exploitation de hackathon tout-en-un",
+          "desc": "Gérez, notez, analysez et finalisez les gagnants — le tout dans un seul tableau de bord."
+        },
+        {
+          "title": "Analyse de projet alimentée par l'IA",
+          "desc": "Performance, SEO, UI/UX, accessibilité, bugs, unicité — analysés instantanément."
+        },
+        {
+          "title": "Classements en temps réel transparents",
+          "desc": "Les participants savent toujours où ils se situent."
+        },
+        {
+          "title": "Flux de travail sans erreur manuelle",
+          "desc": "Pas de scores discordants. Pas de chaos dans les feuilles de calcul."
+        },
+        {
+          "title": "Conçu pour les organisateurs — Gratuit pour les juges et les participants",
+          "desc": ""
+        }
+      ]
+    },
+    "whoUses": {
+      "title": "Qui utilise FairArena ?",
+      "desc1": "FairArena est approuvé par :",
+      "list": [
+        "Collèges et universités",
+        "Communautés technologiques",
+        "Startups et entreprises",
+        "Organisateurs de hackathons",
+        "Groupes de développeurs",
+        "Événements d'innovation"
+      ],
+      "desc2": "Qu'il s'agisse de 50 étudiants ou de 5000 développeurs — FairArena s'adapte instantanément."
+    },
+    "tech": {
+      "title": "Notre Technologie",
+      "desc1": "FairArena combine :",
+      "list1": [
+        "Notation en temps réel",
+        "Calculs automatisés de classement",
+        "Analyse de site Web par IA",
+        "Jurys multi-tours",
+        "Infrastructure cloud à haute vitesse",
+        "Systèmes de données sécurisés"
+      ],
+      "desc2": "Nos modèles d'IA analysent les projets pour :",
+      "list2": [
+        "Performance",
+        "SEO",
+        "UI/UX",
+        "Accessibilité",
+        "Unicité",
+        "Bugs potentiels",
+        "Suggestions d'amélioration"
+      ]
+    },
+    "passion": {
+      "title": "Construit avec passion pour l'innovation",
+      "desc1": "FairArena existe parce que nous aimons les hackathons. Nous y avons participé, nous les avons organisés et nous les avons jugés. Nous savons ce qui fait un grand événement — et ce qui le gâche.",
+      "promise": {
+        "label": "Notre promesse :",
+        "text": "Décisions équitables. Notation claire. Pas de confusion. Innovation pure."
+      }
+    },
+    "cta": {
+      "title": "Rejoignez-nous pour réinventer les hackathons",
+      "desc": "FairArena est plus qu'un outil — c'est un mouvement pour rendre l'innovation accessible, transparente et passionnante.",
+      "item1": "Organisez votre prochain hackathon avec FairArena",
+      "item2": "Planifier une démo",
+      "contact": "Contactez-nous :"
+    }
+  },
+  "changelog": {
+    "title": "Journal des modifications",
+    "subtitle": "Suivez chaque amélioration, fonctionnalité et correctif que nous livrons pour rendre FairArena meilleur pour vous.",
+    "stayUpdated": {
+      "title": "Restez Informé",
+      "text": "Suivez notre parcours alors que nous continuons à construire la meilleure plateforme de hackathon au monde.",
+      "github": "Mettez-nous une étoile sur GitHub",
+      "request": "Demander une fonctionnalité"
+    },
+    "types": {
+      "feature": "Fonctionnalité",
+      "improvement": "Amélioration",
+      "bugfix": "Correctif",
+      "security": "Sécurité",
+      "breaking": "Changement Majeur"
+    },
+    "entries": [
+      {
+        "version": "2.1.0",
+        "date": "2026-01-23",
+        "title": "Enterprise SSO & Advanced Security",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Added Enterprise SSO with domain verification and SAML 2.0 support for organizations"
+          },
+          {
+            "type": "feature",
+            "description": "Implemented OAuth 2.0 Device Authorization Flow for CLI and IoT devices"
+          },
+          {
+            "type": "feature",
+            "description": "Added support for multiple OAuth providers: GitHub, Google, Atlassian, Figma, Vercel, and Zoom"
+          },
+          {
+            "type": "security",
+            "description": "Enhanced CSRF protection with dedicated token endpoint and automatic refresh"
+          },
+          {
+            "type": "improvement",
+            "description": "Migrated to TanStack DB for sub-millisecond reactive updates in Inbox"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed authentication token refresh causing unexpected logouts"
+          }
+        ]
+      },
+      {
+        "version": "1.5.0",
+        "date": "2026-01-20",
+        "title": "Device Authorization & Multi-Provider OAuth",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Implemented OAuth 2.0 Device Authorization Flow for headless devices"
+          },
+          {
+            "type": "feature",
+            "description": "Added Atlassian OAuth integration with environment configuration"
+          },
+          {
+            "type": "improvement",
+            "description": "Updated frontend sign-in/sign-up pages to display all OAuth providers"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed \"Unknown Application\" error on device consent page"
+          },
+          {
+            "type": "bugfix",
+            "description": "Resolved authentication issues with /device/verify endpoint"
+          }
+        ]
+      },
+      {
+        "version": "1.6.0",
+        "date": "2026-01-19",
+        "title": "Database Migrations & Team Features",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Applied database migrations with Prisma for schema updates"
+          },
+          {
+            "type": "feature",
+            "description": "Added team invitation system with email notifications"
+          },
+          {
+            "type": "improvement",
+            "description": "Enhanced backend server restart handling after configuration changes"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed authentication flow with proper token refresh and session invalidation"
+          }
+        ]
+      },
+      {
+        "version": "1.7.0",
+        "date": "2026-01-18",
+        "title": "MCP Server Production Deployment",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Refactored MCP server to use HTTP/SSE transport instead of stdio"
+          },
+          {
+            "type": "feature",
+            "description": "Added production-ready Dockerfile for containerized deployment"
+          },
+          {
+            "type": "security",
+            "description": "Implemented rate limiting, CORS, and authentication for MCP server"
+          },
+          {
+            "type": "security",
+            "description": "Secured Pinecone credentials server-side with client-provided Gemini API keys"
+          },
+          {
+            "type": "improvement",
+            "description": "Created comprehensive README.md and mcp-config.example.json"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed TypeScript errors in production feature implementation"
+          }
+        ]
+      },
+      {
+        "version": "1.8.0",
+        "date": "2026-01-17",
+        "title": "AI Documentation Search & Pinecone Integration",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Integrated Pinecone vector database for AI-powered documentation search"
+          },
+          {
+            "type": "feature",
+            "description": "Added search_documentation tool with embedding-based retrieval"
+          },
+          {
+            "type": "improvement",
+            "description": "Moved AI system prompt to separate file for better maintainability"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed Pinecone dimension mismatch by using 384-dimensional embeddings"
+          },
+          {
+            "type": "bugfix",
+            "description": "Resolved sharp module installation error for @xenova/transformers"
+          }
+        ]
+      },
+      {
+        "version": "1.8.5",
+        "date": "2026-01-15",
+        "title": "OAuth & Authorization Improvements",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Launched OAuth authorization endpoint with consent flow"
+          },
+          {
+            "type": "feature",
+            "description": "Added OAuth application management dashboard"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed 404 error for /oauth/authorize endpoint"
+          },
+          {
+            "type": "security",
+            "description": "Added SECURITY notification type for security-related alerts"
+          }
+        ]
+      },
+      {
+        "version": "1.9.0",
+        "date": "2026-01-14",
+        "title": "UI/UX Redesign & Image Optimization",
+        "changes": [
+          {
+            "type": "improvement",
+            "description": "Redesigned feedback and unsubscribe pages with minimal blackish theme using Shadcn UI"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed upstream image response timeout errors during development"
+          },
+          {
+            "type": "bugfix",
+            "description": "Resolved Docker build failures with pnpm installation"
+          }
+        ]
+      },
+      {
+        "version": "2.0.0",
+        "date": "2026-01-13",
+        "title": "Real-Time Features & GitHub Integration",
+        "changes": [
+          {
+            "type": "feature",
+            "description": "Added real-time GitHub repository stats display in sidebar and footer"
+          },
+          {
+            "type": "feature",
+            "description": "Implemented Redis caching with 6-hour TTL for GitHub data"
+          },
+          {
+            "type": "feature",
+            "description": "Added TanStack Query with 2-hour staleTime for optimized data fetching"
+          },
+          {
+            "type": "improvement",
+            "description": "Enhanced authentication state caching after login and MFA verification"
+          },
+          {
+            "type": "bugfix",
+            "description": "Fixed infinite loop in Axios interceptor when token refresh fails"
+          }
+        ]
+      }
+    ]
+  },
+  "accessibility": {
+    "title": "Déclaration d'Accessibilité",
+    "subtitle": "FairArena s'engage à garantir l'accessibilité numérique pour les personnes handicapées. Nous améliorons continuellement l'expérience utilisateur pour tous.",
+    "commitment": {
+      "title": "Notre Engagement",
+      "text1": "FairArena s'engage à rendre notre plateforme accessible à tous les utilisateurs, y compris ceux ayant un handicap. Nous nous efforçons de nous conformer aux directives d'accessibilité du contenu Web (WCAG) 2.1 niveau AA.",
+      "text2": "Nous pensons que chacun devrait avoir un accès égal à notre plateforme de gestion de hackathon, quelles que soient ses capacités ou les technologies qu'il utilise."
+    },
+    "features": {
+      "title": "Fonctionnalités d'Accessibilité",
+      "items": {
+        "keyboard": {
+          "title": "Navigation au Clavier",
+          "desc": "Support clavier complet pour tous les éléments interactifs. Naviguez en utilisant Tab, Entrée et les flèches."
+        },
+        "screenReader": {
+          "title": "Compatible Lecteur d'Écran",
+          "desc": "Étiquettes ARIA et HTML sémantique assurent la compatibilité avec les lecteurs d'écran comme NVDA, JAWS et VoiceOver."
+        },
+        "highContrast": {
+          "title": "Mode Contraste Élevé",
+          "desc": "Support des thèmes à contraste élevé et schémas de couleurs pour les utilisateurs malvoyants."
+        },
+        "resizableText": {
+          "title": "Texte Redimensionnable",
+          "desc": "Tout le texte peut être redimensionné jusqu'à 200% sans perte de fonctionnalité ou de contenu."
+        },
+        "focusIndicators": {
+          "title": "Indicateurs de Focus",
+          "desc": "Indicateurs de focus visuels clairs pour tous les éléments interactifs."
+        },
+        "captions": {
+          "title": "Sous-titres & Transcriptions",
+          "desc": "Le contenu vidéo et audio inclut des sous-titres et des transcriptions le cas échéant."
+        }
+      }
+    },
+    "standards": {
+      "title": "Normes & Directives",
+      "list": [
+        "Conformité WCAG 2.1 Niveau AA",
+        "Section 508 de la loi sur la réhabilitation",
+        "Norme d'accessibilité européenne EN 301 549",
+        "Balisage sémantique HTML5",
+        "Attributs ARIA (Accessible Rich Internet Applications)"
+      ]
+    },
+    "feedback": {
+      "title": "Retours & Contact",
+      "text": "Nous accueillons vos commentaires sur l'accessibilité de FairArena. Si vous rencontrez des obstacles à l'accessibilité, veuillez nous le faire savoir :",
+      "emailLabel": "E-mail",
+      "supportLabel": "Support",
+      "supportButton": "Contacter le Support",
+      "response": "Nous visons à répondre aux commentaires sur l'accessibilité dans les 2 jours ouvrables et à proposer une solution dans les 10 jours ouvrables."
+    },
+    "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
+  },
+  "communityGuidelines": {
+    "title": "Directives Communautaires",
+    "subtitle": "Construire une communauté sûre, respectueuse et collaborative pour les passionnés de hackathon du monde entier",
+    "commitment": {
+      "title": "Notre Engagement",
+      "text1": "FairArena s'engage à fournir un environnement accueillant et inclusif pour tous. Ces directives aident à garantir que notre communauté reste un espace positif pour l'apprentissage, la collaboration et l'innovation.",
+      "text2": "En utilisant FairArena, vous acceptez de suivre ces directives et de nous aider à maintenir une communauté respectueuse."
+    },
+    "core": {
+      "title": "Directives Fondamentales",
+      "items": {
+        "respectful": {
+          "title": "Soyez Respectueux",
+          "desc": "Traitez tous les membres de la communauté avec respect et gentillesse. Le harcèlement, les discours haineux et la discrimination ne seront pas tolérés.",
+          "examples": [
+            "Utilisez un langage inclusif",
+            "Respectez les différentes perspectives",
+            "Soyez constructif dans la critique"
+          ]
+        },
+        "collaborate": {
+          "title": "Collaborer & Partager",
+          "desc": "FairArena est bâti sur la collaboration. Partagez vos connaissances, aidez les autres et contribuez à la communauté.",
+          "examples": [
+            "Partagez votre expertise",
+            "Aidez les nouveaux venus",
+            "Fournissez des commentaires constructifs"
+          ]
+        },
+        "integrity": {
+          "title": "Maintenir l'Intégrité",
+          "desc": "Soyez honnête et transparent. Ne trichez pas, ne plagiez pas et ne vous engagez dans aucune forme de malhonnêteté académique.",
+          "examples": [
+            "Donnez une attribution appropriée",
+            "Soyez honnête à propos de votre travail",
+            "Signalez les violations"
+          ]
+        },
+        "communicate": {
+          "title": "Communiquez Clairement",
+          "desc": "Utilisez un langage clair et professionnel. Évitez le spam, le contenu hors sujet et l'autopromotion excessive.",
+          "examples": [
+            "Restez sur le sujet",
+            "Évitez le spam",
+            "Utilisez les canaux appropriés"
+          ]
+        }
+      }
+    },
+    "prohibited": {
+      "title": "Contenu et Comportement Interdits",
+      "text": "Les comportements et contenus suivants sont strictement interdits sur FairArena :",
+      "items": [
+        "Harcèlement, intimidation ou menaces",
+        "Discours haineux ou discrimination",
+        "Spam ou autopromotion excessive",
+        "Plagiat ou violation du droit d'auteur",
+        "Partage d'informations privées sans consentement",
+        "Code malveillant ou exploits de sécurité",
+        "Usurpation d'identité ou pratiques trompeuses",
+        "Activités ou contenus illégaux"
+      ]
+    },
+    "enforcement": {
+      "title": "Application",
+      "text": "Les violations de ces directives peuvent entraîner :",
+      "items": [
+        "Avertissement et suppression de contenu",
+        "Suspension temporaire des privilèges du compte",
+        "Résiliation permanente du compte",
+        "Poursuites judiciaires en cas de violations graves"
+      ],
+      "note": "Nous examinons chaque cas individuellement et prenons les mesures appropriées en fonction de la gravité et du contexte de la violation."
+    },
+    "report": {
+      "title": "Signaler des Violations",
+      "text": "Si vous êtes témoin ou victime d'une violation de ces directives, veuillez la signaler immédiatement. Tous les rapports sont examinés rapidement et traités de manière confidentielle.",
+      "button": "Signaler un problème",
+      "emailLabel": "E-mail"
+    },
+    "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
+  },
+  "securityPolicy": {
+    "title": "Politique de Sécurité",
+    "subtitle": "Votre sécurité et votre confidentialité sont nos priorités absolues. Découvrez comment nous protégeons vos données.",
+    "practices": {
+      "title": "Pratiques de Sécurité",
+      "items": {
+        "encryption": {
+          "title": "Chiffrement des Données",
+          "desc": "Toutes les données sont chiffrées en transit utilisant TLS 1.3 et au repos utilisant le chiffrement AES-256."
+        },
+        "auth": {
+          "title": "Authentification Sécurisée",
+          "desc": "Authentification multifacteur, OAuth 2.0 et support WebAuthn pour un accès sécurisé."
+        },
+        "protection": {
+          "title": "Protection des Données",
+          "desc": "Sauvegardes régulières, plans de reprise après sinistre et conformité RGPD pour la protection des données."
+        },
+        "monitoring": {
+          "title": "Surveillance de la Sécurité",
+          "desc": "Surveillance de la sécurité 24/7, détection d'intrusion et réponse automatisée aux menaces."
+        },
+        "access": {
+          "title": "Contrôle d'Accès",
+          "desc": "Contrôle d'accès basé sur les rôles (RBAC) et application du principe du moindre privilège."
+        },
+        "privacy": {
+          "title": "Confidentialité d'Abord",
+          "desc": "Confidentialité par conception, collecte de données minimale et pratiques de données transparentes."
+        }
+      }
+    },
+    "disclosure": {
+      "title": "Divulgation Responsable",
+      "text": "Nous apprécions les efforts de la communauté de recherche en sécurité pour aider à garder FairArena sécurisé. Si vous découvrez une vulnérabilité de sécurité, veuillez la signaler de manière responsable :",
+      "email": {
+        "label": "E-mail",
+        "value": "fairarena.contact@gmail.com"
+      },
+      "pgp": {
+        "label": "Clé PGP",
+        "value": "Disponible sur demande pour les communications chiffrées"
+      },
+      "response": {
+        "label": "Temps de Réponse",
+        "value": "Nous visons à répondre dans les 24 heures et à fournir des mises à jour toutes les 72 heures"
+      }
+    },
+    "bounty": {
+      "title": "Remerciements de Sécurité",
+      "text": "Nous reconnaissons et remercions les chercheurs en sécurité qui nous aident à améliorer la sécurité de FairArena. Les chercheurs qui divulguent de manière responsable les vulnérabilités peuvent être éligibles pour :",
+      "list": [
+        "Reconnaissance publique dans notre temple de la renommée de la sécurité",
+        "Récompenses monétaires pour les vulnérabilités critiques",
+        "Produits dérivés FairArena et avantages de compte premium"
+      ],
+      "button": "Voir le Temple de la Renommée"
+    },
+    "compliance": {
+      "title": "Conformité & Certifications",
+      "standards": {
+        "title": "Normes",
+        "list": [
+          "Conforme RGPD",
+          "SOC 2 Type II (en cours)",
+          "ISO 27001 (en cours)",
+          "Protection OWASP Top 10"
+        ]
+      },
+      "audits": {
+        "title": "Audits de Sécurité",
+        "list": [
+          "Tests d'intrusion annuels",
+          "Évaluations de sécurité trimestrielles",
+          "Analyse de vulnérabilité continue",
+          "Audits de sécurité tiers"
+        ]
+      }
+    },
+    "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last Updated: January 23, 2026",
+    "intro": "FairArena (\"us\", \"we\", or \"our\") operates the FairArena website (the \"Service\"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data. We use your data to provide and improve the Service. By using the Service, you agree to the collection and use of information in accordance with this policy.",
+    "sections": {
+      "collection": {
+        "title": "1. Information We Collect",
+        "description": "We collect several different types of information for various purposes to provide and improve our Service to you.",
+        "subsections": {
+          "personalData": {
+            "title": "1.1 Personal Data",
+            "description": "While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you (\"Personal Data\"). Personally identifiable information may include, but is not limited to:",
+            "list": [
+              "Email address",
+              "First name and last name",
+              "Phone number",
+              "Address, State, Province, ZIP/Postal code, City",
+              "Cookies and Usage Data",
+              "Social Media Profile information (if you log in via 3rd party services like Google or GitHub)"
+            ]
+          },
+          "usageData": {
+            "title": "1.2 Usage Data",
+            "description": "We may also collect information how the Service is accessed and used (\"Usage Data\"). This Usage Data may include information such as:",
+            "list": [
+              "Your computer's Internet Protocol address (e.g. IP address)",
+              "Browser type and browser version",
+              "The pages of our Service that you visit",
+              "The time and date of your visit",
+              "The time spent on those pages",
+              "Unique device identifiers and other diagnostic data"
+            ]
+          },
+          "tracking": {
+            "title": "1.3 Tracking & Cookies Data",
+            "description": "We use cookies and similar tracking technologies to track the activity on our Service and hold certain information.",
+            "list": [
+              "Session Cookies: We use Session Cookies to operate our Service.",
+              "Preference Cookies: We use Preference Cookies to remember your preferences and various settings.",
+              "Security Cookies: We use Security Cookies for security purposes."
+            ]
+          }
+        }
+      },
+      "usage": {
+        "title": "2. How We Use Your Data",
+        "intro": "FairArena uses the collected data for various purposes:",
+        "list": [
+          "To provide and maintain the Service",
+          "To notify you about changes to our Service",
+          "To allow you to participate in interactive features of our Service when you choose to do so",
+          "To provide customer care and support",
+          "To provide analysis or valuable information so that we can improve the Service",
+          "To monitor the usage of the Service",
+          "To detect, prevent and address technical issues",
+          "To process payments and manage billing (via secure third-party processors)"
+        ]
+      },
+      "retention": {
+        "title": "3. Retention of Data",
+        "content1": "FairArena will retain your Personal Data only for as long as is necessary for the purposes set out in this Privacy Policy. We will retain and use your Personal Data to the extent necessary to comply with our legal obligations (for example, if we are required to retain your data to comply with applicable laws), resolve disputes, and enforce our legal agreements and policies.",
+        "content2": "FairArena will also retain Usage Data for internal analysis purposes. Usage Data is generally retained for a shorter period of time, except when this data is used to strengthen the security or to improve the functionality of our Service, or we are legally obligated to retain this data for longer time periods."
+      },
+      "transfer": {
+        "title": "4. Transfer of Data",
+        "content1": "Your information, including Personal Data, may be transferred to — and maintained on — computers located outside of your state, province, country or other governmental jurisdiction where the data protection laws may differ than those from your jurisdiction.",
+        "content2": "If you are located outside India and choose to provide information to us, please note that we transfer the data, including Personal Data, to India and process it there.",
+        "content3": "Your consent to this Privacy Policy followed by your submission of such information represents your agreement to that transfer."
+      },
+      "disclosure": {
+        "title": "5. Disclosure of Data",
+        "subtitle": "5.1 Legal Requirements",
+        "description": "FairArena may disclose your Personal Data in the good faith belief that such action is necessary to:",
+        "list": [
+          "To comply with a legal obligation",
+          "To protect and defend the rights or property of FairArena",
+          "To prevent or investigate possible wrongdoing in connection with the Service",
+          "To protect the personal safety of users of the Service or the public",
+          "To protect against legal liability"
+        ]
+      },
+      "security": {
+        "title": "6. Security of Data",
+        "content": "The security of your data is important to us, but remember that no method of transmission over the Internet, or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we cannot guarantee its absolute security."
+      },
+      "providers": {
+        "title": "7. Service Providers",
+        "content1": "We may employ third party companies and individuals to facilitate our Service (\"Service Providers\"), to provide the Service on our behalf, to perform Service-related services or to assist us in analyzing how our Service is used.",
+        "content2": "These third parties have access to your Personal Data only to perform these tasks on our behalf and are obligated not to disclose or use it for any other purpose."
+      },
+      "links": {
+        "title": "8. Links to Other Sites",
+        "content1": "Our Service may contain links to other sites that are not operated by us. If you click on a third party link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit.",
+        "content2": "We have no control over and assume no responsibility for the content, privacy policies or practices of any third party sites or services."
+      },
+      "children": {
+        "title": "9. Children's Privacy",
+        "content1": "Our Service does not address anyone under the age of 13 (\"Children\").",
+        "content2": "We do not knowingly collect personally identifiable information from anyone under the age of 13. If you are a parent or guardian and you are aware that your Children has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers."
+      },
+      "changes": {
+        "title": "10. Changes to This Privacy Policy",
+        "content1": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.",
+        "content2": "We will let you know via email and/or a prominent notice on our Service, prior to the change becoming effective and update the \"effective date\" at the top of this Privacy Policy.",
+        "content3": "You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page."
+      },
+      "contact": {
+        "title": "11. Contact Us",
+        "description": "If you have any questions about this Privacy Policy, please contact us:",
+        "email": "By email: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "termsAndConditions": {
+    "title": "Terms and Conditions",
+    "lastUpdated": "Last Updated: January 23, 2026",
+    "intro": "Please read these Terms and Conditions (\"Terms\", \"Terms and Conditions\") carefully before using the FairArena website and service (the \"Service\") operated by FairArena (\"us\", \"we\", or \"our\"). Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interpretation and Definitions",
+        "content": "The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.",
+        "list": [
+          "“Company”, “We”, “Us”, or “Our” refers to FairArena, the provider of the Service.",
+          "“Service” refers to the FairArena hackathon management platform, website, and related services managed by the Company.",
+          "“User”, “You”, or “Your” refers to the individual accessing or using the Service, or the company, or other legal entity on behalf of which such individual is accessing or using the Service, as applicable.",
+          "“Account” means a unique account created for You to access our Service or parts of our Service.",
+          "“Organiser” refers to a User who creates and manages hackathons via the Service.",
+          "“Participant” refers to a User who registers for and submits projects to hackathons.",
+          "“Judge” refers to a User invited to evaluate submissions.",
+          "“Content” refers to content such as text, images, or other information that can be posted, uploaded, linked to or otherwise made available by You, regardless of the form of that content."
+        ]
+      },
+      "accounts": {
+        "title": "2. Accounts and Registration",
+        "content": "When You create an account with Us, You must provide us information that is accurate, complete, and current at all times.",
+        "list": [
+          "You must provide accurate, complete, and current information at all times. Failure to do so constitutes a breach of the Terms.",
+          "You are responsible for safeguarding the password that You use to access the Service and for any activities or actions under Your password.",
+          "You agree not to disclose Your password to any third party. You must notify Us immediately upon becoming aware of any breach of security or unauthorized use of Your Account.",
+          "We reserve the right to refuse service, terminate accounts, remove or edit content, or cancel orders in our sole discretion."
+        ]
+      },
+      "usage": {
+        "title": "3. Use of Service and Restrictions",
+        "list": [
+          "You agree not to use the Service for any unlawful purpose or in any way that interrupts, damages, impairs, or renders the Service less efficient.",
+          "You must not attempt to gain unauthorized access to our Service, the server on which our Service is stored or any server, computer or database connected to our Service.",
+          "You must not use the Service to transmit any unsolicited or unauthorized advertising, promotional materials, or spam.",
+          "Organisers are solely responsible for the administration of their hackathons, including the verification of Participants and Judges."
+        ]
+      },
+      "intellectualProperty": {
+        "title": "4. Intellectual Property Rights",
+        "list": [
+          "The Service and its original content (excluding Content provided by You or other Users), features and functionality are and will remain the exclusive property of the Company and its licensors.",
+          "The Service is protected by copyright, trademark, and other laws of both the Country and foreign countries.",
+          "Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of the Company.",
+          "By submitting Content (including project submissions), You grant Us a right to use, modify, perform, display, reproduce, and distribute such Content on and through the Service for the purpose of operating and improving the Service."
+        ]
+      },
+      "aiDisclaimer": {
+        "title": "5. AI Analysis and Disclaimers",
+        "list": [
+          "FairArena utilizes Artificial Intelligence (AI) technologies to provide insights, analysis, and scoring assistance.",
+          "AI-generated results are advisory in nature and may not be 100% accurate or free from bias.",
+          "Organisers and Judges retain full discretion and responsibility for final decision-making and scoring.",
+          "We do not guarantee the accuracy, completeness, or usefulness of any AI-generated analysis."
+        ]
+      },
+      "links": {
+        "title": "6. Links to Other Websites",
+        "content": "Our Service may contain links to third-party web sites or services that are not owned or controlled by the Company. The Company has no control over, and assumes no responsibility for, the content, privacy policies, or practices of any third-party web sites or services. You further acknowledge and agree that the Company shall not be responsible or liable, directly or indirectly, for any damage or loss caused or alleged to be caused by or in connection with the use of or reliance on any such content, goods or services available on or through any such web sites or services."
+      },
+      "termination": {
+        "title": "7. Termination",
+        "list": [
+          "We may terminate or suspend Your Account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if You breach these Terms.",
+          "Upon termination, Your right to use the Service will cease immediately.",
+          "If You wish to terminate Your Account, You may simply discontinue using the Service or delete your account through the settings."
+        ]
+      },
+      "liability": {
+        "title": "8. Limitation of Liability",
+        "list": [
+          "To the maximum extent permitted by applicable law, in no event shall the Company be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, loss of data or other information, for business interruption, for personal injury, loss of privacy arising out of or in any way related to the use of or inability to use the Service).",
+          "Our total liability to You for any claims arising out of or relating to these Terms or Your use of the Service is limited to the amount You paid us to use the Service in the 12 months prior to the act that gave rise to the liability."
+        ]
+      },
+      "disclaimer": {
+        "title": "9. Disclaimer",
+        "content1": "The Service is provided to You \"AS IS\" and \"AS AVAILABLE\" and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, the Company expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the Service, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement.",
+        "content2": "Without limiting the foregoing, neither the Company nor any of the company's provider makes any representation or warranty of any kind, express or implied: (i) as to the operation or availability of the Service, or the information, content, and materials or products included thereon; (ii) that the Service will be uninterrupted or error-free; (iii) as to the accuracy, reliability, or currency of any information or content provided through the Service."
+      },
+      "governing": {
+        "title": "10. Governing Law",
+        "content": "The laws of India, excluding its conflicts of law rules, shall govern this Terms and Your use of the Service. Your use of the Application may also be subject to other local, state, national, or international laws."
+      },
+      "disputes": {
+        "title": "11. Disputes Resolution",
+        "content": "If You have any concern or dispute about the Service, You agree to first try to resolve the dispute informally by contacting the Company."
+      },
+      "changes": {
+        "title": "12. Changes to These Terms",
+        "content1": "We reserve the right, at Our sole discretion, to modify or replace these Terms at any time. If a revision is material We will make reasonable efforts to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at Our sole discretion.",
+        "content2": "By continuing to access or use Our Service after those revisions become effective, You agree to be bound by the revised terms. If You do not agree to the new terms, in whole or in part, please stop using the website and the Service."
+      },
+      "contact": {
+        "title": "13. Contact Us",
+        "description": "If you have any questions about these Terms, You can contact us:",
+        "email": "By email: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "cookiePolicy": {
+    "title": "Politique de Cookies",
+    "lastUpdated": "Dernière mise à jour : 23 janvier 2026",
+    "intro": "Cette Politique de Cookies explique ce que sont les Cookies et comment Nous les utilisons. Vous devez lire cette politique pour comprendre quel type de cookies Nous utilisons, ou les informations que Nous collectons à l'aide de Cookies et comment ces informations sont utilisées. Cette Politique de Cookies a été créée avec l'aide du Générateur de Politique de Cookies.",
+    "intro2": "Les cookies ne contiennent généralement aucune information identifiant personnellement un utilisateur, mais les informations personnelles que nous stockons à Votre sujet peuvent être liées aux informations stockées dans et obtenues à partir des Cookies. Pour plus d'informations sur la manière dont Nous utilisons, stockons et sécurisons vos données personnelles, consultez notre Politique de Confidentialité.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interprétation et Définitions",
+        "subtitle1": "1.1 Interprétation",
+        "content1": "Les mots dont la lettre initiale est en majuscule ont des significations définies dans les conditions suivantes. Les définitions suivantes auront la même signification, qu'elles apparaissent au singulier ou au pluriel.",
+        "subtitle2": "1.2 Définitions",
+        "list": [
+          "“Société” (désignée par \"la Société\", \"Nous\", \"Notre\" ou \"Nos\" dans cette Politique de Cookies) fait référence à FairArena.",
+          "“Cookies” signifie de petits fichiers placés sur Votre ordinateur, appareil mobile ou tout autre appareil par un site web, contenant les détails de Votre historique de navigation sur ce site web parmi ses nombreuses utilisations.",
+          "“Site Web” fait référence à FairArena, accessible depuis fair.sakshamg.me",
+          "“Vous” signifie la personne accédant ou utilisant le Site Web, ou une société, ou toute entité juridique pour le compte de laquelle cette personne accède ou utilise le Site Web, le cas échéant."
+        ]
+      },
+      "usage": {
+        "title": "2. L'Utilisation des Cookies",
+        "subtitle": "2.1 Type de Cookies que Nous Utilisons",
+        "content1": "Les Cookies peuvent être des Cookies \"Persistants\" ou \"de Session\". Les Cookies Persistants restent sur votre ordinateur personnel ou appareil mobile lorsque Vous vous déconnectez, tandis que les Cookies de Session sont supprimés dès que Vous fermez votre navigateur web.",
+        "content2": "Nous utilisons à la fois des Cookies de session et persistants aux fins énoncées ci-dessous :",
+        "types": {
+          "essential": {
+            "title": "Cookies Nécessaires / Essentiels",
+            "type": "Type : Cookies de Session",
+            "admin": "Administré par : Nous",
+            "purpose": "Objectif : Ces Cookies sont essentiels pour Vous fournir les services disponibles via le Site Web et pour Vous permettre d'utiliser certaines de ses fonctionnalités. Ils aident à authentifier les utilisateurs et à prévenir l'utilisation frauduleuse des comptes utilisateurs. Sans ces Cookies, les services que Vous avez demandés ne peuvent pas être fournis, et Nous n'utilisons ces Cookies que pour Vous fournir ces services."
+          },
+          "functionality": {
+            "title": "Cookies de Fonctionnalité",
+            "type": "Type : Cookies Persistants",
+            "admin": "Administré par : Nous",
+            "purpose": "Objectif : Ces Cookies nous permettent de mémoriser les choix que Vous faites lorsque Vous utilisez le Site Web, comme mémoriser vos détails de connexion ou votre préférence linguistique. L'objectif de ces Cookies est de Vous offrir une expérience plus personnelle et de Vous éviter d'avoir à saisir à nouveau vos préférences chaque fois que Vous utilisez le Site Web."
+          },
+          "tracking": {
+            "title": "Cookies de Suivi et de Performance",
+            "type": "Type : Cookies Persistants",
+            "admin": "Administré par : Tiers",
+            "purpose": "Objectif : Ces Cookies sont utilisés pour suivre les informations sur le trafic vers le Site Web et la manière dont les utilisateurs utilisent le Site Web. Les informations recueillies via ces Cookies peuvent Vous identifier directement ou indirectement en tant que visiteur individuel. C'est parce que les informations collectées sont généralement liées à un identifiant pseudonyme associé à l'appareil que vous utilisez pour accéder au Site Web. Nous pouvons également utiliser ces Cookies pour tester de nouvelles publicités, pages, fonctionnalités ou nouvelles fonctionnalités du Site Web pour voir comment nos utilisateurs y réagissent."
+          }
+        }
+      },
+      "choices": {
+        "title": "3. Vos Choix Concernant les Cookies",
+        "content1": "Si Vous préférez éviter l'utilisation de Cookies sur le Site Web, Vous devez d'abord désactiver l'utilisation de Cookies dans votre navigateur, puis supprimer les Cookies enregistrés dans votre navigateur associés à ce site web. Vous pouvez utiliser cette option pour empêcher l'utilisation de Cookies à tout moment.",
+        "content2": "Si Vous n'acceptez pas Nos Cookies, Vous pouvez rencontrer des inconvénients dans votre utilisation du Site Web et certaines fonctionnalités peuvent ne pas fonctionner correctement.",
+        "content3": "Pour plus d'informations sur la gestion et la suppression des Cookies, visitez les documents d'assistance officiels de votre navigateur web spécifique (Chrome, Safari, Firefox, Edge, etc.)."
+      },
+      "moreInfo": {
+        "title": "4. Plus d'Informations sur les Cookies",
+        "content": "Vous pouvez en savoir plus sur les cookies : Que sont les Cookies ?."
+      },
+      "contact": {
+        "title": "5. Nous Contacter",
+        "description": "Si vous avez des questions concernant cette Politique de Cookies, Vous pouvez nous contacter :",
+        "email": "Par e-mail : fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "dmca": {
+    "title": "Politique DMCA",
+    "subtitle": "Conformité au Digital Millennium Copyright Act",
+    "intro": {
+      "title": "Introduction",
+      "text": "FairArena respecte les droits de propriété intellectuelle d'autrui et attend de ses utilisateurs qu'ils fassent de même. Conformément au Digital Millennium Copyright Act de 1998 (DMCA), nous répondrons rapidement aux réclamations pour violation du droit d'auteur commise en utilisant notre service."
+    },
+    "notification": {
+      "title": "Dépôt d'un Avis DMCA",
+      "text": "Si vous pensez que le contenu sur FairArena viole vos droits d'auteur, veuillez fournir à notre Agent des Droits d'Auteur les informations suivantes :",
+      "list": [
+        "Une signature physique ou électronique du titulaire du droit d'auteur ou de la personne autorisée à agir en son nom",
+        "Identification de l'œuvre protégée par le droit d'auteur prétendument violée",
+        "Identification du matériel prétendu être en violation, avec suffisamment de détails pour le localiser sur notre service",
+        "Vos coordonnées (adresse, numéro de téléphone et adresse e-mail)",
+        "Une déclaration selon laquelle vous croyez de bonne foi que l'utilisation du matériel n'est pas autorisée par le titulaire du droit d'auteur",
+        "Une déclaration selon laquelle les informations contenues dans la notification sont exactes et, sous peine de parjure, que vous êtes autorisé à agir au nom du titulaire du droit d'auteur"
+      ]
+    },
+    "counter": {
+      "title": "Contre-Notification",
+      "text": "Si vous pensez que votre contenu a été supprimé par erreur ou mauvaise identification, vous pouvez déposer une contre-notification auprès de notre Agent des Droits d'Auteur. La contre-notification doit inclure :",
+      "list": [
+        "Votre signature physique ou électronique",
+        "Identification du matériel qui a été supprimé et son emplacement avant la suppression",
+        "Une déclaration sous peine de parjure que vous croyez de bonne foi que le matériel a été supprimé par erreur",
+        "Votre nom, adresse et numéro de téléphone",
+        "Une déclaration selon laquelle vous consentez à la juridiction du tribunal fédéral de votre district"
+      ]
+    },
+    "repeat": {
+      "title": "Récidivistes",
+      "text": "FairArena résiliera les comptes des utilisateurs jugés récidivistes. Nous nous réservons le droit de décider si le contenu viole nos politiques pour des raisons autres que la violation du droit d'auteur."
+    },
+    "contact": {
+      "title": "Contact Agent Droit d'Auteur",
+      "text": "Tous les avis DMCA et contre-avis doivent être envoyés à notre agent désigné pour le droit d'auteur :",
+      "agentLabel": "Agent Droit d'Auteur",
+      "agentValue": "Équipe Juridique FairArena",
+      "emailLabel": "E-mail",
+      "subjectLabel": "Objet",
+      "subjectValue": "Avis DMCA ou Contre-Avis DMCA",
+      "liability": "Veuillez noter qu'en vertu de la section 512(f) du DMCA, toute personne qui ferait sciemment une fausse déclaration matérielle selon laquelle un matériel ou une activité est en infraction peut voir sa responsabilité engagée."
+    },
+    "lastUpdated": "Dernière mise à jour : 24 janvier 2026"
+  },
+  "faq": {
+    "title": "FAQ",
+    "subtitle": "Trouvez des réponses aux questions fréquemment posées sur FairArena",
+    "searchPlaceholder": "Rechercher des questions...",
+    "categories": {
+      "all": "Tout",
+      "general": "Général",
+      "gettingStarted": "Démarrer",
+      "features": "Fonctionnalités",
+      "security": "Sécurité & Confidentialité",
+      "pricing": "Tarification & Facturation",
+      "technical": "Technique",
+      "support": "Support"
+    },
+    "noResults": "Aucune question trouvée correspondant à votre recherche.",
+    "contact": {
+      "title": "Vous avez d'autres questions ?",
+      "subtitle": "Vous ne trouvez pas la réponse que vous cherchez ? Notre équipe de support est là pour vous aider.",
+      "button": "Contacter le Support"
+    },
+    "items": [
+      {
+        "category": "general",
+        "q": "Qu'est-ce que FairArena ?",
+        "a": "FairArena est une plateforme de gestion de hackathon alimentée par l'IA qui aide les organisateurs à organiser des hackathons équitables, transparents et efficaces. Nous fournissons des classements en temps réel, des flux de travail de jugement automatisés, une analyse de projet par IA et des analyses complètes."
+      },
+      {
+        "category": "general",
+        "q": "Qui peut utiliser FairArena ?",
+        "a": "FairArena est conçu pour les organisateurs de hackathons, les juges et les participants. Les organisateurs utilisent notre plateforme pour gérer les événements, les juges pour noter les projets efficacement, et les participants peuvent suivre leur classement en temps réel."
+      },
+      {
+        "category": "general",
+        "q": "FairArena est-il gratuit ?",
+        "a": "Nous proposons différents niveaux de tarification. Les juges et les participants utilisent toujours la plateforme gratuitement. Les organisateurs peuvent choisir parmi nos plans Gratuit, Pro ou Entreprise en fonction de la taille de leur événement et de leurs besoins."
+      },
+      {
+        "category": "gettingStarted",
+        "q": "Comment créer un compte ?",
+        "a": "Cliquez sur le bouton « S'inscrire » en haut à droite. Vous pouvez vous inscrire avec votre e-mail ou utiliser des fournisseurs OAuth comme GitHub, Google, Atlassian, Figma, Vercel ou Zoom pour une inscription rapide."
+      },
+      {
+        "category": "gettingStarted",
+        "q": "Comment organiser mon premier hackathon ?",
+        "a": "Après l'inscription, accédez à votre tableau de bord et cliquez sur « Créer un Hackathon ». Remplissez les détails de l'événement, ajoutez des juges, configurez les critères de notation et invitez des participants. Notre assistant étape par étape vous guidera tout au long du processus."
+      },
+      {
+        "category": "gettingStarted",
+        "q": "Puis-je importer des participants depuis un fichier CSV ?",
+        "a": "Oui ! Dans votre tableau de bord hackathon, accédez à la section Participants et utilisez la fonction « Importer CSV ». Assurez-vous que votre CSV inclut les champs requis tels que le nom, l'e-mail et les informations de l'équipe."
+      },
+      {
+        "category": "features",
+        "q": "Qu'est-ce que l'analyse de projet alimentée par l'IA ?",
+        "a": "Notre IA analyse les projets soumis pour la performance, le SEO, l'UI/UX, l'accessibilité, la qualité du code et l'unicité. Elle fournit des rapports détaillés et des suggestions, aidant les juges à prendre des décisions éclairées et donnant aux participants des retours précieux."
+      },
+      {
+        "category": "features",
+        "q": "Comment fonctionne le classement en temps réel ?",
+        "a": "Au fur et à mesure que les juges soumettent les scores, notre système calcule automatiquement les classements et met à jour le tableau de bord en temps réel grâce à la technologie WebSocket. Les participants peuvent voir leur position instantanément, créant une expérience engageante et transparente."
+      },
+      {
+        "category": "features",
+        "q": "Puis-je personnaliser les critères de notation ?",
+        "a": "Absolument ! Vous pouvez créer des grilles de notation personnalisées avec des critères pondérés adaptés à votre hackathon. Définissez des catégories comme l'innovation, la complexité technique, le design et l'impact avec des pondérations personnalisées."
+      },
+      {
+        "category": "features",
+        "q": "FairArena prend-il en charge le jugement multi-tours ?",
+        "a": "Oui ! Vous pouvez configurer plusieurs tours de jugement (par exemple, préliminaires, demi-finales, finales) avec différents jurys et critères pour chaque tour. Le système fait avancer automatiquement les équipes en fonction de votre configuration."
+      },
+      {
+        "category": "security",
+        "q": "Mes données sont-elles sécurisées ?",
+        "a": "Nous prenons la sécurité au sérieux. Toutes les données sont chiffrées en transit (TLS) et au repos. Nous mettons en œuvre une protection CSRF, une limitation de débit et suivons les meilleures pratiques de sécurité OWASP. Nous sommes conformes SOC 2 Type II."
+      },
+      {
+        "category": "security",
+        "q": "Prenez-vous en charge le SSO Entreprise ?",
+        "a": "Oui ! Les plans Entreprise incluent l'authentification unique (SSO) avec le support SAML 2.0. Vous pouvez configurer la vérification de domaine et appliquer le SSO pour les membres de votre organisation."
+      },
+      {
+        "category": "security",
+        "q": "Où sont stockées mes données ?",
+        "a": "Les données sont stockées dans une infrastructure cloud sécurisée avec des sauvegardes automatiques. Nous utilisons des bases de données standard de l'industrie avec chiffrement et suivons le RGPD, le CCPA et d'autres réglementations sur la protection des données."
+      },
+      {
+        "category": "pricing",
+        "q": "Quelles méthodes de paiement acceptez-vous ?",
+        "a": "Nous acceptons toutes les principales cartes de crédit (Visa, Mastercard, American Express, Discover) et prenons en charge les paiements internationaux. Les clients Entreprise peuvent également payer par facture."
+      },
+      {
+        "category": "pricing",
+        "q": "Puis-je annuler mon abonnement à tout moment ?",
+        "a": "Oui, vous pouvez annuler votre abonnement à tout moment depuis les paramètres de votre compte. Votre accès continuera jusqu'à la fin de votre période de facturation en cours. Aucun frais d'annulation ne s'applique."
+      },
+      {
+        "category": "pricing",
+        "q": "Proposez-vous des remboursements ?",
+        "a": "Nous offrons une garantie de remboursement de 14 jours pour tous les plans payants. Si vous n'êtes pas satisfait, contactez notre équipe de support dans les 14 jours suivant l'achat pour un remboursement complet."
+      },
+      {
+        "category": "technical",
+        "q": "Quels navigateurs sont pris en charge ?",
+        "a": "FairArena fonctionne mieux sur les navigateurs modernes, notamment Chrome, Firefox, Safari et Edge (2 dernières versions). Nous prenons également en charge les navigateurs mobiles pour un accès en déplacement."
+      },
+      {
+        "category": "technical",
+        "q": "Y a-t-il une API disponible ?",
+        "a": "Oui ! Nous fournissons une API REST complète et un support OAuth 2.0 pour les intégrations. Les plans Entreprise incluent des limites de débit plus élevées et un support API dédié."
+      },
+      {
+        "category": "technical",
+        "q": "Avez-vous une application mobile ?",
+        "a": "Actuellement, nous proposons une application web entièrement responsive qui fonctionne très bien sur les appareils mobiles. Des applications natives iOS et Android sont sur notre feuille de route pour 2026."
+      },
+      {
+        "category": "support",
+        "q": "Comment puis-je obtenir de l'aide ?",
+        "a": "Vous pouvez contacter notre équipe de support par e-mail à fairarena.contact@gmail.com, via la page de support ou en utilisant le chat intégré. Les clients Entreprise bénéficient d'un support prioritaire avec des gestionnaires de compte dédiés."
+      },
+      {
+        "category": "support",
+        "q": "Proposez-vous une formation ou une intégration ?",
+        "a": "Oui ! Nous fournissons une documentation complète, des tutoriels vidéo et des sessions d'intégration en direct pour les clients Pro et Entreprise. Nous proposons également une formation personnalisée pour les grandes organisations."
+      },
+      {
+        "category": "support",
+        "q": "Quel est votre temps de réponse moyen ?",
+        "a": "Niveau gratuit : 48 heures, Pro : 24 heures, Entreprise : 4 heures (support prioritaire). Les problèmes critiques sont immédiatement escaladés pour tous les plans payants."
+      }
+    ]
+  }
+}

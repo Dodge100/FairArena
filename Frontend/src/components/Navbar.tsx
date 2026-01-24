@@ -2,15 +2,18 @@ import { useTheme } from '@/hooks/useTheme';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuthState } from '../lib/auth';
 import { ThemeSwitcher } from './kibo-ui/theme-switcher';
+import { LanguageSelector } from './LanguageSelector';
 
 export default function Navbar() {
   const { theme, setTheme, isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const { isSignedIn } = useAuthState();
   const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
+  const { t } = useTranslation();
 
   return (
     <>
@@ -19,7 +22,7 @@ export default function Navbar() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className={`w-full fixed top-0 overflow-hidden h-30 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
+        className={`w-full fixed top-0 h-30 left-0 flex justify-center py-6 transition-colors duration-300 z-50`}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -59,9 +62,9 @@ export default function Navbar() {
                   } transition cursor-pointer capitalize`}
               >
                 {item === 'pricing' ? (
-                  <a href="#pricing">{item}</a>
+                  <a href="#pricing">{t('navbar.menu.pricing')}</a>
                 ) : (
-                  <Link to={item}>{item}</Link>
+                  <Link to={item}>{t(`navbar.menu.${item === 'why-choose-us' ? 'whyChooseUs' : item}`)}</Link>
                 )}
               </motion.button>
             ))}
@@ -78,7 +81,7 @@ export default function Navbar() {
                       : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
                     }`}
                 >
-                  {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
+                  {isNewSignupEnabled ? t('navbar.cta.getStarted') : t('navbar.cta.joinWaitlist')}
                 </motion.button>
               </Link>
             ) : (
@@ -93,7 +96,7 @@ export default function Navbar() {
                       : 'bg-[#d9ff00] text-black shadow-[0_0_15px_4px_rgba(217,255,0,0.4)] hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]'
                     }`}
                 >
-                  Go to Dashboard
+                  {t('navbar.cta.dashboard')}
                 </motion.button>
               </Link>
             )}
@@ -112,13 +115,14 @@ export default function Navbar() {
           </motion.button>
         </motion.div>
 
-        <ThemeSwitcher
-          value={theme}
-          onChange={setTheme}
-          className={
-            'hidden absolute lg:flex lg:top-1/2 right-10 -translate-x-1/2 -translate-y-1/2'
-          }
-        />
+        <div className="hidden absolute lg:flex items-center gap-4 lg:top-1/2 right-10 -translate-y-1/2">
+          <LanguageSelector />
+          <ThemeSwitcher
+            value={theme}
+            onChange={setTheme}
+            className={'flex'}
+          />
+        </div>
       </motion.div>
 
       {/* PANEL + BACKDROP WITH AnimatePresence */}
@@ -204,9 +208,9 @@ export default function Navbar() {
                     onClick={() => setOpen(false)}
                   >
                     {item === 'pricing' ? (
-                      <a href="#pricing">{item}</a>
+                      <a href="#pricing">{t('navbar.menu.pricing')}</a>
                     ) : (
-                      <Link to={item}>{item}</Link>
+                      <Link to={item}>{t(`navbar.menu.${item === 'why-choose-us' ? 'whyChooseUs' : item}`)}</Link>
                     )}
                   </motion.button>
                 ))}
@@ -225,7 +229,7 @@ export default function Navbar() {
                       transition-all duration-300 cursor-pointer
                     `}
                     >
-                      {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
+                      {isNewSignupEnabled ? t('navbar.cta.getStarted') : t('navbar.cta.joinWaitlist')}
                     </motion.button>
                   </Link>
                 ) : (
@@ -240,12 +244,13 @@ export default function Navbar() {
                       transition-all duration-300 cursor-pointer
                     `}
                     >
-                      Go to Dashboard
+                      {t('navbar.cta.dashboard')}
                     </motion.button>
                   </Link>
                 )}
 
-                <div className="w-full flex items-center mt-5 justify-center">
+                <div className="w-full flex items-center mt-5 justify-center gap-4">
+                  <LanguageSelector />
                   <ThemeSwitcher
                     value={theme}
                     onChange={setTheme}

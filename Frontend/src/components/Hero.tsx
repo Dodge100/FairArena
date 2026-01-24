@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/avatar";
 import { ArrowRight, Play, Star } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthState } from '../lib/auth';
@@ -15,6 +16,7 @@ import { Spotlight } from './ui/Spotlight';
 export default function Hero() {
     const { isDark } = useTheme();
     const { isSignedIn } = useAuthState();
+    const { t } = useTranslation();
     const isNewSignupEnabled = import.meta.env.VITE_NEW_SIGNUP_ENABLED === 'true';
 
     return (
@@ -50,7 +52,7 @@ export default function Hero() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#d9ff00]"></span>
                     </span>
                     <AnimatedShinyText className="inline-flex items-center justify-center transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
-                        <span>FairArena v1.0 is now live</span>
+                        <span>{t('home.hero.badge')}</span>
                         <ArrowRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
                     </AnimatedShinyText>
                 </motion.div>
@@ -65,9 +67,9 @@ export default function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
                 >
-                    The Platform for <br />
+                    {t('home.hero.title_prefix')} <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d9ff00] to-[#9db800]">
-                        Fair Decisions
+                        {t('home.hero.title_highlight')}
                     </span>
                 </motion.h1>
 
@@ -81,7 +83,7 @@ export default function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
                 >
-                    FairArena is the AI-powered hackathon platform for organizers, judges, and participants. We automate judging with analysis and real-time insights, ensuring fair evaluations for everyone.
+                    {t('home.hero.subtitle')}
                 </motion.p>
 
                 {/* Buttons */}
@@ -97,7 +99,7 @@ export default function Hero() {
                                 <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
                                     <div className="flex items-center gap-2 pr-6">
-                                        {isNewSignupEnabled ? 'Get Started' : 'Join Waitlist'}
+                                        {isNewSignupEnabled ? t('home.hero.ctaPrimary.getStarted') : t('home.hero.ctaPrimary.joinWaitlist')}
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                     </div>
                                 </button>
@@ -107,7 +109,7 @@ export default function Hero() {
                                 <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
                                     <div className="flex items-center gap-2 pr-6">
-                                        Go to Dashboard
+                                        {t('home.hero.ctaPrimary.dashboard')}
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                     </div>
                                 </button>
@@ -121,7 +123,7 @@ export default function Hero() {
                                 : "border-neutral-300 hover:bg-neutral-100 text-gray-900"
                         )}>
                             <Play className="w-4 h-4 fill-current" />
-                            Watch Demo
+                            {t('home.hero.ctaSecondary')}
                         </a>
                     </div>
 
@@ -189,7 +191,7 @@ export default function Hero() {
                                 <Star key={i} className="w-4 h-4 fill-[#d9ff00] text-[#d9ff00]" />
                             ))}
                         </div>
-                        <p className={cn("text-sm", isDark ? "text-neutral-400" : "text-neutral-600")}>Trusted by organizers worldwide</p>
+                        <p className={cn("text-sm", isDark ? "text-neutral-400" : "text-neutral-600")}>{t('home.hero.trustedBy')}</p>
                     </div>
                 </motion.div>
 

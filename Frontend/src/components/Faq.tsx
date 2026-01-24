@@ -3,37 +3,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 
+import { useTranslation } from 'react-i18next';
+
 function Faq() {
-  const faqs = [
-    {
-      q: 'What is FairArena?',
-      a: 'FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking.',
-    },
-    {
-      q: 'Who can use FairArena?',
-      a: 'Organisers (paid), judges (free), and participants (free).',
-    },
-    {
-      q: 'What does the AI analyzer check? ',
-      a: 'It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions.',
-    },
-    {
-      q: 'Can multiple judges score the same project?',
-      a: 'Yes. Scores from all judges are combined automatically.',
-    },
-    {
-      q: 'Does FairArena support multi-round hackathons?',
-      a: 'Yes — preliminary, semi-final, and final rounds.',
-    },
-    {
-      q: 'Is there a free version?',
-      a: 'Judges and participants always use FairArena for free During Hackathons. Organisers choose a paid plan.',
-    },
-    {
-      q: 'Can organisers download reports?',
-      a: 'Yes — detailed score reports, analytics, and winner sheets.',
-    },
-  ];
+  const { t } = useTranslation();
+  const faqs = t('home.faq.items', { returnObjects: true }) as Array<{ q: string; a: string }>;
 
   const { isDark } = useTheme();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -60,7 +34,7 @@ function Faq() {
         className={`px-4 py-1 rounded-full text-[#d9ff00] text-sm font-medium mb-6 ${isDark ? 'bg-[#111]/90' : 'bg-black/90'
           }`}
       >
-        Questions? We Have Answers
+        {t('home.faq.badge')}
       </motion.div>
 
       {/* Heading */}
@@ -70,7 +44,7 @@ function Faq() {
         transition={{ delay: 0.3, duration: 0.5 }}
         className={`text-4xl md:text-5xl font-bold tracking-tight ${textPrimary}`}
       >
-        Frequently Asked <span className="text-neutral-500">Questions</span>
+        {t('home.faq.title')}
       </motion.h1>
 
       {/* Subtext */}
@@ -80,7 +54,7 @@ function Faq() {
         transition={{ delay: 0.4, duration: 0.5 }}
         className={`${textSecondary} text-center max-w-xl mt-4 text-lg`}
       >
-        Find quick answers to some of the most common questions about FairArena.
+        {t('home.faq.subtitle')}
       </motion.p>
 
       {/* FAQ List */}
