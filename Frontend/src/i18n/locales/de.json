@@ -21,7 +21,9 @@
         "about": "Über uns",
         "whyChooseUs": "Warum uns wählen",
         "changelog": "Änderungsprotokoll",
-        "pricing": "Preise"
+        "pricing": "Preise",
+        "faq": "FAQ",
+        "status": "Status"
       }
     },
     "resources": {
@@ -34,7 +36,8 @@
     },
     "contact": {
       "title": "Kontakt",
-      "location": "Delhi, Indien"
+      "location": "Delhi, Indien",
+      "support": "Unterstützung"
     },
     "bottom": {
       "rights": "Alle Rechte vorbehalten.",
@@ -43,7 +46,8 @@
         "privacyPolicy": "Datenschutzrichtlinie",
         "termsAndConditions": "Allgemeine Geschäftsbedingungen",
         "cookiePolicy": "Cookie-Richtlinie",
-        "refund": "Rückerstattung"
+        "refund": "Rückerstattung",
+        "dmca": "DMCA"
       }
     }
   },
@@ -431,7 +435,8 @@
         "q": "Was ist Ihre durchschnittliche Antwortzeit?",
         "a": "Kostenloses Kontingent: 48 Stunden, Pro: 24 Stunden, Enterprise: 4 Stunden (Prioritätssupport). Kritische Probleme werden bei allen kostenpflichtigen Plänen sofort eskaliert."
       }
-    ]
+    ],
+    "title": "FAQ"
   },
   "pricing": {
     "title": "Wählen Sie Ihren Plan",
@@ -452,5 +457,906 @@
       "link": "Kontaktieren Sie unser Team"
     },
     "empty": "Derzeit sind keine Preispläne verfügbar."
+  },
+  "changelog": {
+    "title": "Änderungsprotokoll",
+    "subtitle": "Verfolgen Sie alle Verbesserungen, Funktionen und Korrekturen, die wir liefern, um FairArena für Sie besser zu machen.",
+    "stayUpdated": {
+      "title": "Bleiben Sie auf dem Laufenden",
+      "text": "Verfolgen Sie unsere Reise, während wir weiterhin die beste Hackathon-Plattform der Welt aufbauen.",
+      "github": "Star uns auf GitHub",
+      "request": "Fordern Sie eine Funktion an"
+    },
+    "types": {
+      "feature": "Besonderheit",
+      "improvement": "Verbesserung",
+      "bugfix": "Fehlerbehebung",
+      "security": "Sicherheit",
+      "breaking": "Breaking Change"
+    },
+    "entries": [
+      {
+        "version": "2.1.0",
+        "date": "23.01.2026",
+        "title": "Enterprise SSO und erweiterte Sicherheit",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "Enterprise SSO mit Domänenüberprüfung und SAML 2.0-Unterstützung für Organisationen hinzugefügt"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Implementierung des OAuth 2.0-Geräteautorisierungsablaufs für CLI- und IoT-Geräte"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Unterstützung für mehrere OAuth-Anbieter hinzugefügt: GitHub, Google, Atlassian, Figma, Vercel und Zoom"
+          },
+          {
+            "type": "Sicherheit",
+            "description": "Verbesserter CSRF-Schutz mit dediziertem Token-Endpunkt und automatischer Aktualisierung"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Für reaktive Aktualisierungen im Posteingang in weniger als einer Millisekunde auf TanStack DB migriert"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Problem behoben, bei dem die Aktualisierung des Authentifizierungstokens zu unerwarteten Abmeldungen führte"
+          }
+        ]
+      },
+      {
+        "version": "1.5.0",
+        "date": "20.01.2026",
+        "title": "Geräteautorisierung und Multi-Provider-OAuth",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "OAuth 2.0-Geräteautorisierungsablauf für Headless-Geräte implementiert"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Atlassian OAuth-Integration mit Umgebungskonfiguration hinzugefügt"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Aktualisierte Frontend-Anmelde-/Registrierungsseiten, um alle OAuth-Anbieter anzuzeigen"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Fehler „Unbekannte Anwendung“ auf der Geräteeinwilligungsseite behoben"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Authentifizierungsprobleme mit dem /device/verify-Endpunkt behoben"
+          }
+        ]
+      },
+      {
+        "version": "1.6.0",
+        "date": "19.01.2026",
+        "title": "Datenbankmigrationen und Teamfunktionen",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "Angewandte Datenbankmigrationen mit Prisma für Schemaaktualisierungen"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Teameinladungssystem mit E-Mail-Benachrichtigungen hinzugefügt"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Verbesserte Handhabung des Backend-Server-Neustarts nach Konfigurationsänderungen"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Der Authentifizierungsablauf mit korrekter Token-Aktualisierung und Sitzungsungültigmachung wurde korrigiert"
+          }
+        ]
+      },
+      {
+        "version": "1.7.0",
+        "date": "18.01.2026",
+        "title": "MCP-Server-Produktionsbereitstellung",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "Der MCP-Server wurde überarbeitet, um HTTP/SSE-Transport anstelle von stdio zu verwenden"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Produktionsbereite Docker-Datei für die Containerbereitstellung hinzugefügt"
+          },
+          {
+            "type": "Sicherheit",
+            "description": "Ratenbegrenzung, CORS und Authentifizierung für MCP-Server implementiert"
+          },
+          {
+            "type": "Sicherheit",
+            "description": "Gesicherte Pinecone-Anmeldeinformationen serverseitig mit vom Client bereitgestellten Gemini-API-Schlüsseln"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Umfangreiche README.md und mcp-config.example.json erstellt"
+          },
+          {
+            "type": "Bugfix",
+            "description": "TypeScript-Fehler bei der Implementierung von Produktionsfunktionen behoben"
+          }
+        ]
+      },
+      {
+        "version": "1.8.0",
+        "date": "17.01.2026",
+        "title": "KI-Dokumentationssuche und Pinecone-Integration",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "Integrierte Pinecone-Vektordatenbank für die KI-gestützte Dokumentationssuche"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Search_documentation-Tool mit einbettungsbasiertem Abruf hinzugefügt"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Zur besseren Wartbarkeit wurde die Eingabeaufforderung des KI-Systems in eine separate Datei verschoben"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Die Nichtübereinstimmung der Pinecone-Abmessungen wurde durch die Verwendung von 384-dimensionalen Einbettungen behoben"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Fehler bei der Installation des scharfen Moduls für @xenova/transformers behoben"
+          }
+        ]
+      },
+      {
+        "version": "1.8.5",
+        "date": "15.01.2026",
+        "title": "OAuth- und Autorisierungsverbesserungen",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "OAuth-Autorisierungsendpunkt mit Einwilligungsfluss gestartet"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "OAuth-Anwendungsverwaltungs-Dashboard hinzugefügt"
+          },
+          {
+            "type": "Bugfix",
+            "description": "404-Fehler für den Endpunkt /oauth/authorize behoben"
+          },
+          {
+            "type": "Sicherheit",
+            "description": "Benachrichtigungstyp SECURITY für sicherheitsrelevante Warnungen hinzugefügt"
+          }
+        ]
+      },
+      {
+        "version": "1.9.0",
+        "date": "14.01.2026",
+        "title": "UI/UX-Redesign und Bildoptimierung",
+        "changes": [
+          {
+            "type": "Verbesserung",
+            "description": "Neu gestaltete Feedback- und Abmeldeseiten mit minimalem Schwarz-Thema mithilfe der Shadcn-Benutzeroberfläche"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Timeout-Fehler bei der Upstream-Bildantwort während der Entwicklung behoben"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Docker-Build-Fehler bei der pnpm-Installation behoben"
+          }
+        ]
+      },
+      {
+        "version": "2.0.0",
+        "date": "13.01.2026",
+        "title": "Echtzeitfunktionen und GitHub-Integration",
+        "changes": [
+          {
+            "type": "Besonderheit",
+            "description": "Echtzeit-Anzeige der GitHub-Repository-Statistiken in der Seitenleiste und Fußzeile hinzugefügt"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "Redis-Caching mit 6-Stunden-TTL für GitHub-Daten implementiert"
+          },
+          {
+            "type": "Besonderheit",
+            "description": "TanStack-Abfrage mit 2-Stunden-StaleTime für optimierten Datenabruf hinzugefügt"
+          },
+          {
+            "type": "Verbesserung",
+            "description": "Verbessertes Caching des Authentifizierungsstatus nach der Anmeldung und MFA-Überprüfung"
+          },
+          {
+            "type": "Bugfix",
+            "description": "Endlosschleife im Axios-Interceptor behoben, wenn die Token-Aktualisierung fehlschlägt"
+          }
+        ]
+      }
+    ]
+  },
+  "accessibility": {
+    "title": "Erklärung zur Barrierefreiheit",
+    "subtitle": "FairArena setzt sich dafür ein, die digitale Barrierefreiheit für Menschen mit Behinderungen sicherzustellen. Wir verbessern kontinuierlich die Benutzererfahrung für alle.",
+    "commitment": {
+      "title": "Unser Engagement",
+      "text1": "FairArena ist bestrebt, unsere Plattform für alle Benutzer zugänglich zu machen, auch für Menschen mit Behinderungen. Wir sind bestrebt, die Web Content Accessibility Guidelines (WCAG) 2.1 Level AA-Standards einzuhalten.",
+      "text2": "Wir glauben, dass jeder den gleichen Zugang zu unserer Hackathon-Management-Plattform haben sollte, unabhängig von seinen Fähigkeiten oder den von ihm verwendeten Technologien."
+    },
+    "features": {
+      "title": "Barrierefreiheitsfunktionen",
+      "items": {
+        "keyboard": {
+          "title": "Tastaturnavigation",
+          "desc": "Vollständige Tastaturunterstützung für alle interaktiven Elemente. Navigieren Sie mit der Tabulatortaste, der Eingabetaste und den Pfeiltasten."
+        },
+        "screenReader": {
+          "title": "Kompatibel mit Screenreadern",
+          "desc": "ARIA-Labels und semantisches HTML gewährleisten die Kompatibilität mit Bildschirmleseprogrammen wie NVDA, JAWS und VoiceOver."
+        },
+        "highContrast": {
+          "title": "Hochkontrastmodus",
+          "desc": "Unterstützung für kontrastreiche Themen und Farbschemata für Benutzer mit Sehbehinderungen."
+        },
+        "resizableText": {
+          "title": "Anpassbarer Text",
+          "desc": "Die Größe aller Texte kann um bis zu 200 % geändert werden, ohne dass Funktionalität oder Inhalt verloren gehen."
+        },
+        "focusIndicators": {
+          "title": "Fokusindikatoren",
+          "desc": "Klare visuelle Fokusindikatoren für alle interaktiven Elemente."
+        },
+        "captions": {
+          "title": "Bildunterschriften und Transkripte",
+          "desc": "Zu den Video- und Audioinhalten gehören gegebenenfalls Untertitel und Transkripte."
+        }
+      }
+    },
+    "standards": {
+      "title": "Standards und Richtlinien",
+      "list": [
+        "WCAG 2.1 Level AA-Konformität",
+        "Abschnitt 508 des Rehabilitationsgesetzes",
+        "EN 301 549 Europäische Barrierefreiheitsnorm",
+        "Semantisches HTML5-Markup",
+        "ARIA-Attribute (Accessible Rich Internet Applications)."
+      ]
+    },
+    "feedback": {
+      "title": "Feedback & Kontakt",
+      "text": "Wir freuen uns über Ihr Feedback zur Barrierefreiheit von FairArena. Wenn Sie auf Barrierefreiheitsbarrieren stoßen, teilen Sie uns dies bitte mit:",
+      "emailLabel": "E-Mail",
+      "supportLabel": "Unterstützung",
+      "supportButton": "Kontaktieren Sie den Support",
+      "response": "Unser Ziel ist es, innerhalb von zwei Werktagen auf Feedback zur Barrierefreiheit zu antworten und innerhalb von zehn Werktagen eine Lösung vorzuschlagen."
+    },
+    "lastUpdated": "Letzte Aktualisierung: 24. Januar 2026"
+  },
+  "communityGuidelines": {
+    "title": "Community-Richtlinien",
+    "subtitle": "Aufbau einer sicheren, respektvollen und kollaborativen Community für Hackathon-Enthusiasten weltweit",
+    "commitment": {
+      "title": "Unser Engagement",
+      "text1": "FairArena ist bestrebt, allen ein einladendes und integratives Umfeld zu bieten. Diese Richtlinien tragen dazu bei, dass unsere Gemeinschaft ein positiver Ort für Lernen, Zusammenarbeit und Innovation bleibt.",
+      "text2": "Durch die Nutzung von FairArena erklären Sie sich damit einverstanden, diese Richtlinien zu befolgen und uns dabei zu helfen, eine respektvolle Gemeinschaft aufrechtzuerhalten."
+    },
+    "core": {
+      "title": "Kernrichtlinien",
+      "items": {
+        "respectful": {
+          "title": "Seien Sie respektvoll",
+          "desc": "Behandeln Sie alle Community-Mitglieder mit Respekt und Freundlichkeit. Belästigung, Hassrede und Diskriminierung werden nicht toleriert.",
+          "examples": [
+            "Verwenden Sie eine inklusive Sprache",
+            "Respektieren Sie unterschiedliche Perspektiven",
+            "Seien Sie konstruktiv in der Kritik"
+          ]
+        },
+        "collaborate": {
+          "title": "Zusammenarbeiten und teilen",
+          "desc": "FairArena basiert auf Zusammenarbeit. Teilen Sie Wissen, helfen Sie anderen und tragen Sie zur Gemeinschaft bei.",
+          "examples": [
+            "Teilen Sie Ihr Fachwissen",
+            "Helfen Sie Neuankömmlingen",
+            "Geben Sie konstruktives Feedback"
+          ]
+        },
+        "integrity": {
+          "title": "Bewahren Sie die Integrität",
+          "desc": "Seien Sie ehrlich und transparent. Betrügen Sie nicht, plagiieren Sie nicht und begehen Sie keine akademische Unehrlichkeit.",
+          "examples": [
+            "Geben Sie die richtige Namensnennung an",
+            "Seien Sie ehrlich über Ihre Arbeit",
+            "Verstöße melden"
+          ]
+        },
+        "communicate": {
+          "title": "Kommunizieren Sie klar",
+          "desc": "Verwenden Sie eine klare, professionelle Sprache. Vermeiden Sie Spam, themenfremde Inhalte und übermäßige Eigenwerbung.",
+          "examples": [
+            "Bleiben Sie beim Thema",
+            "Vermeiden Sie Spam",
+            "Nutzen Sie geeignete Kanäle"
+          ]
+        }
+      }
+    },
+    "prohibited": {
+      "title": "Verbotene Inhalte und Verhaltensweisen",
+      "text": "Die folgenden Verhaltensweisen und Inhalte sind auf FairArena strengstens verboten:",
+      "items": [
+        "Belästigung, Mobbing oder Einschüchterung",
+        "Hassrede oder Diskriminierung",
+        "Spam oder übermäßige Eigenwerbung",
+        "Plagiat oder Urheberrechtsverletzung",
+        "Weitergabe privater Informationen ohne Zustimmung",
+        "Schädlicher Code oder Sicherheitslücken",
+        "Identitätswechsel oder betrügerische Praktiken",
+        "Illegale Aktivitäten oder Inhalte"
+      ]
+    },
+    "enforcement": {
+      "title": "Durchsetzung",
+      "text": "Verstöße gegen diese Richtlinien können Folgendes zur Folge haben:",
+      "items": [
+        "Warnung und Entfernung von Inhalten",
+        "Vorübergehende Sperrung der Kontoprivilegien",
+        "Endgültige Kontokündigung",
+        "Rechtliche Schritte bei schwerwiegenden Verstößen"
+      ],
+      "note": "Wir prüfen jeden Fall einzeln und ergreifen je nach Schwere und Kontext des Verstoßes geeignete Maßnahmen."
+    },
+    "report": {
+      "title": "Verstöße melden",
+      "text": "Wenn Sie einen Verstoß gegen diese Richtlinien beobachten oder feststellen, melden Sie ihn bitte umgehend. Alle Meldungen werden zeitnah geprüft und vertraulich behandelt.",
+      "button": "Melden Sie ein Problem",
+      "emailLabel": "E-Mail"
+    },
+    "lastUpdated": "Letzte Aktualisierung: 24. Januar 2026"
+  },
+  "securityPolicy": {
+    "title": "Sicherheitsrichtlinie",
+    "subtitle": "Ihre Sicherheit und Privatsphäre haben für uns oberste Priorität. Erfahren Sie, wie wir Ihre Daten schützen.",
+    "practices": {
+      "title": "Sicherheitspraktiken",
+      "items": {
+        "encryption": {
+          "title": "Datenverschlüsselung",
+          "desc": "Alle Daten werden während der Übertragung mit TLS 1.3 und im Ruhezustand mit AES-256-Verschlüsselung verschlüsselt."
+        },
+        "auth": {
+          "title": "Sichere Authentifizierung",
+          "desc": "Multi-Faktor-Authentifizierung, OAuth 2.0 und WebAuthn-Unterstützung für sicheren Zugriff."
+        },
+        "protection": {
+          "title": "Datenschutz",
+          "desc": "Regelmäßige Backups, Notfallwiederherstellungspläne und DSGVO-Konformität für den Datenschutz."
+        },
+        "monitoring": {
+          "title": "Sicherheitsüberwachung",
+          "desc": "Sicherheitsüberwachung rund um die Uhr, Erkennung von Eindringlingen und automatische Reaktion auf Bedrohungen."
+        },
+        "access": {
+          "title": "Zugangskontrolle",
+          "desc": "Rollenbasierte Zugriffskontrolle (RBAC) und Prinzip der Durchsetzung der geringsten Rechte."
+        },
+        "privacy": {
+          "title": "Datenschutz zuerst",
+          "desc": "Datenschutz durch Design, minimale Datenerfassung und transparente Datenpraktiken."
+        }
+      }
+    },
+    "disclosure": {
+      "title": "Verantwortungsvolle Offenlegung",
+      "text": "Wir schätzen die Bemühungen der Sicherheitsforschungsgemeinschaft, die Sicherheit von FairArena zu gewährleisten. Wenn Sie eine Sicherheitslücke entdecken, melden Sie diese bitte verantwortungsvoll:",
+      "email": {
+        "label": "E-Mail",
+        "value": "fairarena.contact@gmail.com"
+      },
+      "pgp": {
+        "label": "PGP-Schlüssel",
+        "value": "Auf Anfrage für verschlüsselte Kommunikation verfügbar"
+      },
+      "response": {
+        "label": "Ansprechzeit",
+        "value": "Unser Ziel ist es, innerhalb von 24 Stunden zu antworten und alle 72 Stunden Updates bereitzustellen"
+      }
+    },
+    "bounty": {
+      "title": "Sicherheitsbestätigungen",
+      "text": "Wir würdigen und danken Sicherheitsforschern, die uns helfen, die Sicherheit von FairArena zu verbessern. Forscher, die Schwachstellen verantwortungsbewusst offenlegen, haben möglicherweise Anspruch auf:",
+      "list": [
+        "Öffentliche Anerkennung in unserer Security Hall of Fame",
+        "Geldprämien für kritische Schwachstellen",
+        "Vorteile von FairArena-Geschenken und Premium-Konten"
+      ],
+      "button": "Hall of Fame ansehen"
+    },
+    "compliance": {
+      "title": "Compliance und Zertifizierungen",
+      "standards": {
+        "title": "Standards",
+        "list": [
+          "DSGVO-konform",
+          "SOC 2 Typ II (in Bearbeitung)",
+          "ISO 27001 (in Bearbeitung)",
+          "OWASP Top 10 Schutz"
+        ]
+      },
+      "audits": {
+        "title": "Sicherheitsaudits",
+        "list": [
+          "Jährlicher Penetrationstest",
+          "Vierteljährliche Sicherheitsbewertungen",
+          "Kontinuierliches Scannen von Schwachstellen",
+          "Sicherheitsüberprüfungen durch Dritte"
+        ]
+      }
+    },
+    "lastUpdated": "Letzte Aktualisierung: 24. Januar 2026"
+  },
+  "privacyPolicy": {
+    "title": "Datenschutzrichtlinie",
+    "lastUpdated": "Letzte Aktualisierung: 23. Januar 2026",
+    "intro": "FairArena („wir“, „wir“ oder „unser“) betreibt die FairArena-Website (der „Dienst“). Auf dieser Seite informieren wir Sie über unsere Richtlinien zur Erhebung, Nutzung und Offenlegung personenbezogener Daten bei der Nutzung unseres Dienstes sowie über die Wahlmöglichkeiten, die Sie mit diesen Daten haben. Wir nutzen Ihre Daten zur Bereitstellung und Verbesserung des Dienstes. Durch die Nutzung des Dienstes stimmen Sie der Erfassung und Nutzung von Informationen gemäß dieser Richtlinie zu.",
+    "sections": {
+      "collection": {
+        "title": "1. Informationen, die wir sammeln",
+        "description": "Wir sammeln verschiedene Arten von Informationen für verschiedene Zwecke, um Ihnen unseren Service bereitzustellen und zu verbessern.",
+        "subsections": {
+          "personalData": {
+            "title": "1.1 Persönliche Daten",
+            "description": "Während der Nutzung unseres Dienstes bitten wir Sie möglicherweise um die Angabe bestimmter personenbezogener Daten, die zur Kontaktaufnahme oder Identifizierung mit Ihnen verwendet werden können („personenbezogene Daten“). Persönlich identifizierbare Informationen können unter anderem Folgendes umfassen:",
+            "list": [
+              "E-Mail-Adresse",
+              "Vorname und Nachname",
+              "Telefonnummer",
+              "Adresse, Bundesland, Provinz, Postleitzahl, Stadt",
+              "Cookies und Nutzungsdaten",
+              "Informationen zum Social-Media-Profil (wenn Sie sich über Drittanbieterdienste wie Google oder GitHub anmelden)"
+            ]
+          },
+          "usageData": {
+            "title": "1.2 Nutzungsdaten",
+            "description": "Wir erfassen möglicherweise auch Informationen darüber, wie auf den Dienst zugegriffen und er genutzt wird („Nutzungsdaten“). Diese Nutzungsdaten können Informationen enthalten wie:",
+            "list": [
+              "Die Internetprotokolladresse Ihres Computers (z. B. IP-Adresse)",
+              "Browsertyp und Browserversion",
+              "Die Seiten unseres Dienstes, die Sie besuchen",
+              "Uhrzeit und Datum Ihres Besuchs",
+              "Die auf diesen Seiten verbrachte Zeit",
+              "Eindeutige Gerätekennungen und andere Diagnosedaten"
+            ]
+          },
+          "tracking": {
+            "title": "1.3 Tracking- und Cookie-Daten",
+            "description": "Wir verwenden Cookies und ähnliche Tracking-Technologien, um die Aktivität auf unserem Dienst zu verfolgen und bestimmte Informationen zu speichern.",
+            "list": [
+              "Sitzungscookies: Wir verwenden Sitzungscookies, um unseren Service zu betreiben.",
+              "Präferenz-Cookies: Wir verwenden Präferenz-Cookies, um Ihre Präferenzen und verschiedene Einstellungen zu speichern.",
+              "Sicherheitscookies: Wir verwenden Sicherheitscookies aus Sicherheitsgründen."
+            ]
+          }
+        }
+      },
+      "usage": {
+        "title": "2. Wie wir Ihre Daten verwenden",
+        "intro": "FairArena nutzt die erhobenen Daten für verschiedene Zwecke:",
+        "list": [
+          "Zur Bereitstellung und Aufrechterhaltung des Dienstes",
+          "Um Sie über Änderungen an unserem Service zu informieren",
+          "Um Ihnen die Teilnahme an interaktiven Funktionen unseres Dienstes zu ermöglichen, wenn Sie dies wünschen",
+          "Bereitstellung von Kundenbetreuung und Support",
+          "Um Analysen oder wertvolle Informationen bereitzustellen, damit wir den Service verbessern können",
+          "Um die Nutzung des Dienstes zu überwachen",
+          "Um technische Probleme zu erkennen, zu verhindern und zu beheben",
+          "Um Zahlungen zu verarbeiten und die Abrechnung zu verwalten (über sichere Drittanbieter)"
+        ]
+      },
+      "retention": {
+        "title": "3. Aufbewahrung von Daten",
+        "content1": "FairArena speichert Ihre personenbezogenen Daten nur so lange, wie es für die in dieser Datenschutzrichtlinie dargelegten Zwecke erforderlich ist. Wir werden Ihre personenbezogenen Daten in dem Umfang aufbewahren und verwenden, der zur Erfüllung unserer gesetzlichen Verpflichtungen erforderlich ist (z. B. wenn wir Ihre Daten zur Einhaltung geltender Gesetze aufbewahren müssen), zur Beilegung von Streitigkeiten und zur Durchsetzung unserer rechtlichen Vereinbarungen und Richtlinien.",
+        "content2": "FairArena speichert außerdem Nutzungsdaten für interne Analysezwecke. Nutzungsdaten werden im Allgemeinen für einen kürzeren Zeitraum gespeichert, es sei denn, diese Daten werden zur Stärkung der Sicherheit oder zur Verbesserung der Funktionalität unseres Dienstes verwendet oder wir sind gesetzlich verpflichtet, diese Daten für längere Zeiträume aufzubewahren."
+      },
+      "transfer": {
+        "title": "4. Datenübermittlung",
+        "content1": "Ihre Informationen, einschließlich personenbezogener Daten, können an Computer übertragen und dort gespeichert werden, die sich außerhalb Ihres Staates, Ihrer Provinz, Ihres Landes oder einer anderen Regierungsgerichtsbarkeit befinden, wo die Datenschutzgesetze möglicherweise von denen Ihrer Gerichtsbarkeit abweichen.",
+        "content2": "Wenn Sie sich außerhalb Indiens befinden und uns Informationen zur Verfügung stellen möchten, beachten Sie bitte, dass wir die Daten, einschließlich personenbezogener Daten, nach Indien übertragen und dort verarbeiten.",
+        "content3": "Ihre Zustimmung zu dieser Datenschutzrichtlinie und die anschließende Übermittlung dieser Informationen stellen Ihr Einverständnis mit dieser Übertragung dar."
+      },
+      "disclosure": {
+        "title": "5. Offenlegung von Daten",
+        "subtitle": "5.1 Gesetzliche Anforderungen",
+        "description": "FairArena kann Ihre personenbezogenen Daten in gutem Glauben offenlegen, wenn dies erforderlich ist, um:",
+        "list": [
+          "Um einer gesetzlichen Verpflichtung nachzukommen",
+          "Zum Schutz und zur Verteidigung der Rechte oder des Eigentums von FairArena",
+          "Um mögliches Fehlverhalten im Zusammenhang mit dem Dienst zu verhindern oder zu untersuchen",
+          "Zum Schutz der persönlichen Sicherheit der Nutzer des Dienstes oder der Öffentlichkeit",
+          "Zum Schutz vor rechtlicher Haftung"
+        ]
+      },
+      "security": {
+        "title": "6. Datensicherheit",
+        "content": "Die Sicherheit Ihrer Daten ist uns wichtig, aber denken Sie daran, dass keine Methode der Übertragung über das Internet oder Methode der elektronischen Speicherung zu 100 % sicher ist. Obwohl wir uns bemühen, Ihre personenbezogenen Daten mit kommerziell akzeptablen Mitteln zu schützen, können wir deren absolute Sicherheit nicht garantieren."
+      },
+      "providers": {
+        "title": "7. Dienstleister",
+        "content1": "Wir können Drittunternehmen und Einzelpersonen damit beauftragen, unseren Dienst zu ermöglichen („Dienstleister“), den Dienst in unserem Namen bereitzustellen, dienstbezogene Dienstleistungen zu erbringen oder uns bei der Analyse der Nutzung unseres Dienstes zu unterstützen.",
+        "content2": "Diese Dritten haben nur Zugriff auf Ihre personenbezogenen Daten, um diese Aufgaben in unserem Namen auszuführen, und sind verpflichtet, diese nicht weiterzugeben oder für andere Zwecke zu verwenden."
+      },
+      "links": {
+        "title": "8. Links zu anderen Websites",
+        "content1": "Unser Service kann Links zu anderen Websites enthalten, die nicht von uns betrieben werden. Wenn Sie auf einen Link eines Drittanbieters klicken, werden Sie zur Website dieses Drittanbieters weitergeleitet. Wir empfehlen Ihnen dringend, die Datenschutzrichtlinien jeder von Ihnen besuchten Website zu lesen.",
+        "content2": "Wir haben keine Kontrolle über den Inhalt, die Datenschutzrichtlinien oder -praktiken von Websites oder Diensten Dritter und übernehmen keine Verantwortung dafür."
+      },
+      "children": {
+        "title": "9. Privatsphäre von Kindern",
+        "content1": "Unser Service richtet sich nicht an Personen unter 13 Jahren („Kinder“).",
+        "content2": "Wir erfassen wissentlich keine personenbezogenen Daten von Personen unter 13 Jahren. Wenn Sie ein Elternteil oder Erziehungsberechtigter sind und wissen, dass Ihre Kinder uns personenbezogene Daten zur Verfügung gestellt haben, kontaktieren Sie uns bitte. Wenn uns bekannt wird, dass wir personenbezogene Daten von Kindern ohne Überprüfung der Zustimmung der Eltern erfasst haben, ergreifen wir Maßnahmen, um diese Informationen von unseren Servern zu entfernen."
+      },
+      "changes": {
+        "title": "10. Änderungen dieser Datenschutzrichtlinie",
+        "content1": "Wir können unsere Datenschutzrichtlinie von Zeit zu Zeit aktualisieren. Wir werden Sie über alle Änderungen informieren, indem wir die neue Datenschutzrichtlinie auf dieser Seite veröffentlichen.",
+        "content2": "Wir informieren Sie per E-Mail und/oder durch einen deutlich sichtbaren Hinweis auf unserem Service, bevor die Änderung in Kraft tritt, und aktualisieren das „Datum des Inkrafttretens“ oben in dieser Datenschutzrichtlinie.",
+        "content3": "Wir empfehlen Ihnen, diese Datenschutzrichtlinie regelmäßig auf etwaige Änderungen zu überprüfen. Änderungen dieser Datenschutzrichtlinie treten in Kraft, wenn sie auf dieser Seite veröffentlicht werden."
+      },
+      "contact": {
+        "title": "11. Kontaktieren Sie uns",
+        "description": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie haben, kontaktieren Sie uns bitte:",
+        "email": "Per E-Mail: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "termsAndConditions": {
+    "title": "Geschäftsbedingungen",
+    "lastUpdated": "Letzte Aktualisierung: 23. Januar 2026",
+    "intro": "Bitte lesen Sie diese Allgemeinen Geschäftsbedingungen („Allgemeine Geschäftsbedingungen“, „Allgemeine Geschäftsbedingungen“) sorgfältig durch, bevor Sie die von FairArena („uns“, „wir“ oder „unser“) betriebene FairArena-Website und -Dienstleistung (die „Dienstleistung“) nutzen. Ihr Zugriff auf den Dienst und dessen Nutzung ist davon abhängig, dass Sie diese Bedingungen akzeptieren und einhalten. Diese Bedingungen gelten für alle Besucher, Benutzer und andere, die auf den Dienst zugreifen oder ihn nutzen. Durch den Zugriff auf oder die Nutzung des Dienstes erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie mit einem Teil der Bedingungen nicht einverstanden sind, dürfen Sie nicht auf den Dienst zugreifen.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interpretation und Definitionen",
+        "content": "Die Wörter, deren Anfangsbuchstaben groß geschrieben werden, haben eine Bedeutung, die unter den folgenden Bedingungen definiert ist. Die folgenden Definitionen haben die gleiche Bedeutung, unabhängig davon, ob sie im Singular oder im Plural erscheinen.",
+        "list": [
+          "„Unternehmen“, „Wir“, „Uns“ oder „Unser“ bezieht sich auf FairArena, den Anbieter des Dienstes.",
+          "„Dienst“ bezieht sich auf die FairArena-Hackathon-Managementplattform, die Website und die damit verbundenen Dienste, die vom Unternehmen verwaltet werden.",
+          "„Benutzer“, „Sie“ oder „Ihr“ bezieht sich auf die Person, die auf den Dienst zugreift oder ihn nutzt, oder auf das Unternehmen oder eine andere juristische Person, in deren Namen diese Person auf den Dienst zugreift oder ihn nutzt.",
+          "„Konto“ bezeichnet ein einzigartiges Konto, das für Sie erstellt wurde, um auf unseren Dienst oder Teile unseres Dienstes zuzugreifen.",
+          "„Organisator“ bezieht sich auf einen Benutzer, der über den Dienst Hackathons erstellt und verwaltet.",
+          "„Teilnehmer“ bezieht sich auf einen Benutzer, der sich für Hackathons registriert und Projekte einreicht.",
+          "„Richter“ bezieht sich auf einen Benutzer, der zur Bewertung von Einsendungen eingeladen wird.",
+          "„Inhalt“ bezieht sich auf Inhalte wie Texte, Bilder oder andere Informationen, die von Ihnen gepostet, hochgeladen, verlinkt oder anderweitig zur Verfügung gestellt werden können, unabhängig von der Form dieser Inhalte."
+        ]
+      },
+      "accounts": {
+        "title": "2. Konten und Registrierung",
+        "content": "Wenn Sie ein Konto bei uns erstellen, müssen Sie uns jederzeit korrekte, vollständige und aktuelle Informationen zur Verfügung stellen.",
+        "list": [
+          "Sie müssen jederzeit korrekte, vollständige und aktuelle Informationen bereitstellen. Geschieht dies nicht, stellt dies einen Verstoß gegen die Bedingungen dar.",
+          "Sie sind dafür verantwortlich, das Passwort, das Sie für den Zugriff auf den Dienst verwenden, sowie alle Aktivitäten oder Aktionen unter Ihrem Passwort zu schützen.",
+          "Sie verpflichten sich, Ihr Passwort nicht an Dritte weiterzugeben. Sie müssen uns unverzüglich benachrichtigen, wenn Sie Kenntnis von einer Sicherheitsverletzung oder einer unbefugten Nutzung Ihres Kontos erlangen.",
+          "Wir behalten uns das Recht vor, nach unserem alleinigen Ermessen den Service zu verweigern, Konten zu kündigen, Inhalte zu entfernen oder zu bearbeiten oder Bestellungen zu stornieren."
+        ]
+      },
+      "usage": {
+        "title": "3. Nutzung des Dienstes und Einschränkungen",
+        "list": [
+          "Sie erklären sich damit einverstanden, den Dienst nicht für rechtswidrige Zwecke oder in einer Weise zu nutzen, die den Dienst unterbricht, beschädigt, beeinträchtigt oder weniger effizient macht.",
+          "Sie dürfen nicht versuchen, sich unbefugten Zugriff auf unseren Dienst, den Server, auf dem unser Dienst gespeichert ist, oder einen mit unserem Dienst verbundenen Server, Computer oder eine Datenbank zu verschaffen.",
+          "Sie dürfen den Dienst nicht zur Übermittlung unerwünschter oder nicht autorisierter Werbung, Werbematerialien oder Spam nutzen.",
+          "Die Organisatoren sind allein für die Verwaltung ihrer Hackathons verantwortlich, einschließlich der Überprüfung der Teilnehmer und Juroren."
+        ]
+      },
+      "intellectualProperty": {
+        "title": "4. Geistige Eigentumsrechte",
+        "list": [
+          "Der Dienst und seine ursprünglichen Inhalte (mit Ausnahme der von Ihnen oder anderen Benutzern bereitgestellten Inhalte), Merkmale und Funktionen sind und bleiben das ausschließliche Eigentum des Unternehmens und seiner Lizenzgeber.",
+          "Der Dienst ist durch Urheberrechts-, Marken- und andere Gesetze des Landes und anderer Länder geschützt.",
+          "Unsere Marken und Handelsaufmachung dürfen ohne vorherige schriftliche Zustimmung des Unternehmens nicht in Verbindung mit Produkten oder Dienstleistungen verwendet werden.",
+          "Durch die Übermittlung von Inhalten (einschließlich Projekteinreichungen) gewähren Sie uns das Recht, diese Inhalte zum Zweck des Betriebs und der Verbesserung des Dienstes auf und über den Dienst zu nutzen, zu ändern, auszuführen, anzuzeigen, zu reproduzieren und zu verbreiten."
+        ]
+      },
+      "aiDisclaimer": {
+        "title": "5. KI-Analyse und Haftungsausschluss",
+        "list": [
+          "FairArena nutzt Technologien der künstlichen Intelligenz (KI), um Erkenntnisse, Analysen und Bewertungsunterstützung bereitzustellen.",
+          "KI-generierte Ergebnisse haben beratenden Charakter und sind möglicherweise nicht 100 % genau oder frei von Verzerrungen.",
+          "Die endgültige Entscheidungsfindung und Bewertung liegt in vollem Ermessen und liegt bei den Organisatoren und Richtern.",
+          "Wir übernehmen keine Gewähr für die Richtigkeit, Vollständigkeit oder Nützlichkeit einer KI-generierten Analyse."
+        ]
+      },
+      "links": {
+        "title": "6. Links zu anderen Websites",
+        "content": "Unser Dienst kann Links zu Websites oder Diensten Dritter enthalten, die nicht Eigentum des Unternehmens sind oder von diesem kontrolliert werden. Das Unternehmen hat keine Kontrolle über die Inhalte, Datenschutzrichtlinien oder Praktiken von Websites oder Diensten Dritter und übernimmt keine Verantwortung dafür. Sie erkennen ferner an und stimmen zu, dass das Unternehmen weder direkt noch indirekt für Schäden oder Verluste verantwortlich oder haftbar ist, die durch oder im Zusammenhang mit der Nutzung oder dem Vertrauen auf solche Inhalte, Waren oder Dienste, die auf oder über solche Websites oder Dienste verfügbar sind, verursacht oder angeblich verursacht wurden."
+      },
+      "termination": {
+        "title": "7. Kündigung",
+        "list": [
+          "Wir können Ihr Konto ohne vorherige Ankündigung oder Haftung aus beliebigem Grund sofort kündigen oder sperren, insbesondere wenn Sie gegen diese Bedingungen verstoßen.",
+          "Mit der Kündigung erlischt Ihr Recht zur Nutzung des Dienstes sofort.",
+          "Wenn Sie Ihr Konto kündigen möchten, können Sie die Nutzung des Dienstes einfach einstellen oder Ihr Konto über die Einstellungen löschen."
+        ]
+      },
+      "liability": {
+        "title": "8. Haftungsbeschränkung",
+        "list": [
+          "Soweit gesetzlich zulässig, haftet das Unternehmen in keinem Fall für besondere, zufällige, indirekte oder Folgeschäden jeglicher Art (einschließlich, aber nicht beschränkt auf Schäden aus entgangenem Gewinn, Daten- oder anderen Informationsverlusten, Betriebsunterbrechungen, Personenschäden, Verlust der Privatsphäre, die sich aus der Nutzung oder Unmöglichkeit der Nutzung des Dienstes ergeben oder in irgendeiner Weise damit zusammenhängen).",
+          "Unsere Gesamthaftung Ihnen gegenüber für alle Ansprüche, die sich aus oder im Zusammenhang mit diesen Bedingungen oder Ihrer Nutzung des Dienstes ergeben, ist auf den Betrag beschränkt, den Sie uns für die Nutzung des Dienstes in den 12 Monaten vor der Handlung, die zur Haftung geführt hat, gezahlt haben."
+        ]
+      },
+      "disclaimer": {
+        "title": "9. Haftungsausschluss",
+        "content1": "Der Service wird Ihnen „WIE BESEHEN“ und „WIE VERFÜGBAR“ und mit allen Fehlern und Mängeln ohne Gewährleistung jeglicher Art bereitgestellt. Soweit nach geltendem Recht zulässig, lehnt das Unternehmen ausdrücklich alle ausdrücklichen, stillschweigenden, gesetzlichen oder sonstigen Garantien in Bezug auf den Dienst ab, einschließlich aller stillschweigenden Garantien der Marktgängigkeit, der Eignung für einen bestimmten Zweck, des Titels und der Nichtverletzung.",
+        "content2": "Ohne das Vorstehende einzuschränken, geben weder das Unternehmen noch seine Anbieter irgendeine ausdrückliche oder stillschweigende Zusicherung oder Garantie ab: (i) in Bezug auf den Betrieb oder die Verfügbarkeit des Dienstes oder der darin enthaltenen Informationen, Inhalte und Materialien oder Produkte; (ii) dass der Dienst ununterbrochen oder fehlerfrei ist; (iii) hinsichtlich der Genauigkeit, Zuverlässigkeit oder Aktualität der über den Dienst bereitgestellten Informationen oder Inhalte."
+      },
+      "governing": {
+        "title": "10. Anwendbares Recht",
+        "content": "Für diese Bedingungen und Ihre Nutzung des Dienstes gelten die Gesetze Indiens, mit Ausnahme der Kollisionsnormen. Ihre Nutzung der Anwendung unterliegt möglicherweise auch anderen lokalen, staatlichen, nationalen oder internationalen Gesetzen."
+      },
+      "disputes": {
+        "title": "11. Streitbeilegung",
+        "content": "Wenn Sie Bedenken oder Streitigkeiten bezüglich des Dienstes haben, erklären Sie sich damit einverstanden, zunächst zu versuchen, den Streit informell beizulegen, indem Sie sich an das Unternehmen wenden."
+      },
+      "changes": {
+        "title": "12. Änderungen dieser Bedingungen",
+        "content1": "Wir behalten uns das Recht vor, diese Bedingungen nach eigenem Ermessen jederzeit zu ändern oder zu ersetzen. Wenn eine Änderung wesentlich ist, werden wir angemessene Anstrengungen unternehmen, um Sie mindestens 30 Tage vor dem Inkrafttreten neuer Bedingungen zu benachrichtigen. Was eine wesentliche Änderung darstellt, liegt in unserem alleinigen Ermessen.",
+        "content2": "Indem Sie nach Inkrafttreten dieser Änderungen weiterhin auf unseren Service zugreifen oder ihn nutzen, erklären Sie sich mit den geänderten Bedingungen einverstanden. Wenn Sie den neuen Bedingungen ganz oder teilweise nicht zustimmen, stellen Sie bitte die Nutzung der Website und des Dienstes ein."
+      },
+      "contact": {
+        "title": "13. Kontaktieren Sie uns",
+        "description": "Wenn Sie Fragen zu diesen Bedingungen haben, können Sie uns kontaktieren:",
+        "email": "Per E-Mail: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "cookiePolicy": {
+    "title": "Cookie-Richtlinie",
+    "lastUpdated": "Letzte Aktualisierung: 23. Januar 2026",
+    "intro": "In dieser Cookie-Richtlinie wird erläutert, was Cookies sind und wie wir sie verwenden. Sie sollten diese Richtlinie lesen, damit Sie verstehen, welche Art von Cookies wir verwenden oder welche Informationen wir mithilfe von Cookies sammeln und wie diese Informationen verwendet werden. Diese Cookie-Richtlinie wurde mit Hilfe des Cookies Policy Generator erstellt.",
+    "intro2": "Cookies enthalten normalerweise keine Informationen, die einen Benutzer persönlich identifizieren, aber persönliche Informationen, die wir über Sie speichern, können mit den in Cookies gespeicherten und von ihnen erhaltenen Informationen verknüpft werden. Weitere Informationen darüber, wie wir Ihre personenbezogenen Daten verwenden, speichern und schützen, finden Sie in unserer Datenschutzrichtlinie.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interpretation und Definitionen",
+        "subtitle1": "1.1 Interpretation",
+        "content1": "Die Wörter, deren Anfangsbuchstaben groß geschrieben werden, haben eine Bedeutung, die unter den folgenden Bedingungen definiert ist. Die folgenden Definitionen haben die gleiche Bedeutung, unabhängig davon, ob sie im Singular oder im Plural erscheinen.",
+        "subtitle2": "1.2 Definitionen",
+        "list": [
+          "„Unternehmen“ (in dieser Cookie-Richtlinie entweder als „das Unternehmen“, „wir“, „uns“ oder „unser“ bezeichnet) bezieht sich auf FairArena.",
+          "„Cookies“ sind kleine Dateien, die von einer Website auf Ihrem Computer, Mobilgerät oder einem anderen Gerät abgelegt werden und unter anderem Details zu Ihrem Browserverlauf auf dieser Website enthalten.",
+          "„Website“ bezieht sich auf FairArena, zugänglich über fair.sakshamg.me",
+          "„Sie“ bezeichnet die Person, die auf die Website zugreift oder diese nutzt, oder ein Unternehmen oder eine juristische Person, in deren Namen diese Person auf die Website zugreift oder diese nutzt."
+        ]
+      },
+      "usage": {
+        "title": "2. Die Verwendung der Cookies",
+        "subtitle": "2.1 Art der von uns verwendeten Cookies",
+        "content1": "Cookies können „persistente“ oder „Sitzungs“-Cookies sein. Permanente Cookies verbleiben auf Ihrem persönlichen Computer oder Mobilgerät, wenn Sie offline gehen, während Sitzungscookies gelöscht werden, sobald Sie Ihren Webbrowser schließen.",
+        "content2": "Wir verwenden sowohl Sitzungs- als auch dauerhafte Cookies für die unten aufgeführten Zwecke:",
+        "types": {
+          "essential": {
+            "title": "Notwendige/unverzichtbare Cookies",
+            "type": "Typ: Sitzungscookies",
+            "admin": "Verwaltet von: Uns",
+            "purpose": "Zweck: Diese Cookies sind unerlässlich, um Ihnen die über die Website verfügbaren Dienste bereitzustellen und Ihnen die Nutzung einiger ihrer Funktionen zu ermöglichen. Sie helfen dabei, Benutzer zu authentifizieren und die betrügerische Nutzung von Benutzerkonten zu verhindern. Ohne diese Cookies können die von Ihnen angeforderten Dienste nicht bereitgestellt werden und wir verwenden diese Cookies nur, um Ihnen diese Dienste bereitzustellen."
+          },
+          "functionality": {
+            "title": "Funktionalitäts-Cookies",
+            "type": "Typ: Permanente Cookies",
+            "admin": "Verwaltet von: Uns",
+            "purpose": "Zweck: Mithilfe dieser Cookies können wir uns an die von Ihnen bei der Nutzung der Website getroffenen Entscheidungen erinnern, beispielsweise an Ihre Anmeldedaten oder Spracheinstellungen. Der Zweck dieser Cookies besteht darin, Ihnen ein persönlicheres Erlebnis zu bieten und zu vermeiden, dass Sie Ihre Präferenzen bei jeder Nutzung der Website erneut eingeben müssen."
+          },
+          "tracking": {
+            "title": "Tracking- und Performance-Cookies",
+            "type": "Typ: Permanente Cookies",
+            "admin": "Verwaltet durch: Dritte",
+            "purpose": "Zweck: Diese Cookies werden verwendet, um Informationen über den Verkehr auf der Website und die Art und Weise, wie Benutzer die Website nutzen, zu verfolgen. Die über diese Cookies gesammelten Informationen können Sie direkt oder indirekt als einzelnen Besucher identifizieren. Dies liegt daran, dass die gesammelten Informationen in der Regel mit einer pseudonymen Kennung verknüpft sind, die mit dem Gerät verknüpft ist, mit dem Sie auf die Website zugreifen. Wir können diese Cookies auch verwenden, um neue Anzeigen, Seiten, Funktionen oder neue Funktionen der Website zu testen, um zu sehen, wie unsere Benutzer darauf reagieren."
+          }
+        }
+      },
+      "choices": {
+        "title": "3. Ihre Wahlmöglichkeiten bezüglich Cookies",
+        "content1": "Wenn Sie die Verwendung von Cookies auf der Website vermeiden möchten, müssen Sie zunächst die Verwendung von Cookies in Ihrem Browser deaktivieren und dann die in Ihrem Browser gespeicherten Cookies löschen, die mit dieser Website verknüpft sind. Mit dieser Möglichkeit können Sie die Verwendung von Cookies jederzeit verhindern.",
+        "content2": "Wenn Sie unsere Cookies nicht akzeptieren, kann es zu Unannehmlichkeiten bei der Nutzung der Website kommen und einige Funktionen funktionieren möglicherweise nicht ordnungsgemäß.",
+        "content3": "Weitere Informationen zum Verwalten und Löschen von Cookies finden Sie in den offiziellen Supportdokumenten für Ihren spezifischen Webbrowser (Chrome, Safari, Firefox, Edge usw.)."
+      },
+      "moreInfo": {
+        "title": "4. Weitere Informationen zu Cookies",
+        "content": "Mehr über Cookies erfahren Sie: Was sind Cookies?."
+      },
+      "contact": {
+        "title": "5. Kontaktieren Sie uns",
+        "description": "Wenn Sie Fragen zu dieser Cookie-Richtlinie haben, können Sie uns kontaktieren:",
+        "email": "Per E-Mail: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "dmca": {
+    "title": "DMCA-Richtlinie",
+    "subtitle": "Einhaltung des Digital Millennium Copyright Act",
+    "intro": {
+      "title": "Einführung",
+      "text": "FairArena respektiert die geistigen Eigentumsrechte anderer und erwartet von unseren Nutzern, dass sie dasselbe tun. Gemäß dem Digital Millennium Copyright Act von 1998 (DMCA) reagieren wir umgehend auf Ansprüche wegen Urheberrechtsverletzungen, die durch die Nutzung unseres Dienstes begangen werden."
+    },
+    "notification": {
+      "title": "Einreichen einer DMCA-Mitteilung",
+      "text": "Wenn Sie glauben, dass Inhalte auf FairArena Ihr Urheberrecht verletzen, teilen Sie unserem Urheberrechtsbeauftragten bitte die folgenden Informationen mit:",
+      "list": [
+        "Eine physische oder elektronische Unterschrift des Urheberrechtsinhabers oder einer Person, die befugt ist, in seinem Namen zu handeln",
+        "Identifizierung des urheberrechtlich geschützten Werks, von dem behauptet wird, dass es verletzt wurde",
+        "Identifizierung des mutmaßlich rechtsverletzenden Materials mit ausreichenden Details, um es in unserem Dienst lokalisieren zu können",
+        "Ihre Kontaktdaten (Adresse, Telefonnummer und E-Mail-Adresse)",
+        "Eine Erklärung, dass Sie in gutem Glauben davon ausgehen, dass die Verwendung des Materials nicht vom Urheberrechtsinhaber genehmigt wurde",
+        "Eine Erklärung, dass die Informationen in der Benachrichtigung korrekt sind und dass Sie unter Strafe des Meineids berechtigt sind, im Namen des Urheberrechtsinhabers zu handeln"
+      ]
+    },
+    "counter": {
+      "title": "Gegendarstellung",
+      "text": "Wenn Sie der Meinung sind, dass Ihre Inhalte versehentlich oder aufgrund einer falschen Identifizierung entfernt wurden, können Sie bei unserem Urheberrechtsbeauftragten eine Gegendarstellung einreichen. Die Gegendarstellung muss Folgendes enthalten:",
+      "list": [
+        "Ihre physische oder elektronische Signatur",
+        "Identifizierung des entfernten Materials und seines Standorts vor der Entfernung",
+        "Eine eidesstattliche Erklärung, dass Sie in gutem Glauben davon ausgehen, dass das Material versehentlich entfernt wurde",
+        "Ihr Name, Ihre Adresse und Ihre Telefonnummer",
+        "Eine Erklärung, dass Sie der Zuständigkeit des Bundesgerichts in Ihrem Bezirk zustimmen"
+      ]
+    },
+    "repeat": {
+      "title": "Wiederholungstäter",
+      "text": "FairArena wird die Konten von Benutzern sperren, bei denen festgestellt wird, dass sie wiederholt gegen das Urheberrecht verstoßen. Wir behalten uns das Recht vor, zu entscheiden, ob Inhalte aus anderen Gründen als einer Urheberrechtsverletzung gegen unsere Richtlinien verstoßen."
+    },
+    "contact": {
+      "title": "Kontakt zum Urheberrechtsbeauftragten",
+      "text": "Alle DMCA-Mitteilungen und Gegendarstellungen sollten an unseren zuständigen Urheberrechtsbeauftragten gesendet werden:",
+      "agentLabel": "Urheberrechtsbeauftragter",
+      "agentValue": "FairArena-Rechtsteam",
+      "emailLabel": "E-Mail",
+      "subjectLabel": "Betreffzeile",
+      "subjectValue": "DMCA-Mitteilung oder DMCA-Gegenmitteilung",
+      "liability": "Bitte beachten Sie, dass gemäß Abschnitt 512(f) des DMCA jede Person haftbar gemacht werden kann, die wissentlich und erheblich falsch darstellt, dass Material oder Aktivität rechtsverletzend ist."
+    },
+    "lastUpdated": "Letzte Aktualisierung: 24. Januar 2026"
+  },
+  "maintenance": {
+    "title": "Website wird gewartet",
+    "description": "Wir führen derzeit geplante Wartungsarbeiten durch, um Ihr Erlebnis zu verbessern",
+    "duration": {
+      "title": "Erwartete Dauer",
+      "text": "Wir gehen davon aus, dass wir in Kürze wieder online sein werden. Vielen Dank für Ihre Geduld."
+    },
+    "assistance": {
+      "title": "Brauchen Sie Hilfe?",
+      "text": "In dringenden Fällen wenden Sie sich bitte an unser Support-Team.",
+      "button": "Kontaktieren Sie den Support"
+    },
+    "checkStatus": "Überprüfen Sie den Status"
+  },
+  "ipBlocked": {
+    "title": "Zugriff eingeschränkt",
+    "description": "Unser Sicherheitssystem hat ungewöhnliche Aktivitäten bei Ihrer Verbindung festgestellt",
+    "flagsTitle": "Sicherheitsflags erkannt",
+    "resolution": {
+      "title": "So lösen Sie das Problem",
+      "steps": [
+        "Deaktivieren Sie VPN oder Proxy, falls aktiv",
+        "Vermeiden Sie die Verwendung von Tor oder anonymen Browsern",
+        "Stellen Sie sicher, dass Ihr Browser nicht als Automatisierungstool gekennzeichnet ist",
+        "Versuchen Sie es mit einem Standard-Wohnnetzwerk",
+        "Leeren Sie Ihren Browser-Cache und Ihre Cookies"
+      ]
+    },
+    "retry": "Verbindung erneut versuchen",
+    "contact": "Kontaktieren Sie den Support",
+    "footer": "Wenn Sie glauben, dass es sich hierbei um einen Fehler handelt, wenden Sie sich bitte an unser Support-Team unter",
+    "autoRetry": "Automatischer Verbindungsversuch..."
+  },
+  "banned": {
+    "title": "Konto gesperrt",
+    "description": "Ihr Konto wurde aufgrund eines Verstoßes gegen unsere Nutzungsbedingungen oder Community-Richtlinien gesperrt.",
+    "reason": "Grund für die Aussetzung:",
+    "contact": "Wenn Sie glauben, dass es sich hierbei um einen Fehler handelt, wenden Sie sich bitte an unser Support-Team.",
+    "signOut": "Abmelden"
+  },
+  "unsubscribe": {
+    "title": "Newsletter abbestellen",
+    "description": "Wir werden dich vermissen, aber wir respektieren deinen Posteingang.",
+    "processing": "Anfrage wird bearbeitet...",
+    "success": {
+      "title": "Abgemeldet",
+      "defaultMessage": "Sie haben sich erfolgreich von unserem Newsletter abgemeldet."
+    },
+    "error": {
+      "title": "Fehler",
+      "defaultMessage": "Etwas ist schief gelaufen. Bitte versuchen Sie es später noch einmal.",
+      "invalidEmail": "Ungültige E-Mail-Adresse"
+    },
+    "returnHome": "Zurück nach Hause",
+    "rightsReserved": "Alle Rechte vorbehalten."
+  },
+  "oauthError": {
+    "title": "Autorisierungsfehler",
+    "defaultDescription": "Während des Autorisierungsprozesses ist ein Fehler aufgetreten.",
+    "fixTitle": "So beheben Sie das Problem",
+    "technicalDetails": "Technische Details",
+    "tryAgain": "Versuchen Sie es erneut",
+    "goHome": "Nach Hause gehen",
+    "securedBy": "Gesichert durch FairArena OAuth",
+    "errors": {
+      "invalid_request": {
+        "title": "Ungültige Anfrage",
+        "description": "Der Autorisierungsanfrage fehlen erforderliche Parameter oder sie enthält ungültige Werte.",
+        "solutions": [
+          "Überprüfen Sie, ob die Anwendung die richtige Autorisierungs-URL verwendet",
+          "Stellen Sie sicher, dass alle erforderlichen Parameter (Client_ID, Redirect_uri, Scope) enthalten sind",
+          "Stellen Sie sicher, dass „redirect_uri“ genau mit dem übereinstimmt, was registriert wurde"
+        ]
+      },
+      "invalid_client": {
+        "title": "Ungültiger Client",
+        "description": "Der Antrag konnte nicht verifiziert werden oder ist nicht berechtigt, diese Anfrage zu stellen.",
+        "solutions": [
+          "Wenden Sie sich an den Anwendungsentwickler, um seine OAuth-Konfiguration zu überprüfen",
+          "Stellen Sie sicher, dass die Anwendung bei FairArena registriert ist",
+          "Überprüfen Sie, ob die client_id korrekt ist"
+        ]
+      },
+      "access_denied": {
+        "title": "Zugriff verweigert",
+        "description": "Sie haben die Autorisierungsanfrage abgelehnt oder die Anfrage wurde storniert.",
+        "solutions": [
+          "Versuchen Sie die Autorisierung erneut, wenn dies ein Fehler war",
+          "Wenden Sie sich an den Anwendungssupport, wenn Sie glauben, dass es sich hierbei um einen Fehler handelt"
+        ]
+      },
+      "invalid_scope": {
+        "title": "Ungültiger Bereich",
+        "description": "Die Anwendung hat Berechtigungen angefordert, die nicht verfügbar oder nicht zulässig sind.",
+        "solutions": [
+          "Kontaktieren Sie den Anwendungsentwickler bezüglich der angeforderten Berechtigungen",
+          "Die Anwendung muss möglicherweise ihre OAuth-Konfiguration aktualisieren"
+        ]
+      },
+      "server_error": {
+        "title": "Serverfehler",
+        "description": "Bei der Verarbeitung Ihrer Anfrage ist auf unseren Servern ein unerwarteter Fehler aufgetreten.",
+        "solutions": [
+          "Versuchen Sie es in ein paar Augenblicken noch einmal",
+          "Wenn das Problem weiterhin besteht, wenden Sie sich an den FairArena-Support",
+          "Überprüfen Sie unsere Statusseite auf aktuelle Vorfälle"
+        ]
+      },
+      "temporarily_unavailable": {
+        "title": "Dienst vorübergehend nicht verfügbar",
+        "description": "Unser Autorisierungsdienst ist aufgrund von Wartungsarbeiten oder hoher Auslastung vorübergehend nicht verfügbar.",
+        "solutions": [
+          "Warten Sie ein paar Minuten und versuchen Sie es erneut",
+          "Auf unserer Statusseite finden Sie Wartungsupdates"
+        ]
+      },
+      "expired": {
+        "title": "Anfrage abgelaufen",
+        "description": "Diese Autorisierungsanfrage ist abgelaufen und nicht mehr gültig.",
+        "solutions": [
+          "Kehren Sie zur Anwendung zurück und starten Sie den Anmeldevorgang erneut",
+          "Autorisierungsanfragen laufen aus Sicherheitsgründen nach 10 Minuten ab"
+        ]
+      },
+      "already_used": {
+        "title": "Anfrage bereits verwendet",
+        "description": "Diese Autorisierungsanfrage wurde bereits abgeschlossen.",
+        "solutions": [
+          "Wenn Sie eine erneute Autorisierung benötigen, starten Sie eine neue Anmeldung über die Anwendung",
+          "Überprüfen Sie, ob Sie bereits eine aktive Sitzung mit der Anwendung haben"
+        ]
+      }
+    }
   }
 }

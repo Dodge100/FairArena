@@ -36,7 +36,8 @@
     },
     "contact": {
       "title": "Contacto",
-      "support": "Soporte"
+      "support": "Soporte",
+      "location": "Delhi, India"
     },
     "bottom": {
       "rights": "Todos los derechos reservados.",
@@ -45,7 +46,8 @@
         "privacyPolicy": "Política de privacidad",
         "termsAndConditions": "Términos y condiciones",
         "cookiePolicy": "Política de cookies",
-        "refund": "Reembolso"
+        "refund": "Reembolso",
+        "dmca": "DMCA"
       }
     }
   },
@@ -176,14 +178,128 @@
       "security": "Seguridad y Privacidad",
       "pricing": "Precios y Facturación",
       "technical": "Técnico",
-      "support": "Soporte"
+      "support": "Soporte",
+      "general": "General"
     },
     "noResults": "No se encontraron preguntas que coincidan con su búsqueda.",
     "contact": {
       "title": "¿Todavía tienes preguntas?",
       "subtitle": "¿No encuentras la respuesta que buscas? Nuestro equipo de soporte está aquí para ayudar.",
       "button": "Contactar Soporte"
-    }
+    },
+    "title": "Preguntas frecuentes",
+    "items": [
+      {
+        "category": "general",
+        "q": "¿Qué es FairArena?",
+        "a": "FairArena es una plataforma de gestión de hackatones impulsada por inteligencia artificial que ayuda a los organizadores a realizar hackatones justos, transparentes y eficientes. Proporcionamos tablas de clasificación en tiempo real, flujos de trabajo de evaluación automatizados, análisis de proyectos de IA y análisis integrales."
+      },
+      {
+        "category": "general",
+        "q": "¿Quién puede utilizar FairArena?",
+        "a": "FairArena está diseñado para organizadores, jueces y participantes de hackathon. Los organizadores utilizan nuestra plataforma para gestionar eventos, los jueces la utilizan para calificar proyectos de manera eficiente y los participantes pueden realizar un seguimiento de sus clasificaciones en tiempo real."
+      },
+      {
+        "category": "general",
+        "q": "¿FairArena es gratuito?",
+        "a": "Ofrecemos diferentes niveles de precios. Los jueces y participantes siempre utilizan la plataforma de forma gratuita. Los organizadores pueden elegir entre nuestros planes Free, Pro o Enterprise según el tamaño y las necesidades de su evento. Consulte nuestra página de precios para obtener más detalles."
+      },
+      {
+        "category": "empezando",
+        "q": "¿Cómo creo una cuenta?",
+        "a": "Haga clic en el botón \"Registrarse\" en la esquina superior derecha. Puede registrarse utilizando su correo electrónico o utilizar proveedores de OAuth como GitHub, Google, Atlassian, Figma, Vercel o Zoom para un registro rápido."
+      },
+      {
+        "category": "empezando",
+        "q": "¿Cómo organizo mi primer hackathon?",
+        "a": "Después de registrarte, ve a tu panel y haz clic en \"Crear Hackathon\". Complete los detalles del evento, agregue jueces, configure criterios de puntuación e invite a participantes. Nuestro asistente paso a paso le guiará a través del proceso."
+      },
+      {
+        "category": "empezando",
+        "q": "¿Puedo importar participantes desde un archivo CSV?",
+        "a": "¡Sí! En el panel de su hackathon, navegue hasta la sección Participantes y use la función \"Importar CSV\". Asegúrese de que su CSV incluya campos obligatorios como nombre, correo electrónico e información del equipo."
+      },
+      {
+        "category": "características",
+        "q": "¿Qué es el análisis de proyectos impulsado por IA?",
+        "a": "Nuestra IA analiza los proyectos presentados en cuanto a rendimiento, SEO, UI/UX, accesibilidad, calidad del código y singularidad. Proporciona informes y sugerencias detallados, ayudando a los jueces a tomar decisiones informadas y brindando a los participantes comentarios valiosos."
+      },
+      {
+        "category": "características",
+        "q": "¿Cómo funciona la tabla de clasificación en tiempo real?",
+        "a": "A medida que los jueces envían puntuaciones, nuestro sistema calcula automáticamente las clasificaciones y actualiza la tabla de clasificación en tiempo real utilizando la tecnología WebSocket. Los participantes pueden ver su clasificación al instante, creando una experiencia atractiva y transparente."
+      },
+      {
+        "category": "características",
+        "q": "¿Puedo personalizar los criterios de puntuación?",
+        "a": "¡Absolutamente! Puede crear rúbricas de puntuación personalizadas con criterios ponderados adaptados a su hackathon. Defina categorías como innovación, complejidad técnica, diseño e impacto con ponderaciones personalizadas."
+      },
+      {
+        "category": "características",
+        "q": "¿FairArena admite la evaluación de múltiples rondas?",
+        "a": "¡Sí! Puede configurar múltiples rondas de evaluación (por ejemplo, preliminares, semifinales, finales) con diferentes paneles de jueces y criterios para cada ronda. El sistema avanza automáticamente los equipos según su configuración."
+      },
+      {
+        "category": "seguridad",
+        "q": "¿Qué tan seguros están mis datos?",
+        "a": "Nos tomamos la seguridad en serio. Todos los datos están cifrados en tránsito (TLS) y en reposo. Implementamos protección CSRF, limitación de velocidad y seguimos las mejores prácticas de seguridad de OWASP. Cumplimos con SOC 2 Tipo II."
+      },
+      {
+        "category": "seguridad",
+        "q": "¿Admite SSO empresarial?",
+        "a": "¡Sí! Los planes empresariales incluyen inicio de sesión único (SSO) con soporte SAML 2.0. Puede configurar la verificación del dominio y aplicar SSO para los miembros de su organización."
+      },
+      {
+        "category": "seguridad",
+        "q": "¿Dónde se almacenan mis datos?",
+        "a": "Los datos se almacenan en una infraestructura segura en la nube con copias de seguridad automáticas. Utilizamos bases de datos estándar de la industria con cifrado y cumplimos con GDPR, CCPA y otras regulaciones de protección de datos."
+      },
+      {
+        "category": "precios",
+        "q": "¿Qué métodos de pago aceptan?",
+        "a": "Aceptamos todas las principales tarjetas de crédito (Visa, Mastercard, American Express, Discover) y admitimos pagos internacionales. Los clientes empresariales también pueden pagar mediante factura."
+      },
+      {
+        "category": "precios",
+        "q": "¿Puedo cancelar mi suscripción en cualquier momento?",
+        "a": "Sí, puedes cancelar tu suscripción en cualquier momento desde la configuración de tu cuenta. Su acceso continuará hasta el final de su período de facturación actual. No se aplican gastos de cancelación."
+      },
+      {
+        "category": "precios",
+        "q": "¿Ofrecen reembolsos?",
+        "a": "Ofrecemos una garantía de devolución de dinero de 14 días para todos los planes pagos. Si no está satisfecho, comuníquese con nuestro equipo de soporte dentro de los 14 días posteriores a la compra para obtener un reembolso completo. Consulte nuestra política de reembolso para obtener más detalles."
+      },
+      {
+        "category": "técnico",
+        "q": "¿Qué navegadores son compatibles?",
+        "a": "FairArena funciona mejor en navegadores modernos, incluidos Chrome, Firefox, Safari y Edge (las 2 últimas versiones). También admitimos navegadores móviles para acceso mientras viaja."
+      },
+      {
+        "category": "técnico",
+        "q": "¿Hay una API disponible?",
+        "a": "¡Sí! Proporcionamos una API REST integral y soporte OAuth 2.0 para integraciones. Los planes empresariales incluyen límites de tarifas más altos y soporte API dedicado. Consulte nuestra documentación API para obtener más detalles."
+      },
+      {
+        "category": "técnico",
+        "q": "¿Tienes una aplicación móvil?",
+        "a": "Actualmente, ofrecemos una aplicación web totalmente responsiva que funciona muy bien en dispositivos móviles. Las aplicaciones nativas de iOS y Android están en nuestra hoja de ruta para 2026."
+      },
+      {
+        "category": "apoyo",
+        "q": "¿Cómo puedo obtener ayuda?",
+        "a": "Puede comunicarse con nuestro equipo de soporte por correo electrónico a fairarena.contact@gmail.com, a través de la página de soporte o mediante el chat en la aplicación. Los clientes empresariales obtienen soporte prioritario con administradores de cuentas dedicados."
+      },
+      {
+        "category": "apoyo",
+        "q": "¿Ofrecen capacitación o incorporación?",
+        "a": "¡Sí! Proporcionamos documentación completa, tutoriales en vídeo y sesiones de incorporación en vivo para clientes Pro y Enterprise. También ofrecemos formación personalizada para grandes organizaciones."
+      },
+      {
+        "category": "apoyo",
+        "q": "¿Cuál es su tiempo promedio de respuesta?",
+        "a": "Nivel gratuito: 48 horas, Pro: 24 horas, Enterprise: 4 horas (soporte prioritario). Los problemas críticos se escalan inmediatamente para todos los planes pagos."
+      }
+    ]
   },
   "pricing": {
     "title": "Elige tu plan",
@@ -340,6 +456,907 @@
       "item1": "Organice su próximo hackathon con FairArena",
       "item2": "Agendar una demo",
       "contact": "Contáctenos:"
+    }
+  },
+  "changelog": {
+    "title": "Registro de cambios",
+    "subtitle": "Realice un seguimiento de cada mejora, característica y solución que enviamos para que FairArena sea mejor para usted.",
+    "stayUpdated": {
+      "title": "Manténgase actualizado",
+      "text": "Siga nuestro viaje mientras continuamos construyendo la mejor plataforma de hackathon del mundo.",
+      "github": "Destacanos en GitHub",
+      "request": "Solicitar una característica"
+    },
+    "types": {
+      "feature": "Característica",
+      "improvement": "Mejora",
+      "bugfix": "Corrección de errores",
+      "security": "Seguridad",
+      "breaking": "Cambio radical"
+    },
+    "entries": [
+      {
+        "version": "2.1.0",
+        "date": "2026-01-23",
+        "title": "SSO empresarial y seguridad avanzada",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Se agregó Enterprise SSO con verificación de dominio y compatibilidad con SAML 2.0 para organizaciones."
+          },
+          {
+            "type": "característica",
+            "description": "Se implementó el flujo de autorización de dispositivos OAuth 2.0 para dispositivos CLI e IoT"
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó soporte para múltiples proveedores de OAuth: GitHub, Google, Atlassian, Figma, Vercel y Zoom."
+          },
+          {
+            "type": "seguridad",
+            "description": "Protección CSRF mejorada con punto final de token dedicado y actualización automática"
+          },
+          {
+            "type": "mejora",
+            "description": "Migrado a TanStack DB para actualizaciones reactivas de menos de milisegundos en la Bandeja de entrada"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigió la actualización del token de autenticación que causaba cierres de sesión inesperados."
+          }
+        ]
+      },
+      {
+        "version": "1.5.0",
+        "date": "2026-01-20",
+        "title": "Autorización de dispositivo y OAuth multiproveedor",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Se implementó el flujo de autorización de dispositivos OAuth 2.0 para dispositivos sin cabeza"
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó integración de Atlassian OAuth con la configuración del entorno."
+          },
+          {
+            "type": "mejora",
+            "description": "Páginas de inicio de sesión/registro en la interfaz actualizadas para mostrar todos los proveedores de OAuth"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigió el error de \"Aplicación desconocida\" en la página de consentimiento del dispositivo."
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Problemas de autenticación resueltos con /device/verify endpoint"
+          }
+        ]
+      },
+      {
+        "version": "1.6.0",
+        "date": "2026-01-19",
+        "title": "Migraciones de bases de datos y funciones de equipo",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Migraciones de bases de datos aplicadas con Prisma para actualizaciones de esquemas."
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó un sistema de invitación al equipo con notificaciones por correo electrónico."
+          },
+          {
+            "type": "mejora",
+            "description": "Manejo mejorado del reinicio del servidor backend después de cambios de configuración"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Flujo de autenticación fijo con actualización de token adecuada e invalidación de sesión"
+          }
+        ]
+      },
+      {
+        "version": "1.7.0",
+        "date": "2026-01-18",
+        "title": "Implementación de producción del servidor MCP",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Servidor MCP refactorizado para usar transporte HTTP/SSE en lugar de stdio"
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó Dockerfile listo para producción para implementación en contenedores."
+          },
+          {
+            "type": "seguridad",
+            "description": "Limitación de velocidad implementada, CORS y autenticación para el servidor MCP."
+          },
+          {
+            "type": "seguridad",
+            "description": "Credenciales Pinecone seguras en el lado del servidor con claves API Gemini proporcionadas por el cliente"
+          },
+          {
+            "type": "mejora",
+            "description": "Se crearon README.md y mcp-config.example.json completos."
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigieron errores de TypeScript en la implementación de funciones de producción."
+          }
+        ]
+      },
+      {
+        "version": "1.8.0",
+        "date": "2026-01-17",
+        "title": "Búsqueda de documentación de IA e integración de Pinecone",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Base de datos de vectores Pinecone integrada para búsqueda de documentación impulsada por IA"
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó la herramienta search_documentation con recuperación basada en incrustaciones"
+          },
+          {
+            "type": "mejora",
+            "description": "Se movió el mensaje del sistema de IA para separar el archivo para una mejor mantenibilidad"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigió la discrepancia en las dimensiones de Pinecone mediante el uso de incrustaciones de 384 dimensiones."
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se resolvió el error de instalación del módulo Sharp para @xenova/transformers"
+          }
+        ]
+      },
+      {
+        "version": "1.8.5",
+        "date": "2026-01-15",
+        "title": "Mejoras en OAuth y autorización",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Se lanzó el punto final de autorización de OAuth con flujo de consentimiento."
+          },
+          {
+            "type": "característica",
+            "description": "Panel de administración de aplicaciones OAuth agregado"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigió el error 404 para el punto final /oauth/authorize"
+          },
+          {
+            "type": "seguridad",
+            "description": "Se agregó el tipo de notificación SEGURIDAD para alertas relacionadas con la seguridad."
+          }
+        ]
+      },
+      {
+        "version": "1.9.0",
+        "date": "2026-01-14",
+        "title": "Rediseño de UI/UX y optimización de imágenes",
+        "changes": [
+          {
+            "type": "mejora",
+            "description": "Páginas de comentarios y cancelación de suscripción rediseñadas con un tema negruzco mínimo usando Shadcn UI"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigieron errores de tiempo de espera de respuesta de imagen ascendente durante el desarrollo."
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se resolvieron fallas de compilación de Docker con la instalación de pnpm"
+          }
+        ]
+      },
+      {
+        "version": "2.0.0",
+        "date": "2026-01-13",
+        "title": "Funciones en tiempo real e integración de GitHub",
+        "changes": [
+          {
+            "type": "característica",
+            "description": "Se agregaron estadísticas del repositorio de GitHub en tiempo real en la barra lateral y en el pie de página."
+          },
+          {
+            "type": "característica",
+            "description": "Se implementó el almacenamiento en caché de Redis con TTL de 6 horas para datos de GitHub."
+          },
+          {
+            "type": "característica",
+            "description": "Se agregó TanStack Query con staleTime de 2 horas para obtener datos optimizados"
+          },
+          {
+            "type": "mejora",
+            "description": "Almacenamiento en caché del estado de autenticación mejorado después del inicio de sesión y la verificación MFA"
+          },
+          {
+            "type": "corrección de errores",
+            "description": "Se corrigió el bucle infinito en el interceptor Axios cuando falla la actualización del token"
+          }
+        ]
+      }
+    ]
+  },
+  "accessibility": {
+    "title": "Declaración de accesibilidad",
+    "subtitle": "FairArena se compromete a garantizar la accesibilidad digital para las personas con discapacidad. Estamos mejorando continuamente la experiencia del usuario para todos.",
+    "commitment": {
+      "title": "Nuestro Compromiso",
+      "text1": "FairArena se compromete a hacer que nuestra plataforma sea accesible para todos los usuarios, incluidos aquellos con discapacidades. Nos esforzamos por cumplir con los estándares de nivel AA de las Pautas de accesibilidad al contenido web (WCAG) 2.1.",
+      "text2": "Creemos que todos deberían tener igual acceso a nuestra plataforma de gestión de hackathon, independientemente de sus capacidades o las tecnologías que utilicen."
+    },
+    "features": {
+      "title": "Funciones de accesibilidad",
+      "items": {
+        "keyboard": {
+          "title": "Navegación por teclado",
+          "desc": "Soporte completo de teclado para todos los elementos interactivos. Navegue usando Tab, Enter y las teclas de flecha."
+        },
+        "screenReader": {
+          "title": "Compatible con lectores de pantalla",
+          "desc": "Las etiquetas ARIA y el HTML semántico garantizan la compatibilidad con lectores de pantalla como NVDA, JAWS y VoiceOver."
+        },
+        "highContrast": {
+          "title": "Modo de alto contraste",
+          "desc": "Soporte para temas de alto contraste y combinaciones de colores para usuarios con discapacidad visual."
+        },
+        "resizableText": {
+          "title": "Texto redimensionable",
+          "desc": "Se puede cambiar el tamaño de todo el texto hasta un 200% sin pérdida de funcionalidad o contenido."
+        },
+        "focusIndicators": {
+          "title": "Indicadores de enfoque",
+          "desc": "Indicadores de enfoque visual claros para todos los elementos interactivos."
+        },
+        "captions": {
+          "title": "Subtítulos y transcripciones",
+          "desc": "El contenido de video y audio incluye subtítulos y transcripciones cuando corresponda."
+        }
+      }
+    },
+    "standards": {
+      "title": "Estándares y pautas",
+      "list": [
+        "Cumplimiento de WCAG 2.1 Nivel AA",
+        "Sección 508 de la Ley de Rehabilitación",
+        "EN 301 549 Norma europea de accesibilidad",
+        "Marcado semántico HTML5",
+        "Atributos ARIA (Aplicaciones enriquecidas de Internet accesibles)"
+      ]
+    },
+    "feedback": {
+      "title": "Comentarios y contacto",
+      "text": "Agradecemos sus comentarios sobre la accesibilidad de FairArena. Si encuentra alguna barrera de accesibilidad, háganoslo saber:",
+      "emailLabel": "Correo electrónico",
+      "supportLabel": "Apoyo",
+      "supportButton": "Contactar con soporte",
+      "response": "Nuestro objetivo es responder a los comentarios sobre accesibilidad en un plazo de 2 días hábiles y proponer una solución en un plazo de 10 días hábiles."
+    },
+    "lastUpdated": "Última actualización: 24 de enero de 2026"
+  },
+  "communityGuidelines": {
+    "title": "Pautas de la comunidad",
+    "subtitle": "Construir una comunidad segura, respetuosa y colaborativa para los entusiastas del hackathon en todo el mundo.",
+    "commitment": {
+      "title": "Nuestro Compromiso",
+      "text1": "FairArena se compromete a brindar un ambiente acogedor e inclusivo para todos. Estas pautas ayudan a garantizar que nuestra comunidad siga siendo un espacio positivo para el aprendizaje, la colaboración y la innovación.",
+      "text2": "Al utilizar FairArena, usted acepta seguir estas pautas y ayudarnos a mantener una comunidad respetuosa."
+    },
+    "core": {
+      "title": "Directrices básicas",
+      "items": {
+        "respectful": {
+          "title": "Sea respetuoso",
+          "desc": "Trate a todos los miembros de la comunidad con respeto y amabilidad. No se tolerará el acoso, el discurso de odio ni la discriminación.",
+          "examples": [
+            "Utilice un lenguaje inclusivo",
+            "Respeta las diferentes perspectivas",
+            "Sea constructivo en las críticas"
+          ]
+        },
+        "collaborate": {
+          "title": "Colabora y comparte",
+          "desc": "FairArena se basa en la colaboración. Comparta conocimientos, ayude a otros y contribuya a la comunidad.",
+          "examples": [
+            "Comparte tu experiencia",
+            "Ayuda a los recién llegados",
+            "Proporcionar comentarios constructivos"
+          ]
+        },
+        "integrity": {
+          "title": "Mantener la integridad",
+          "desc": "Sea honesto y transparente. No haga trampa, plagie ni participe en ninguna forma de deshonestidad académica.",
+          "examples": [
+            "Dar la atribución adecuada",
+            "Sea honesto acerca de su trabajo",
+            "Informar infracciones"
+          ]
+        },
+        "communicate": {
+          "title": "Comunicarse claramente",
+          "desc": "Utilice un lenguaje claro y profesional. Evite el spam, el contenido fuera de tema y la autopromoción excesiva.",
+          "examples": [
+            "Mantente en el tema",
+            "Evite el spam",
+            "Utilice canales apropiados"
+          ]
+        }
+      }
+    },
+    "prohibited": {
+      "title": "Contenido y comportamiento prohibidos",
+      "text": "Los siguientes comportamientos y contenidos están estrictamente prohibidos en FairArena:",
+      "items": [
+        "Acoso, intimidación o intimidación",
+        "Discurso de odio o discriminación",
+        "Spam o autopromoción excesiva",
+        "Plagio o infracción de derechos de autor",
+        "Compartir información privada sin consentimiento",
+        "Código malicioso o exploits de seguridad",
+        "Suplantación de identidad o prácticas engañosas",
+        "Actividades o contenidos ilegales"
+      ]
+    },
+    "enforcement": {
+      "title": "Aplicación",
+      "text": "Las violaciones de estas pautas pueden resultar en:",
+      "items": [
+        "Advertencia y eliminación de contenido",
+        "Suspensión temporal de privilegios de cuenta.",
+        "Terminación permanente de la cuenta",
+        "Acciones legales en casos de violaciones graves"
+      ],
+      "note": "Revisamos cada caso individualmente y tomamos las medidas adecuadas según la gravedad y el contexto de la infracción."
+    },
+    "report": {
+      "title": "Informar infracciones",
+      "text": "Si es testigo o experimenta una violación de estas pautas, infórmelo de inmediato. Todos los informes se revisan con prontitud y se manejan con confidencialidad.",
+      "button": "Informar un problema",
+      "emailLabel": "Correo electrónico"
+    },
+    "lastUpdated": "Última actualización: 24 de enero de 2026"
+  },
+  "securityPolicy": {
+    "title": "Política de seguridad",
+    "subtitle": "Su seguridad y privacidad son nuestras principales prioridades. Descubra cómo protegemos sus datos.",
+    "practices": {
+      "title": "Prácticas de seguridad",
+      "items": {
+        "encryption": {
+          "title": "Cifrado de datos",
+          "desc": "Todos los datos se cifran en tránsito mediante TLS 1.3 y en reposo mediante cifrado AES-256."
+        },
+        "auth": {
+          "title": "Autenticación segura",
+          "desc": "Autenticación multifactor, OAuth 2.0 y compatibilidad con WebAuthn para un acceso seguro."
+        },
+        "protection": {
+          "title": "Protección de datos",
+          "desc": "Copias de seguridad periódicas, planes de recuperación ante desastres y cumplimiento del RGPD para la protección de datos."
+        },
+        "monitoring": {
+          "title": "Monitoreo de seguridad",
+          "desc": "Monitoreo de seguridad 24 horas al día, 7 días a la semana, detección de intrusiones y respuesta automatizada a amenazas."
+        },
+        "access": {
+          "title": "Control de acceso",
+          "desc": "Control de acceso basado en roles (RBAC) y principio de aplicación de privilegios mínimos."
+        },
+        "privacy": {
+          "title": "Privacidad primero",
+          "desc": "Privacidad por diseño, recopilación mínima de datos y prácticas de datos transparentes."
+        }
+      }
+    },
+    "disclosure": {
+      "title": "Divulgación responsable",
+      "text": "Apreciamos los esfuerzos de la comunidad de investigación de seguridad para ayudar a mantener seguro a FairArena. Si descubre una vulnerabilidad de seguridad, infórmelo de manera responsable:",
+      "email": {
+        "label": "Correo electrónico",
+        "value": "fairarena.contact@gmail.com"
+      },
+      "pgp": {
+        "label": "Clave PGP",
+        "value": "Disponible previa solicitud para comunicaciones cifradas"
+      },
+      "response": {
+        "label": "Tiempo de respuesta",
+        "value": "Nuestro objetivo es responder dentro de las 24 horas y proporcionar actualizaciones cada 72 horas."
+      }
+    },
+    "bounty": {
+      "title": "Reconocimientos de seguridad",
+      "text": "Reconocemos y agradecemos a los investigadores de seguridad que nos ayudan a mejorar la seguridad de FairArena. Los investigadores que revelen vulnerabilidades de manera responsable pueden ser elegibles para:",
+      "list": [
+        "Reconocimiento público en nuestro salón de la fama de seguridad",
+        "Recompensas monetarias por vulnerabilidades críticas",
+        "Beneficios de la cuenta premium y regalos de FairArena"
+      ],
+      "button": "Ver Salón de la Fama"
+    },
+    "compliance": {
+      "title": "Cumplimiento y certificaciones",
+      "standards": {
+        "title": "Estándares",
+        "list": [
+          "Cumple con el RGPD",
+          "SOC 2 Tipo II (en proceso)",
+          "ISO 27001 (en proceso)",
+          "Las 10 mejores protecciones de OWASP"
+        ]
+      },
+      "audits": {
+        "title": "Auditorías de seguridad",
+        "list": [
+          "Pruebas de penetración anuales",
+          "Evaluaciones de seguridad trimestrales",
+          "Escaneo continuo de vulnerabilidades",
+          "Auditorías de seguridad de terceros"
+        ]
+      }
+    },
+    "lastUpdated": "Última actualización: 24 de enero de 2026"
+  },
+  "privacyPolicy": {
+    "title": "política de privacidad",
+    "lastUpdated": "Última actualización: 23 de enero de 2026",
+    "intro": "FairArena (\"nosotros\", \"nosotros\" o \"nuestro\") opera el sitio web de FairArena (el \"Servicio\"). Esta página le informa sobre nuestras políticas con respecto a la recopilación, uso y divulgación de datos personales cuando utiliza nuestro Servicio y las opciones que tiene asociadas con esos datos. Utilizamos sus datos para proporcionar y mejorar el Servicio. Al utilizar el Servicio, usted acepta la recopilación y el uso de información de acuerdo con esta política.",
+    "sections": {
+      "collection": {
+        "title": "1. Información que recopilamos",
+        "description": "Recopilamos varios tipos diferentes de información para diversos fines para brindarle y mejorar nuestro Servicio.",
+        "subsections": {
+          "personalData": {
+            "title": "1.1 Datos personales",
+            "description": "Mientras utiliza nuestro Servicio, es posible que le solicitemos que nos proporcione cierta información de identificación personal que pueda usarse para contactarlo o identificarlo (\"Datos personales\"). La información de identificación personal puede incluir, entre otras:",
+            "list": [
+              "Dirección de correo electrónico",
+              "Nombre y apellido",
+              "Número de teléfono",
+              "Dirección, Estado, Provincia, Código Postal, Ciudad",
+              "Cookies y datos de uso",
+              "Información del perfil de redes sociales (si inicia sesión a través de servicios de terceros como Google o GitHub)"
+            ]
+          },
+          "usageData": {
+            "title": "1.2 Datos de uso",
+            "description": "También podemos recopilar información sobre cómo se accede y utiliza el Servicio (\"Datos de uso\"). Estos Datos de uso pueden incluir información como:",
+            "list": [
+              "La dirección de protocolo de Internet de su computadora (por ejemplo, dirección IP)",
+              "Tipo de navegador y versión del navegador",
+              "Las páginas de nuestro Servicio que usted visita",
+              "La hora y fecha de su visita.",
+              "El tiempo pasado en esas páginas.",
+              "Identificadores únicos de dispositivos y otros datos de diagnóstico"
+            ]
+          },
+          "tracking": {
+            "title": "1.3 Datos de seguimiento y cookies",
+            "description": "Utilizamos cookies y tecnologías de seguimiento similares para rastrear la actividad en nuestro Servicio y conservar cierta información.",
+            "list": [
+              "Cookies de sesión: utilizamos cookies de sesión para operar nuestro Servicio.",
+              "Cookies de preferencias: utilizamos cookies de preferencias para recordar sus preferencias y diversas configuraciones.",
+              "Cookies de seguridad: utilizamos cookies de seguridad con fines de seguridad."
+            ]
+          }
+        }
+      },
+      "usage": {
+        "title": "2. Cómo utilizamos sus datos",
+        "intro": "FairArena utiliza los datos recopilados para diversas finalidades:",
+        "list": [
+          "Para proporcionar y mantener el Servicio",
+          "Para notificarle sobre cambios en nuestro Servicio",
+          "Para permitirle participar en funciones interactivas de nuestro Servicio cuando usted elija hacerlo",
+          "Para brindar atención y soporte al cliente.",
+          "Para proporcionar análisis o información valiosa para que podamos mejorar el Servicio.",
+          "Para monitorear el uso del Servicio",
+          "Detectar, prevenir y abordar problemas técnicos.",
+          "Para procesar pagos y gestionar la facturación (a través de procesadores externos seguros)"
+        ]
+      },
+      "retention": {
+        "title": "3. Retención de Datos",
+        "content1": "FairArena conservará sus Datos personales solo durante el tiempo que sea necesario para los fines establecidos en esta Política de privacidad. Conservaremos y utilizaremos sus Datos personales en la medida necesaria para cumplir con nuestras obligaciones legales (por ejemplo, si debemos conservar sus datos para cumplir con las leyes aplicables), resolver disputas y hacer cumplir nuestros acuerdos y políticas legales.",
+        "content2": "FairArena también conservará los Datos de uso para fines de análisis interno. Los datos de uso generalmente se conservan durante un período de tiempo más corto, excepto cuando estos datos se utilizan para fortalecer la seguridad o mejorar la funcionalidad de nuestro Servicio, o estamos legalmente obligados a conservar estos datos durante períodos de tiempo más largos."
+      },
+      "transfer": {
+        "title": "4. Transferencia de Datos",
+        "content1": "Su información, incluidos los Datos personales, puede transferirse y mantenerse en computadoras ubicadas fuera de su estado, provincia, país u otra jurisdicción gubernamental donde las leyes de protección de datos pueden diferir de las de su jurisdicción.",
+        "content2": "Si se encuentra fuera de la India y decide proporcionarnos información, tenga en cuenta que transferimos los datos, incluidos los datos personales, a la India y los procesamos allí.",
+        "content3": "Su consentimiento a esta Política de Privacidad seguido del envío de dicha información representa su aceptación de esa transferencia."
+      },
+      "disclosure": {
+        "title": "5. Divulgación de datos",
+        "subtitle": "5.1 Requisitos legales",
+        "description": "FairArena puede divulgar sus Datos personales de buena fe cuando considere que dicha acción es necesaria para:",
+        "list": [
+          "Para cumplir con una obligación legal",
+          "Para proteger y defender los derechos o propiedad de FairArena",
+          "Para prevenir o investigar posibles irregularidades en relación con el Servicio",
+          "Para proteger la seguridad personal de los usuarios del Servicio o del público.",
+          "Para protegerse contra la responsabilidad legal"
+        ]
+      },
+      "security": {
+        "title": "6. Seguridad de los datos",
+        "content": "La seguridad de sus datos es importante para nosotros, pero recuerde que ningún método de transmisión a través de Internet o método de almacenamiento electrónico es 100% seguro. Si bien nos esforzamos por utilizar medios comercialmente aceptables para proteger sus Datos personales, no podemos garantizar su seguridad absoluta."
+      },
+      "providers": {
+        "title": "7. Proveedores de servicios",
+        "content1": "Podemos emplear empresas e individuos de terceros para facilitar nuestro Servicio (\"Proveedores de servicios\"), para proporcionar el Servicio en nuestro nombre, para realizar servicios relacionados con el Servicio o para ayudarnos a analizar cómo se utiliza nuestro Servicio.",
+        "content2": "Estos terceros tienen acceso a sus Datos personales solo para realizar estas tareas en nuestro nombre y están obligados a no divulgarlos ni utilizarlos para ningún otro propósito."
+      },
+      "links": {
+        "title": "8. Enlaces a otros sitios",
+        "content1": "Nuestro Servicio puede contener enlaces a otros sitios que no son operados por nosotros. Si hace clic en un enlace de un tercero, será dirigido al sitio de ese tercero. Le recomendamos encarecidamente que revise la Política de privacidad de cada sitio que visite.",
+        "content2": "No tenemos control ni asumimos ninguna responsabilidad por el contenido, las políticas de privacidad o las prácticas de sitios o servicios de terceros."
+      },
+      "children": {
+        "title": "9. Privacidad de los niños",
+        "content1": "Nuestro Servicio no está dirigido a personas menores de 13 años (\"Niños\").",
+        "content2": "No recopilamos intencionalmente información de identificación personal de ninguna persona menor de 13 años. Si usted es padre o tutor y sabe que sus hijos nos han proporcionado datos personales, comuníquese con nosotros. Si nos damos cuenta de que hemos recopilado datos personales de niños sin verificación del consentimiento de los padres, tomamos medidas para eliminar esa información de nuestros servidores."
+      },
+      "changes": {
+        "title": "10. Cambios a esta Política de Privacidad",
+        "content1": "Podemos actualizar nuestra Política de Privacidad de vez en cuando. Le notificaremos cualquier cambio publicando la nueva Política de Privacidad en esta página.",
+        "content2": "Le informaremos por correo electrónico y/o un aviso destacado en nuestro Servicio, antes de que el cambio entre en vigor y actualizaremos la \"fecha de entrada en vigor\" en la parte superior de esta Política de Privacidad.",
+        "content3": "Se le recomienda revisar esta Política de Privacidad periódicamente para detectar cualquier cambio. Los cambios a esta Política de Privacidad entran en vigencia cuando se publican en esta página."
+      },
+      "contact": {
+        "title": "11. Contáctenos",
+        "description": "Si tiene alguna pregunta sobre esta Política de Privacidad, por favor contáctenos:",
+        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "termsAndConditions": {
+    "title": "Términos y condiciones",
+    "lastUpdated": "Última actualización: 23 de enero de 2026",
+    "intro": "Lea atentamente estos Términos y condiciones (\"Términos\", \"Términos y condiciones\") antes de utilizar el sitio web y el servicio de FairArena (el \"Servicio\") operado por FairArena (\"nosotros\", \"nosotros\" o \"nuestro\"). Su acceso y uso del Servicio está condicionado a su aceptación y cumplimiento de estos Términos. Estos Términos se aplican a todos los visitantes, usuarios y otras personas que acceden o utilizan el Servicio. Al acceder o utilizar el Servicio, usted acepta estar sujeto a estos Términos. Si no está de acuerdo con alguna parte de los términos, no podrá acceder al Servicio.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interpretación y definiciones",
+        "content": "Las palabras cuya letra inicial está en mayúscula tienen significados definidos bajo las siguientes condiciones. Las siguientes definiciones tendrán el mismo significado independientemente de que aparezcan en singular o en plural.",
+        "list": [
+          "\"Empresa\", \"Nosotros\", \"Nos\" o \"Nuestro\" se refiere a FairArena, el proveedor del Servicio.",
+          "“Servicio” se refiere a la plataforma de gestión del hackathon FairArena, el sitio web y los servicios relacionados administrados por la Compañía.",
+          "\"Usuario\", \"Usted\" o \"Su\" se refiere a la persona que accede o utiliza el Servicio, o a la empresa u otra entidad legal en nombre de la cual dicha persona accede o utiliza el Servicio, según corresponda.",
+          "“Cuenta” significa una cuenta única creada para que Usted acceda a nuestro Servicio o partes de nuestro Servicio.",
+          "\"Organizador\" se refiere a un Usuario que crea y gestiona hackatones a través del Servicio.",
+          "\"Participante\" se refiere a un Usuario que se registra y envía proyectos a hackatones.",
+          "\"Juez\" se refiere a un Usuario invitado a evaluar las presentaciones.",
+          "“Contenido” se refiere a contenido como texto, imágenes u otra información que usted puede publicar, cargar, vincular o poner a disposición de otro modo, independientemente de la forma de ese contenido."
+        ]
+      },
+      "accounts": {
+        "title": "2. Cuentas y Registro",
+        "content": "Cuando crea una cuenta con nosotros, debe proporcionarnos información que sea precisa, completa y actualizada en todo momento.",
+        "list": [
+          "Deberá proporcionar información precisa, completa y actualizada en todo momento. No hacerlo constituye un incumplimiento de los Términos.",
+          "Usted es responsable de salvaguardar la contraseña que utiliza para acceder al Servicio y para cualquier actividad o acción bajo Su contraseña.",
+          "Usted acepta no revelar su contraseña a ningún tercero. Debe notificarnos inmediatamente al tener conocimiento de cualquier violación de seguridad o uso no autorizado de Su Cuenta.",
+          "Nos reservamos el derecho de rechazar el servicio, cancelar cuentas, eliminar o editar contenido o cancelar pedidos a nuestro exclusivo criterio."
+        ]
+      },
+      "usage": {
+        "title": "3. Uso del Servicio y Restricciones",
+        "list": [
+          "Usted acepta no utilizar el Servicio para ningún propósito ilegal o de cualquier manera que interrumpa, dañe, deteriore o haga que el Servicio sea menos eficiente.",
+          "No debe intentar obtener acceso no autorizado a nuestro Servicio, al servidor en el que está almacenado nuestro Servicio ni a ningún servidor, computadora o base de datos conectada a nuestro Servicio.",
+          "No debe utilizar el Servicio para transmitir publicidad, materiales promocionales o spam no solicitados o no autorizados.",
+          "Los organizadores son los únicos responsables de la administración de sus hackatones, incluida la verificación de los participantes y jueces."
+        ]
+      },
+      "intellectualProperty": {
+        "title": "4. Derechos de propiedad intelectual",
+        "list": [
+          "El Servicio y su contenido original (excluido el Contenido proporcionado por usted u otros Usuarios), sus características y funcionalidades son y seguirán siendo propiedad exclusiva de la Compañía y sus licenciantes.",
+          "El Servicio está protegido por derechos de autor, marcas comerciales y otras leyes tanto del país como de países extranjeros.",
+          "Nuestras marcas comerciales e imagen comercial no se pueden utilizar en relación con ningún producto o servicio sin el consentimiento previo por escrito de la Compañía.",
+          "Al enviar Contenido (incluidos los envíos de proyectos), Usted Nos otorga el derecho de usar, modificar, realizar, mostrar, reproducir y distribuir dicho Contenido en y a través del Servicio con el fin de operar y mejorar el Servicio."
+        ]
+      },
+      "aiDisclaimer": {
+        "title": "5. Análisis de IA y descargos de responsabilidad",
+        "list": [
+          "FairArena utiliza tecnologías de Inteligencia Artificial (IA) para proporcionar información, análisis y asistencia en la puntuación.",
+          "Los resultados generados por IA son de naturaleza consultiva y pueden no ser 100% precisos o estar libres de sesgos.",
+          "Los organizadores y jueces conservan total discreción y responsabilidad para la toma de decisiones finales y la puntuación.",
+          "No garantizamos la exactitud, integridad o utilidad de ningún análisis generado por IA."
+        ]
+      },
+      "links": {
+        "title": "6. Enlaces a otros sitios web",
+        "content": "Nuestro Servicio puede contener enlaces a sitios web o servicios de terceros que no son propiedad de la Compañía ni están controlados por ella. La Compañía no tiene control ni asume ninguna responsabilidad por el contenido, las políticas de privacidad o las prácticas de los sitios web o servicios de terceros. Además, reconoce y acepta que la Compañía no será responsable, directa o indirectamente, de ningún daño o pérdida causada o presuntamente causada por o en conexión con el uso o la confianza en dicho contenido, bienes o servicios disponibles en o a través de dichos sitios web o servicios."
+      },
+      "termination": {
+        "title": "7. Terminación",
+        "list": [
+          "Podemos cancelar o suspender Su Cuenta inmediatamente, sin previo aviso ni responsabilidad, por cualquier motivo, incluido, entre otros, si usted incumple estos Términos.",
+          "Tras la rescisión, su derecho a utilizar el Servicio cesará inmediatamente.",
+          "Si desea cancelar su cuenta, simplemente puede dejar de usar el servicio o eliminar su cuenta a través de la configuración."
+        ]
+      },
+      "liability": {
+        "title": "8. Limitación de responsabilidad",
+        "list": [
+          "En la medida máxima permitida por la ley aplicable, en ningún caso la Compañía será responsable de ningún daño especial, incidental, indirecto o consecuente de ningún tipo (incluidos, entre otros, daños por pérdida de ganancias, pérdida de datos u otra información, por interrupción del negocio, por lesiones personales, pérdida de privacidad que surja o esté relacionada de alguna manera con el uso o la imposibilidad de usar el Servicio).",
+          "Nuestra responsabilidad total hacia Usted por cualquier reclamo que surja de estos Términos o se relacione con ellos o Su uso del Servicio se limita a la cantidad que Usted nos pagó para usar el Servicio en los 12 meses anteriores al acto que dio lugar a la responsabilidad."
+        ]
+      },
+      "disclaimer": {
+        "title": "9. Descargo de responsabilidad",
+        "content1": "El Servicio se le proporciona \"TAL CUAL\" y \"SEGÚN DISPONIBILIDAD\" y con todas las fallas y defectos sin garantía de ningún tipo. En la medida máxima permitida por la ley aplicable, la Compañía renuncia expresamente a todas las garantías, ya sean expresas, implícitas, legales o de otro tipo, con respecto al Servicio, incluidas todas las garantías implícitas de comerciabilidad, idoneidad para un propósito particular, título y no infracción.",
+        "content2": "Sin limitar lo anterior, ni la Compañía ni ninguno de sus proveedores hacen ninguna representación o garantía de ningún tipo, expresa o implícita: (i) en cuanto al funcionamiento o disponibilidad del Servicio, o la información, el contenido y los materiales o productos incluidos en el mismo; (ii) que el Servicio será ininterrumpido o estará libre de errores; (iii) en cuanto a la exactitud, confiabilidad o actualidad de cualquier información o contenido proporcionado a través del Servicio."
+      },
+      "governing": {
+        "title": "10. Ley aplicable",
+        "content": "Las leyes de la India, excluyendo sus conflictos de normas legales, regirán estos Términos y su uso del Servicio. Su uso de la Aplicación también puede estar sujeto a otras leyes locales, estatales, nacionales o internacionales."
+      },
+      "disputes": {
+        "title": "11. Resolución de disputas",
+        "content": "Si tiene alguna inquietud o disputa sobre el Servicio, acepta intentar primero resolver la disputa de manera informal comunicándose con la Compañía."
+      },
+      "changes": {
+        "title": "12. Cambios a estos términos",
+        "content1": "Nos reservamos el derecho, a nuestra entera discreción, de modificar o reemplazar estos Términos en cualquier momento. Si una revisión es importante, haremos esfuerzos razonables para avisar con al menos 30 días de antelación antes de que los nuevos términos entren en vigor. Lo que constituye un cambio material se determinará a Nuestro exclusivo criterio.",
+        "content2": "Al continuar accediendo o utilizando Nuestro Servicio después de que esas revisiones entren en vigencia, usted acepta estar sujeto a los términos revisados. Si no acepta los nuevos términos, total o parcialmente, deje de utilizar el sitio web y el Servicio."
+      },
+      "contact": {
+        "title": "13. Contáctenos",
+        "description": "Si tiene alguna pregunta sobre estos Términos, puede contactarnos:",
+        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "cookiePolicy": {
+    "title": "Política de cookies",
+    "lastUpdated": "Última actualización: 23 de enero de 2026",
+    "intro": "Esta Política de Cookies explica qué son las Cookies y cómo las utilizamos. Debe leer esta política para comprender qué tipo de cookies utilizamos o la información que recopilamos mediante cookies y cómo se utiliza esa información. Esta Política de Cookies ha sido creada con la ayuda del Generador de Políticas de Cookies.",
+    "intro2": "Las cookies generalmente no contienen información que identifique personalmente a un usuario, pero la información personal que almacenamos sobre usted puede estar vinculada a la información almacenada y obtenida de las cookies. Para obtener más información sobre cómo utilizamos, almacenamos y mantenemos seguros sus datos personales, consulte nuestra Política de privacidad.",
+    "sections": {
+      "definitions": {
+        "title": "1. Interpretación y definiciones",
+        "subtitle1": "1.1 Interpretación",
+        "content1": "Las palabras cuya letra inicial está en mayúscula tienen significados definidos bajo las siguientes condiciones. Las siguientes definiciones tendrán el mismo significado independientemente de que aparezcan en singular o en plural.",
+        "subtitle2": "1.2 Definiciones",
+        "list": [
+          "“Empresa” (denominada \"la Compañía\", \"Nosotros\", \"Nos\" o \"Nuestro\" en esta Política de Cookies) se refiere a FairArena.",
+          "“Cookies” significa pequeños archivos que un sitio web coloca en su computadora, dispositivo móvil o cualquier otro dispositivo y que contienen detalles de su historial de navegación en ese sitio web, entre sus muchos usos.",
+          "“Sitio web” se refiere a FairArena, accesible desde fair.sakshamg.me",
+          "“Usted” significa la persona que accede o utiliza el sitio web, o una empresa o cualquier entidad legal en nombre de la cual dicha persona accede o utiliza el sitio web, según corresponda."
+        ]
+      },
+      "usage": {
+        "title": "2. El Uso de las Cookies",
+        "subtitle": "2.1 Tipo de cookies que utilizamos",
+        "content1": "Las cookies pueden ser Cookies \"Persistentes\" o de \"Sesión\". Las cookies persistentes permanecen en su computadora personal o dispositivo móvil cuando se desconecta, mientras que las cookies de sesión se eliminan tan pronto como cierra su navegador web.",
+        "content2": "Utilizamos cookies de sesión y persistentes para los fines que se detallan a continuación:",
+        "types": {
+          "essential": {
+            "title": "Cookies necesarias/esenciales",
+            "type": "Tipo: Cookies de sesión",
+            "admin": "Administrado por: Nosotros",
+            "purpose": "Propósito: Estas cookies son esenciales para brindarle los servicios disponibles a través del sitio web y permitirle utilizar algunas de sus funciones. Ayudan a autenticar a los usuarios y evitar el uso fraudulento de cuentas de usuario. Sin estas Cookies, no se pueden proporcionar los servicios que ha solicitado y solo utilizamos estas Cookies para brindarle esos servicios."
+          },
+          "functionality": {
+            "title": "Cookies de funcionalidad",
+            "type": "Tipo: Cookies persistentes",
+            "admin": "Administrado por: Nosotros",
+            "purpose": "Propósito: Estas cookies nos permiten recordar las elecciones que realiza cuando utiliza el sitio web, como recordar sus datos de inicio de sesión o su preferencia de idioma. El propósito de estas Cookies es brindarle una experiencia más personal y evitar que tenga que volver a ingresar sus preferencias cada vez que utiliza el sitio web."
+          },
+          "tracking": {
+            "title": "Cookies de seguimiento y rendimiento",
+            "type": "Tipo: Cookies persistentes",
+            "admin": "Administrado por: Terceros",
+            "purpose": "Propósito: Estas cookies se utilizan para rastrear información sobre el tráfico al sitio web y cómo los usuarios utilizan el sitio web. La información recopilada a través de estas Cookies puede identificarlo directa o indirectamente como visitante individual. Esto se debe a que la información recopilada generalmente está vinculada a un identificador seudónimo asociado con el dispositivo que utiliza para acceder al sitio web. También podemos utilizar estas Cookies para probar nuevos anuncios, páginas, características o nuevas funciones del sitio web para ver cómo reaccionan nuestros usuarios ante ellas."
+          }
+        }
+      },
+      "choices": {
+        "title": "3. Sus opciones con respecto a las cookies",
+        "content1": "Si prefiere evitar el uso de Cookies en el Sitio Web, primero deberá desactivar el uso de Cookies en su navegador y luego eliminar las Cookies guardadas en su navegador asociadas a este sitio web. Podrá utilizar esta opción para impedir el uso de Cookies en cualquier momento.",
+        "content2": "Si no acepta nuestras cookies, puede experimentar algunos inconvenientes en el uso del sitio web y es posible que algunas funciones no funcionen correctamente.",
+        "content3": "Para obtener más información sobre cómo administrar y eliminar Cookies, visite los documentos de soporte oficiales para su navegador web específico (Chrome, Safari, Firefox, Edge, etc.)."
+      },
+      "moreInfo": {
+        "title": "4. Más información sobre las cookies",
+        "content": "Puede obtener más información sobre las cookies: ¿Qué son las cookies?"
+      },
+      "contact": {
+        "title": "5. Contáctenos",
+        "description": "Si tiene alguna duda sobre esta Política de Cookies, puede contactar con nosotros:",
+        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+      }
+    }
+  },
+  "dmca": {
+    "title": "Política DMCA",
+    "subtitle": "Cumplimiento de la Ley de Derechos de Autor del Milenio Digital",
+    "intro": {
+      "title": "Introducción",
+      "text": "FairArena respeta los derechos de propiedad intelectual de otros y espera que nuestros usuarios hagan lo mismo. De acuerdo con la Ley de Derechos de Autor del Milenio Digital de 1998 (DMCA), responderemos rápidamente a los reclamos de infracción de derechos de autor cometidos utilizando nuestro servicio."
+    },
+    "notification": {
+      "title": "Presentar un aviso DMCA",
+      "text": "Si cree que el contenido de FairArena infringe sus derechos de autor, proporcione a nuestro agente de derechos de autor la siguiente información:",
+      "list": [
+        "Una firma física o electrónica del propietario de los derechos de autor o de la persona autorizada para actuar en su nombre.",
+        "Identificación de la obra protegida por derechos de autor que se alega ha sido infringida",
+        "Identificación del material que se alega infringe, con suficiente detalle para localizarlo en nuestro servicio.",
+        "Su información de contacto (dirección, número de teléfono y dirección de correo electrónico)",
+        "Una declaración de que usted cree de buena fe que el uso del material no está autorizado por el propietario de los derechos de autor.",
+        "Una declaración de que la información contenida en la notificación es exacta y, bajo pena de perjurio, de que usted está autorizado a actuar en nombre del propietario de los derechos de autor."
+      ]
+    },
+    "counter": {
+      "title": "Contranotificación",
+      "text": "Si cree que su contenido fue eliminado por error o identificación errónea, puede presentar una contranotificación a nuestro Agente de derechos de autor. La contranotificación deberá incluir:",
+      "list": [
+        "Tu firma física o electrónica",
+        "Identificación del material que ha sido removido y su ubicación antes de su remoción.",
+        "Una declaración bajo pena de perjurio de que usted cree de buena fe que el material fue eliminado por error.",
+        "Su nombre, dirección y número de teléfono",
+        "Una declaración de que usted acepta la jurisdicción del tribunal federal de su distrito."
+      ]
+    },
+    "repeat": {
+      "title": "Infractores reincidentes",
+      "text": "FairArena cancelará las cuentas de los usuarios que se determine que son infractores reincidentes. Nos reservamos el derecho de decidir si el contenido viola nuestras políticas por motivos distintos a la infracción de derechos de autor."
+    },
+    "contact": {
+      "title": "Contacto del agente de derechos de autor",
+      "text": "Todos los avisos y contranotificaciones de la DMCA deben enviarse a nuestro Agente de derechos de autor designado:",
+      "agentLabel": "Agente de derechos de autor",
+      "agentValue": "Equipo Legal de FairArena",
+      "emailLabel": "Correo electrónico",
+      "subjectLabel": "Línea de asunto",
+      "subjectValue": "Aviso DMCA o contraaviso DMCA",
+      "liability": "Tenga en cuenta que, según la Sección 512(f) de la DMCA, cualquier persona que, a sabiendas, tergiverse materialmente que el material o la actividad está infringiendo puede estar sujeta a responsabilidad."
+    },
+    "lastUpdated": "Última actualización: 24 de enero de 2026"
+  },
+  "maintenance": {
+    "title": "Sitio en mantenimiento",
+    "description": "Actualmente estamos realizando un mantenimiento programado para mejorar tu experiencia.",
+    "duration": {
+      "title": "Duración esperada",
+      "text": "Esperamos volver a estar en línea en breve. Gracias por tu paciencia."
+    },
+    "assistance": {
+      "title": "¿Necesita ayuda?",
+      "text": "Para asuntos urgentes, comuníquese con nuestro equipo de soporte.",
+      "button": "Contactar con soporte"
+    },
+    "checkStatus": "Verificar estado"
+  },
+  "ipBlocked": {
+    "title": "Acceso restringido",
+    "description": "Nuestro sistema de seguridad ha detectado actividad inusual en tu conexión.",
+    "flagsTitle": "Banderas de seguridad detectadas",
+    "resolution": {
+      "title": "Cómo resolver esto",
+      "steps": [
+        "Deshabilite VPN o proxy si está activo",
+        "Evite el uso de Tor o navegadores anónimos",
+        "Asegúrese de que su navegador no esté marcado como herramienta de automatización",
+        "Intente utilizar una red residencial estándar",
+        "Borre la memoria caché y las cookies de su navegador"
+      ]
+    },
+    "retry": "Reintentar conexión",
+    "contact": "Contactar con soporte",
+    "footer": "Si cree que se trata de un error, comuníquese con nuestro equipo de soporte al",
+    "autoRetry": "Reintento automático de conexión..."
+  },
+  "banned": {
+    "title": "Cuenta suspendida",
+    "description": "Su cuenta ha sido suspendida debido a una violación de nuestros términos de servicio o pautas comunitarias.",
+    "reason": "Motivo de la suspensión:",
+    "contact": "Si cree que se trata de un error, comuníquese con nuestro equipo de soporte.",
+    "signOut": "Desconectar"
+  },
+  "unsubscribe": {
+    "title": "Darse de baja del boletín",
+    "description": "Te extrañaremos, pero respetamos tu bandeja de entrada.",
+    "processing": "Procesando solicitud...",
+    "success": {
+      "title": "Cancelar suscripción",
+      "defaultMessage": "Se ha cancelado correctamente su suscripción a nuestro boletín."
+    },
+    "error": {
+      "title": "Error",
+      "defaultMessage": "Algo salió mal. Inténtelo de nuevo más tarde.",
+      "invalidEmail": "Dirección de correo electrónico no válida"
+    },
+    "returnHome": "Regreso a casa",
+    "rightsReserved": "Reservados todos los derechos."
+  },
+  "oauthError": {
+    "title": "Error de autorización",
+    "defaultDescription": "Se produjo un error durante el proceso de autorización.",
+    "fixTitle": "Cómo arreglar esto",
+    "technicalDetails": "Detalles técnicos",
+    "tryAgain": "Intentar otra vez",
+    "goHome": "Ir a casa",
+    "securedBy": "Asegurado por FairArena OAuth",
+    "errors": {
+      "invalid_request": {
+        "title": "Solicitud no válida",
+        "description": "A la solicitud de autorización le faltan parámetros requeridos o contiene valores no válidos.",
+        "solutions": [
+          "Compruebe que la aplicación esté utilizando la URL de autorización correcta",
+          "Asegúrese de que todos los parámetros requeridos (client_id, redirigir_uri, alcance) estén incluidos",
+          "Verifique que el redireccionamiento_uri coincida exactamente con lo que se registró"
+        ]
+      },
+      "invalid_client": {
+        "title": "Cliente no válido",
+        "description": "La solicitud no pudo ser verificada o no está autorizado para realizar esta solicitud.",
+        "solutions": [
+          "Póngase en contacto con el desarrollador de la aplicación para verificar su configuración de OAuth.",
+          "Asegúrese de que la aplicación esté registrada en FairArena",
+          "Compruebe que el client_id sea correcto"
+        ]
+      },
+      "access_denied": {
+        "title": "Acceso denegado",
+        "description": "Usted negó la solicitud de autorización o la solicitud fue cancelada.",
+        "solutions": [
+          "Intente autorizar nuevamente si fue un error.",
+          "Póngase en contacto con el soporte de la aplicación si cree que se trata de un error."
+        ]
+      },
+      "invalid_scope": {
+        "title": "Alcance no válido",
+        "description": "La aplicación solicitó permisos que no están disponibles o no están permitidos.",
+        "solutions": [
+          "Póngase en contacto con el desarrollador de la aplicación sobre los permisos solicitados.",
+          "Es posible que la aplicación necesite actualizar su configuración OAuth."
+        ]
+      },
+      "server_error": {
+        "title": "Error del servidor",
+        "description": "Se produjo un error inesperado en nuestros servidores al procesar su solicitud.",
+        "solutions": [
+          "Vuelve a intentarlo en unos momentos.",
+          "Si el problema persiste, contacta con el soporte de FairArena.",
+          "Consulte nuestra página de estado para conocer cualquier incidente en curso."
+        ]
+      },
+      "temporarily_unavailable": {
+        "title": "Servicio no disponible temporalmente",
+        "description": "Nuestro servicio de autorización no está disponible temporalmente debido a mantenimiento o carga alta.",
+        "solutions": [
+          "Espera unos minutos y vuelve a intentarlo.",
+          "Consulte nuestra página de estado para obtener actualizaciones de mantenimiento."
+        ]
+      },
+      "expired": {
+        "title": "Solicitud caducada",
+        "description": "Esta solicitud de autorización ha caducado y ya no es válida.",
+        "solutions": [
+          "Regrese a la aplicación y comience el proceso de inicio de sesión nuevamente.",
+          "Las solicitudes de autorización caducan después de 10 minutos por seguridad"
+        ]
+      },
+      "already_used": {
+        "title": "Solicitud ya utilizada",
+        "description": "Esta solicitud de autorización ya se ha completado.",
+        "solutions": [
+          "Si necesita autorizar nuevamente, inicie un nuevo inicio de sesión desde la aplicación",
+          "Comprueba si ya tienes una sesión activa con la aplicación"
+        ]
+      }
     }
   }
 }
