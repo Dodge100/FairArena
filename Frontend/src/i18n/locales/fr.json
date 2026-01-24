@@ -185,14 +185,14 @@
       ]
     },
     "exceptions": {
-     "h1": "Exceptions Limitées",
-     "list": [
+      "h1": "Exceptions Limitées",
+      "list": [
         "Paiements en double ou accidentels",
         "Complications liées aux services tiers",
         "Périodes prolongées depuis l'achat",
         "Indisponibilité complète et prolongée de la plateforme dépassant trente (30) jours consécutifs",
         "Compromis de sécurité critique affectant directement les systèmes de traitement des paiements"
-     ]
+      ]
     },
     "contact": {
       "title": "Soumission de Demande de Remboursement",
@@ -1204,5 +1204,25 @@
         "a": "Niveau gratuit : 48 heures, Pro : 24 heures, Entreprise : 4 heures (support prioritaire). Les problèmes critiques sont immédiatement escaladés pour tous les plans payants."
       }
     ]
+  },
+  "pricing": {
+    "title": "Choisissez votre forfait",
+    "subtitle": "Sélectionnez le plan parfait pour vos besoins de hackathon",
+    "disabled": "Les paiements sont actuellement désactivés. Veuillez contacter le support pour obtenir de l'aide.",
+    "popular": "Les plus populaires",
+    "custom": "Coutume",
+    "oneTime": "paiement unique",
+    "buttons": {
+      "processing": "Traitement...",
+      "disabled": "Paiements désactivés",
+      "contactSales": "Contacter le service commercial",
+      "purchase": "Achetez maintenant"
+    },
+    "creditsInfo": "Comprend {{count}} crédit(s) de hackathon (1 crédit = 1 membre)",
+    "help": {
+      "text": "Besoin d'aide pour choisir ?",
+      "link": "Contactez notre équipe"
+    },
+    "empty": "Aucun plan tarifaire disponible pour le moment."
   }
 }

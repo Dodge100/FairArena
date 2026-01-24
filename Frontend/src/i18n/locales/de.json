@@ -185,14 +185,14 @@
       ]
     },
     "exceptions": {
-     "h1": "Begrenzte Ausnahmen",
-     "list": [
+      "h1": "Begrenzte Ausnahmen",
+      "list": [
         "Doppelte oder versehentliche Zahlungen",
         "Komplikationen mit Drittanbieterdiensten",
         "Längere Zeiträume seit dem Kauf",
         "Vollständige und dauerhafte Nichtverfügbarkeit der Plattform von mehr als dreißig (30) aufeinanderfolgenden Tagen",
         "Kritische Sicherheitsverletzung, die sich direkt auf Zahlungsabwicklungssysteme auswirkt"
-     ]
+      ]
     },
     "contact": {
       "title": "Einreichung eines Rückerstattungsantrags",
@@ -1071,5 +1071,158 @@
       "liability": "Please note that under Section 512(f) of the DMCA, any person who knowingly materially misrepresents that material or activity is infringing may be subject to liability."
     },
     "lastUpdated": "Last updated: January 24, 2026"
+  },
+  "faq": {
+    "title": "FAQ",
+    "subtitle": "Finden Sie Antworten auf häufig gestellte Fragen zu FairArena",
+    "searchPlaceholder": "Suchfragen...",
+    "categories": {
+      "all": "Alle",
+      "general": "Allgemein",
+      "gettingStarted": "Erste Schritte",
+      "features": "Merkmale",
+      "security": "Sicherheit und Datenschutz",
+      "pricing": "Preise und Abrechnung",
+      "technical": "Technisch",
+      "support": "Unterstützung"
+    },
+    "noResults": "Es wurden keine Fragen gefunden, die Ihrer Suche entsprechen.",
+    "contact": {
+      "title": "Sie haben noch Fragen?",
+      "subtitle": "Sie können die Antwort, die Sie suchen, nicht finden? Unser Support-Team ist für Sie da.",
+      "button": "Kontaktieren Sie den Support"
+    },
+    "items": [
+      {
+        "category": "allgemein",
+        "q": "Was ist FairArena?",
+        "a": "FairArena ist eine KI-gestützte Hackathon-Managementplattform, die Organisatoren bei der Durchführung fairer, transparenter und effizienter Hackathons unterstützt. Wir bieten Echtzeit-Bestenlisten, automatisierte Bewertungsabläufe, KI-Projektanalysen und umfassende Analysen."
+      },
+      {
+        "category": "allgemein",
+        "q": "Wer kann FairArena nutzen?",
+        "a": "FairArena richtet sich an Hackathon-Organisatoren, Juroren und Teilnehmer. Organisatoren nutzen unsere Plattform zur Verwaltung von Veranstaltungen, Juroren nutzen sie zur effizienten Bewertung von Projekten und Teilnehmer können ihre Platzierungen in Echtzeit verfolgen."
+      },
+      {
+        "category": "allgemein",
+        "q": "Ist FairArena kostenlos?",
+        "a": "Wir bieten verschiedene Preisstufen an. Juroren und Teilnehmer nutzen die Plattform stets kostenlos. Organisatoren können je nach Größe und Bedarf ihrer Veranstaltung zwischen unseren kostenlosen, Pro- oder Enterprise-Plänen wählen. Weitere Informationen finden Sie auf unserer Preisseite."
+      },
+      {
+        "category": "Erste Schritte",
+        "q": "Wie erstelle ich ein Konto?",
+        "a": "Klicken Sie oben rechts auf die Schaltfläche „Anmelden“. Sie können sich mit Ihrer E-Mail-Adresse anmelden oder für eine schnelle Registrierung OAuth-Anbieter wie GitHub, Google, Atlassian, Figma, Vercel oder Zoom nutzen."
+      },
+      {
+        "category": "Erste Schritte",
+        "q": "Wie organisiere ich meinen ersten Hackathon?",
+        "a": "Gehen Sie nach der Anmeldung zu Ihrem Dashboard und klicken Sie auf „Hackathon erstellen“. Geben Sie die Veranstaltungsdetails ein, fügen Sie Juroren hinzu, konfigurieren Sie Bewertungskriterien und laden Sie Teilnehmer ein. Unser Schritt-für-Schritt-Assistent führt Sie durch den Prozess."
+      },
+      {
+        "category": "Erste Schritte",
+        "q": "Kann ich Teilnehmer aus einer CSV-Datei importieren?",
+        "a": "Ja! Navigieren Sie in Ihrem Hackathon-Dashboard zum Abschnitt „Teilnehmer“ und verwenden Sie die Funktion „CSV importieren“. Stellen Sie sicher, dass Ihre CSV-Datei erforderliche Felder wie Name, E-Mail-Adresse und Teaminformationen enthält."
+      },
+      {
+        "category": "Merkmale",
+        "q": "Was ist KI-gestützte Projektanalyse?",
+        "a": "Unsere KI analysiert eingereichte Projekte auf Leistung, SEO, UI/UX, Zugänglichkeit, Codequalität und Einzigartigkeit. Es liefert detaillierte Berichte und Vorschläge, hilft den Richtern, fundierte Entscheidungen zu treffen und gibt den Teilnehmern wertvolles Feedback."
+      },
+      {
+        "category": "Merkmale",
+        "q": "Wie funktioniert die Echtzeit-Bestenliste?",
+        "a": "Wenn die Juroren ihre Ergebnisse einreichen, berechnet unser System mithilfe der WebSocket-Technologie automatisch die Rangliste und aktualisiert die Bestenliste in Echtzeit. Die Teilnehmer können ihre Platzierungen sofort sehen, was ein ansprechendes und transparentes Erlebnis schafft."
+      },
+      {
+        "category": "Merkmale",
+        "q": "Kann ich Bewertungskriterien anpassen?",
+        "a": "Absolut! Sie können benutzerdefinierte Bewertungsrubriken mit gewichteten Kriterien erstellen, die auf Ihren Hackathon zugeschnitten sind. Definieren Sie Kategorien wie Innovation, technische Komplexität, Design und Wirkung mit benutzerdefinierten Gewichtungen."
+      },
+      {
+        "category": "Merkmale",
+        "q": "Unterstützt FairArena die Bewertung in mehreren Runden?",
+        "a": "Ja! Sie können mehrere Bewertungsrunden (z. B. Vorrunde, Halbfinale, Finale) mit unterschiedlichen Jurygremien und Kriterien für jede Runde konfigurieren. Das System rückt Teams basierend auf Ihrer Konfiguration automatisch weiter."
+      },
+      {
+        "category": "Sicherheit",
+        "q": "Wie sicher sind meine Daten?",
+        "a": "Wir nehmen Sicherheit ernst. Alle Daten werden während der Übertragung (TLS) und im Ruhezustand verschlüsselt. Wir implementieren CSRF-Schutz, Ratenbegrenzung und befolgen die Best Practices für die OWASP-Sicherheit. Wir sind SOC 2 Typ II konform."
+      },
+      {
+        "category": "Sicherheit",
+        "q": "Unterstützen Sie Enterprise SSO?",
+        "a": "Ja! Unternehmenspläne umfassen Single Sign-On (SSO) mit SAML 2.0-Unterstützung. Sie können die Domänenüberprüfung konfigurieren und SSO für Ihre Organisationsmitglieder erzwingen."
+      },
+      {
+        "category": "Sicherheit",
+        "q": "Wo werden meine Daten gespeichert?",
+        "a": "Die Daten werden in einer sicheren Cloud-Infrastruktur mit automatischen Backups gespeichert. Wir verwenden branchenübliche Datenbanken mit Verschlüsselung und befolgen DSGVO, CCPA und andere Datenschutzbestimmungen."
+      },
+      {
+        "category": "Preisgestaltung",
+        "q": "Welche Zahlungsmethoden akzeptieren Sie?",
+        "a": "Wir akzeptieren alle gängigen Kreditkarten (Visa, Mastercard, American Express, Discover) und unterstützen internationale Zahlungen. Unternehmenskunden können auch per Rechnung bezahlen."
+      },
+      {
+        "category": "Preisgestaltung",
+        "q": "Kann ich mein Abonnement jederzeit kündigen?",
+        "a": "Ja, Sie können Ihr Abonnement jederzeit über Ihre Kontoeinstellungen kündigen. Ihr Zugriff bleibt bis zum Ende Ihres aktuellen Abrechnungszeitraums bestehen. Es fallen keine Stornogebühren an."
+      },
+      {
+        "category": "Preisgestaltung",
+        "q": "Bieten Sie Rückerstattungen an?",
+        "a": "Wir bieten eine 14-tägige Geld-zurück-Garantie für alle kostenpflichtigen Pläne. Wenn Sie nicht zufrieden sind, wenden Sie sich innerhalb von 14 Tagen nach dem Kauf an unser Support-Team, um eine vollständige Rückerstattung zu erhalten. Einzelheiten finden Sie in unseren Rückerstattungsrichtlinien."
+      },
+      {
+        "category": "technisch",
+        "q": "Welche Browser werden unterstützt?",
+        "a": "FairArena funktioniert am besten mit modernen Browsern, einschließlich Chrome, Firefox, Safari und Edge (neueste 2 Versionen). Wir unterstützen auch mobile Browser für den Zugriff von unterwegs."
+      },
+      {
+        "category": "technisch",
+        "q": "Ist eine API verfügbar?",
+        "a": "Ja! Wir bieten eine umfassende REST-API und OAuth 2.0-Unterstützung für Integrationen. Enterprise-Pläne beinhalten höhere Ratenlimits und dedizierte API-Unterstützung. Weitere Informationen finden Sie in unserer API-Dokumentation."
+      },
+      {
+        "category": "technisch",
+        "q": "Haben Sie eine mobile App?",
+        "a": "Derzeit bieten wir eine vollständig responsive Webanwendung an, die hervorragend auf Mobilgeräten funktioniert. Native iOS- und Android-Apps stehen auf unserer Roadmap für 2026."
+      },
+      {
+        "category": "Unterstützung",
+        "q": "Wie kann ich Hilfe bekommen?",
+        "a": "Sie erreichen unser Support-Team per E-Mail unter fairarena.contact@gmail.com, über die Support-Seite oder über den In-App-Chat. Unternehmenskunden erhalten vorrangigen Support durch engagierte Account Manager."
+      },
+      {
+        "category": "Unterstützung",
+        "q": "Bieten Sie Schulungen oder Onboarding an?",
+        "a": "Ja! Wir bieten umfassende Dokumentation, Video-Tutorials und Live-Onboarding-Sitzungen für Pro- und Enterprise-Kunden. Wir bieten auch maßgeschneiderte Schulungen für große Organisationen an."
+      },
+      {
+        "category": "Unterstützung",
+        "q": "Was ist Ihre durchschnittliche Antwortzeit?",
+        "a": "Kostenloses Kontingent: 48 Stunden, Pro: 24 Stunden, Enterprise: 4 Stunden (Prioritätssupport). Kritische Probleme werden bei allen kostenpflichtigen Plänen sofort eskaliert."
+      }
+    ]
+  },
+  "pricing": {
+    "title": "Wählen Sie Ihren Plan",
+    "subtitle": "Wählen Sie den perfekten Plan für Ihre Hackathon-Anforderungen",
+    "disabled": "Zahlungen sind derzeit deaktiviert. Bitte wenden Sie sich an den Support, um Hilfe zu erhalten.",
+    "popular": "Am beliebtesten",
+    "custom": "Brauch",
+    "oneTime": "einmalige Zahlung",
+    "buttons": {
+      "processing": "Verarbeitung...",
+      "disabled": "Zahlungen deaktiviert",
+      "contactSales": "Kontaktieren Sie den Vertrieb",
+      "purchase": "Jetzt kaufen"
+    },
+    "creditsInfo": "Beinhaltet {{count}} Hackathon-Credit(s) (1 Credit = 1 Mitglied)",
+    "help": {
+      "text": "Brauchen Sie Hilfe bei der Auswahl?",
+      "link": "Kontaktieren Sie unser Team"
+    },
+    "empty": "Derzeit sind keine Preispläne verfügbar."
   }
 }
