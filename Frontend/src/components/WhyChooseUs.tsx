@@ -2,7 +2,7 @@ import { BarChart3, Lightbulb, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
-import BenefitCard from './BenefitCard'; // ⬅️ IMPORTED
+import BenefitCard from './BenefitCard';
 import { DataSaverImage } from './ui/DataSaverImage';
 
 function WhyChooseUs() {

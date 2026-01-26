@@ -90,6 +90,8 @@ function Footer() {
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
             {[
+              { label: t('footer.resources.items.docs'), path: 'https://docs.fair.sakshamg.me/', external: true },
+              { label: t('footer.resources.items.blog'), path: 'https://blogs.fair.sakshamg.me/', external: true },
               { label: t('footer.resources.items.accessibility'), path: 'accessibility' },
               { label: t('footer.resources.items.communityGuidelines'), path: 'community-guidelines' },
               { label: t('footer.resources.items.securityPolicy'), path: 'security-policy' },
@@ -101,7 +103,13 @@ function Footer() {
                   ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
                 `}
               >
-                <Link to={`/${item.path}`}>{item.label}</Link>
+                {item.external ? (
+                  <a href={item.path} target="_blank" rel="noopener noreferrer">
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link to={`/${item.path}`}>{item.label}</Link>
+                )}
               </li>
             ))}
           </ul>

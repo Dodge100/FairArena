@@ -29,6 +29,8 @@
     "resources": {
       "title": "Resources",
       "items": {
+        "docs": "Docs",
+        "blog": "Blog",
         "accessibility": "Accessibility",
         "communityGuidelines": "Community Guidelines",
         "securityPolicy": "Security Policy"
