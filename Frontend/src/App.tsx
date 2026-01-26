@@ -75,6 +75,39 @@ function App() {
     initializeCsrfToken();
   }, [token]);
 
+  useEffect(() => {
+    // Security warning for console users
+    const titleStyle = [
+      'color: #ef4444',
+      'font-size: 60px',
+      'font-weight: bold',
+      'text-shadow: 2px 2px 0px #000',
+      'padding: 10px',
+    ].join(';');
+
+    const textStyle = [
+      'font-size: 18px',
+      'font-family: sans-serif',
+      'color: #605959ff',
+      'padding: 5px',
+      'line-height: 1.5',
+    ].join(';');
+
+    // Only clear if in production to avoid annoying devs
+    if (!import.meta.env.DEV) {
+      console.clear();
+    }
+
+    setTimeout(() => {
+      console.log('%cSTOP!', titleStyle);
+      console.log(
+        '%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a "hidden feature" or "hack", it is a scam and will give them access to your FairArena account.',
+        textStyle
+      );
+      console.log('%cSee https://en.wikipedia.org/wiki/Self-XSS for more information.', textStyle);
+    }, 1000);
+  }, []);
+
   // Handle hash routing for pricing modal
   useEffect(() => {
     const handleHashChange = () => {

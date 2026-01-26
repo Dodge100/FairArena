@@ -32,6 +32,30 @@ import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/v1/auth/csrf-token:
+ *   get:
+ *     summary: Get CSRF token
+ *     tags: [Authentication]
+ *     description: Retrieve a new CSRF token (automatically set in cookie and header)
+ *     responses:
+ *       200:
+ *         description: CSRF token set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
+router.get('/csrf-token', (req, res) => {
+  res.status(200).json({ success: true, message: 'CSRF token set' });
+});
+
 // Rate limiters for different endpoints
 const registerLimiter = createAuthRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -547,6 +571,106 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
 router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
 
 // ============================================================================
+// DEVICE CODE AUTHENTICATION ROUTES (RFC 8628)
+// ============================================================================
+
+/**
+ * @swagger
+ * /api/v1/auth/device/code:
+ *   post:
+ *     summary: Initiate device authorization flow
+ *     tags: [Authentication, Device]
+ *     security: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               clientId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Device code generated
+ */
+router.post('/device/code', initiateDeviceAuth);
+
+/**
+ * @swagger
+ * /api/v1/auth/device/token:
+ *   post:
+ *     summary: Poll for device access token
+ *     tags: [Authentication, Device]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [deviceCode]
+ *             properties:
+ *               deviceCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Access token returned
+ *       400:
+ *         description: Pending or invalid
+ */
+router.post('/device/token', pollDeviceToken);
+
+/**
+ * @swagger
+ * /api/v1/auth/device/verify:
+ *   post:
+ *     summary: Verify user code
+ *     tags: [Authentication, Device]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userCode]
+ *             properties:
+ *               userCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Code valid
+ */
+router.post('/device/verify', verifyDeviceUserCode);
+
+/**
+ * @swagger
+ * /api/v1/auth/device/approve:
+ *   post:
+ *     summary: Approve device authorization
+ *     tags: [Authentication, Device]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userCode, approve]
+ *             properties:
+ *               userCode:
+ *                 type: string
+ *               approve:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Approved or denied
+ */
+router.post('/device/approve', protectRoute, approveDeviceAuth);
+
+// ============================================================================
 // QR CODE AUTHENTICATION ROUTES
 // ============================================================================
 
@@ -739,6 +863,12 @@ router.post('/accounts/logout-all', logoutAllAccounts);
 router.post('/oauth/session', loginLimiter, exchangeOAuthTokenForSession);
 
 // OAuth Routes
+import {
+  approveDeviceAuth,
+  initiateDeviceAuth,
+  pollDeviceToken,
+  verifyDeviceUserCode,
+} from '../../controllers/v1/deviceAuthController.js';
 import {
   getAtlassianAuthUrl,
   getDiscordAuthUrl,

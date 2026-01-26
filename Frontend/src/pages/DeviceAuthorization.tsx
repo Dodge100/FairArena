@@ -134,7 +134,8 @@ export default function DeviceAuthorization() {
                         </div>
                         <CardTitle className="text-center">Device Authorization</CardTitle>
                         <CardDescription className="text-center">
-                            Enter the code displayed on your device to authorize access
+                            Enter the code displayed on your device to authorize access.{'\n'}
+                            Codes expire in 10 minutes.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">

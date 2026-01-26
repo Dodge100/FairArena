@@ -54,4 +54,6 @@ export const REDIS_KEYS = {
   USER_RECENT_ACTIVITY_CACHE: 'user:recent:activity:',
   QR_AUTH_SESSION: 'qr:auth:session:',
   QR_AUTH_RATE_LIMIT: 'qr:auth:ratelimit:',
+  DEVICE_AUTH_CODE: 'device:auth:code:',
+  DEVICE_AUTH_USER: 'device:auth:user:',
 } as const;

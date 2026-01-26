@@ -288,7 +288,7 @@ export const ENV = {
   OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PRIVATE_KEY', ''),
   OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY: getEnv('OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY', ''),
   // Device Authorization Flow (RFC 8628)
-  OAUTH_DEVICE_CODE_EXPIRY: parseInt(getEnv('OAUTH_DEVICE_CODE_EXPIRY', '1800')), // 30 minutes in seconds
+  OAUTH_DEVICE_CODE_EXPIRY: parseInt(getEnv('OAUTH_DEVICE_CODE_EXPIRY', '600')), // 10 minutes in seconds
   OAUTH_DEVICE_POLL_INTERVAL: parseInt(getEnv('OAUTH_DEVICE_POLL_INTERVAL', '5')), // 5 seconds
   // Security Configuration
   CSRF_SECRET: getEnv('CSRF_SECRET'),
