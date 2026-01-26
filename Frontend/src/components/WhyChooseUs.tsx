@@ -85,7 +85,7 @@ function WhyChooseUs() {
       </div>
 
       <Link to="/why-choose-us">
-        <button className="mt-10 px-8 py-4 rounded-full bg-lime-300 text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.4)] transition-all duration-300 hover:scale-105">
+        <button className="mt-10 px-8 py-4 rounded-full bg-lime-300 text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(190,242,100,0.4)] transition-all duration-300 hover:scale-105">
           {t('home.whyChooseUs.cta')}
         </button>
       </Link>
