@@ -36,7 +36,7 @@ function WhyChooseUs() {
       {/* Heading */}
       <h2
         className={`
-          text-xl md:text-sm font-semibold px-6 py-1 h-15 rounded-full flex items-center overflow-hidden
+          text-sm md:text-xl font-semibold px-6 py-1 h-16 rounded-full flex items-center overflow-hidden
           ${isDark ? 'bg-neutral-900 text-[#d9ff00] border border-neutral-800' : 'bg-neutral-100 text-neutral-800 border border-neutral-200'}
         `}
       >
@@ -44,9 +44,9 @@ function WhyChooseUs() {
         <DataSaverImage
           src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
           alt="FairArena Logo"
-          className="md:w-20 w-20 h-auto object-contain ml-2"
+          className="w-20 h-auto object-contain ml-2"
           fallback={
-            <div className="md:w-20 w-20 h-8 bg-primary/10 rounded flex items-center justify-center ml-2">
+            <div className="w-20 h-8 bg-primary/10 rounded flex items-center justify-center ml-2">
               <span className="text-sm font-bold text-primary">FA</span>
             </div>
           }
@@ -85,7 +85,7 @@ function WhyChooseUs() {
       </div>
 
       <Link to="/why-choose-us">
-        <button className="mt-10 px-8 py-4 rounded-full bg-[#d9ff00] text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.4)] transition-all duration-300 hover:scale-105">
+        <button className="mt-10 px-8 py-4 rounded-full bg-lime-300 text-black font-semibold text-lg hover:shadow-[0_0_20px_rgba(190,242,100,0.4)] transition-all duration-300 hover:scale-105">
           {t('home.whyChooseUs.cta')}
         </button>
       </Link>
