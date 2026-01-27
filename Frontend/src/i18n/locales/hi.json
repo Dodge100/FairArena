@@ -31,7 +31,9 @@
       "items": {
         "accessibility": "पहुंच",
         "communityGuidelines": "सामुदायिक दिशानिर्देश",
-        "securityPolicy": "सुरक्षा नीति"
+        "securityPolicy": "सुरक्षा नीति",
+        "docs": "डॉक्स",
+        "blog": "ब्लॉग"
       }
     },
     "contact": {
