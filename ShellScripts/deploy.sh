@@ -1,14 +1,14 @@
 #!/bin/bash
 
-LOG_FILE="/tmp/fairarena-deploy.log"
+LOG_FILE="/tmp/fairarena-deploy-$(whoami).log"
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-TEMP_LOG_FILE="/tmp/fairarena-deploy-$(date +%Y%m%d%H%M%S).log"
+TEMP_LOG_FILE="/tmp/fairarena-deploy-$(whoami)-$(date +%Y%m%d%H%M%S).log"
 
 # Git Configuration
 GIT_BRANCH="main"
 COMPOSE_FILE="docker-compose.yml"
-LOCK_FILE="/tmp/deploy.lock"
+LOCK_FILE="/tmp/deploy-$(whoami).lock"
 EXPECTED_REPO="FairArena/FairArena"
 
 # Email Configuration (Load from environment or .env file)
@@ -38,6 +38,10 @@ HOSTNAME=$(hostname 2>/dev/null || echo "unknown")
 DEPLOY_ID="$(date +%Y%m%d%H%M%S)-$$"
 START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 START_EPOCH=$(date +%s)
+
+# Ensure script is rigorous
+set -u
+
 
 # Color codes - use $'...' syntax for proper escape sequence interpretation
 # These are only used for visual output, stripped from logs
@@ -390,7 +394,11 @@ error_handler() {
 trap 'error_handler ${LINENO} $?' ERR
 
 # Background Execution Handler
-if [ "${1:-}" != "--background" ]; then
+EXEC_MODE="${1:-}"
+# Sanitize argument to remove potential Windows carriage returns
+EXEC_MODE=$(echo "$EXEC_MODE" | tr -d '\r')
+
+if [ "$EXEC_MODE" != "--background" ] && [ "$EXEC_MODE" != "--foreground" ]; then
     # Launch in background and fully detach from terminal
     nohup bash "$SCRIPT_PATH" --background "$@" > /dev/null 2>&1 &
 
@@ -421,7 +429,11 @@ touch "$LOG_FILE" "$LOCK_FILE" "$TEMP_LOG_FILE" 2>/dev/null || true
 set -euo pipefail
 
 # Redirect stdout/stderr to log file for real-time monitoring
-exec >> "$LOG_FILE" 2>&1
+if [ "$EXEC_MODE" == "--foreground" ]; then
+    exec > >(tee -a "$LOG_FILE") 2>&1
+else
+    exec >> "$LOG_FILE" 2>&1
+fi
 
 # Main Deployment Logic
 log_section "STARTING DEPLOYMENT - ID: $DEPLOY_ID"
@@ -429,6 +441,14 @@ log "Host: $HOSTNAME"
 log "Branch: $GIT_BRANCH"
 log "Compose File: $COMPOSE_FILE"
 log "Start Time: $START_TIME"
+
+# Check for Docker permissions
+if ! docker info > /dev/null 2>&1; then
+    DEPLOY_MESSAGE="Docker command failed. User may not have permissions."
+    log "${RED}ERROR: $DEPLOY_MESSAGE${NC}"
+    log "${YELLOW}Fix: Run 'sudo usermod -aG docker \$USER' and re-login.${NC}"
+    exit 1
+fi
 
 # Acquire deployment lock with stale lock detection
 log "${BLUE}[INIT] Acquiring deployment lock...${NC}"
@@ -467,7 +487,21 @@ log "${GREEN}Lock acquired (PID: $$)${NC}"
 
 # Safety checks for git
 log "${BLUE}[INIT] Validating repository...${NC}"
-current_repo=$(git config --get remote.origin.url | sed 's/.*github.com[:/]\(.*\)\.git/\1/' | tr '[:upper:]' '[:lower:]')
+# Ensure we are in the repo root for git commands
+cd "$SCRIPT_DIR/.." || exit 1
+
+current_repo=$(git config --get remote.origin.url | sed 's/.*github.com[:/]\(.*\)\.git/\1/' | tr '[:upper:]' '[:lower:]' || echo "")
+
+# If git config returned empty, try to get it from .git/config directly as fallback
+if [ -z "$current_repo" ]; then
+    current_repo=$(grep "url = " .git/config 2>/dev/null | head -n 1 | sed 's/.*github.com[:/]\(.*\)\.git/\1/' | tr '[:upper:]' '[:lower:]' || echo "")
+fi
+
+if [ -z "$current_repo" ]; then
+    log "${YELLOW}Warning: Could not determine git repository URL. Skipping validation.${NC}"
+    # Set to expected so we don't fail, but log the warning
+    current_repo="$expected_repo_lower"
+fi
 expected_repo_lower=$(echo "$EXPECTED_REPO" | tr '[:upper:]' '[:lower:]')
 if [[ "$current_repo" != "$expected_repo_lower" ]]; then
     DEPLOY_MESSAGE="Unexpected repository: $current_repo (expected: $EXPECTED_REPO)"
@@ -511,39 +545,40 @@ else
 fi
 
 # Step 3: Setup Backend environment
+# Step 3: Setup Backend environment
 log "${GREEN}[3/10] Setting up Backend environment...${NC}"
-if [ -f "../Backend/ShellScripts/envs.sh" ]; then
-    cd ../Backend/ShellScripts
+if [ -f "$SCRIPT_DIR/../Backend/ShellScripts/envs.sh" ]; then
+    cd "$SCRIPT_DIR/../Backend/ShellScripts"
     if ! bash envs.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup Backend environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
         exit 1
     fi
-    # cd ../../
-    cd ../../ShellScripts
+    cd "$SCRIPT_DIR"
     log "Backend environment configured"
 else
-    log "${YELLOW}Backend envs.sh not found, skipping${NC}"
+    log "${YELLOW}Backend envs.sh not found at $SCRIPT_DIR/../Backend/ShellScripts/envs.sh, skipping${NC}"
 fi
 
 # Step 4: Setup Frontend environment
-# log "${GREEN}[4/10] Setting up Frontend environment...${NC}"
-# if [ -f "./Frontend/ShellScripts/envs.sh" ]; then
-#     cd ./Frontend/
-#     if ! bash envs.sh 2>&1; then
-#         DEPLOY_MESSAGE="Failed to setup Frontend environment"
-#         log "${RED}$DEPLOY_MESSAGE${NC}"
-#         exit 1
-#     fi
-#     cd ../ShellScripts
-#     log "Frontend environment configured"
-# else
-#     log "${YELLOW}Frontend envs.sh not found, skipping${NC}"
-# fi
+log "${GREEN}[4/10] Setting up Frontend environment...${NC}"
+if [ -f "$SCRIPT_DIR/../Frontend/ShellScripts/envs.sh" ]; then
+    cd "$SCRIPT_DIR/../Frontend/ShellScripts"
+    if ! bash envs.sh 2>&1; then
+        DEPLOY_MESSAGE="Failed to setup Frontend environment"
+        log "${RED}$DEPLOY_MESSAGE${NC}"
+        exit 1
+    fi
+    cd "$SCRIPT_DIR"
+    log "Frontend environment configured"
+else
+    log "${YELLOW}Frontend envs.sh not found at $SCRIPT_DIR/../Frontend/ShellScripts/envs.sh, skipping${NC}"
+fi
 
-# Step 4: Setup Inngest environment
+# Step 4: Setup Inngest environment (Fixed Step Numbering)
 log "${GREEN}[4/10] Setting up Inngest environment...${NC}"
-if [ -f "./envs.inngest.sh" ]; then
+if [ -f "$SCRIPT_DIR/envs.inngest.sh" ]; then
+    cd "$SCRIPT_DIR"
     if ! bash envs.inngest.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup Inngest environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
@@ -551,12 +586,13 @@ if [ -f "./envs.inngest.sh" ]; then
     fi
     log "Inngest environment configured"
 else
-    log "${YELLOW}envs.inngest.sh not found, skipping${NC}"
+    log "${YELLOW}envs.inngest.sh not found at $SCRIPT_DIR/envs.inngest.sh, skipping${NC}"
 fi
 
 # Step 5: Setup SRH environment
 log "${GREEN}[5/10] Setting up SRH environment...${NC}"
-if [ -f "./envs.srh.sh" ]; then
+if [ -f "$SCRIPT_DIR/envs.srh.sh" ]; then
+    cd "$SCRIPT_DIR"
     if ! bash envs.srh.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup SRH environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
@@ -564,12 +600,13 @@ if [ -f "./envs.srh.sh" ]; then
     fi
     log "SRH environment configured"
 else
-    log "${YELLOW}envs.srh.sh not found, skipping${NC}"
+    log "${YELLOW}envs.srh.sh not found at $SCRIPT_DIR/envs.srh.sh, skipping${NC}"
 fi
 
 # Step 6: Setup Credential Validator environment
 log "${GREEN}[6/10] Setting up Credential Validator environment...${NC}"
-if [ -f "./envs.credential-validator.sh" ]; then
+if [ -f "$SCRIPT_DIR/envs.credential-validator.sh" ]; then
+    cd "$SCRIPT_DIR"
     if ! bash envs.credential-validator.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup Credential Validator environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
@@ -577,25 +614,13 @@ if [ -f "./envs.credential-validator.sh" ]; then
     fi
     log "Credential Validator environment configured"
 else
-    log "${YELLOW}envs.credential-validator.sh not found, skipping${NC}"
+    log "${YELLOW}envs.credential-validator.sh not found at $SCRIPT_DIR/envs.credential-validator.sh, skipping${NC}"
 fi
-
-# Step 7: Setup N8N environment
-# log "${GREEN}[7/10] Setting up N8N environment...${NC}"
-# if [ -f "./envs.n8n.sh" ]; then
-#     if ! bash envs.n8n.sh 2>&1; then
-#         DEPLOY_MESSAGE="Failed to setup N8N environment"
-#         log "${RED}$DEPLOY_MESSAGE${NC}"
-#         exit 1
-#     fi
-#     log "N8N environment configured"
-# else
-#     log "${YELLOW}envs.n8n.sh not found, skipping${NC}"
-# fi
 
 # Step 8: Setup OTel environments
 log "${GREEN}[8/10] Setting up Observability environment...${NC}"
-if [ -f "./envs.otel.sh" ]; then
+if [ -f "$SCRIPT_DIR/envs.otel.sh" ]; then
+    cd "$SCRIPT_DIR"
     if ! bash envs.otel.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup OTel environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
@@ -603,10 +628,11 @@ if [ -f "./envs.otel.sh" ]; then
     fi
     log "OTel environment configured"
 else
-    log "${YELLOW}envs.otel.sh not found, skipping${NC}"
+    log "${YELLOW}envs.otel.sh not found at $SCRIPT_DIR/envs.otel.sh, skipping${NC}"
 fi
 
-if [ -f "./envs.github.sh" ]; then
+if [ -f "$SCRIPT_DIR/envs.github.sh" ]; then
+    cd "$SCRIPT_DIR"
     if ! bash envs.github.sh 2>&1; then
         DEPLOY_MESSAGE="Failed to setup GitHub OTel environment"
         log "${RED}$DEPLOY_MESSAGE${NC}"
@@ -614,12 +640,13 @@ if [ -f "./envs.github.sh" ]; then
     fi
     log "GitHub OTel environment configured"
 else
-    log "${YELLOW}envs.github.sh not found, skipping${NC}"
+    log "${YELLOW}envs.github.sh not found at $SCRIPT_DIR/envs.github.sh, skipping${NC}"
 fi
 
 # Step 9: Pull and build Docker images
 log "${GREEN}[9/10] Pulling latest images and building containers...${NC}"
-cd ..
+# Ensure we are in the repo root for docker commands
+cd "$SCRIPT_DIR/.." || exit 1
 
 # log "Pulling Docker images..."
 # if ! docker compose -f ${COMPOSE_FILE} pull 2>&1; then

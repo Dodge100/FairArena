@@ -25,4 +25,4 @@ jobs:
           script: |
             set -e
             cd /srv/fairarena/ShellScripts
-            bash deploy.sh ci
+            bash deploy.sh --foreground ci
