@@ -55,34 +55,34 @@
   },
   "home": {
     "hero": {
-      "badge": "FairArena v1.0 is now live",
-      "title_prefix": "The Platform for",
-      "title_highlight": "Fair Decisions",
-      "subtitle": "FairArena is the AI-powered hackathon platform for organizers, judges, and participants. We automate judging with analysis and real-time insights, ensuring fair evaluations for everyone.",
+      "badge": "✨ Now live — FairArena v1.0",
+      "title_prefix": "Run Hackathons",
+      "title_highlight": "That Actually Work",
+      "subtitle": "The complete operating system for modern hackathons. Launch event sites, manage submissions, automate judging, and showcase live leaderboards—all without touching a single spreadsheet.",
       "ctaPrimary": {
-        "getStarted": "Get Started",
+        "getStarted": "Start Free Trial",
         "joinWaitlist": "Join Waitlist",
         "dashboard": "Go to Dashboard"
       },
       "ctaSecondary": "Watch Demo",
-      "trustedBy": "Trusted by organizers worldwide"
+      "trustedBy": "Trusted by communities running 150+ hackathons worldwide"
     },
     "whyChooseUs": {
       "badge": "Why Choose FairArena",
-      "title": "Key Benefits Of Using FairArena",
+      "title": "Everything You Need to Run a World-Class Hackathon",
       "cta": "Read More",
       "cards": [
         {
-          "title": "AI-Powered Website Analysis",
-          "desc": "Get automated insights into each project: performance, UI/UX quality, SEO score, accessibility, code uniqueness, and improvement suggestions."
+          "title": "Detailed Tech Audits",
+          "desc": "Every submission gets an instant technical report covering performance, accessibility, SEO, and code quality—giving judges objective data alongside their subjective reviews."
         },
         {
-          "title": "Fair & Transparent Scoring",
-          "desc": "Judges score entries with predefined rubrics. All scores are logged, secure, and visible to organisers."
+          "title": "Fair, Weighted Scoring",
+          "desc": "Set custom criteria (e.g., Innovation 40%, Technical 30%, Design 30%). Judges score directly on the platform, and the system handles the math automatically."
         },
         {
-          "title": "One Dashboard for Entire Hackathon",
-          "desc": "Manage submissions, scores, judges, participants, prizes, winners, categories, and rounds all from one clean dashboard."
+          "title": "Live Command Center",
+          "desc": "Monitor submissions, track judging progress, and watch the leaderboard update in real-time. Manage everything from a single, intuitive dashboard."
         }
       ]
     },
@@ -93,38 +93,38 @@
       "items": [
         {
           "q": "What is FairArena?",
-          "a": "FairArena is an AI-powered hackathon management platform that helps organisers run events smoothly with automated scoring, live leaderboards, judge panels, AI website analysis, and complete event tracking."
+          "a": "FairArena is the complete operating system for hackathons. It combines registration, project submission, automated AI analysis, and real-time judging into one platform. Instead of juggling spreadsheets, forms, and Discord chats, organizers get a single command center to run professional, transparent events."
         },
         {
           "q": "Who can use FairArena?",
-          "a": "Organisers (paid), judges (free), and participants (free)."
+          "a": "Everyone involved in a hackathon! Organizers use it to manage the entire event lifecycle. Judges use it to evaluate projects with custom rubrics and AI insights. Participants use it to submit their work and track their standing on the real-time leaderboard."
         },
         {
           "q": "What does the AI analyzer check? ",
-          "a": "It checks performance, UI/UX, speed, SEO, accessibility, uniqueness, bugs, and generates improvement suggestions."
+          "a": "Our AI runs a comprehensive technical audit on every submission. It checks Lighthouse performance scores (speed, accessibility, SEO), analyzes code quality for best practices, and even detects potential plagiarism. This gives judges objective data to complement their subjective review."
         },
         {
           "q": "Can multiple judges score the same project?",
-          "a": "Yes. Scores from all judges are combined automatically."
+          "a": "Absolutely. FairArena is built for collaborative judging. You can assign multiple judges to a single project, and the system automatically calculates the final score based on your chosen method (average, weighted average, or sum). All scores are logged for transparency."
         },
         {
           "q": "Does FairArena support multi-round hackathons?",
-          "a": "Yes — preliminary, semi-final, and final rounds."
+          "a": "Yes, we support complex event structures. You can set up multiple rounds (e.g., Qualification, Semi-Finals, Finals), filter top teams for the next stage, and even change scoring criteria between rounds to reflect higher stakes."
         },
         {
           "q": "Is there a free version?",
-          "a": "Judges and participants always use FairArena for free During Hackathons. Organisers choose a paid plan."
+          "a": "Yes! FairArena is free for all judges and participants. For organizers, we offer a robust 'Starter' plan that lets you run small-to-medium hackathons at no cost. Larger events with advanced needs (SSO, custom branding, large participant caps) can upgrade to our Pro or Enterprise plans."
         },
         {
           "q": "Can organisers download reports?",
-          "a": "Yes — detailed score reports, analytics, and winner sheets."
+          "a": "Yes, complete data ownership is yours. You can export everything: raw submission data, individual judge scorecards, finalized rankings, and participant details. Reports are available in CSV and PDF formats, perfect for sponsor updates or post-event analysis."
         }
       ]
     },
     "newsletter": {
-      "title": "Stay Updated With FairArena",
-      "desc": "Subscribe to our newsletter and get updates about new features, upcoming hackathon tools, AI scoring upgrades, and more.",
-      "placeholder": "Enter your email",
+      "title": "Get Hackathon Tips & Product Updates",
+      "desc": "Get notified about new features, upcoming hackathons, and scoring tips. Unsubscribe at any time.",
+      "placeholder": "your@email.com",
       "button": "Subscribe",
       "subscribing": "Subscribing..."
     },

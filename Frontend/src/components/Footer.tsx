@@ -1,5 +1,5 @@
 import { useTheme } from '@/hooks/useTheme';
-import { Github, Linkedin } from 'lucide-react';
+import { Github, Instagram, Linkedin, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
 
@@ -35,7 +35,7 @@ function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-4 mt-5">
-            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
               <Github
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -43,8 +43,24 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
               <Linkedin
+                className={`
+                  w-5 h-5 cursor-pointer duration-200 hover:scale-110
+                  ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}
+                `}
+              />
+            </a>
+            <a href="https://www.instagram.com/fair.arena" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <Instagram
+                className={`
+                  w-5 h-5 cursor-pointer duration-200 hover:scale-110
+                  ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}
+                `}
+              />
+            </a>
+            <a href="https://x.com/real_fairarena" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+              <Twitter
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
                   ${isDark ? 'text-[#DDFF00]' : 'text-[#556000] hover:text-[#8aa300]'}

@@ -6,8 +6,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface FAQItem {
-    question: string;
-    answer: string;
+    q: string;
+    a: string;
     category: string;
 }
 
@@ -29,9 +29,11 @@ function FAQ() {
     }
 
     const filteredFAQs = faqData.filter((faq) => {
+        const question = faq.q || '';
+        const answer = faq.a || '';
         const matchesSearch =
-            faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+            question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            answer.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
@@ -203,7 +205,7 @@ function FAQ() {
                         ${isDark ? 'text-neutral-100' : 'text-neutral-900'}
                       `}
                                         >
-                                            {faq.question}
+                                            {faq.q}
                                         </h3>
                                     </div>
                                     <ChevronDown
@@ -230,7 +232,7 @@ function FAQ() {
                       ${isDark ? 'text-neutral-300' : 'text-neutral-700'}
                     `}
                                     >
-                                        {faq.answer}
+                                        {faq.a}
                                     </p>
                                 </motion.div>
                             </motion.div>

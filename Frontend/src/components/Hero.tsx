@@ -1,9 +1,4 @@
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from "@/components/ui/avatar";
-import { ArrowRight, Play, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -53,7 +48,6 @@ export default function Hero() {
                     </span>
                     <AnimatedShinyText className="inline-flex items-center justify-center transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
                         <span>{t('home.hero.badge')}</span>
-                        <ArrowRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
                     </AnimatedShinyText>
                 </motion.div>
 
@@ -96,22 +90,16 @@ export default function Hero() {
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         {!isSignedIn ? (
                             <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
-                                <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
+                                <button className="relative group overflow-hidden px-8 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
-                                    <div className="flex items-center gap-2 pr-6">
-                                        {isNewSignupEnabled ? t('home.hero.ctaPrimary.getStarted') : t('home.hero.ctaPrimary.joinWaitlist')}
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                    </div>
+                                    {isNewSignupEnabled ? t('home.hero.ctaPrimary.getStarted') : t('home.hero.ctaPrimary.joinWaitlist')}
                                 </button>
                             </Link>
                         ) : (
                             <Link to="/dashboard">
-                                <button className="relative group overflow-hidden pl-6 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
+                                <button className="relative group overflow-hidden px-8 h-14 rounded-full bg-[#d9ff00] text-neutral-950 font-semibold text-lg hover:shadow-[0_0_20px_rgba(217,255,0,0.5)] transition-all duration-300">
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shiny-text"></span>
-                                    <div className="flex items-center gap-2 pr-6">
-                                        {t('home.hero.ctaPrimary.dashboard')}
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                    </div>
+                                    {t('home.hero.ctaPrimary.dashboard')}
                                 </button>
                             </Link>
                         )}
@@ -122,7 +110,9 @@ export default function Hero() {
                                 ? "border-neutral-700 hover:bg-neutral-800 text-white"
                                 : "border-neutral-300 hover:bg-neutral-100 text-gray-900"
                         )}>
-                            <Play className="w-4 h-4 fill-current" />
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
                             {t('home.hero.ctaSecondary')}
                         </a>
                     </div>
@@ -133,65 +123,58 @@ export default function Hero() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 1, delay: 0.8 }}
-                    className="mt-20 flex flex-col items-center gap-4"
+                    className="mt-20 flex flex-col items-center gap-6"
                 >
-                    <div className="flex flex-row flex-wrap items-center gap-12">
-                        <div className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
-                            <Avatar>
-                                <AvatarImage src="https://github.com/saksham-goel1107.png" alt="Saksham-Goel1107" />
-                                <AvatarFallback>SG</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/fairarena.png"
-                                    alt="FairArena"
-                                />
-                                <AvatarFallback>FA</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/sachinpal11.png"
-                                    alt="@sachinpal11"
-                                />
-                                <AvatarFallback>SP</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/Harsh091234.png"
-                                    alt="@Harsh091234"
-                                />
-                                <AvatarFallback>HS</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/prabsingh005.png"
-                                    alt="@prabsingh005"
-                                />
-                                <AvatarFallback>PS</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/rohitshandilya01.png"
-                                    alt="@rohitshandilya01"
-                                />
-                                <AvatarFallback>RS</AvatarFallback>
-                            </Avatar>
-                            <Avatar>
-                                <AvatarImage
-                                    src="https://github.com/arsh118.png"
-                                    alt="@arsh118"
-                                />
-                                <AvatarFallback>AA</AvatarFallback>
-                            </Avatar>
+                    {/* Credible Proof Points - Features not fake numbers */}
+                    <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 max-w-4xl">
+                        <div className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-full border",
+                            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-neutral-50 border-neutral-200"
+                        )}>
+                            <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
+                            <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
+                                Multi-round judging
+                            </span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-full border",
+                            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-neutral-50 border-neutral-200"
+                        )}>
+                            <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
+                            <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
+                                Automated AI analysis
+                            </span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-full border",
+                            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-neutral-50 border-neutral-200"
+                        )}>
+                            <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
+                            <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
+                                Real-time leaderboards
+                            </span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-3 px-4 py-2 rounded-full border",
+                            isDark ? "bg-neutral-900/50 border-neutral-800" : "bg-neutral-50 border-neutral-200"
+                        )}>
+                            <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
+                            <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
+                                Custom rubrics
+                            </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Trust indicator */}
+                    <div className="flex items-center gap-3 mt-2">
                         <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((_, i) => (
-                                <Star key={i} className="w-4 h-4 fill-[#d9ff00] text-[#d9ff00]" />
+                                <Star key={i} className="w-5 h-5 fill-[#d9ff00] text-[#d9ff00]" />
                             ))}
                         </div>
-                        <p className={cn("text-sm", isDark ? "text-neutral-400" : "text-neutral-600")}>{t('home.hero.trustedBy')}</p>
+                        <p className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
+                            {t('home.hero.trustedBy')}
+                        </p>
                     </div>
                 </motion.div>
 
