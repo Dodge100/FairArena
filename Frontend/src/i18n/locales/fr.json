@@ -31,7 +31,9 @@
       "items": {
         "accessibility": "Accessibilité",
         "communityGuidelines": "Directives communautaires",
-        "securityPolicy": "Politique de sécurité"
+        "securityPolicy": "Politique de sécurité",
+        "docs": "Documents",
+        "blog": "Blogue"
       }
     },
     "contact": {
