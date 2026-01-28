@@ -133,7 +133,7 @@ export default function Hero() {
                         )}>
                             <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
                             <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
-                                Multi-round judging
+                                {t('home.hero.proofPoints.multiRound')}
                             </span>
                         </div>
                         <div className={cn(
@@ -142,7 +142,7 @@ export default function Hero() {
                         )}>
                             <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
                             <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
-                                Automated AI analysis
+                                {t('home.hero.proofPoints.aiAnalysis')}
                             </span>
                         </div>
                         <div className={cn(
@@ -151,7 +151,7 @@ export default function Hero() {
                         )}>
                             <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
                             <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
-                                Real-time leaderboards
+                                {t('home.hero.proofPoints.leaderboards')}
                             </span>
                         </div>
                         <div className={cn(
@@ -160,7 +160,7 @@ export default function Hero() {
                         )}>
                             <div className={cn("w-2 h-2 rounded-full bg-[#d9ff00]")} />
                             <span className={cn("text-sm font-medium", isDark ? "text-neutral-300" : "text-neutral-700")}>
-                                Custom rubrics
+                                {t('home.hero.proofPoints.rubrics')}
                             </span>
                         </div>
                     </div>

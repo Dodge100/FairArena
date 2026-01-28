@@ -13,7 +13,7 @@
   },
   "footer": {
     "brand": {
-      "desc": "Suivez-nous et ne manquez aucune mise à jour sur les dernières technologies, la productivité et la croissance numérique."
+      "desc": "Connectez-vous avec nous pour les dernières mises à jour de la plateforme, les conseils du hackathon et les faits saillants de la communauté."
     },
     "menu": {
       "items": {
@@ -21,7 +21,7 @@
         "whyChooseUs": "Pourquoi nous choisir",
         "changelog": "Journal des modifications",
         "pricing": "Tarification",
-        "status": "Statut",
+        "status": "État du système",
         "faq": "FAQ"
       },
       "title": "Menu"
@@ -37,13 +37,15 @@
       }
     },
     "contact": {
-      "location": "Delhi, Inde",
+      "location": "New Delhi, Inde",
       "title": "Contact",
-      "support": "Soutien"
+      "support": "Centre d'assistance",
+      "responseTime": "Moy. réponse : 24h",
+      "hours": "Du lundi au vendredi, de 9h à 18h IST"
     },
     "bottom": {
       "rights": "Tous droits réservés.",
-      "builtWith": "Construit avec ❤️ par l'équipe FairArena",
+      "builtWith": "Conçu pour les hackathons hautes performances.",
       "links": {
         "privacyPolicy": "Politique de confidentialité",
         "termsAndConditions": "Termes et conditions",
@@ -51,38 +53,52 @@
         "refund": "Remboursement",
         "dmca": "DMCA"
       }
+    },
+    "invite": {
+      "placeholder": "ami@email.com",
+      "desc": "Offrez à vos amis un accès anticipé et débloquez des fonctionnalités premium pour votre prochain événement.",
+      "trust": "Pas de spam. Nous ne partageons jamais d'e-mails.",
+      "loading": "Envoi...",
+      "title": "Invitez des amis et débloquez des avantages",
+      "button": "Envoyer une invitation"
     }
   },
   "home": {
     "hero": {
-      "badge": "FairArena v1.0 est maintenant en ligne",
-      "title_prefix": "La plateforme pour",
-      "title_highlight": "des décisions équitables",
-      "subtitle": "FairArena est la plateforme de hackathon alimentée par l'IA pour les organisateurs, les juges et les participants. Nous automatisons le jugement avec des analyses et des informations en temps réel, garantissant des évaluations équitables pour tous.",
+      "badge": "✨ Maintenant en ligne — FairArena v1.0",
+      "title_prefix": "Organisez des hackathons",
+      "title_highlight": "Cela fonctionne réellement",
+      "subtitle": "Le système d'exploitation complet pour les hackathons modernes. Lancez des sites d'événements, gérez les soumissions, automatisez les évaluations et présentez des classements en direct, le tout sans toucher à une seule feuille de calcul.",
       "ctaPrimary": {
-        "getStarted": "Commencer gratuitement",
+        "getStarted": "Commencer l'essai gratuit",
         "joinWaitlist": "Rejoindre la liste d'attente",
         "dashboard": "Aller au tableau de bord"
       },
       "ctaSecondary": "Voir la démo",
-      "trustedBy": "Approuvé par les organisateurs du monde entier"
+      "trustedBy": "Approuvé par les communautés qui organisent plus de 150 hackathons dans le monde",
+      "proofPoints": {
+        "leaderboards": "Classements en temps réel",
+        "aiAnalysis": "Analyse automatisée de l'IA",
+        "rubrics": "Rubriques personnalisées",
+        "multiRound": "Jugement à plusieurs tours"
+      }
     },
     "whyChooseUs": {
       "badge": "Pourquoi choisir FairArena",
-      "title": "Principaux avantages de l'utilisation de FairArena",
+      "title": "Tout ce dont vous avez besoin pour organiser un hackathon de classe mondiale",
       "cta": "En savoir plus",
       "cards": [
         {
-          "title": "Analyse de site Web alimentée par l'IA",
-          "desc": "Obtenez des informations automatisées sur chaque projet : performances, qualité UI/UX, score SEO, accessibilité, unicité du code et suggestions d'amélioration."
+          "title": "Audits techniques détaillés",
+          "desc": "Chaque soumission reçoit un rapport technique instantané couvrant les performances, l'accessibilité, le référencement et la qualité du code, fournissant aux juges des données objectives ainsi que leurs évaluations subjectives."
         },
         {
-          "title": "Notation équitable et transparente",
-          "desc": "Les juges notent les entrées avec des grilles prédéfinies. Tous les scores sont enregistrés, sécurisés et visibles par les organisateurs."
+          "title": "Notation équitable et pondérée",
+          "desc": "Définissez des critères personnalisés (par exemple, Innovation 40 %, Technique 30 %, Conception 30 %). Les juges notent directement sur la plateforme et le système gère automatiquement les calculs."
         },
         {
-          "title": "Un tableau de bord pour tout le hackathon",
-          "desc": "Gérez les soumissions, les scores, les juges, les participants, les prix, les gagnants, les catégories et les tours, le tout à partir d'un tableau de bord clair."
+          "title": "Centre de commande en direct",
+          "desc": "Surveillez les soumissions, suivez la progression du jugement et regardez la mise à jour du classement en temps réel. Gérez tout à partir d’un tableau de bord unique et intuitif."
         }
       ]
     },
@@ -93,38 +109,38 @@
       "items": [
         {
           "q": "Qu'est-ce que FairArena ?",
-          "a": "FairArena est une plateforme de gestion de hackathon alimentée par l'IA qui aide les organisateurs à gérer les événements en douceur grâce à la notation automatisée, aux classements en direct, aux jurys, à l'analyse de site Web par IA et au suivi complet des événements."
+          "a": "FairArena est le système d'exploitation complet pour les hackathons. Il combine l'inscription, la soumission de projets, l'analyse automatisée de l'IA et le jugement en temps réel sur une seule plateforme. Au lieu de jongler avec les feuilles de calcul, les formulaires et les discussions Discord, les organisateurs disposent d'un centre de commande unique pour organiser des événements professionnels et transparents."
         },
         {
           "q": "Qui peut utiliser FairArena ?",
-          "a": "Organisateurs (payant), juges (gratuit) et participants (gratuit)."
+          "a": "Tous impliqués dans un hackathon ! Les organisateurs l'utilisent pour gérer l'ensemble du cycle de vie de l'événement. Les juges l'utilisent pour évaluer des projets avec des rubriques personnalisées et des informations sur l'IA. Les participants l'utilisent pour soumettre leur travail et suivre leur position dans le classement en temps réel."
         },
         {
           "q": "Que vérifie l'analyseur d'IA ?",
-          "a": "Il vérifie les performances, l'UI/UX, la vitesse, le SEO, l'accessibilité, l'unicité, les bugs et génère des suggestions d'amélioration."
+          "a": "Notre IA effectue un audit technique complet sur chaque soumission. Il vérifie les scores de performances de Lighthouse (vitesse, accessibilité, référencement), analyse la qualité du code pour connaître les meilleures pratiques et détecte même le plagiat potentiel. Cela donne aux juges des données objectives pour compléter leur examen subjectif."
         },
         {
           "q": "Plusieurs juges peuvent-ils noter le même projet ?",
-          "a": "Oui. Les notes de tous les juges sont combinées automatiquement."
+          "a": "Absolument. FairArena est conçu pour le jugement collaboratif. Vous pouvez attribuer plusieurs juges à un seul projet et le système calcule automatiquement la note finale en fonction de la méthode choisie (moyenne, moyenne pondérée ou somme). Tous les scores sont enregistrés pour plus de transparence."
         },
         {
           "q": "FairArena prend-il en charge les hackathons à plusieurs tours ?",
-          "a": "Oui — tours préliminaires, demi-finales et finales."
+          "a": "Oui, nous prenons en charge les structures événementielles complexes. Vous pouvez configurer plusieurs tours (par exemple, qualification, demi-finales, finales), filtrer les meilleures équipes pour l'étape suivante et même modifier les critères de notation entre les tours pour refléter des enjeux plus élevés."
         },
         {
           "q": "Y a-t-il une version gratuite ?",
-          "a": "Les juges et les participants utilisent toujours FairArena gratuitement pendant les hackathons. Les organisateurs choisissent un plan payant."
+          "a": "Oui! FairArena est gratuit pour tous les juges et participants. Pour les organisateurs, nous proposons un plan « Starter » robuste qui vous permet d'organiser gratuitement des hackathons de petite et moyenne taille. Les événements plus importants ayant des besoins avancés (SSO, image de marque personnalisée, nombre de participants important) peuvent passer à nos forfaits Pro ou Entreprise."
         },
         {
           "q": "Les organisateurs peuvent-ils télécharger des rapports ?",
-          "a": "Oui — rapports de score détaillés, analyses et feuilles de gagnants."
+          "a": "Oui, la propriété totale des données vous appartient. Vous pouvez tout exporter : les données brutes de soumission, les cartes de pointage des juges individuels, les classements finalisés et les détails des participants. Les rapports sont disponibles aux formats CSV et PDF, parfaits pour les mises à jour des sponsors ou l'analyse post-événement."
         }
       ]
     },
     "newsletter": {
-      "title": "Restez à jour avec FairArena",
-      "desc": "Abonnez-vous à notre newsletter et recevez des mises à jour sur les nouvelles fonctionnalités, les outils de hackathon à venir, les mises à niveau de notation IA et plus encore.",
-      "placeholder": "Entrez votre e-mail",
+      "title": "Obtenez des conseils sur le hackathon et des mises à jour de produits",
+      "desc": "Soyez informé des nouvelles fonctionnalités, des hackathons à venir et des conseils de notation. Désabonnez-vous à tout moment.",
+      "placeholder": "votre@email.com",
       "button": "S'abonner",
       "subscribing": "Abonnement en cours..."
     },

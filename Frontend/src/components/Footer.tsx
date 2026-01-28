@@ -1,5 +1,5 @@
 import { useTheme } from '@/hooks/useTheme';
-import { Github, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Clock, Github, Instagram, Linkedin, MapPin, MessageCircle, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
 
@@ -35,7 +35,7 @@ function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-4 mt-5">
-            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
               <Github
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -43,7 +43,7 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
               <Linkedin
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -51,7 +51,7 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://www.instagram.com/fair.arena" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <a href="https://www.instagram.com/fair.arena" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
               <Instagram
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -59,7 +59,7 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://x.com/real_fairarena" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+            <a href="https://x.com/real_fairarena" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
               <Twitter
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -80,17 +80,23 @@ function Footer() {
               { label: t('footer.menu.items.changelog'), path: 'changelog' },
               { label: t('footer.menu.items.faq'), path: 'faq' },
               { label: t('footer.menu.items.pricing'), path: '#pricing', hash: true },
-              { label: t('footer.menu.items.status'), path: 'status' },
+              { label: t('footer.menu.items.status'), path: 'https://status.fairarena.sakshamg.me', badge: true },
             ].map((item) => (
               <li
                 key={item.path}
                 className={`
-                    cursor-pointer
+                    cursor-pointer flex items-center gap-2
                     ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
                   `}
               >
-                {item.hash ? (
-                  <a href={item.path}>{item.label}</a>
+                {item.badge && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                )}
+                {item.hash || item.path.startsWith('http') ? (
+                  <a href={item.path} target={item.path.startsWith('http') ? '_blank' : undefined} rel={item.path.startsWith('http') ? 'noopener noreferrer' : undefined}>{item.label}</a>
                 ) : (
                   <Link to={`/${item.path}`}>{item.label}</Link>
                 )}
@@ -136,37 +142,35 @@ function Footer() {
           <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
             {t('footer.contact.title')}
           </h3>
-          <ul className="mt-4 space-y-2 text-sm">
-            <li>
-              <Link
-                to="/support"
-                className={`
-                  cursor-pointer
-                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-                `}
-              >
-                {t('footer.contact.support')}
-              </Link>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li className="flex gap-2">
+              <MessageCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <Link
+                  to="/support"
+                  className={`
+                    block font-medium cursor-pointer
+                    ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
+                    `}
+                >
+                  {t('footer.contact.support')}
+                </Link>
+                <div className={`text-xs mt-0.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                  {t('footer.contact.responseTime')}
+                </div>
+              </div>
             </li>
-            <li>
-              <a
-                href="mailto:fairarena.contact@gmail.com"
-                rel="noopener noreferrer"
-                className={`
-                  cursor-pointer
-                  ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-                `}
-              >
-                fairarena.contact@gmail.com
-              </a>
+            <li className="flex gap-2">
+              <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
+                {t('footer.contact.hours')}
+              </span>
             </li>
-            <li
-              className={`
-                cursor-pointer
-                ${isDark ? 'hover:text-[#DDFF00]' : 'hover:text-[#556000]'}
-              `}
-            >
-              {t('footer.contact.location')}
+            <li className="flex gap-2">
+              <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
+                {t('footer.contact.location')}
+              </span>
             </li>
           </ul>
         </div>
@@ -188,13 +192,13 @@ function Footer() {
           © {new Date().getFullYear()} FairArena. {t('footer.bottom.rights')}
         </p>
 
-        <div className="flex gap-6">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
           {[
             { key: 'privacy-policy', label: t('footer.bottom.links.privacyPolicy') },
             { key: 'terms-and-conditions', label: t('footer.bottom.links.termsAndConditions') },
             { key: 'cookie-policy', label: t('footer.bottom.links.cookiePolicy') },
             { key: 'refund', label: t('footer.bottom.links.refund') },
-            { key: 'dmca', label: t('footer.bottom.links.dmca') }
+            { key: 'dmca', label: t('footer.bottom.links.dmca') },
           ].map((item) => (
             <p
               key={item.key}

@@ -1,11 +1,14 @@
 import json
 import os
 import time
+import hashlib
+import subprocess
 from deep_translator import GoogleTranslator
 
 # Configuration
 SOURCE_FILE = 'Frontend/src/i18n/locales/en.json'
 LOCALES_DIR = 'Frontend/src/i18n/locales'
+HASHES_FILE = os.path.join(LOCALES_DIR, 'source_hashes.json')
 TARGET_LANGS = ['fr', 'es', 'de', 'hi']
 BATCH_SIZE = 50
 
@@ -32,46 +35,56 @@ def save_json(path, data):
         json.dump(data, f, indent=2, ensure_ascii=False)
         f.write('\n')
 
-def extract_missing_keys(source, target, prefix=''):
+def flatten_data(data, prefix=''):
     """
-    Recursively find keys present in source but missing in target.
-    Returns a list of tuples: (dot_notation_key, text_to_translate)
+    Flattens a dictionary/list into a single dict of dot-notation keys.
+    Compatible with set_nested_value format.
     """
-    missing = []
-
-    if isinstance(source, dict):
-        target_dict = target if isinstance(target, dict) else {}
-
-        for key, value in source.items():
+    flat = {}
+    if isinstance(data, dict):
+        for key, value in data.items():
             full_key = f"{prefix}.{key}" if prefix else key
-
-            if key not in target_dict:
-                if isinstance(value, (dict, list)):
-                    missing.extend(extract_missing_keys(value, {}, full_key))
-                else:
-                    missing.append((full_key, str(value)))
+            if isinstance(value, (dict, list)):
+                flat.update(flatten_data(value, full_key))
             else:
-                missing.extend(extract_missing_keys(value, target_dict[key], full_key))
-
-    elif isinstance(source, list):
-        target_list = target if isinstance(target, list) else []
-
-        for i, item in enumerate(source):
+                flat[full_key] = str(value)
+    elif isinstance(data, list):
+        for i, item in enumerate(data):
             full_key = f"{prefix}[{i}]"
-
-            if i >= len(target_list):
-                 if isinstance(item, (dict, list)):
-                    missing.extend(extract_missing_keys(item, {}, full_key))
-                 else:
-                    missing.append((full_key, str(item)))
+            if isinstance(item, (dict, list)):
+                flat.update(flatten_data(item, full_key))
             else:
-                missing.extend(extract_missing_keys(item, target_list[i], full_key))
-
+                flat[full_key] = str(item)
     else:
-        # Scalar value not in list/dict handled by parent calls
-        pass
+        # Should be covered by parents, but for safety
+        flat[prefix] = str(data)
+    return flat
 
-    return missing
+def get_hashes(flat_data):
+    """
+    Returns a dict of key -> md5 hash of value.
+    """
+    hashes = {}
+    for k, v in flat_data.items():
+        hashes[k] = hashlib.md5(v.encode('utf-8')).hexdigest()
+    return hashes
+
+def get_git_old_content(path, revision='HEAD~1'):
+    """
+    Tries to fetch the content of the file from a previous git revision.
+    """
+    # Convert path to posix for git if needed (Windows accepts / too)
+    git_path = path.replace('\\', '/')
+    cmd = ['git', 'show', f'{revision}:{git_path}']
+    try:
+        # Run command gracefully
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+    except Exception as e:
+        # Don't crash if git is missing or fails
+        print(f"  [Info] Git fallback failed (this is normal if no git history): {e}")
+    return None
 
 def set_nested_value(data, key_path, value):
     """
@@ -104,7 +117,6 @@ def set_nested_value(data, key_path, value):
                 current.append({})
 
             # Type check correction if needed could happen here
-            # For now assume structure matches source
             current = current[part_idx]
         else:
             if part not in current:
@@ -153,34 +165,69 @@ def main():
         print("Source file empty or missing!")
         return
 
+    flat_source = flatten_data(source_data)
+    current_hashes = get_hashes(flat_source)
+
+    # Check for changes
+    changed_keys = set()
+    old_hashes = load_json(HASHES_FILE)
+
+    if not old_hashes:
+        print("  No existing hash file found. Attempting to detect recent changes via Git...")
+        # Try to get previous version from Git to compare
+        old_content = get_git_old_content(SOURCE_FILE)
+        if old_content:
+            print("  Git history found. Comparing with HEAD~1...")
+            flat_old = flatten_data(old_content)
+            old_hashes = get_hashes(flat_old)
+        else:
+            print("  Could not retrieve old version from Git. Assuming initial sync (only truly missing keys will be added).")
+            old_hashes = current_hashes # Treat current as baseline to avoid overwriting everything on first run
+
+    # Identify changed keys
+    if old_hashes:
+        for k, h in current_hashes.items():
+            if k in old_hashes and old_hashes[k] != h:
+                changed_keys.add(k)
+
+    if changed_keys:
+        print(f"  Detected {len(changed_keys)} changed source keys (based on hash comparison).")
+    else:
+        print("  No changed keys detected.")
+
     for lang in TARGET_LANGS:
         target_file = os.path.join(LOCALES_DIR, f"{lang}.json")
         print(f"Processing {lang}...")
-
         target_data = load_json(target_file)
+        flat_target = flatten_data(target_data)
 
-        # 1. Identify missing content
-        missing_entries = extract_missing_keys(source_data, target_data)
+        # 1. Missing Keys (in source but not in target)
+        missing_keys = [k for k in flat_source if k not in flat_target]
 
-        if not missing_entries:
-            print(f"  No missing keys for {lang}. Skipping.")
+        # 2. Changed Keys (content changed)
+        # We process changed keys even if they exist in target
+        keys_to_translate = list(set(missing_keys) | changed_keys)
+
+        if not keys_to_translate:
+            print(f"  No updates needed for {lang}.")
             continue
 
-        print(f"  Found {len(missing_entries)} missing keys.")
+        print(f"  Updating {len(keys_to_translate)} keys ({len(missing_keys)} missing, {len(changed_keys)} changed/stale)...")
 
-        # 2. Extract texts to translate
-        keys_to_update = [entry[0] for entry in missing_entries]
-        texts_to_translate = [entry[1] for entry in missing_entries]
+        # Prepare text list (order matters for batch_translate)
+        texts_to_translate = [flat_source[k] for k in keys_to_translate]
 
-        # 3. Batch translate
         translated_texts = batch_translate(texts_to_translate, lang)
 
-        # 4. Apply back to target data
-        for key, text in zip(keys_to_update, translated_texts):
+        # Apply updates
+        for key, text in zip(keys_to_translate, translated_texts):
             set_nested_value(target_data, key, text)
 
         print(f"  Saving updates to {target_file}")
         save_json(target_file, target_data)
+
+    print(f"Updating source hashes to {HASHES_FILE}")
+    save_json(HASHES_FILE, current_hashes)
 
 if __name__ == "__main__":
     main()

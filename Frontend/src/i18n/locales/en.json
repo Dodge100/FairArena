@@ -13,7 +13,7 @@
   },
   "footer": {
     "brand": {
-      "desc": "Follow us and never miss an update on the latest tech, productivity, and digital growth insights."
+      "desc": "Connect with us for the latest platform updates, hackathon tips, and community highlights."
     },
     "menu": {
       "title": "Menu",
@@ -23,7 +23,7 @@
         "changelog": "Changelog",
         "faq": "FAQ",
         "pricing": "Pricing",
-        "status": "Status"
+        "status": "System Status"
       }
     },
     "resources": {
@@ -38,12 +38,14 @@
     },
     "contact": {
       "title": "Contact",
-      "support": "Support",
-      "location": "Delhi, India"
+      "support": "Support Center",
+      "location": "New Delhi, India",
+      "hours": "Mon-Fri, 9am - 6pm IST",
+      "responseTime": "Avg. response: 24h"
     },
     "bottom": {
       "rights": "All rights reserved.",
-      "builtWith": "Built with ❤️ by FairArena Team",
+      "builtWith": "Built for high-performance hackathons.",
       "links": {
         "privacyPolicy": "Privacy Policy",
         "termsAndConditions": "Terms and Conditions",
@@ -51,6 +53,14 @@
         "refund": "Refund",
         "dmca": "DMCA"
       }
+    },
+    "invite": {
+      "title": "Invite Friends & Unlock Perks",
+      "desc": "Give your friends early access and unlock premium features for your next event.",
+      "placeholder": "friend@email.com",
+      "button": "Send Invite",
+      "trust": "No spam. We never share emails.",
+      "loading": "Sending..."
     }
   },
   "home": {
@@ -65,7 +75,13 @@
         "dashboard": "Go to Dashboard"
       },
       "ctaSecondary": "Watch Demo",
-      "trustedBy": "Trusted by communities running 150+ hackathons worldwide"
+      "trustedBy": "Trusted by communities running 150+ hackathons worldwide",
+      "proofPoints": {
+        "multiRound": "Multi-round judging",
+        "aiAnalysis": "Automated AI analysis",
+        "leaderboards": "Real-time leaderboards",
+        "rubrics": "Custom rubrics"
+      }
     },
     "whyChooseUs": {
       "badge": "Why Choose FairArena",

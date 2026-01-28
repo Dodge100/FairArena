@@ -1,15 +1,17 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Shield, X } from 'lucide-react';
+import { Lock, Mail, Shield, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiRequest } from '../lib/apiClient';
 import { useAuthState } from '../lib/auth';
 
 function InviteFriend() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -99,9 +101,14 @@ function InviteFriend() {
 
   return (
     <div className="space-y-4">
-      <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
-        Invite Friends
-      </h3>
+      <div className="space-y-1">
+        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+          {t('footer.invite.title')}
+        </h3>
+        <p className={`text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+          {t('footer.invite.desc')}
+        </p>
+      </div>
 
       {/* Email Invite */}
       <div className="space-y-3">
@@ -116,9 +123,9 @@ function InviteFriend() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="friend@example.com"
+            placeholder={t('footer.invite.placeholder')}
             className={`
-              flex-1 px-3 py-2 text-sm rounded-lg outline-none transition
+              flex-1 px-3 py-2.5 text-sm rounded-lg outline-none transition
               ${isDark
                 ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700 focus:border-[#DDFF00]'
                 : 'bg-white text-black placeholder-neutral-500 border border-neutral-300 focus:border-[#556000]'
@@ -129,8 +136,8 @@ function InviteFriend() {
             type="submit"
             disabled={isLoading}
             className={`
-              px-4 py-2 text-sm font-medium rounded-lg transition
-              flex items-center gap-2 whitespace-nowrap
+              px-4 py-2.5 text-sm font-medium rounded-lg transition
+              flex items-center gap-2 whitespace-nowrap justify-center
               disabled:opacity-50 disabled:cursor-not-allowed
               ${isDark
                 ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
@@ -141,16 +148,24 @@ function InviteFriend() {
             {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Sending...
+                {t('footer.invite.loading')}
               </>
             ) : (
               <>
                 <Mail className="w-4 h-4" />
-                Send Invite
+                {t('footer.invite.button')}
               </>
             )}
           </button>
         </form>
+
+        {/* Trust Signals */}
+        <div className="flex items-center gap-4 text-xs">
+          <div className={`flex items-center gap-1.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+            <Lock className="w-3 h-3" />
+            <span>{t('footer.invite.trust')}</span>
+          </div>
+        </div>
       </div>
 
       {/* CAPTCHA Modal */}
@@ -217,7 +232,7 @@ function InviteFriend() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Sending...
+                    {t('footer.invite.loading')}
                   </>
                 ) : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ? (
                   'CAPTCHA not configured'
@@ -229,7 +244,7 @@ function InviteFriend() {
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    Send Invite
+                    {t('footer.invite.button')}
                   </>
                 )}
               </button>

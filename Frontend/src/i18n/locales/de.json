@@ -13,7 +13,7 @@
   },
   "footer": {
     "brand": {
-      "desc": "Folgen Sie uns und verpassen Sie keine Updates zu den neuesten Technologien, Produktivitäts- und digitalen Wachstumseinblicken."
+      "desc": "Kontaktieren Sie uns für die neuesten Plattform-Updates, Hackathon-Tipps und Community-Highlights."
     },
     "menu": {
       "title": "Menü",
@@ -23,7 +23,7 @@
         "changelog": "Änderungsprotokoll",
         "pricing": "Preise",
         "faq": "FAQ",
-        "status": "Status"
+        "status": "Systemstatus"
       }
     },
     "resources": {
@@ -38,51 +38,68 @@
     },
     "contact": {
       "title": "Kontakt",
-      "location": "Delhi, Indien",
-      "support": "Unterstützung"
+      "location": "Neu-Delhi, Indien",
+      "support": "Support-Center",
+      "responseTime": "Durchschn. Antwort: 24h",
+      "hours": "Mo-Fr, 9:00 - 18:00 Uhr IST"
     },
     "bottom": {
       "rights": "Alle Rechte vorbehalten.",
-      "builtWith": "Erstellt mit ❤️ vom FairArena Team",
+      "builtWith": "Entwickelt für Hochleistungs-Hackathons.",
       "links": {
         "privacyPolicy": "Datenschutzrichtlinie",
         "termsAndConditions": "Allgemeine Geschäftsbedingungen",
         "cookiePolicy": "Cookie-Richtlinie",
         "refund": "Rückerstattung",
         "dmca": "DMCA"
-      }
+      },
+      "version": "v2.1.0"
+    },
+    "invite": {
+      "placeholder": "freund@email.com",
+      "desc": "Geben Sie Ihren Freunden frühzeitigen Zugriff und schalten Sie Premium-Funktionen für Ihre nächste Veranstaltung frei.",
+      "trust": "Kein Spam. Wir geben niemals E-Mails weiter.",
+      "loading": "Senden...",
+      "title": "Freunde einladen und Vorteile freischalten",
+      "button": "Einladung senden"
     }
   },
   "home": {
     "hero": {
-      "badge": "FairArena v1.0 ist jetzt live",
-      "title_prefix": "Die Plattform für",
-      "title_highlight": "Faire Entscheidungen",
-      "subtitle": "FairArena ist die KI-gestützte Hackathon-Plattform für Organisatoren, Juroren und Teilnehmer. Wir automatisieren die Bewertung mit Analysen und Echtzeit-Erkenntnissen und gewährleisten so faire Bewertungen für alle.",
+      "badge": "✨ Jetzt live – FairArena v1.0",
+      "title_prefix": "Führen Sie Hackathons durch",
+      "title_highlight": "Das funktioniert tatsächlich",
+      "subtitle": "Das komplette Betriebssystem für moderne Hackathons. Starten Sie Veranstaltungsseiten, verwalten Sie Einsendungen, automatisieren Sie die Bewertung und präsentieren Sie Live-Bestenlisten – und das alles, ohne eine einzige Tabelle zu berühren.",
       "ctaPrimary": {
-        "getStarted": "Kostenlos starten",
+        "getStarted": "Kostenlose Testversion starten",
         "joinWaitlist": "Warteliste beitreten",
         "dashboard": "Zum Dashboard"
       },
       "ctaSecondary": "Demo ansehen",
-      "trustedBy": "Vertraut von Organisatoren weltweit"
+      "trustedBy": "Communities, die weltweit über 150 Hackathons durchführen, vertrauen darauf",
+      "proofPoints": {
+        "leaderboards": "Bestenlisten in Echtzeit",
+        "aiAnalysis": "Automatisierte KI-Analyse",
+        "rubrics": "Benutzerdefinierte Rubriken",
+        "multiRound": "Mehrrunden-Bewertung"
+      }
     },
     "whyChooseUs": {
       "badge": "Warum FairArena wählen",
-      "title": "Hauptvorteile der Nutzung von FairArena",
+      "title": "Alles, was Sie brauchen, um einen erstklassigen Hackathon durchzuführen",
       "cta": "Mehr lesen",
       "cards": [
         {
-          "title": "KI-gestützte Website-Analyse",
-          "desc": "Erhalten Sie automatisierte Einblicke in jedes Projekt: Leistung, UI/UX-Qualität, SEO-Score, Barrierefreiheit, Code-Einzigartigkeit und Verbesserungsvorschläge."
+          "title": "Detaillierte technische Audits",
+          "desc": "Jede Einreichung erhält sofort einen technischen Bericht über Leistung, Zugänglichkeit, SEO und Codequalität, sodass die Juroren neben ihren subjektiven Bewertungen auch objektive Daten erhalten."
         },
         {
-          "title": "Faire & transparente Bewertung",
-          "desc": "Juroren bewerten Beiträge anhand vordefinierter Bewertungskriterien. Alle Bewertungen werden protokolliert, sind sicher und für Organisatoren sichtbar."
+          "title": "Faire, gewichtete Bewertung",
+          "desc": "Legen Sie benutzerdefinierte Kriterien fest (z. B. Innovation 40 %, Technik 30 %, Design 30 %). Die Richter bewerten direkt auf der Plattform und das System führt die Berechnung automatisch durch."
         },
         {
-          "title": "Ein Dashboard für den gesamten Hackathon",
-          "desc": "Verwalten Sie Einreichungen, Bewertungen, Juroren, Teilnehmer, Preise, Gewinner, Kategorien und Runden von einem übersichtlichen Dashboard aus."
+          "title": "Live-Kommandozentrale",
+          "desc": "Überwachen Sie Einsendungen, verfolgen Sie den Bewertungsfortschritt und sehen Sie sich die Aktualisierung der Bestenliste in Echtzeit an. Verwalten Sie alles über ein einziges, intuitives Dashboard."
         }
       ]
     },
@@ -93,38 +110,38 @@
       "items": [
         {
           "q": "Was ist FairArena?",
-          "a": "FairArena ist eine KI-gestützte Hackathon-Management-Plattform, die Organisatoren hilft, Veranstaltungen reibungslos mit automatisierter Bewertung, Live-Bestenlisten, Jurorenpanels, KI-Website-Analyse und vollständiger Veranstaltungsverfolgung durchzuführen."
+          "a": "FairArena ist das komplette Betriebssystem für Hackathons. Es vereint Registrierung, Projekteinreichung, automatisierte KI-Analyse und Echtzeitbewertung auf einer Plattform. Anstatt mit Tabellenkalkulationen, Formularen und Discord-Chats zu jonglieren, erhalten Organisatoren eine einzige Kommandozentrale für die Durchführung professioneller, transparenter Veranstaltungen."
         },
         {
           "q": "Wer kann FairArena nutzen?",
-          "a": "Organisatoren (bezahlt), Juroren (kostenlos) und Teilnehmer (kostenlos)."
+          "a": "Alle Beteiligten eines Hackathons! Organisatoren verwalten damit den gesamten Veranstaltungslebenszyklus. Juroren nutzen es, um Projekte mit benutzerdefinierten Rubriken und KI-Erkenntnissen zu bewerten. Teilnehmer nutzen es, um ihre Arbeit einzureichen und ihren Platz auf der Echtzeit-Bestenliste zu verfolgen."
         },
         {
           "q": "Was prüft der KI-Analysator?",
-          "a": "Er prüft Leistung, UI/UX, Geschwindigkeit, SEO, Barrierefreiheit, Einzigartigkeit, Fehler und generiert Verbesserungsvorschläge."
+          "a": "Unsere KI führt bei jeder Einreichung ein umfassendes technisches Audit durch. Es überprüft die Leistungswerte von Lighthouse (Geschwindigkeit, Zugänglichkeit, SEO), analysiert die Codequalität auf Best Practices und erkennt sogar potenzielle Plagiate. Dadurch erhalten Richter objektive Daten, die ihre subjektive Bewertung ergänzen."
         },
         {
           "q": "Können mehrere Juroren dasselbe Projekt bewerten?",
-          "a": "Ja. Bewertungen aller Juroren werden automatisch kombiniert."
+          "a": "Absolut. FairArena ist für die gemeinschaftliche Beurteilung konzipiert. Sie können einem einzelnen Projekt mehrere Juroren zuweisen und das System berechnet automatisch die Endpunktzahl basierend auf der von Ihnen gewählten Methode (Durchschnitt, gewichteter Durchschnitt oder Summe). Alle Ergebnisse werden zur Transparenz protokolliert."
         },
         {
           "q": "Unterstützt FairArena mehrstufige Hackathons?",
-          "a": "Ja — Vorrunden, Halbfinals und Finalrunden."
+          "a": "Ja, wir unterstützen komplexe Eventstrukturen. Sie können mehrere Runden einrichten (z. B. Qualifikation, Halbfinale, Finale), Top-Teams für die nächste Phase filtern und sogar die Bewertungskriterien zwischen den Runden ändern, um höhere Einsätze widerzuspiegeln."
         },
         {
           "q": "Gibt es eine kostenlose Version?",
-          "a": "Juroren und Teilnehmer nutzen FairArena während Hackathons immer kostenlos. Organisatoren wählen einen kostenpflichtigen Plan."
+          "a": "Ja! FairArena ist für alle Juroren und Teilnehmer kostenlos. Für Organisatoren bieten wir einen robusten „Starter“-Plan an, mit dem Sie kleine bis mittlere Hackathons kostenlos durchführen können. Größere Veranstaltungen mit erweiterten Anforderungen (SSO, individuelles Branding, große Teilnehmergrenzen) können auf unsere Pro- oder Enterprise-Pläne upgraden."
         },
         {
           "q": "Können Organisatoren Berichte herunterladen?",
-          "a": "Ja — detaillierte Bewertungsberichte, Analysen und Gewinnerlisten."
+          "a": "Ja, das vollständige Dateneigentum liegt bei Ihnen. Sie können alles exportieren: rohe Einreichungsdaten, einzelne Richter-Scorecards, endgültige Ranglisten und Teilnehmerdetails. Berichte sind im CSV- und PDF-Format verfügbar und eignen sich perfekt für Sponsoren-Updates oder Analysen nach der Veranstaltung."
         }
       ]
     },
     "newsletter": {
-      "title": "Bleiben Sie auf dem Laufenden mit FairArena",
-      "desc": "Abonnieren Sie unseren Newsletter und erhalten Sie Updates zu neuen Funktionen, kommenden Hackathon-Tools, KI-Bewertungs-Upgrades und mehr.",
-      "placeholder": "Geben Sie Ihre E-Mail ein",
+      "title": "Erhalten Sie Hackathon-Tipps und Produkt-Updates",
+      "desc": "Lassen Sie sich über neue Funktionen, bevorstehende Hackathons und Bewertungstipps benachrichtigen. Abmelden ist jederzeit möglich.",
+      "placeholder": "your@email.com",
       "button": "Abonnieren",
       "subscribing": "Abonnieren..."
     },
