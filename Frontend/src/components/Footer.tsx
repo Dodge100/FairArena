@@ -24,7 +24,7 @@ function Footer() {
         {/* Brand + Social */}
         <div>
           <Link to="/">
-            <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
+            <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
           </Link>
           <p
             className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'

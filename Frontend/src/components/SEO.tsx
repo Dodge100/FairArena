@@ -14,7 +14,7 @@ interface SEOProps {
 export const SEO = ({
     title = 'FairArena - AI-Powered Project Reviewer',
     description = 'FairArena ensures unbiased project evaluations using advanced AI while facilitating seamless team collaboration.',
-    image = 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+    image = 'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
     url,
     type = 'website',
     siteName = 'FairArena',

@@ -197,7 +197,7 @@ export function AppSidebar() {
             {/* Show logo and text when expanded */}
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <img
-                src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+                src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin"
                 className="w-30 -my-8"
                 alt="FairArena Logo"
                 style={{ filter: theme === 'light' ? 'invert(1)' : 'none' }}

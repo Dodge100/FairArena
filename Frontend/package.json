@@ -5,7 +5,7 @@
   "description": "This is FairArena your Hackathon partner",
   "type": "module",
   "author": "Saksham-Goel1107",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
