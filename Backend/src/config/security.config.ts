@@ -25,6 +25,7 @@ export const CSRF_CONFIG = {
   exemptPaths: [
     '/api/v1/payments/webhook',
     'api/v1/newsletter/unsubscribe',
+    '/api/v1/waitlist',
     '/api/v1/auth/verify-email',
     '/api/inngest',
     '/healthz',

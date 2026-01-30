@@ -69,7 +69,7 @@ function Unsubscribe() {
       <div className="p-4 max-w-4xl mx-auto relative z-10 w-full flex flex-col items-center">
         <div className="flex justify-center mb-8">
           <DataSaverImage
-            src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png"
+            src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin"
             alt="FairArena Logo"
             className="w-32 h-20 object-contain brightness-0 invert opacity-80"
             width={128}

@@ -24,7 +24,7 @@
   },
   "keywords": [],
   "author": "Saksham-Goel1107",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.2",
   "dependencies": {
     "@arcjet/node": "1.0.0-beta.15",
     "@arizeai/openinference-instrumentation-langchain": "^4.0.6",

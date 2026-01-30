@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" width="140" height="140">
+  <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena Logo" width="140" height="140">
 </p>
 
 <h1 align="center">FairArena</h1>
@@ -36,10 +36,9 @@
 
 <p align="center">
   <a href="https://fair.sakshamg.me" target="_blank">
-    <img src="https://fairarena.blob.core.windows.net/fairarena/Dashboard%20Preview%20GIF" alt="FairArena Dashboard Preview" width="100%" />
+    <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena Dashboard Preview" width="100%" />
   </a>
 </p>
-
 
 ---
 
@@ -82,12 +81,12 @@ cd Frontend && pnpm dev
 
 ### Access Points
 
-| Service | URL |
-|---------|-----|
-| 🌐 Frontend | http://localhost:5173 |
-| 🔧 Backend API | http://localhost:3000 |
-| 📖 API Docs | http://localhost:3000/api-docs |
-| ⚡ Inngest | http://localhost:8288 |
+| Service        | URL                            |
+| -------------- | ------------------------------ |
+| 🌐 Frontend    | http://localhost:5173          |
+| 🔧 Backend API | http://localhost:3000          |
+| 📖 API Docs    | http://localhost:3000/api-docs |
+| ⚡ Inngest     | http://localhost:8288          |
 
 ---
 
@@ -95,35 +94,35 @@ cd Frontend && pnpm dev
 
 ### Platform Features
 
-| Feature | Description |
-|---------|-------------|
-| 🔐 **Authentication** | Clerk-based auth with OAuth & MFA |
-| 👤 **Profiles** | Complete user profiles with social links |
-| 🏢 **Organizations** | Create and manage organizations |
-| 👥 **Teams** | Team collaboration with roles & invites |
-| 💳 **Credits** | Credit-based usage with Razorpay payments |
-| 🤖 **AI Assistant** | Google Gemini-powered chat |
-| 🔔 **Notifications** | Real-time notification system |
-| 📧 **Email** | 19 transactional email templates |
-| 🆘 **Support** | In-app ticket system |
+| Feature               | Description                               |
+| --------------------- | ----------------------------------------- |
+| 🔐 **Authentication** | Clerk-based auth with OAuth & MFA         |
+| 👤 **Profiles**       | Complete user profiles with social links  |
+| 🏢 **Organizations**  | Create and manage organizations           |
+| 👥 **Teams**          | Team collaboration with roles & invites   |
+| 💳 **Credits**        | Credit-based usage with Razorpay payments |
+| 🤖 **AI Assistant**   | Google Gemini-powered chat                |
+| 🔔 **Notifications**  | Real-time notification system             |
+| 📧 **Email**          | 19 transactional email templates          |
+| 🆘 **Support**        | In-app ticket system                      |
 
 ### Technical Highlights
 
-| Feature | Description |
-|---------|-------------|
+| Feature                    | Description                     |
+| -------------------------- | ------------------------------- |
 | ⚡ **34+ Background Jobs** | Inngest event-driven processing |
-| 🗄️ **Read Replicas** | Horizontal database scaling |
-| 🚀 **Redis Caching** | Performance optimization |
-| 🛡️ **Arcjet Security** | Rate limiting & bot detection |
-| 📊 **OpenTelemetry** | Distributed tracing to SigNoz |
-| 🐳 **Docker Ready** | Full containerization |
+| 🗄️ **Read Replicas**       | Horizontal database scaling     |
+| 🚀 **Redis Caching**       | Performance optimization        |
+| 🛡️ **Arcjet Security**     | Rate limiting & bot detection   |
+| 📊 **OpenTelemetry**       | Distributed tracing to SigNoz   |
+| 🐳 **Docker Ready**        | Full containerization           |
 
 ---
 
 ## 🏗 Architecture
 
 <p align="center">
-  <img src="https://fairarena.blob.core.windows.net/fairarena/FairArena-Design.png" alt="FairArena System Architecture" width="100%">
+  <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b99fa00063e4fb03e/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena System Architecture" width="100%">
 </p>
 
 ```
@@ -179,15 +178,16 @@ docker compose down
 
 ## 📚 Documentation
 
-| Document | Location |
-|----------|----------|
-| **Frontend README** | [Frontend/README.md](./Frontend/README.md) |
-| **Backend README** | [Backend/README.md](./Backend/README.md) |
-| **API Reference** | [Backend/docs/API_REFERENCE.md](./Backend/docs/API_REFERENCE.md) |
+| Document                | Location                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| **Frontend README**     | [Frontend/README.md](./Frontend/README.md)                                   |
+| **Backend README**      | [Backend/README.md](./Backend/README.md)                                     |
+| **API Reference**       | [Backend/docs/API_REFERENCE.md](./Backend/docs/API_REFERENCE.md)             |
 | **System Architecture** | [Backend/docs/SYSTEM_ARCHITECTURE.md](./Backend/docs/SYSTEM_ARCHITECTURE.md) |
-| **Database Design** | [Backend/docs/DATABASE_DESIGN.md](./Backend/docs/DATABASE_DESIGN.md) |
-| **Infrastructure** | [Backend/docs/INFRASTRUCTURE.md](./Backend/docs/INFRASTRUCTURE.md) |
-| **Postman Collection** | [Backend/postman/](./Backend/postman/) |
+| **System Architecture Eraser Diagram** | [docs/architecture/README.md](./docs/architecture/README.md)                  |
+| **Database Design**     | [Backend/docs/DATABASE_DESIGN.md](./Backend/docs/DATABASE_DESIGN.md)         |
+| **Infrastructure**      | [Backend/docs/INFRASTRUCTURE.md](./Backend/docs/INFRASTRUCTURE.md)           |
+| **Postman Collection**  | [Backend/postman/](./Backend/postman/)                                       |
 
 ---
 

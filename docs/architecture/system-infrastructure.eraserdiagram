@@ -1,0 +1,54 @@
+title High-Level System Infrastructure
+direction right
+
+// Groups
+Container [icon: box, color: blue] {
+  Caddy [icon: shield, color: orange]
+  Backend [icon: server, color: blue]
+  Inngest [icon: zap, color: purple]
+}
+
+DataLayer [icon: database, color: gray] {
+  Postgres [icon: database, color: blue]
+  Redis [icon: database, color: red]
+}
+
+ExternalServices [icon: cloud, color: green] {
+  GoogleAuth [icon: lock]
+  Razorpay [icon: credit-card]
+  AzureBlob [icon: hard-drive]
+  EmailProvider [icon: mail]
+}
+
+// Connections
+Client [icon: monitor] > Caddy: HTTPS / TCP 443
+Caddy > Backend: Reverse Proxy (Port 3000)
+
+// Backend Dependencies
+Backend > Postgres: TypeORM / Prisma (Data)
+Backend > Redis: Sessions / Cache / RateLimit
+Backend > AzureBlob: File Uploads
+Backend > Inngest: Job Queueing
+
+// Async Workers
+Inngest > Backend: Triggers HTTP Functions
+Backend > EmailProvider: SMTP / API
+Backend > Razorpay: Payment Verification
+
+// Auth
+Backend > GoogleAuth: OAuth / Keys
+
+// Notes
+note right of Inngest {
+  Handles:
+  - Email Notifications
+  - Async Webhooks
+  - Scheduled Jobs
+}
+
+note right of Redis {
+  Stores:
+  - Session Bindings
+  - Permission Contexts
+  - Rate Limit Counters
+}

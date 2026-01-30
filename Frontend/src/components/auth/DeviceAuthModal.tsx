@@ -465,7 +465,7 @@ export function DeviceAuthModal({ open, onOpenChange, onSuccess }: DeviceAuthMod
                                                 level="H"
                                                 includeMargin={false}
                                                 imageSettings={{
-                                                    src: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+                                                    src: 'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin',
                                                     height: 40,
                                                     width: 40,
                                                     excavate: true,

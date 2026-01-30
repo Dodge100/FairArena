@@ -1,0 +1,99 @@
+title Razorpay Payment & Credit System Flow
+autoNumber on
+
+// Actors
+User [icon: user, color: gray]
+Client [icon: monitor, color: gray]
+Backend [icon: server, color: blue]
+Razorpay [icon: credit-card, color: orange]
+Inngest [icon: zap, color: purple]
+Postgres [icon: database, color: blue]
+Redis [icon: database, color: red]
+EmailService [icon: mail, color: green]
+
+// ============================================
+// PART 1: INIT PAYMENT
+// ============================================
+User > Client: Select Plan
+Client > Backend: POST /payment/order
+activate Backend
+Backend > Razorpay: Create Order (amount, currency)
+Razorpay --> Backend: Order ID
+Backend --> Client: Order Details
+deactivate Backend
+
+User > Client: Complete Payment (Razorpay UI)
+Client > Razorpay: Submit Payment
+Razorpay --> Client: Success Callback
+
+// ============================================
+// PART 2: WEBHOOK PROCESSING (Async)
+// ============================================
+Razorpay > Backend: POST /webhook/razorpay (Event: payment.captured)
+activate Backend
+Backend > Backend: Verify Webhook Signature
+
+Backend > redis: Check Duplicate Event (Idempotency)
+alt [label: Processed Before] {
+    Backend --> Razorpay: 200 OK
+}
+Backend > Inngest: Trigger 'payment/webhook-received'
+Backend --> Razorpay: 200 OK (Ack)
+deactivate Backend
+
+// Inngest Job
+activate Inngest
+Inngest > Backend: Process Event (payment.captured)
+activate Backend
+Backend > Postgres: Update Payment Status (SUCCESS)
+Backend > Postgres: Create Credit Transaction (+Credits)
+Backend > Postgres: Update User Plan
+
+Backend > Inngest: Trigger 'payment/verified'
+deactivate Backend
+
+Inngest > Backend: Send Confirmation Email
+activate Backend
+Backend > EmailService: Send "Plan Active" Email
+deactivate Backend
+deactivate Inngest
+
+// ============================================
+// PART 3: CREDIT ALLOCATION (Free Credits)
+// ============================================
+User > Client: Request Free Credits
+Client > Backend: POST /credits/claim-free
+activate Backend
+
+Backend > Backend: Check Eligibility
+Backend > Redis: Check Cache (hasClaimed)
+alt [label: Not Claimed] {
+    Backend > Postgres: Check Existing Transaction (INITIAL_ALLOCATION)
+    alt [label: No Transaction] {
+        Backend > Postgres: Transaction (Atomic)
+        note right of Postgres: 1. Set claimed=true\n2. Add Credits\n3. Log Transaction
+        Backend > Redis: Invalidate Credit Cache
+        Backend --> Client: Success
+    }
+}
+deactivate Backend
+
+// ============================================
+// PART 4: BALANCE CHECK & REFUNDS
+// ============================================
+User > Client: View Balance
+Client > Backend: GET /credits/balance
+activate Backend
+Backend > Redis: Get Balance
+alt [label: Cache Miss] {
+    Backend > Postgres: Sum Transactions
+    Backend > Redis: Set Balance
+}
+Backend --> Client: { balance: 500 }
+deactivate Backend
+
+// Refund Flow
+Razorpay > Backend: Webhook (refund.created)
+Backend > Inngest: Trigger 'payment/webhook'
+Inngest > Backend: Create Negative Credit Transaction (-Credits)
+Backend > EmailService: Send Refund Email

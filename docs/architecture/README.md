@@ -7,18 +7,20 @@ We use [Eraser.io](https://eraser.io) for diagramming.
 
 | Diagram | Source | Rendered |
 |---------|--------|----------|
-| **Database Schema** | [`database-schema.eraser.md`](./database-schema.eraser) | ![Database Schema](./database-schema.svg) |
-| **Auth System Flow** | [`auth-system-flow.eraser.md`](./auth-system-flow.eraser) | ![Auth System Flow](./auth-system-flow.svg) |
-| **Inbox & Settings** | [`inbox-settings-system-flow.eraser.md`](./inbox-settings-system-flow.eraser) | ![Inbox Settings](./inbox-settings-system-flow.svg) |
-| **Razorpay Credits System Flow** | [`razorpay-credits-system-flow.eraser.md`](./razorpay-credits-system-flow.eraser) | ![Razorpay Credits System Flow](./razorpay-credits-system-flow.svg) |
+| **Database Schema** | [`database-schema.eraserdiagram`](./database-schema.eraserdiagram) | ![Database Schema](./database-schema.svg) |
+| **System Infrastructure** | [`system-infrastructure.eraserdiagram`](./system-infrastructure.eraserdiagram) | ![Infrastructure](./system-infrastructure.svg) |
+| **Auth System Flow** | [`auth-system-flow.eraserdiagram`](./auth-system-flow.eraserdiagram) | ![Auth System Flow](./auth-system-flow.svg) |
+| **Razorpay Credits System** | [`razorpay-credits-system-flow.eraserdiagram`](./razorpay-credits-system-flow.eraserdiagram) | ![Razorpay Credits System Flow](./razorpay-credits-system-flow.svg) |
+| **Organization Permissions** | [`organization-permission-flow.eraserdiagram`](./organization-permission-flow.eraserdiagram) | ![Org Permissions](./organization-permission-flow.svg) |
+| **Inbox & Settings** | [`inbox-settings-system-flow.eraserdiagram`](./inbox-settings-system-flow.eraserdiagram) | ![Inbox Settings](./inbox-settings-system-flow.svg) |
 
 ## How to edit diagrams
 
-1. **Copy Source**: Open the `.eraser` file and copy the code.
+1. **Copy Source**: Open the `.eraserdiagram` file and copy the code.
 2. **Edit in Eraser**: Paste the code into a new [Eraser.io](https://eraser.io) file.
 3. **Export SVG**: Once updated, export the diagram as an **SVG**.
 4. **Update File**: Overwrite the corresponding `.svg` file in this directory.
-5. **Update Source**: Copy the updated DSL code from Eraser back into the `.eraser` file.
-6. **Commit Both**: Commit **BOTH** the `.eraser` and the `.svg` files in your PR.
+5. **Update Source**: Copy the updated DSL code from Eraser back into the `.eraserdiagram` file.
+6. **Commit Both**: Commit **BOTH** the `.eraserdiagram` and the `.svg` files in your PR.
 
 > **Critical**: PRs that update the SVG without updating the specific source code (or vice versa) must be rejected. The source and the visual must always stay in sync.

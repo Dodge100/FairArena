@@ -1,0 +1,94 @@
+title Organization & Team Permission Flow
+autoNumber on
+
+// Actors
+User [icon: user, color: gray]
+Client [icon: monitor, color: blue]
+Backend [icon: server, color: blue]
+Redis [icon: database, color: red]
+Postgres [icon: database, color: blue]
+
+// ============================================
+// PART 1: ORGANIZATION LEVEL PERMISSIONS
+// ============================================
+
+User > Client: Access Settings Page
+Client > Backend: GET /api/v1/orgs/:slug/settings
+activate Backend
+
+// Middleware: loadOrganizationPermissions
+Backend > Redis: GET permission:uid:orgSlug
+activate Redis
+
+alt [label: Cache Hit] {
+  Redis --> Backend: Return JSON Context
+}
+alt [label: Cache Miss] {
+  Redis --> Backend: Null
+  Backend > Postgres: Query UserRole + Permission Blob
+  activate Postgres
+  Postgres --> Backend: Role Data (JSON)
+  deactivate Postgres
+
+  Backend > Backend: Parse Permissions JSON
+  Backend > Redis: SETEX (TTL 1h)
+}
+deactivate Redis
+
+// Middleware: requirePermission('org', 'view_settings')
+Backend > Backend: Check Context.permissions.org.view_settings
+
+alt [label: Allowed] {
+  Backend > Backend: Execute Controller Logic
+  Backend --> Client: 200 OK (Settings Data)
+}
+else [label: Denied] {
+  Backend --> Client: 403 Forbidden
+}
+deactivate Backend
+
+// ============================================
+// PART 2: TEAM LEVEL PERMISSIONS
+// ============================================
+
+User > Client: Invite Member to Team
+Client > Backend: POST /orgs/:oSlug/teams/:tSlug/invite
+activate Backend
+
+// Middleware: teamPermissionMiddleware
+Backend > Redis: GET team_ctx:oSlug:tSlug:uid
+activate Redis
+alt [label: Cache Miss] {
+  Redis --> Backend: Null
+  Backend > Postgres: Query Team + UserRole
+  Postgres --> Backend: Team Role Data
+  Backend > Redis: SETEX (TTL 1h)
+}
+deactivate Redis
+
+// Middleware: requireTeamPermission('members', 'invite')
+Backend > Backend: Check Context.permissions.members.invite
+
+alt [label: Allowed] {
+  Backend > Postgres: Create Invite Record
+  Backend --> Client: 200 OK (Invited)
+}
+else [label: Denied] {
+  Backend --> Client: 403 Forbidden
+}
+deactivate Backend
+
+// ============================================
+// PART 3: CACHE INVALIDATION (Critical)
+// ============================================
+
+// Admin updates a Role's permissions
+User > Client: Admin: Update Role Permissions
+Client > Backend: PATCH /orgs/:slug/roles/:id
+activate Backend
+
+Backend > Postgres: Update Role Permissions JSON
+Backend > Backend: Find All Users with Role
+Backend > Redis: DEL permission:uid:orgSlug (for all users)
+Backend --> Client: 200 OK
+deactivate Backend

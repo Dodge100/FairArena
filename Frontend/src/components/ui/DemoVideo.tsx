@@ -24,9 +24,10 @@ function DemoVideo() {
           muted: true,
           fluid: true,
           responsive: true,
-          poster: 'https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview',
+          poster: 'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9aea0008a7865980/view?project=69735edc00127d2033d8&mode=admin',
           textTrackSettings: false, // Prevent settings UI from leaking into DOM
           controlBar: false, // Disable control bar since we have custom controls
+          loop: true,
         });
 
         const player = playerRef.current;
@@ -79,7 +80,7 @@ function DemoVideo() {
           <>
             <video
               ref={videoRef}
-              poster="https://fairarena.blob.core.windows.net/fairarena/Dashboard Preview"
+              poster="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9aea0008a7865980/view?project=69735edc00127d2033d8&mode=admin"
               className="video-js vjs-default-skin w-full h-full object-cover rounded-2xl"
               aria-label="FairArena Dashboard Preview - Demo video showing the platform's features and interface"
               title="FairArena Dashboard Demo"

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena Logo" width="120" height="120">
+  <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena Logo" width="120" height="120">
 </p>
 
 <h1 align="center">FairArena Backend</h1>
@@ -52,12 +52,12 @@
 
 ### Prerequisites
 
-| Requirement | Version | Purpose |
-|-------------|---------|---------|
-| Node.js | 20 LTS+ | JavaScript runtime |
-| pnpm | 8.x+ | Package manager |
-| PostgreSQL | 15+ | Primary database |
-| Redis | 7+ | Caching & rate limiting |
+| Requirement | Version | Purpose                 |
+| ----------- | ------- | ----------------------- |
+| Node.js     | 20 LTS+ | JavaScript runtime      |
+| pnpm        | 8.x+    | Package manager         |
+| PostgreSQL  | 15+     | Primary database        |
+| Redis       | 7+      | Caching & rate limiting |
 
 ### Local Development
 
@@ -92,20 +92,20 @@ docker compose logs -f backend
 
 ### Development URLs
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| 🌐 **API Server** | http://localhost:3000 | Main REST API |
-| 📖 **Swagger Docs** | http://localhost:3000/api-docs | Interactive API documentation |
-| ⚡ **Inngest Dashboard** | http://localhost:8288 | Background job monitoring |
-| 📊 **Prometheus** | http://localhost:9090 | Metrics dashboard |
-| 🗄️ **Prisma Studio** | http://localhost:5555 | Database GUI (`pnpm db:studio`) |
+| Service                  | URL                            | Description                     |
+| ------------------------ | ------------------------------ | ------------------------------- |
+| 🌐 **API Server**        | http://localhost:3000          | Main REST API                   |
+| 📖 **Swagger Docs**      | http://localhost:3000/api-docs | Interactive API documentation   |
+| ⚡ **Inngest Dashboard** | http://localhost:8288          | Background job monitoring       |
+| 📊 **Prometheus**        | http://localhost:9090          | Metrics dashboard               |
+| 🗄️ **Prisma Studio**     | http://localhost:5555          | Database GUI (`pnpm db:studio`) |
 
 ---
 
 ## 🏗 Architecture
 
 <p align="center">
-  <img src="https://fairarena.blob.core.windows.net/fairarena/FairArena-Design.png" alt="FairArena System Architecture" width="100%">
+  <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b99fa00063e4fb03e/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena System Architecture" width="100%">
 </p>
 
 ### System Overview
@@ -133,12 +133,12 @@ docker compose logs -f backend
 
 ### Key Highlights
 
-| Metric | Target | Description |
-|--------|--------|-------------|
-| **Availability** | 99.9% | Health checks + auto-recovery |
-| **P99 Latency** | <200ms | Redis caching + read replicas |
-| **Throughput** | 1000 req/min | Arcjet rate limiting |
-| **Background Jobs** | 34+ functions | Event-driven with Inngest |
+| Metric              | Target        | Description                   |
+| ------------------- | ------------- | ----------------------------- |
+| **Availability**    | 99.9%         | Health checks + auto-recovery |
+| **P99 Latency**     | <200ms        | Redis caching + read replicas |
+| **Throughput**      | 1000 req/min  | Arcjet rate limiting          |
+| **Background Jobs** | 34+ functions | Event-driven with Inngest     |
 
 ---
 
@@ -146,10 +146,10 @@ docker compose logs -f backend
 
 ### Base URLs
 
-| Environment | URL |
-|-------------|-----|
-| **Production** | `https://fairarena.sakshamg.me/api/v1` |
-| **Development** | `http://localhost:3000/api/v1` |
+| Environment     | URL                                    |
+| --------------- | -------------------------------------- |
+| **Production**  | `https://fairarena.sakshamg.me/api/v1` |
+| **Development** | `http://localhost:3000/api/v1`         |
 
 ### Authentication
 
@@ -161,26 +161,26 @@ Authorization: Bearer <clerk_jwt_token>
 
 ### Endpoint Summary
 
-| Category | Endpoints | Auth | Description |
-|----------|:---------:|:----:|-------------|
-| **Profile** | 5 | ✅ | User profile management |
-| **Credits** | 8 | ✅ | Credit balance & OTP verification |
-| **Account Settings** | 5 | ✅ | Email verification, data export |
-| **Organizations** | 8 | ✅ | Organization CRUD & management |
-| **Teams** | 7 | ✅ | Team management |
-| **Team Invitations** | 7 | Mixed | Invite flow (accept/decline public) |
-| **AI Assistant** | 3 | ✅ | Streaming & non-streaming chat |
-| **Notifications** | 8 | ✅ | Real-time notification system |
-| **Stars** | 4 | Mixed | Profile starring |
-| **Payments** | 3 | ✅ | Razorpay integration |
-| **Plans** | 2 | ❌ | Public pricing plans |
-| **Settings** | 3 | ✅ | User preferences |
-| **Reports** | 2 | ✅ | Content reporting |
-| **Feedback** | 2 | ❌ | Public feedback submission |
-| **Newsletter** | 2 | ❌ | Email subscriptions |
-| **Support** | 2 | Mixed | Support tickets |
-| **Health** | 1 | ❌ | Service health check |
-| | **70+** | | **Total Endpoints** |
+| Category             | Endpoints | Auth  | Description                         |
+| -------------------- | :-------: | :---: | ----------------------------------- |
+| **Profile**          |     5     |  ✅   | User profile management             |
+| **Credits**          |     8     |  ✅   | Credit balance & OTP verification   |
+| **Account Settings** |     5     |  ✅   | Email verification, data export     |
+| **Organizations**    |     8     |  ✅   | Organization CRUD & management      |
+| **Teams**            |     7     |  ✅   | Team management                     |
+| **Team Invitations** |     7     | Mixed | Invite flow (accept/decline public) |
+| **AI Assistant**     |     3     |  ✅   | Streaming & non-streaming chat      |
+| **Notifications**    |     8     |  ✅   | Real-time notification system       |
+| **Stars**            |     4     | Mixed | Profile starring                    |
+| **Payments**         |     3     |  ✅   | Razorpay integration                |
+| **Plans**            |     2     |  ❌   | Public pricing plans                |
+| **Settings**         |     3     |  ✅   | User preferences                    |
+| **Reports**          |     2     |  ✅   | Content reporting                   |
+| **Feedback**         |     2     |  ❌   | Public feedback submission          |
+| **Newsletter**       |     2     |  ❌   | Email subscriptions                 |
+| **Support**          |     2     | Mixed | Support tickets                     |
+| **Health**           |     1     |  ❌   | Service health check                |
+|                      |  **70+**  |       | **Total Endpoints**                 |
 
 ### Postman Collection
 
@@ -207,26 +207,26 @@ postman/
 
 ### Core Technologies
 
-| Layer | Technology | Version | Purpose |
-|-------|------------|:-------:|---------|
-| **Runtime** | Node.js | 20 LTS | JavaScript runtime |
-| **Language** | TypeScript | 5.9 | Type-safe development |
-| **Framework** | Express | 5.2 | HTTP server |
-| **ORM** | Prisma | 7.2 | Database access |
-| **Database** | PostgreSQL | 15+ | Primary data store |
-| **Cache** | Redis (Upstash) | 7 | Caching & rate limits |
+| Layer         | Technology      | Version | Purpose               |
+| ------------- | --------------- | :-----: | --------------------- |
+| **Runtime**   | Node.js         | 20 LTS  | JavaScript runtime    |
+| **Language**  | TypeScript      |   5.9   | Type-safe development |
+| **Framework** | Express         |   5.2   | HTTP server           |
+| **ORM**       | Prisma          |   7.2   | Database access       |
+| **Database**  | PostgreSQL      |   15+   | Primary data store    |
+| **Cache**     | Redis (Upstash) |    7    | Caching & rate limits |
 
 ### Integrations
 
-| Service | Technology | Purpose |
-|---------|------------|---------|
-| **Authentication** | Clerk | JWT-based auth with webhooks |
-| **Background Jobs** | Inngest | Event-driven job processing |
-| **Payments** | Razorpay | Payment gateway (INR) |
-| **Email** | Resend | Transactional emails |
-| **AI** | Google Gemini + LangChain | AI assistant with tools |
-| **Security** | Arcjet + Helmet | Rate limiting & headers |
-| **Observability** | OpenTelemetry + SigNoz | Tracing & metrics |
+| Service             | Technology                | Purpose                      |
+| ------------------- | ------------------------- | ---------------------------- |
+| **Authentication**  | Clerk                     | JWT-based auth with webhooks |
+| **Background Jobs** | Inngest                   | Event-driven job processing  |
+| **Payments**        | Razorpay                  | Payment gateway (INR)        |
+| **Email**           | Resend                    | Transactional emails         |
+| **AI**              | Google Gemini + LangChain | AI assistant with tools      |
+| **Security**        | Arcjet + Helmet           | Rate limiting & headers      |
+| **Observability**   | OpenTelemetry + SigNoz    | Tracing & metrics            |
 
 ---
 
@@ -296,29 +296,29 @@ Backend/
 
 ### Required Environment Variables
 
-| Variable | Source | Description |
-|----------|--------|-------------|
-| `DATABASE_URL` | [Neon](https://neon.tech) / [Supabase](https://supabase.com) | PostgreSQL connection |
-| `CLERK_SECRET_KEY` | [Clerk Dashboard](https://dashboard.clerk.com) | Auth secret (`sk_...`) |
-| `CLERK_WEBHOOK_SECRET` | Clerk Dashboard | Webhook verification |
-| `INNGEST_SIGNING_KEY` | [Inngest Dashboard](https://app.inngest.com) | Function signing |
-| `INNGEST_EVENT_KEY` | Inngest Dashboard | Event publishing |
-| `UPSTASH_REDIS_REST_URL` | [Upstash Console](https://console.upstash.com) | Redis endpoint |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Console | Redis auth |
-| `RESEND_API_KEY` | [Resend Dashboard](https://resend.com) | Email service (`re_...`) |
-| `RAZORPAY_KEY_ID` | [Razorpay Dashboard](https://dashboard.razorpay.com) | Payment key (`rzp_...`) |
-| `RAZORPAY_KEY_SECRET` | Razorpay Dashboard | Payment secret |
-| `GOOGLE_GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com) | AI service |
+| Variable                   | Source                                                       | Description              |
+| -------------------------- | ------------------------------------------------------------ | ------------------------ |
+| `DATABASE_URL`             | [Neon](https://neon.tech) / [Supabase](https://supabase.com) | PostgreSQL connection    |
+| `CLERK_SECRET_KEY`         | [Clerk Dashboard](https://dashboard.clerk.com)               | Auth secret (`sk_...`)   |
+| `CLERK_WEBHOOK_SECRET`     | Clerk Dashboard                                              | Webhook verification     |
+| `INNGEST_SIGNING_KEY`      | [Inngest Dashboard](https://app.inngest.com)                 | Function signing         |
+| `INNGEST_EVENT_KEY`        | Inngest Dashboard                                            | Event publishing         |
+| `UPSTASH_REDIS_REST_URL`   | [Upstash Console](https://console.upstash.com)               | Redis endpoint           |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Console                                              | Redis auth               |
+| `RESEND_API_KEY`           | [Resend Dashboard](https://resend.com)                       | Email service (`re_...`) |
+| `RAZORPAY_KEY_ID`          | [Razorpay Dashboard](https://dashboard.razorpay.com)         | Payment key (`rzp_...`)  |
+| `RAZORPAY_KEY_SECRET`      | Razorpay Dashboard                                           | Payment secret           |
+| `GOOGLE_GEMINI_API_KEY`    | [Google AI Studio](https://aistudio.google.com)              | AI service               |
 
 ### Optional Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Server port |
-| `NODE_ENV` | `development` | Environment mode |
-| `MAINTENANCE_MODE` | `false` | Enable maintenance page |
-| `PAYMENTS_ENABLED` | `false` | Enable payment processing |
-| `CREDENTIAL_VALIDATOR_URL` | - | Phone validation service |
+| Variable                   | Default       | Description               |
+| -------------------------- | ------------- | ------------------------- |
+| `PORT`                     | `3000`        | Server port               |
+| `NODE_ENV`                 | `development` | Environment mode          |
+| `MAINTENANCE_MODE`         | `false`       | Enable maintenance page   |
+| `PAYMENTS_ENABLED`         | `false`       | Enable payment processing |
+| `CREDENTIAL_VALIDATOR_URL` | -             | Phone validation service  |
 
 ---
 
@@ -326,37 +326,37 @@ Backend/
 
 ### Development
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server with hot reload |
-| `pnpm dev:inngest` | Start Inngest local dev server |
-| `pnpm build` | Compile TypeScript |
-| `pnpm start` | Run production build |
+| Command            | Description                      |
+| ------------------ | -------------------------------- |
+| `pnpm dev`         | Start dev server with hot reload |
+| `pnpm dev:inngest` | Start Inngest local dev server   |
+| `pnpm build`       | Compile TypeScript               |
+| `pnpm start`       | Run production build             |
 
 ### Code Quality
 
-| Command | Description |
-|---------|-------------|
-| `pnpm typecheck` | Type check without emit |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Format with Prettier |
-| `pnpm format:check` | Check formatting |
+| Command             | Description             |
+| ------------------- | ----------------------- |
+| `pnpm typecheck`    | Type check without emit |
+| `pnpm lint`         | Run ESLint              |
+| `pnpm format`       | Format with Prettier    |
+| `pnpm format:check` | Check formatting        |
 
 ### Database
 
-| Command | Description |
-|---------|-------------|
-| `pnpm db:generate` | Generate Prisma client |
-| `pnpm db:migrate` | Run migrations |
-| `pnpm db:studio` | Open Prisma Studio |
-| `pnpm db:seed` | Seed database |
-| `pnpm db:reset` | Reset database (⚠️ destructive) |
+| Command            | Description                     |
+| ------------------ | ------------------------------- |
+| `pnpm db:generate` | Generate Prisma client          |
+| `pnpm db:migrate`  | Run migrations                  |
+| `pnpm db:studio`   | Open Prisma Studio              |
+| `pnpm db:seed`     | Seed database                   |
+| `pnpm db:reset`    | Reset database (⚠️ destructive) |
 
 ### Utilities
 
-| Command | Description |
-|---------|-------------|
-| `pnpm script:clear-redis` | Clear Redis cache |
+| Command                      | Description               |
+| ---------------------------- | ------------------------- |
+| `pnpm script:clear-redis`    | Clear Redis cache         |
 | `pnpm script:sync-env-to-db` | Sync env vars to database |
 
 ---
@@ -398,30 +398,30 @@ curl -H "X-Health-Check: ${HEALTHZ_HEADER_VALUE}" \
 
 Comprehensive documentation available in `docs/`:
 
-| Document | Description |
-|----------|-------------|
-| [📐 **System Architecture**](./docs/SYSTEM_ARCHITECTURE.md) | Complete architecture with Mermaid diagrams |
-| [🔄 **Data Flow**](./docs/DATA_FLOW.md) | Request lifecycle, workflows, state machines |
-| [📡 **API Reference**](./docs/API_REFERENCE.md) | Full endpoint documentation with examples |
-| [💾 **Database Design**](./docs/DATABASE_DESIGN.md) | Schema, ERD, indexing, retention policies |
-| [⚙️ **Infrastructure**](./docs/INFRASTRUCTURE.md) | Deployment, Docker, monitoring, runbooks |
+| Document                                                    | Description                                  |
+| ----------------------------------------------------------- | -------------------------------------------- |
+| [📐 **System Architecture**](./docs/SYSTEM_ARCHITECTURE.md) | Complete architecture with Mermaid diagrams  |
+| [🔄 **Data Flow**](./docs/DATA_FLOW.md)                     | Request lifecycle, workflows, state machines |
+| [📡 **API Reference**](./docs/API_REFERENCE.md)             | Full endpoint documentation with examples    |
+| [💾 **Database Design**](./docs/DATABASE_DESIGN.md)         | Schema, ERD, indexing, retention policies    |
+| [⚙️ **Infrastructure**](./docs/INFRASTRUCTURE.md)           | Deployment, Docker, monitoring, runbooks     |
 
 ---
 
 ## ✨ Key Features
 
-| Feature | Description |
-|---------|-------------|
+| Feature                   | Description                                     |
+| ------------------------- | ----------------------------------------------- |
 | 🔐 **JWT Authentication** | Clerk-based auth with role-based access control |
-| 💳 **Payment Processing** | Razorpay integration with webhook handling |
-| 🤖 **AI Assistant** | Google Gemini with 10 context-aware tools |
-| ⚡ **Event-Driven** | 34+ Inngest background functions |
-| 📧 **Email System** | 19 React Email templates via Resend |
-| 🗄️ **Read Replicas** | Horizontal read scaling (2 replicas) |
-| 🚀 **Redis Caching** | TTL-based caching for performance |
-| 📊 **Observability** | Prometheus metrics + OpenTelemetry tracing |
-| 🛡️ **Security** | Arcjet rate limiting + Helmet headers |
-| 🔔 **Notifications** | Real-time notification system |
+| 💳 **Payment Processing** | Razorpay integration with webhook handling      |
+| 🤖 **AI Assistant**       | Google Gemini with 10 context-aware tools       |
+| ⚡ **Event-Driven**       | 34+ Inngest background functions                |
+| 📧 **Email System**       | 19 React Email templates via Resend             |
+| 🗄️ **Read Replicas**      | Horizontal read scaling (2 replicas)            |
+| 🚀 **Redis Caching**      | TTL-based caching for performance               |
+| 📊 **Observability**      | Prometheus metrics + OpenTelemetry tracing      |
+| 🛡️ **Security**           | Arcjet rate limiting + Helmet headers           |
+| 🔔 **Notifications**      | Real-time notification system                   |
 
 ---
 
