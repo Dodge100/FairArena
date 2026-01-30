@@ -1,6 +1,7 @@
 import { Star } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { cn } from '../lib/utils';
+import { LazyImage } from './ui/LazyImage';
 
 const testimonials = [
     {
@@ -73,7 +74,7 @@ export default function Testimonials() {
                                 )}
                             >
                                 <div className="flex items-center gap-4 mb-4">
-                                    <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover bg-neutral-200" />
+                                    <LazyImage src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover bg-neutral-200" />
                                     <div>
                                         <h4 className={cn("font-bold", isDark ? "text-white" : "text-black")}>{t.name}</h4>
                                         <p className={cn("text-xs uppercase tracking-wider font-medium", isDark ? "text-neutral-500" : "text-neutral-400")}>{t.role}</p>
@@ -100,7 +101,7 @@ export default function Testimonials() {
                                 )}
                             >
                                 <div className="flex items-center gap-4 mb-4">
-                                    <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover bg-neutral-200" />
+                                    <LazyImage src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover bg-neutral-200" />
                                     <div>
                                         <h4 className={cn("font-bold", isDark ? "text-white" : "text-black")}>{t.name}</h4>
                                         <p className={cn("text-xs uppercase tracking-wider font-medium", isDark ? "text-neutral-500" : "text-neutral-400")}>{t.role}</p>

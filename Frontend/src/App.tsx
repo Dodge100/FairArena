@@ -1,62 +1,77 @@
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
-import { CookieConsentModal } from './components/CookieConsentModal';
-import { FrontendMismatch } from "./components/FrontendMismatch";
-import { GoogleOneTap } from './components/GoogleOneTap';
-import NotFound from './components/NotFound';
-import PricingModal from './components/PricingModal';
-import WaitList from './components/WaitList';
+import { LazyErrorBoundary, ModalLoadingFallback, PageLoadingFallback } from './components/LazyComponents';
 import { useCookieConsent } from './contexts/CookieConsentContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import ProtectedLayout from './layout/ProtectedLayout';
 import PublicLayout from './layout/PublicLayout';
 import { registerAuth } from './lib/apiClient';
 import { useAuth, useToken } from './lib/auth';
-import About from './pages/About';
-import Accessibility from './pages/Accessibility';
-import AccountLogs from './pages/AccountLogs';
-import AccountSettings from './pages/AccountSettings';
-import AuthorizedApps from './pages/AuthorizedApps';
+import { initializeCsrfToken } from './utils/csrfToken';
+
+// Critical components - loaded immediately
+import { FrontendMismatch } from "./components/FrontendMismatch";
+import NotFound from './components/NotFound';
 import BannedAccount from './pages/BannedAccount';
-import Changelog from './pages/Changelog';
-import CommunityGuidelines from './pages/CommunityGuidelines';
-import CookiePolicy from './pages/CookiePolicy';
-import CreditsPage from './pages/CreditsPage';
-import CreditsVerificationPage from './pages/CreditsVerificationPage';
-import Dashboard from './pages/Dashboard';
-import DeviceAuthorization from './pages/DeviceAuthorization';
-import DMCA from './pages/DMCA';
-import EditProfile from './pages/EditProfile';
-import FAQ from './pages/FAQ';
-import Feedback from './pages/Feedback';
-import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
-import Inbox from './pages/Inbox';
 import IPBlockedPage from './pages/IPBlocked';
 import Maintenance from './pages/Maintenance';
-import MyProfile from './pages/MyProfile';
-import OAuthApplications from './pages/OAuthApplications';
-import OAuthConsent from './pages/OAuthConsent';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import ProfileStars from './pages/ProfileStars';
-import ProfileViews from './pages/ProfileViews';
-import PublicProfile from './pages/PublicProfile';
-import RefundPage from './pages/RefundPage';
-import ResetPassword from './pages/ResetPassword';
-import SecurityPolicy from './pages/SecurityPolicy';
 import Signin from './pages/Signin';
-import Signup from './pages/Signup';
-import Support from './pages/Support';
-import TeamInviteAcceptPage from './pages/TeamInviteAcceptPage';
-import TeamsPage from './pages/TeamsPage';
-import TermsAndConditions from './pages/TermsAndConditions';
-import Unsubscribe from './pages/Unsubscribe';
-import VerifyEmail from './pages/VerifyEmail';
-import HowItWorks from './pages/WhyChooseUsPage';
-import { initializeCsrfToken } from './utils/csrfToken';
+
+// Defer analytics to reduce initial bundle
+const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
+const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
+
+// Lazy load modals
+const PricingModal = lazy(() => import('./components/PricingModal'));
+const CookieConsentModal = lazy(() => import('./components/CookieConsentModal').then(m => ({ default: m.CookieConsentModal })));
+const GoogleOneTap = lazy(() => import('./components/GoogleOneTap').then(m => ({ default: m.GoogleOneTap })));
+const WaitList = lazy(() => import('./components/WaitList'));
+
+// Lazy load public pages
+const About = lazy(() => import('./pages/About'));
+const Accessibility = lazy(() => import('./pages/Accessibility'));
+const Changelog = lazy(() => import('./pages/Changelog'));
+const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
+const DMCA = lazy(() => import('./pages/DMCA'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const HowItWorks = lazy(() => import('./pages/WhyChooseUsPage'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const RefundPage = lazy(() => import('./pages/RefundPage'));
+const SecurityPolicy = lazy(() => import('./pages/SecurityPolicy'));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
+
+// Lazy load auth pages
+const Signup = lazy(() => import('./pages/Signup'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
+
+// Lazy load protected pages
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AccountLogs = lazy(() => import('./pages/AccountLogs'));
+const AccountSettings = lazy(() => import('./pages/AccountSettings'));
+const AuthorizedApps = lazy(() => import('./pages/AuthorizedApps'));
+const CreditsPage = lazy(() => import('./pages/CreditsPage'));
+const CreditsVerificationPage = lazy(() => import('./pages/CreditsVerificationPage'));
+const DeviceAuthorization = lazy(() => import('./pages/DeviceAuthorization'));
+const EditProfile = lazy(() => import('./pages/EditProfile'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const MyProfile = lazy(() => import('./pages/MyProfile'));
+const OAuthApplications = lazy(() => import('./pages/OAuthApplications'));
+const OAuthConsent = lazy(() => import('./pages/OAuthConsent'));
+const ProfileStars = lazy(() => import('./pages/ProfileStars'));
+const ProfileViews = lazy(() => import('./pages/ProfileViews'));
+const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const TeamsPage = lazy(() => import('./pages/TeamsPage'));
+const TeamInviteAcceptPage = lazy(() => import('./pages/TeamInviteAcceptPage'));
+
+// Lazy load other pages
+const Feedback = lazy(() => import('./pages/Feedback'));
+const Support = lazy(() => import('./pages/Support'));
 
 function App() {
   const location = useLocation();
@@ -170,71 +185,240 @@ function App() {
   return (
     <>
       <Toaster richColors position="top-right" />
-      <Analytics />
-      <SpeedInsights />
-      <PricingModal
-        isOpen={showPricingModal}
-        onClose={() => {
-          setShowPricingModal(false);
-          window.location.hash = '';
-        }}
-      />
-      <CookieConsentModal
-        isOpen={showModal}
-        onClose={updateConsent}
-        onAcceptAll={acceptAll}
-        onRejectAll={rejectAll}
-      />
-      <GoogleOneTap />
-      <OnboardingProvider>
-        <Routes>
-          <Route path="/maintenance" element={<Maintenance />} />
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/why-choose-us" element={<HowItWorks />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/changelog" element={<Changelog />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/accessibility" element={<Accessibility />} />
-            <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-            <Route path="/security-policy" element={<SecurityPolicy />} />
-            <Route path="/dmca" element={<DMCA />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/refund" element={<RefundPage />} />
-            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-          </Route>
-          <Route path="/dashboard" element={<ProtectedLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="/dashboard/credits" element={<CreditsPage />} />
-            <Route path="/dashboard/credits/verify" element={<CreditsVerificationPage />} />
-            <Route path="/dashboard/inbox" element={<Inbox />} />
-            <Route path="/dashboard/teams" element={<TeamsPage />} />
-            <Route path="/dashboard/profile/edit" element={<EditProfile />} />
-            <Route path="/dashboard/profile/views" element={<ProfileViews />} />
-            <Route path="/dashboard/public-profile" element={<MyProfile />} />
-            <Route path="/dashboard/account-settings" element={<AccountSettings />} />
-            <Route path="/dashboard/account-settings/logs" element={<AccountLogs />} />
-            <Route path="/dashboard/oauth/applications" element={<OAuthApplications />} />
-            <Route path="/dashboard/oauth/authorized" element={<AuthorizedApps />} />
-            <Route path="/dashboard/device" element={<DeviceAuthorization />} />
-          </Route>
-          <Route path="/feedback/:feedbackCode" element={<Feedback />} />
-          <Route path="/invite/team/:inviteCode" element={<TeamInviteAcceptPage />} />
-          <Route path="/profile/:userId" element={<PublicProfile />} />
-          <Route path="/profile/:userId/stars" element={<ProfileStars />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/waitlist" element={isNewSignupEnabled ? <Navigate to="/signup" replace /> : <WaitList />} />
-          <Route path="/signin" element={<Signin />} />
-          <Route path="/signup" element={isNewSignupEnabled ? <Signup /> : <Navigate to="/waitlist" replace />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/unsubscribe/:email" element={<Unsubscribe />} />
-          <Route path="/oauth/consent" element={<OAuthConsent />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </OnboardingProvider>
+
+      {/* Defer analytics - not critical for initial render */}
+      <Suspense fallback={null}>
+        <Analytics />
+        <SpeedInsights />
+      </Suspense>
+
+      {/* Lazy load modals */}
+      <Suspense fallback={<ModalLoadingFallback />}>
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => {
+            setShowPricingModal(false);
+            window.location.hash = '';
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <CookieConsentModal
+          isOpen={showModal}
+          onClose={updateConsent}
+          onAcceptAll={acceptAll}
+          onRejectAll={rejectAll}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <GoogleOneTap />
+      </Suspense>
+
+      <LazyErrorBoundary>
+        <OnboardingProvider>
+          <Routes>
+            <Route path="/maintenance" element={<Maintenance />} />
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/why-choose-us" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <HowItWorks />
+                </Suspense>
+              } />
+              <Route path="/about" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <About />
+                </Suspense>
+              } />
+              <Route path="/changelog" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Changelog />
+                </Suspense>
+              } />
+              <Route path="/faq" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <FAQ />
+                </Suspense>
+              } />
+              <Route path="/accessibility" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Accessibility />
+                </Suspense>
+              } />
+              <Route path="/community-guidelines" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CommunityGuidelines />
+                </Suspense>
+              } />
+              <Route path="/security-policy" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <SecurityPolicy />
+                </Suspense>
+              } />
+              <Route path="/dmca" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <DMCA />
+                </Suspense>
+              } />
+              <Route path="/privacy-policy" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <PrivacyPolicy />
+                </Suspense>
+              } />
+              <Route path="/cookie-policy" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CookiePolicy />
+                </Suspense>
+              } />
+              <Route path="/refund" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <RefundPage />
+                </Suspense>
+              } />
+              <Route path="/terms-and-conditions" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TermsAndConditions />
+                </Suspense>
+              } />
+            </Route>
+            <Route path="/dashboard" element={<ProtectedLayout />}>
+              <Route index element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Dashboard />
+                </Suspense>
+              } />
+              <Route path="/dashboard/credits" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CreditsPage />
+                </Suspense>
+              } />
+              <Route path="/dashboard/credits/verify" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <CreditsVerificationPage />
+                </Suspense>
+              } />
+              <Route path="/dashboard/inbox" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Inbox />
+                </Suspense>
+              } />
+              <Route path="/dashboard/teams" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TeamsPage />
+                </Suspense>
+              } />
+              <Route path="/dashboard/profile/edit" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <EditProfile />
+                </Suspense>
+              } />
+              <Route path="/dashboard/profile/views" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ProfileViews />
+                </Suspense>
+              } />
+              <Route path="/dashboard/public-profile" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <MyProfile />
+                </Suspense>
+              } />
+              <Route path="/dashboard/account-settings" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <AccountSettings />
+                </Suspense>
+              } />
+              <Route path="/dashboard/account-settings/logs" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <AccountLogs />
+                </Suspense>
+              } />
+              <Route path="/dashboard/oauth/applications" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OAuthApplications />
+                </Suspense>
+              } />
+              <Route path="/dashboard/oauth/authorized" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <AuthorizedApps />
+                </Suspense>
+              } />
+              <Route path="/dashboard/device" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <DeviceAuthorization />
+                </Suspense>
+              } />
+            </Route>
+            <Route path="/feedback/:feedbackCode" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <Feedback />
+              </Suspense>
+            } />
+            <Route path="/invite/team/:inviteCode" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <TeamInviteAcceptPage />
+              </Suspense>
+            } />
+            <Route path="/profile/:userId" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <PublicProfile />
+              </Suspense>
+            } />
+            <Route path="/profile/:userId/stars" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <ProfileStars />
+              </Suspense>
+            } />
+            <Route path="/support" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <Support />
+              </Suspense>
+            } />
+            <Route path="/waitlist" element={
+              isNewSignupEnabled ? <Navigate to="/signup" replace /> : (
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <WaitList />
+                </Suspense>
+              )
+            } />
+            <Route path="/signin" element={<Signin />} />
+            <Route path="/signup" element={
+              isNewSignupEnabled ? (
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Signup />
+                </Suspense>
+              ) : <Navigate to="/waitlist" replace />
+            } />
+            <Route path="/forgot-password" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <ForgotPassword />
+              </Suspense>
+            } />
+            <Route path="/reset-password/:token" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <ResetPassword />
+              </Suspense>
+            } />
+            <Route path="/verify-email/:token" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <VerifyEmail />
+              </Suspense>
+            } />
+            <Route path="/unsubscribe/:email" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <Unsubscribe />
+              </Suspense>
+            } />
+            <Route path="/oauth/consent" element={
+              <Suspense fallback={<PageLoadingFallback />}>
+                <OAuthConsent />
+              </Suspense>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </OnboardingProvider>
+      </LazyErrorBoundary>
     </>
   );
 }

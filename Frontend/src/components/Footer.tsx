@@ -2,6 +2,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Clock, Github, Instagram, Linkedin, MapPin, MessageCircle, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InviteFriend from './InviteFriend';
+import { LazyImage } from './ui/LazyImage';
 
 import { useTranslation } from 'react-i18next';
 
@@ -24,7 +25,7 @@ function Footer() {
         {/* Brand + Social */}
         <div>
           <Link to="/">
-            <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
+            <LazyImage src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
           </Link>
           <p
             className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
