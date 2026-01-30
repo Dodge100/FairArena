@@ -1,0 +1,127 @@
+title Inbox & Settings System Flows
+autoNumber on
+
+// Actors
+User [icon: user, color: gray]
+Dashboard [icon: monitor, color: blue]
+Backend [icon: server, color: blue]
+Postgres [icon: database, color: blue]
+Redis [icon: database, color: red]
+Inngest [icon: zap, color: purple]
+StreamService [icon: radio, color: green]
+
+// ===============================================
+// FLOW 1: INBOX / NOTIFICATION SYSTEM (Real-time)
+// ===============================================
+
+// --- Fetching Notifications ---
+User > Dashboard: Open Inbox
+Dashboard > Backend: GET /api/v1/user/notifications?limit=50
+activate Backend
+
+Backend > Redis: Check List Cache (notification:list:uid:filters)
+alt [label: Cache Hit] {
+  Redis --> Backend: JSON Data
+}
+alt [label: Cache Miss] {
+  Backend > Postgres: Query Notifications + Count
+  Backend > Redis: Set Cache (TTL 3m)
+}
+Backend --> Dashboard: Notification List
+deactivate Backend
+
+// --- Real-time Event Trigger ---
+// (Triggered by any system event, e.g., Payment Success)
+Backend > Postgres: Create Notification Record
+Backend > StreamService: Publish Event (inbox.notification.new)
+activate StreamService
+StreamService > Redis: Get Active Sessions
+loop [label: For Each Session] {
+  StreamService --> Dashboard: SSE Push (New Notification Alert)
+}
+deactivate StreamService
+
+// --- Reading / Marking as Read ---
+User > Dashboard: Click "Mark All Read"
+Dashboard > Backend: POST /api/v1/user/notifications/mark-read
+activate Backend
+Backend > Postgres: UpdateMany (read=true)
+Backend > Redis: Invalidate Cache (notification:*:uid*)
+Backend > StreamService: Publish Event (inbox.notification.read)
+activate StreamService
+StreamService --> Dashboard: SSE Push (Update Badge Count)
+deactivate StreamService
+deactivate Backend
+
+
+// ===============================================
+// FLOW 2: SETTINGS & PREFERENCES MANAGEMENT
+// ===============================================
+
+// --- Fetching Settings ---
+User > Dashboard: View Account Settings
+Dashboard > Backend: GET /api/v1/settings
+activate Backend
+
+Backend > Backend: Verify Password/Token (Sensitive Action)
+Backend > Redis: Check Cache (settings:uid)
+alt [label: Cache Hit] {
+  Redis --> Backend: JSON Settings
+}
+alt [label: Cache Miss] {
+  Backend > Postgres: Find Settings
+  alt [label: Not Found] {
+    Backend > Postgres: Create Default Settings
+  }
+  Backend > Redis: Set Cache (TTL 24h)
+}
+Backend --> Dashboard: User Settings
+deactivate Backend
+
+// --- Updating Settings (Async) ---
+User > Dashboard: Update Email Preferences
+Dashboard > Backend: PATCH /api/v1/settings
+activate Backend
+Backend > Inngest: Trigger 'settings/update'
+Backend --> Dashboard: 200 OK (Update Initiated)
+deactivate Backend
+
+// Background Job
+activate Inngest
+Inngest > Backend: Execute Update
+Backend > Postgres: Update Settings JSON
+Backend > Redis: Invalidate & Set New Cache
+deactivate Inngest
+
+
+// ===============================================
+// FLOW 3: SUPPORT & FILE UPLOAD
+// ===============================================
+
+User > Dashboard: Upload Attachment (Support Ticket)
+Dashboard > Backend: POST /api/v1/support/upload
+activate Backend
+
+Backend > Backend: Validate File Type/Size
+Backend > AzureBlob: Upload Stream
+activate AzureBlob
+AzureBlob --> Backend: Secure URL
+deactivate AzureBlob
+
+Backend > Postgres: Save Attachment Metadata (PENDING)
+Backend --> Dashboard: File ID & URL
+deactivate Backend
+
+User > Dashboard: Submit Ticket
+Dashboard > Backend: POST /api/v1/support/create
+activate Backend
+Backend > Postgres: Create Ticket
+Backend > Postgres: Link Attachments
+Backend > Inngest: Trigger 'support/created'
+deactivate Backend
+
+// Async Notification
+activate Inngest
+Inngest > Backend: Send Confirmation Email
+Inngest > Backend: Create Internal Alert (Slack/Discord)
+deactivate Inngest

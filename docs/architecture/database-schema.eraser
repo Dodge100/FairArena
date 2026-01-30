@@ -1,0 +1,282 @@
+title Database Structure
+// --- User Module ---
+User [icon: user, color: blue] {
+  id string pk
+  userId string uk
+  email string uk
+  createdAt dateTime
+  updatedAt dateTime
+  firstName string
+  lastName string
+  username string
+  phoneNumber string
+  onboardingStatus enum
+  googleId string
+  isBanned boolean
+}
+
+Profile [icon: user, color: blue] {
+  id string pk
+  userId string
+  bio string
+  firstName string
+  lastName string
+  company string
+  location string
+  website string
+  githubUsername string
+  twitterHandle string
+  linkedInProfile string
+}
+
+Settings [icon: settings, color: gray] {
+  id string pk
+  userId string
+  settings json
+}
+
+// --- Organization & Team Module ---
+Organization [icon: building, color: blue] {
+  id string pk
+  name string
+  slug string
+  joinEnabled boolean
+  isPublic boolean
+  createdAt dateTime
+}
+
+OrganizationProfile [icon: file-text, color: blue] {
+  id string pk
+  organizationId string
+  description string
+  website string
+  logoUrl string
+}
+
+OrganizationRole [icon: shield, color: blue] {
+  id string pk
+  organizationId string
+  roleName string
+  permissions json
+}
+
+OrganizationUserRole [icon: users, color: blue] {
+  id string pk
+  userId string
+  organizationId string
+  roleId string
+  assignedAt dateTime
+}
+
+Team [icon: users, color: blue] {
+  id string pk
+  name string
+  slug string
+  organizationId string
+  visibility enum
+  joinEnabled boolean
+  createdAt dateTime
+}
+
+TeamProfile [icon: file-text, color: blue] {
+  id string pk
+  teamId string
+  description string
+}
+
+TeamUserRole [icon: users, color: blue] {
+  id string pk
+  userId string
+  teamId string
+  roleId string
+}
+
+Project [icon: folder, color: blue] {
+  id string pk
+  teamId string
+  name string
+  slug string
+  visibility enum
+  joinEnabled boolean
+  createdAt dateTime
+}
+
+ProjectUserRole [icon: users, color: blue] {
+  id string pk
+  userId string
+  projectId string
+  roleId string
+}
+
+// --- Auth & Security Module ---
+ApiKey [icon: key, color: red] {
+  id string pk
+  userId string
+  keyPrefix string
+  keyHash string
+  expiresAt dateTime
+}
+
+OAuthApplication [icon: smartphone, color: red] {
+  id string pk
+  clientId string uk
+  name string
+  ownerId string
+  isActive boolean
+  isTrusted boolean
+}
+
+OAuthConsent [icon: check-circle, color: red] {
+  id string pk
+  userId string
+  applicationId string
+  grantedScopes string[]
+}
+
+OrganizationSSOConfig [icon: lock, color: red] {
+  id string pk
+  organizationId string
+  domain string
+  providerType string
+}
+
+// --- Support & Communication ---
+Support [icon: message-circle, color: green] {
+  id string pk
+  userId string
+  emailId string
+  subject string
+  message string
+  status enum
+  severity enum
+  type enum
+  createdAt dateTime
+}
+
+Notification [icon: bell, color: green] {
+  id string pk
+  userId string
+  type enum
+  title string
+  message string
+  read boolean
+  createdAt dateTime
+}
+
+Report [icon: flag, color: orange] {
+  id string pk
+  reporterId string
+  reportedEntityId string
+  entityType string
+  reason string
+  state enum
+}
+
+// --- Invites ---
+OrganizationInviteCode [icon: mail, color: green] {
+  id string pk
+  organizationId string
+  code string
+  email string
+  roleId string
+  used boolean
+}
+
+InviteCode [icon: mail, color: green] {
+  id string pk
+  teamId string
+  code string
+  email string
+  roleId string
+  used boolean
+}
+
+// --- Payment Module ---
+Plan [icon: credit-card, color: orange] {
+  id string pk
+  name string
+  planId string
+  amount number
+  currency string
+  credits number
+}
+
+Payment [icon: dollar-sign, color: orange] {
+  id string pk
+  userId string
+  razorpayOrderId string
+  planId string
+  amount number
+  status enum
+  credits number
+}
+
+CreditTransaction [icon: activity, color: orange] {
+  id string pk
+  userId string
+  amount number
+  balance number
+  type enum
+  paymentId string
+}
+
+// --- Logs ---
+Logs [icon: file-text, color: gray] {
+  id string pk
+  userId string
+  action string
+  level enum
+  createdAt dateTime
+}
+
+OrganizationAuditLog [icon: list, color: gray] {
+  id string pk
+  organizationId string
+  userId string
+  action string
+}
+
+// --- Relationships ---
+
+// User Relationships
+Profile.userId > User.userId
+Settings.userId > User.userId
+ApiKey.userId > User.userId
+Notification.userId > User.userId
+Support.userId > User.userId
+Logs.userId > User.userId
+
+// Organization Relationships
+OrganizationProfile.organizationId > Organization.id
+OrganizationUserRole.organizationId > Organization.id
+OrganizationUserRole.userId > User.userId
+OrganizationUserRole.roleId > OrganizationRole.id
+OrganizationRole.organizationId > Organization.id
+OrganizationSSOConfig.organizationId > Organization.id
+OrganizationAuditLog.organizationId > Organization.id
+OrganizationInviteCode.organizationId > Organization.id
+
+// Team Relationships
+Team.organizationId > Organization.id
+TeamProfile.teamId > Team.id
+TeamUserRole.teamId > Team.id
+TeamUserRole.userId > User.userId
+TeamUserRole.roleId > TeamRole.id
+InviteCode.teamId > Team.id
+
+// Project Relationships
+Project.teamId > Team.id
+ProjectUserRole.projectId > Project.id
+ProjectUserRole.userId > User.userId
+ProjectUserRole.roleId > ProjectRole.id
+
+// Payment Relationships
+Payment.userId > User.userId
+Payment.planId > Plan.planId
+CreditTransaction.userId > User.userId
+CreditTransaction.paymentId > Payment.id
+
+// Auth Relationships
+OAuthApplication.ownerId > User.userId
+OAuthConsent.userId > User.userId
+OAuthConsent.applicationId > OAuthApplication.id

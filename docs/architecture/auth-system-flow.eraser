@@ -1,0 +1,125 @@
+title Auth System Flow
+autoNumber on
+
+// Actors
+User [icon: user, color: gray]
+Dashboard [icon: monitor, color: blue]
+Backend [icon: server, color: blue]
+GoogleAuth [icon: lock, color: red]
+Postgres [icon: database, color: blue]
+Redis [icon: database, color: red]
+Inngest [icon: zap, color: purple]
+EmailService [icon: mail, color: green]
+
+// ============================================
+// PART 1: OAUTH & GOOGLE ONE TAP FLOW
+// ============================================
+
+// --- Google One Tap Login ---
+User > Dashboard: Click "Continue with Google"
+Dashboard > GoogleAuth: Request ID Token
+GoogleAuth --> Dashboard: ID Token (JWT)
+
+Dashboard > Backend: POST /api/v1/auth/google/token
+activate Backend
+Backend > GoogleAuth: Verify ID Token (server-side)
+activate GoogleAuth
+GoogleAuth --> Backend: Valid Payload (Email, Sub, Picture)
+deactivate GoogleAuth
+
+Backend > Postgres: Find User (by Email or GoogleId)
+activate Postgres
+alt [label: New User] {
+  Postgres --> Backend: Null
+  Backend > Postgres: Create User
+}
+alt [label: Existing User] {
+  Postgres --> Backend: User Data
+  Backend > Postgres: Link GoogleId (if missing)
+}
+deactivate Postgres
+
+// Session Creation Logic
+Backend > Redis: Check Account Limit (Max 5)
+Backend > Backend: Generate SessionID & RefreshToken
+Backend > Backend: Generate Binding Token (Security)
+Backend > Redis: Store Session (TTL 7d)
+Backend > Postgres: Update LastLogin
+
+// Async Triggers
+Backend > Inngest: Trigger 'log.create' (Login)
+Backend > Inngest: Trigger 'auth/session.created'
+
+Backend --> Dashboard: 200 OK (Set-Cookie: active_session, session_id)
+deactivate Backend
+
+// --- Google RISC Security Event (Async) ---
+GoogleAuth > Backend: POST /api/v1/auth/google/risc (Security Event)
+activate Backend
+Backend > Backend: Verify RISC Token
+Backend > Postgres: Find User by Subject
+Backend > Postgres: Revoke All Sessions
+Backend > Postgres: Ban User (if Critical)
+Backend > Inngest: Trigger 'log.create' (Security Action)
+Backend --> GoogleAuth: 202 Accepted
+deactivate Backend
+
+
+// ============================================
+// PART 2: EMAIL / PASSWORD & MFA FLOW
+// ============================================
+
+User > Dashboard: Enter Email/Password
+Dashboard > Backend: POST /api/v1/auth/login
+activate Backend
+Backend > Postgres: Get User Hash & Settings
+Backend > Backend: Verify Password (Bcrypt)
+
+alt [label: MFA Enabled] {
+  Backend > Backend: Mint JWT (mfa_pending)
+  Backend --> Dashboard: 200 OK (MFA Required)
+
+  User > Dashboard: Enter MFA Code
+  Dashboard > Backend: POST /api/v1/auth/verify-mfa
+  Backend > Backend: Validate Code (TOTP)
+}
+
+// Session Creation (Same as above)
+Backend > Redis: Store Session
+Backend --> Dashboard: 200 OK (Logged In)
+deactivate Backend
+
+
+// ============================================
+// PART 3: ASYNC EMAILS & NOTIFICATIONS (INNGEST)
+// ============================================
+
+// --- Email Verification Flow ---
+Backend > Inngest: Trigger 'email/verification'
+activate Inngest
+Inngest > Backend: Execute 'send-verification-email'
+activate Backend
+Backend > EmailService: Send Email (Template: VERIFICATION)
+deactivate Backend
+deactivate Inngest
+EmailService > User: Email: "Verify your Account"
+
+// --- Password Reset Flow ---
+User > Dashboard: Request Password Reset
+Dashboard > Backend: POST /api/v1/auth/forgot-password
+Backend > Inngest: Trigger 'email/password-reset'
+activate Inngest
+Inngest > Backend: Execute 'send-reset-email'
+activate Backend
+Backend > EmailService: Send Email (Template: RESET)
+deactivate Backend
+deactivate Inngest
+
+// --- Security Alerts (New Device Login) ---
+Backend > Inngest: Trigger 'email/login-notification'
+activate Inngest
+Inngest > Backend: Execute 'send-login-alert'
+activate Backend
+Backend > EmailService: Send Email (Template: LOGIN_ALERT)
+deactivate Backend
+deactivate Inngest
