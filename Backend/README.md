@@ -148,7 +148,7 @@ docker compose logs -f backend
 
 | Environment     | URL                                    |
 | --------------- | -------------------------------------- |
-| **Production**  | `https://fairarena.sakshamg.me/api/v1` |
+| **Production**  | `https://fairarena.app/api/v1` |
 | **Development** | `http://localhost:3000/api/v1`         |
 
 ### Authentication
@@ -389,7 +389,7 @@ docker run -p 3000:3000 --env-file .env fairarena-backend
 
 ```bash
 curl -H "X-Health-Check: ${HEALTHZ_HEADER_VALUE}" \
-  https://fairarena.sakshamg.me/healthz
+  https://fairarena.app/healthz
 ```
 
 ---
@@ -451,9 +451,9 @@ This project is licensed under the **Proprietary License** — see the [LICENSE]
 ---
 
 <p align="center">
-  <a href="https://fair.sakshamg.me">🌐 Website</a> •
+  <a href="https://www.fairarena.app">🌐 Website</a> •
   <a href="https://github.com/fairarena">💻 GitHub</a> •
-  <a href="mailto:fairarena.contact@gmail.com">📧 Support</a>
+  <a href="mailto:support@fairarena.app">📧 Support</a>
 </p>
 
 <p align="center">

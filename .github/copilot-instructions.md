@@ -5,8 +5,8 @@
 FairArena is an enterprise-grade full-stack platform for skill assessment, built with modern technologies and production-ready architecture.
 
 **Repository:** FairArena/FairArena (Proprietary)
-**Production URL:** https://fair.sakshamg.me
-**API Base:** https://fairarena.sakshamg.me/api/v1
+**Production URL:** https://www.fairarena.app
+**API Base:** https://fairarena.app/api/v1
 **Author:** Saksham Goel (@Saksham-Goel1107)
 
 ## Technology Stack
@@ -284,7 +284,7 @@ export const sendWelcomeEmail = inngest.createFunction(
     // Step 2: Send email
     await step.run('send-email', async () => {
       await resend.emails.send({
-        from: 'FairArena <noreply@noreply.sakshamg.me>',
+        from: 'FairArena <noreply@noreply.fairarena.app>',
         to: email,
         subject: 'Welcome to FairArena!',
         react: WelcomeEmail({ user }),

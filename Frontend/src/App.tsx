@@ -41,6 +41,7 @@ const HowItWorks = lazy(() => import('./pages/WhyChooseUsPage'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const RefundPage = lazy(() => import('./pages/RefundPage'));
 const SecurityPolicy = lazy(() => import('./pages/SecurityPolicy'));
+const SecurityAcknowledgments = lazy(() => import('./pages/SecurityAcknowledgments'));
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 
 // Lazy load auth pages
@@ -255,6 +256,11 @@ function App() {
               <Route path="/security-policy" element={
                 <Suspense fallback={<PageLoadingFallback />}>
                   <SecurityPolicy />
+                </Suspense>
+              } />
+              <Route path="/security-acknowledgments" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <SecurityAcknowledgments />
                 </Suspense>
               } />
               <Route path="/dmca" element={

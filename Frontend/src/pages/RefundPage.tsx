@@ -99,7 +99,7 @@ const RefundPage = () => {
                                 </p>
                             </div>
                             <Button
-                                onClick={() => window.open('mailto:fairarena.contact@gmail.com?subject=Refund Request', '_blank')}
+                                onClick={() => window.open('mailto:support@fairarena.app?subject=Refund Request', '_blank')}
                                 className="bg-[#ddef00] text-black hover:bg-[#ddef00]/90 font-semibold rounded-full px-8 py-6 text-lg transition-transform hover:scale-105"
                             >
                                 {t('refund.contact.button')}

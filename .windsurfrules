@@ -4,8 +4,8 @@
 
 FairArena is a production-grade full-stack skill assessment platform with enterprise architecture.
 
-**Live:** https://fair.sakshamg.me
-**API:** https://fairarena.sakshamg.me/api/v1
+**Live:** https://www.fairarena.app
+**API:** https://fairarena.app/api/v1
 **License:** Proprietary
 **Author:** Saksham Goel
 
@@ -320,7 +320,7 @@ export const sendEmail = inngest.createFunction(
 
     await step.run('send-email', async () => {
       await resend.emails.send({
-        from: 'FairArena <noreply@noreply.sakshamg.me>',
+        from: 'FairArena <noreply@noreply.fairarena.app>',
         to: user.email,
         subject: 'Welcome!',
         react: WelcomeEmail({ user }),
@@ -441,8 +441,8 @@ PORT=3000
 ### Frontend
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_...
-VITE_API_BASE_URL=https://fairarena.sakshamg.me
-VITE_SOCKET_URL=wss://fairarena.sakshamg.me
+VITE_API_BASE_URL=https://fairarena.app
+VITE_SOCKET_URL=wss://fairarena.app
 VITE_RAZORPAY_KEY_ID=rzp_...
 ```
 
@@ -503,5 +503,5 @@ pnpm lint               # ESLint
 
 ---
 
-**Support:** fairarena.contact@gmail.com
+**Support:** support@fairarena.app
 **Author:** @Saksham-Goel1107

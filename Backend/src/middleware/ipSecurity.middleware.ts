@@ -395,7 +395,7 @@ function createBlockedOverlay(title: string, messages: string[]): string {
 
     <div class="footer">
       If you believe this is an error, please contact our support team at
-      <a href="mailto:fairarena.contact@gmail.com">fairarena.contact@gmail.com</a>
+      <a href="mailto:support@fairarena.app">support@fairarena.app</a>
     </div>
   </div>
 </body>

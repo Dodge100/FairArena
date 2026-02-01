@@ -306,7 +306,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile> => {
 
 For questions about these context files:
 
-- **Email:** fairarena.contact@gmail.com
+- **Email:** support@fairarena.app
 - **Author:** Saksham Goel (@Saksham-Goel1107)
 - **Repository:** FairArena/FairArena (Private)
 

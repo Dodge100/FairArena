@@ -70,9 +70,12 @@ function Changelog() {
     const changelogData = t('changelog.entries', { returnObjects: true }) as ChangelogEntry[];
     const [expandedVersions, setExpandedVersions] = useState<Set<string>>(new Set());
 
+    const isInitialized = useRef(false);
+
     useEffect(() => {
-        if (changelogData && changelogData.length > 0) {
+        if (!isInitialized.current && changelogData && changelogData.length > 0) {
             setExpandedVersions(new Set([changelogData[0].version]));
+            isInitialized.current = true;
         }
     }, [changelogData]);
 

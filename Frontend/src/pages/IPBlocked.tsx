@@ -36,7 +36,7 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
     };
 
     const handleContactSupport = () => {
-        window.location.href = 'mailto:fairarena.contact@gmail.com?subject=IP%20Security%20Block%20Appeal';
+        window.location.href = 'mailto:support@fairarena.app?subject=IP%20Security%20Block%20Appeal';
     };
 
     return (
@@ -130,10 +130,10 @@ const IPBlockedPage = ({ reasons = [], onRetry }: IPBlockedPageProps) => {
                         <p className="text-xs text-slate-400">
                             {t('ipBlocked.footer')}{' '}
                             <a
-                                href="mailto:fairarena.contact@gmail.com"
+                                href="mailto:support@fairarena.app"
                                 className="text-blue-400 hover:text-blue-300 underline"
                             >
-                                fairarena.contact@gmail.com
+                                support@fairarena.app
                             </a>
                         </p>
                     </div>

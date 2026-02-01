@@ -1,4 +1,4 @@
-fairarena.sakshamg.me {
+backend.fairarena.app {
     @http {
         protocol http
     }
@@ -6,7 +6,7 @@ fairarena.sakshamg.me {
     reverse_proxy localhost:3000
 }
 
-prometheus.fairarena.sakshamg.me {
+prometheus.fairarena.app {
     @grafanaAuth {
         header X-Grafana-Token super-secret-token
     }
@@ -18,27 +18,27 @@ prometheus.fairarena.sakshamg.me {
     respond "Forbidden" 403
 }
 
-cadviser.fairarena.sakshamg.me {
-    @authorized {
-        cookie X-CADVISOR-ACCESS super-secret-cookie
-    }
+# cadviser.fairarena.app {
+#     @authorized {
+#         cookie X-CADVISOR-ACCESS super-secret-cookie
+#     }
 
-    handle @authorized {
-        @http {
-            protocol http
-        }
-        redir @http https://{host}{uri} permanent
-        reverse_proxy localhost:8080
-    }
+#     handle @authorized {
+#         @http {
+#             protocol http
+#         }
+#         redir @http https://{host}{uri} permanent
+#         reverse_proxy localhost:8080
+#     }
 
-    handle {
-        respond "Access Denied: Set cookie first" 403 {
-            close
-        }
-    }
-}
+#     handle {
+#         respond "Access Denied: Set cookie first" 403 {
+#             close
+#         }
+#     }
+# }
 
-# fair.sakshamg.me {
+# www.fairarena.app {
 #    @http {
 #        protocol http
 #    }
@@ -46,10 +46,10 @@ cadviser.fairarena.sakshamg.me {
 #    reverse_proxy localhost:4173
 #}
 
-n8n.sakshamg.me {
-    @http {
-        protocol http
-    }
-    redir @http https://{host}{uri} permanent
-    reverse_proxy localhost:5678
-}
+#n8n.sakshamg.me {
+#    @http {
+#        protocol http
+#    }
+#    redir @http https://{host}{uri} permanent
+#    reverse_proxy localhost:5678
+#}

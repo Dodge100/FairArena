@@ -7,7 +7,7 @@ Thank you for helping keep FairArena and its users safe!
 If you discover a security vulnerability in FairArena, please **do not open a public issue**. Instead, report it directly and responsibly by following these steps:
 
 1. **Email:**
-   Please send your report to [fairarena.contact@gmail.com](mailto:fairarena.contact@gmail.com) with details of the vulnerability and steps to reproduce.
+   Please send your report to [support@fairarena.app](mailto:support@fairarena.app) with details of the vulnerability and steps to reproduce.
 
 2. **What to include:**
    - A clear description of the vulnerability.
@@ -33,4 +33,4 @@ We appreciate your help in responsibly disclosing vulnerabilities. Your effort m
 
 ---
 
-For any security-related questions or concerns, please contact [fairarena.contact@gmail.com](mailto:fairarena.contact@gmail.com).
+For any security-related questions or concerns, please contact [contact@fairarena.app](mailto:contact@fairarena.app).

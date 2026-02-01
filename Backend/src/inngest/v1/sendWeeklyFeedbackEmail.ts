@@ -20,171 +20,173 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
   {
     id: 'send-weekly-feedback-email',
     concurrency: {
-      limit: 5,
+      limit: 1, // Limit to 1 to prevent any potential overlap, though cron should trigger once
     },
   },
   { cron: '0 0 * * 0' }, // Every Sunday at midnight
-  async () => {
+  async ({ step }) => {
     logger.info('Starting weekly feedback email job');
 
     try {
-      // Get all users with their settings (if any)
-      const allUsers = await getReadOnlyPrisma().user.findMany({
-        select: {
-          userId: true,
-          email: true,
-          profile: {
+      // Step 1: Fetch and categorize users
+      const { emailUsers, notificationUsers } = await step.run(
+        'fetch-target-users',
+        async () => {
+          // Get all users with their settings (if any)
+          const allUsers = await getReadOnlyPrisma().user.findMany({
             select: {
-              firstName: true,
-              lastName: true,
+              userId: true,
+              email: true,
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              settings: {
+                select: {
+                  settings: true,
+                },
+              },
             },
-          },
-          settings: {
-            select: {
-              settings: true,
-            },
-          },
-        },
-      });
+          });
 
-      // Filter users who want feedback emails (using defaults for missing settings)
-      const usersWithFeedbackEnabled = allUsers.filter((user) => {
-        const userSettings = user.settings?.settings as UserSettings;
-        const wantFeedbackMail =
-          userSettings?.wantToGetFeedbackMail ?? DEFAULT_SETTINGS.wantToGetFeedbackMail;
-        return wantFeedbackMail === true;
-      });
+          // Filter users who want feedback emails
+          const emailUsers = allUsers.filter((user) => {
+            const userSettings = user.settings?.settings as UserSettings;
+            const wantFeedbackMail =
+              userSettings?.wantToGetFeedbackMail ?? DEFAULT_SETTINGS.wantToGetFeedbackMail;
+            return wantFeedbackMail === true;
+          });
 
-      // Filter users who want feedback notifications (using defaults for missing settings)
-      const usersWithNotificationsEnabled = allUsers.filter((user) => {
-        const userSettings = user.settings?.settings as UserSettings;
-        const wantFeedbackNotifications =
-          userSettings?.wantFeedbackNotifications ?? DEFAULT_SETTINGS.wantFeedbackNotifications;
-        return wantFeedbackNotifications === true;
-      });
+          // Filter users who want feedback notifications
+          const notificationUsers = allUsers.filter((user) => {
+            const userSettings = user.settings?.settings as UserSettings;
+            const wantFeedbackNotifications =
+              userSettings?.wantFeedbackNotifications ??
+              DEFAULT_SETTINGS.wantFeedbackNotifications;
+            return wantFeedbackNotifications === true;
+          });
 
-      logger.info(
-        `Found ${usersWithFeedbackEnabled.length} users with feedback emails enabled (out of ${allUsers.length} total users)`,
-      );
-      logger.info(
-        `Found ${usersWithNotificationsEnabled.length} users with feedback notifications enabled (out of ${allUsers.length} total users)`,
+          logger.info(
+            `Found ${emailUsers.length} users for emails and ${notificationUsers.length} users for notifications`
+          );
+
+          return { emailUsers, notificationUsers };
+        }
       );
 
-      // Process in batches of 100 to avoid overwhelming the system
-      const batchSize = 100;
-      for (let i = 0; i < usersWithFeedbackEnabled.length; i += batchSize) {
-        const batch = usersWithFeedbackEnabled.slice(i, i + batchSize);
-        logger.info(
-          `Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(usersWithFeedbackEnabled.length / batchSize)}`,
-        );
+      // Step 2: Send emails
+      await step.run('send-feedback-emails', async () => {
+        if (emailUsers.length === 0) return { sent: 0 };
 
-        await Promise.all(
-          batch.map(async (user) => {
-            try {
-              // Generate unique feedback code
-              const feedbackCode = createId();
+        const batchSize = 50; // Smaller batch size for better reliability
+        let sentCount = 0;
 
-              // Create feedback entry
-              await prisma.feedback.create({
-                data: {
-                  feedbackCode,
-                  isUsed: false,
-                },
-              });
+        for (let i = 0; i < emailUsers.length; i += batchSize) {
+          const batch = emailUsers.slice(i, i + batchSize);
 
-              // Send email
-              const name = user.profile?.firstName
-                ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
-                : 'there';
+          await Promise.all(
+            batch.map(async (user) => {
+              try {
+                const feedbackCode = createId();
 
-              const unsubscribeUrl = `${process.env.FRONTEND_URL}/dashboard/account-settings`;
+                await prisma.feedback.create({
+                  data: {
+                    feedbackCode,
+                    isUsed: false,
+                  },
+                });
 
-              await sendEmail({
-                to: user.email,
-                subject: "We'd love your feedback!",
-                templateType: 'weekly-feedback',
-                templateData: {
-                  name,
-                  feedbackUrl: `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`,
-                },
-                headers: {
-                  'List-Unsubscribe': `<${unsubscribeUrl}>`,
-                },
-              });
+                const name = user.profile?.firstName
+                  ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
+                  : 'there';
 
-              logger.info(`Sent feedback email to user ${user.userId}`);
-            } catch (error) {
-              logger.error(`Failed to send feedback email to user ${user.userId}`, {
-                error: error instanceof Error ? error.message : String(error),
-              });
-            }
-          }),
-        );
+                const unsubscribeUrl = `${process.env.FRONTEND_URL}/dashboard/account-settings`;
 
-        // Small delay between batches to prevent overwhelming email service
-        if (i + batchSize < usersWithFeedbackEnabled.length) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+                await sendEmail({
+                  to: user.email,
+                  subject: "We'd love your feedback!",
+                  templateType: 'weekly-feedback',
+                  templateData: {
+                    name,
+                    feedbackUrl: `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`,
+                  },
+                  headers: {
+                    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+                  },
+                });
+                sentCount++;
+              } catch (error) {
+                logger.error(`Failed to send feedback email to user ${user.userId}`, {
+                  error: error instanceof Error ? error.message : String(error),
+                });
+              }
+            })
+          );
+
+          // Small delay between batches
+          if (i + batchSize < emailUsers.length) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
         }
-      }
+        return { sent: sentCount };
+      });
 
-      // Send in-app notifications to users who opted in
-      logger.info('Starting to send in-app notifications');
+      // Step 3: Send notifications
+      await step.run('send-feedback-notifications', async () => {
+        if (notificationUsers.length === 0) return { sent: 0 };
 
-      // Process notification users in batches
-      for (let i = 0; i < usersWithNotificationsEnabled.length; i += batchSize) {
-        const batch = usersWithNotificationsEnabled.slice(i, i + batchSize);
-        logger.info(
-          `Processing notification batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(usersWithNotificationsEnabled.length / batchSize)}`,
-        );
+        const batchSize = 50;
+        let sentCount = 0;
 
-        await Promise.all(
-          batch.map(async (user) => {
-            try {
-              const name = user.profile?.firstName
-                ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
-                : 'there';
+        for (let i = 0; i < notificationUsers.length; i += batchSize) {
+          const batch = notificationUsers.slice(i, i + batchSize);
 
-              // Create feedback entry for notification users too
-              const feedbackCode = createId();
-              await prisma.feedback.create({
-                data: {
-                  feedbackCode,
-                  isUsed: false,
-                },
-              });
+          await Promise.all(
+            batch.map(async (user) => {
+              try {
+                const name = user.profile?.firstName
+                  ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
+                  : 'there';
 
-              const notificationUrl = `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`;
+                const feedbackCode = createId();
+                await prisma.feedback.create({
+                  data: {
+                    feedbackCode,
+                    isUsed: false,
+                  },
+                });
 
-              await notificationService.createNotification({
-                userId: user.userId,
-                type: NotificationType.REMINDER,
-                title: "We'd love your feedback!",
-                message: `<p>Hi ${name},</p><p>Thank you for being part of FairArena! Your feedback helps us improve and build features that matter to you.</p><p>We'd love to hear your thoughts, suggestions, or any issues you've encountered. It only takes a minute!</p>`,
-                description: 'Weekly feedback request from FairArena team',
-                actionUrl: notificationUrl,
-                actionLabel: 'Share Your Feedback',
-                metadata: {
-                  feedbackCode,
-                  type: 'weekly-feedback',
-                },
-              });
+                const notificationUrl = `${process.env.FRONTEND_URL}/feedback/${feedbackCode}`;
 
-              logger.info(`Sent feedback notification to user ${user.userId}`);
-            } catch (error) {
-              logger.error(`Failed to send feedback notification to user ${user.userId}`, {
-                error: error instanceof Error ? error.message : String(error),
-              });
-            }
-          }),
-        );
-
-        // Small delay between batches
-        if (i + batchSize < usersWithNotificationsEnabled.length) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+                await notificationService.createNotification({
+                  userId: user.userId,
+                  type: NotificationType.REMINDER,
+                  title: "We'd love your feedback!",
+                  message: `<p>Hi ${name},</p><p>Thank you for being part of FairArena! Your feedback helps us improve and build features that matter to you.</p><p>We'd love to hear your thoughts, suggestions, or any issues you've encountered. It only takes a minute!</p>`,
+                  description: 'Weekly feedback request from FairArena team',
+                  actionUrl: notificationUrl,
+                  actionLabel: 'Share Your Feedback',
+                  metadata: {
+                    feedbackCode,
+                    type: 'weekly-feedback',
+                  },
+                });
+                sentCount++;
+              } catch (error) {
+                logger.error(`Failed to send feedback notification to user ${user.userId}`, {
+                  error: error instanceof Error ? error.message : String(error),
+                });
+              }
+            })
+          );
         }
-      }
+        return { sent: sentCount };
+      });
 
       logger.info('Completed weekly feedback email and notification job');
+      return { success: true };
     } catch (error) {
       logger.error('Weekly feedback email job failed', {
         error: error instanceof Error ? error.message : String(error),

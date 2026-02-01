@@ -187,10 +187,10 @@ export default function CommunityGuidelines() {
                                 {t('communityGuidelines.report.button')}
                             </a>
                             <a
-                                href="mailto:fairarena.contact@gmail.com"
+                                href="mailto:legal@fairarena.app"
                                 className="px-8 py-3 bg-white/10 backdrop-blur-sm rounded-lg font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300"
                             >
-                                {t('communityGuidelines.report.emailLabel')}: fairarena.contact@gmail.com
+                                {t('communityGuidelines.report.emailLabel')}: legal@fairarena.app
                             </a>
                         </div>
                     </motion.section>

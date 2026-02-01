@@ -726,7 +726,7 @@
       "text": "Nous apprécions les efforts de la communauté de recherche en sécurité pour aider à garder FairArena sécurisé. Si vous découvrez une vulnérabilité de sécurité, veuillez la signaler de manière responsable :",
       "email": {
         "label": "E-mail",
-        "value": "fairarena.contact@gmail.com"
+        "value": "support@fairarena.app"
       },
       "pgp": {
         "label": "Clé PGP",
@@ -784,7 +784,7 @@
         "list": [
           "“Société” (désignée par \"la Société\", \"Nous\", \"Notre\" ou \"Nos\" dans cette Politique de Cookies) fait référence à FairArena.",
           "“Cookies” signifie de petits fichiers placés sur Votre ordinateur, appareil mobile ou tout autre appareil par un site web, contenant les détails de Votre historique de navigation sur ce site web parmi ses nombreuses utilisations.",
-          "“Site Web” fait référence à FairArena, accessible depuis fair.sakshamg.me",
+          "“Site Web” fait référence à FairArena, accessible depuis www.fairarena.app",
           "“Vous” signifie la personne accédant ou utilisant le Site Web, ou une société, ou toute entité juridique pour le compte de laquelle cette personne accède ou utilise le Site Web, le cas échéant."
         ]
       },
@@ -827,7 +827,7 @@
       "contact": {
         "title": "5. Nous Contacter",
         "description": "Si vous avez des questions concernant cette Politique de Cookies, Vous pouvez nous contacter :",
-        "email": "Par e-mail : fairarena.contact@gmail.com"
+        "email": "Par e-mail : support@fairarena.app"
       }
     }
   },
@@ -995,7 +995,7 @@
       {
         "category": "support",
         "q": "Comment puis-je obtenir de l'aide ?",
-        "a": "Vous pouvez contacter notre équipe de support par e-mail à fairarena.contact@gmail.com, via la page de support ou en utilisant le chat intégré. Les clients Entreprise bénéficient d'un support prioritaire avec des gestionnaires de compte dédiés."
+        "a": "Vous pouvez contacter notre équipe de support par e-mail à support@fairarena.app, via la page de support ou en utilisant le chat intégré. Les clients Entreprise bénéficient d'un support prioritaire avec des gestionnaires de compte dédiés."
       },
       {
         "category": "support",
@@ -1139,7 +1139,7 @@
       "contact": {
         "title": "11. Contactez-nous",
         "description": "Si vous avez des questions concernant cette politique de confidentialité, veuillez nous contacter :",
-        "email": "Par email : fairarena.contact@gmail.com"
+        "email": "Par email : support@fairarena.app"
       }
     }
   },
@@ -1239,7 +1239,7 @@
       "contact": {
         "title": "13. Contactez-nous",
         "description": "Si vous avez des questions concernant ces Conditions, vous pouvez nous contacter :",
-        "email": "Par email : fairarena.contact@gmail.com"
+        "email": "Par email : support@fairarena.app"
       }
     }
   },

@@ -498,9 +498,9 @@ This project is licensed under the **Proprietary License** — see the [LICENSE]
 ---
 
 <p align="center">
-  <a href="https://fair.sakshamg.me">🌐 Website</a> •
+  <a href="https://www.fairarena.app">🌐 Website</a> •
   <a href="https://github.com/fairarena">💻 GitHub</a> •
-  <a href="mailto:fairarena.contact@gmail.com">📧 Support</a>
+  <a href="mailto:support@fairarena.app">📧 Support</a>
 </p>
 
 <p align="center">

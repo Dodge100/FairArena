@@ -177,8 +177,7 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.contact.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.contact.description')}
-            <br />
-            <span className="text-[#879400]">{t('privacyPolicy.sections.contact.email')}</span>
+            <a className="text-[#879400]" href="mailto:legal@fairarena.app">legal@fairarena.app</a>
           </p>
         </LegalSection>
       </div>

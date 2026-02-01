@@ -189,7 +189,7 @@ export default function Support() {
   const handleContactMethod = (method: string) => {
     switch (method) {
       case 'email':
-        window.open('mailto:fairarena.contact@gmail.com', '_blank');
+        window.open('mailto:support@fairarena.app', '_blank');
         break;
       case 'chat':
         // Scroll to form for now, can be integrated with a chat widget later
@@ -338,7 +338,7 @@ export default function Support() {
               <p
                 className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
               >
-                fairarena.contact@gmail.com
+                support@fairarena.app
               </p>
               <div
                 className={cn(`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`)}

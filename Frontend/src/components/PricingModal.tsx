@@ -129,7 +129,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
     if (plan.amount === 0) {
       // Custom pricing - redirect to contact
-      window.open('mailto:fairarena.contact@gmail.com?subject=Enterprise Plan Inquiry', '_blank');
+      window.open('mailto:support@fairarena.app?subject=Enterprise Plan Inquiry', '_blank');
       return;
     }
 
@@ -382,7 +382,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
             <p>
               {t('pricing.help.text')}{' '}
               <a
-                href="mailto:fairarena.contact@gmail.com"
+                href="mailto:support@fairarena.app"
                 className="text-[#d9ff00] hover:underline"
               >
                 {t('pricing.help.link')}

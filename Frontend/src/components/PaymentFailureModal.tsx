@@ -120,10 +120,10 @@ export default function PaymentFailureModal({
               <span className="hidden sm:inline"> </span>
               Contact us at{' '}
               <a
-                href="mailto:fairarena.contact@gmail.com"
+                href="mailto:support@fairarena.app"
                 className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 hover:decoration-blue-300 underline-offset-2 transition-colors font-medium"
               >
-                fairarena.contact@gmail.com
+                support@fairarena.app
               </a>
             </p>
           </div>

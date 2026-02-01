@@ -130,8 +130,7 @@ function TermsAndConditions() {
         <LegalSection title={t('termsAndConditions.sections.contact.title')} isDark={isDark}>
           <p>
             {t('termsAndConditions.sections.contact.description')}
-            <br />
-            <span className="text-[#909d00]">{t('termsAndConditions.sections.contact.email')}</span>
+            <a className="text-[#909d00]" href="mailto:legal@fairarena.app">legal@fairarena.app</a>
           </p>
         </LegalSection>
       </div>

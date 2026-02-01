@@ -35,7 +35,7 @@
 ## 🎬 Demo
 
 <p align="center">
-  <a href="https://fair.sakshamg.me" target="_blank">
+  <a href="https://www.fairarena.app" target="_blank">
     <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena Dashboard Preview" width="100%" />
   </a>
 </p>
@@ -217,9 +217,9 @@ This project is licensed under the **Proprietary License** — see the [LICENSE]
 ---
 
 <p align="center">
-  <a href="https://fair.sakshamg.me">🌐 Website</a> •
+  <a href="https://www.fairarena.app">🌐 Website</a> •
   <a href="https://github.com/FairArena/FairArena">💻 GitHub</a> •
-  <a href="mailto:fairarena.contact@gmail.com">📧 Support</a>
+  <a href="mailto:support@fairarena.app">📧 Support</a>
 </p>
 
 <p align="center">

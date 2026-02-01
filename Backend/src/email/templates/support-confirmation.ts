@@ -119,7 +119,7 @@ export const supportConfirmationEmailTemplate = (
           <tr>
             <td class="footer">
               <p><strong>FairArena Support Team</strong></p>
-              <p>Questions? Contact us at <a href="mailto:fairarena.contact@gmail.com">fairarena.contact@gmail.com</a></p>
+              <p>Questions? Contact us at <a href="mailto:support@fairarena.app">support@fairarena.app</a></p>
               <p>&copy; ${currentYear} FairArena. All rights reserved.</p>
             </td>
           </tr>

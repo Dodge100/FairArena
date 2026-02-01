@@ -6,7 +6,7 @@
 
   <!-- Homepage -->
   <url>
-    <loc>https://fair.sakshamg.me/</loc>
+    <loc>https://www.fairarena.app/</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -14,35 +14,35 @@
 
   <!-- Main Pages -->
   <url>
-    <loc>https://fair.sakshamg.me/about</loc>
+    <loc>https://www.fairarena.app/about</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/why-choose-us</loc>
+    <loc>https://www.fairarena.app/why-choose-us</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/changelog</loc>
+    <loc>https://www.fairarena.app/changelog</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/faq</loc>
+    <loc>https://www.fairarena.app/faq</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/support</loc>
+    <loc>https://www.fairarena.app/support</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -50,28 +50,28 @@
 
   <!-- Legal Pages -->
   <url>
-    <loc>https://fair.sakshamg.me/privacy-policy</loc>
+    <loc>https://www.fairarena.app/privacy-policy</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/terms-and-conditions</loc>
+    <loc>https://www.fairarena.app/terms-and-conditions</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/cookie-policy</loc>
+    <loc>https://www.fairarena.app/cookie-policy</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/refund</loc>
+    <loc>https://www.fairarena.app/refund</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
@@ -79,14 +79,14 @@
 
   <!-- Auth Pages (public) -->
   <url>
-    <loc>https://fair.sakshamg.me/signin</loc>
+    <loc>https://www.fairarena.app/signin</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://fair.sakshamg.me/signup</loc>
+    <loc>https://www.fairarena.app/signup</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

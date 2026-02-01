@@ -4,7 +4,7 @@
 
 **Name:** FairArena
 **Type:** Full-stack skill assessment platform
-**Stage:** Production (https://fair.sakshamg.me)
+**Stage:** Production (https://www.fairarena.app)
 **License:** Proprietary
 **Author:** Saksham Goel (@Saksham-Goel1107)
 
@@ -351,4 +351,4 @@ import './styles.css';
 
 ---
 
-**Support:** fairarena.contact@gmail.com
+**Support:** support@fairarena.app

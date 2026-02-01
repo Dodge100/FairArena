@@ -305,7 +305,7 @@
       {
         "category": "support",
         "q": "How can I get help?",
-        "a": "You can reach our support team via email at fairarena.contact@gmail.com, through the support page, or by using the in-app chat. Enterprise customers get priority support with dedicated account managers."
+        "a": "You can reach our support team via email at support@fairarena.app, through the support page, or by using the in-app chat. Enterprise customers get priority support with dedicated account managers."
       },
       {
         "category": "support",
@@ -863,7 +863,7 @@
       "text": "We appreciate the security research community's efforts to help keep FairArena secure. If you discover a security vulnerability, please report it responsibly:",
       "email": {
         "label": "Email",
-        "value": "fairarena.contact@gmail.com"
+        "value": "support@fairarena.app"
       },
       "pgp": {
         "label": "PGP Key",
@@ -1016,7 +1016,7 @@
       "contact": {
         "title": "11. Contact Us",
         "description": "If you have any questions about this Privacy Policy, please contact us:",
-        "email": "By email: fairarena.contact@gmail.com"
+        "email": "By email: support@fairarena.app"
       }
     }
   },
@@ -1116,7 +1116,7 @@
       "contact": {
         "title": "13. Contact Us",
         "description": "If you have any questions about these Terms, You can contact us:",
-        "email": "By email: fairarena.contact@gmail.com"
+        "email": "By email: support@fairarena.app"
       }
     }
   },
@@ -1134,7 +1134,7 @@
         "list": [
           "“Company” (referred to as either \"the Company\", \"We\", \"Us\" or \"Our\" in this Cookies Policy) refers to FairArena.",
           "“Cookies” means small files that are placed on Your computer, mobile device or any other device by a website, containing details of Your browsing history on that website among its many uses.",
-          "“Website” refers to FairArena, accessible from fair.sakshamg.me",
+          "“Website” refers to FairArena, accessible from www.fairarena.app",
           "“You” means the individual accessing or using the Website, or a company, or any legal entity on behalf of which such individual is accessing or using the Website, as applicable."
         ]
       },
@@ -1177,7 +1177,7 @@
       "contact": {
         "title": "5. Contact Us",
         "description": "If you have any questions about this Cookie Policy, You can contact us:",
-        "email": "By email: fairarena.contact@gmail.com"
+        "email": "By email: support@fairarena.app"
       }
     }
   },
@@ -1359,6 +1359,26 @@
           "Check if you already have an active session with the application"
         ]
       }
+    }
+  }
+  ,
+  "securityAcknowledgments": {
+    "title": "Security Hall of Fame",
+    "subtitle": "We would like to thank the following individuals for responsibly disclosing security vulnerabilities and helping us make FairArena safer for everyone.",
+    "years": {
+      "2026": "2026",
+      "2025": "2025"
+    },
+    "columns": {
+      "researcher": "Researcher",
+      "date": "Date",
+      "reported": "Vulnerability"
+    },
+    "empty": "No vulnerabilities reported yet for this year. Will you be the first?",
+    "cta": {
+      "title": "Found a vulnerability?",
+      "text": "Check out our Security Policy to learn how to responsibly disclose security issues.",
+      "button": "View Security Policy"
     }
   }
 }

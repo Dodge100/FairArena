@@ -44,7 +44,7 @@ export default function Maintenance() {
             <Button
               variant="outline"
               className="ml-8"
-              onClick={() => (window.location.href = 'mailto:fairarena.contact@gmail.com')}
+              onClick={() => (window.location.href = 'mailto:support@fairarena.app')}
             >
               {t('maintenance.assistance.button')}
             </Button>

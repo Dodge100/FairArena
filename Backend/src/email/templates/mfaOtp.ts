@@ -146,7 +146,7 @@ export const mfaOtpTemplate = (params: {
     <div class="footer">
       <p>© ${currentYear} FairArena. All rights reserved.</p>
       <p>
-        <a href="https://fair.sakshamg.me">fair.sakshamg.me</a>
+        <a href="https://www.fairarena.app">www.fairarena.app</a>
       </p>
     </div>
   </div>

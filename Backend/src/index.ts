@@ -145,10 +145,11 @@ app.use(setCsrfToken);
 // Track authentication failures for brute force protection
 app.use(trackAuthFailures);
 
-const originRegex = new RegExp(
-  `^https://(${ENV.CORS_URL.replace('.', '\\.')}|[a-z0-9-]+\\.${ENV.CORS_URL.replace('.', '\\.')})$`,
-  'i',
+const allowedProdOrigins = new RegExp(
+  '^https://([a-z0-9-]+\\.)*(fairarena\\.(app|live))$',
+  'i'
 );
+
 
 app.use(
   cors((req, callback) => {
@@ -176,7 +177,7 @@ app.use(
           return cb(null, true);
         }
 
-        if (originRegex.test(origin) || ENV.NODE_ENV === 'development') {
+        if (allowedProdOrigins.test(origin) || ENV.NODE_ENV === 'development') {
           return cb(null, true);
         }
 

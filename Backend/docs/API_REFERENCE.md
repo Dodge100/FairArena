@@ -1,7 +1,7 @@
 # FairArena API Reference
 
 > **Version:** 1.0.0
-> **Base URL:** `https://fairarena.sakshamg.me/api/v1`
+> **Base URL:** `https://fairarena.app/api/v1`
 > **Last Updated:** 2025-12-30
 
 ---

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "fairarena-api-v1-complete",
     "name": "FairArena API v1 - Complete",
-    "description": "# FairArena API Reference\n\nComplete API documentation for FairArena platform.\n\n## Base URLs\n| Environment | URL |\n|-------------|-----|\n| Production | `https://fairarena.sakshamg.me` |\n| Development | `http://localhost:3000` |\n\n## Authentication\nMost endpoints require Clerk JWT authentication:\n```\nAuthorization: Bearer <clerk_jwt_token>\n```\n\n## Rate Limiting\n- Standard: 100 req/min\n- Auth endpoints: 10 req/min\n- OTP: 3 req/24hr",
+    "description": "# FairArena API Reference\n\nComplete API documentation for FairArena platform.\n\n## Base URLs\n| Environment | URL |\n|-------------|-----|\n| Production | `https://fairarena.app` |\n| Development | `http://localhost:3000` |\n\n## Authentication\nMost endpoints require Clerk JWT authentication:\n```\nAuthorization: Bearer <clerk_jwt_token>\n```\n\n## Rate Limiting\n- Standard: 100 req/min\n- Auth endpoints: 10 req/min\n- OTP: 3 req/24hr",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{clerkToken}}", "type": "string" }] },

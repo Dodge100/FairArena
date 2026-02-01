@@ -179,7 +179,7 @@ function About() {
             </li>
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              {t('about.cta.contact')} <span className="text-[#ddef00]">fairarena.contact@gmail.com</span>
+              {t('about.cta.contact')} <a className="text-[#ddef00]" href="mailto:contact@fairarena.app">contact@fairarena.app</a>
             </li>
           </ul>
         </section>

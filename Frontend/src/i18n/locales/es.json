@@ -305,7 +305,7 @@
       {
         "category": "apoyo",
         "q": "¿Cómo puedo obtener ayuda?",
-        "a": "Puede comunicarse con nuestro equipo de soporte por correo electrónico a fairarena.contact@gmail.com, a través de la página de soporte o mediante el chat en la aplicación. Los clientes empresariales obtienen soporte prioritario con administradores de cuentas dedicados."
+        "a": "Puede comunicarse con nuestro equipo de soporte por correo electrónico a support@fairarena.app, a través de la página de soporte o mediante el chat en la aplicación. Los clientes empresariales obtienen soporte prioritario con administradores de cuentas dedicados."
       },
       {
         "category": "apoyo",
@@ -879,7 +879,7 @@
       "text": "Apreciamos los esfuerzos de la comunidad de investigación de seguridad para ayudar a mantener seguro a FairArena. Si descubre una vulnerabilidad de seguridad, infórmelo de manera responsable:",
       "email": {
         "label": "Correo electrónico",
-        "value": "fairarena.contact@gmail.com"
+        "value": "support@fairarena.app"
       },
       "pgp": {
         "label": "Clave PGP",
@@ -1032,7 +1032,7 @@
       "contact": {
         "title": "11. Contáctenos",
         "description": "Si tiene alguna pregunta sobre esta Política de Privacidad, por favor contáctenos:",
-        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+        "email": "Por correo electrónico: support@fairarena.app"
       }
     }
   },
@@ -1132,7 +1132,7 @@
       "contact": {
         "title": "13. Contáctenos",
         "description": "Si tiene alguna pregunta sobre estos Términos, puede contactarnos:",
-        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+        "email": "Por correo electrónico: support@fairarena.app"
       }
     }
   },
@@ -1150,7 +1150,7 @@
         "list": [
           "“Empresa” (denominada \"la Compañía\", \"Nosotros\", \"Nos\" o \"Nuestro\" en esta Política de Cookies) se refiere a FairArena.",
           "“Cookies” significa pequeños archivos que un sitio web coloca en su computadora, dispositivo móvil o cualquier otro dispositivo y que contienen detalles de su historial de navegación en ese sitio web, entre sus muchos usos.",
-          "“Sitio web” se refiere a FairArena, accesible desde fair.sakshamg.me",
+          "“Sitio web” se refiere a FairArena, accesible desde www.fairarena.app",
           "“Usted” significa la persona que accede o utiliza el sitio web, o una empresa o cualquier entidad legal en nombre de la cual dicha persona accede o utiliza el sitio web, según corresponda."
         ]
       },
@@ -1193,7 +1193,7 @@
       "contact": {
         "title": "5. Contáctenos",
         "description": "Si tiene alguna duda sobre esta Política de Cookies, puede contactar con nosotros:",
-        "email": "Por correo electrónico: fairarena.contact@gmail.com"
+        "email": "Por correo electrónico: support@fairarena.app"
       }
     }
   },

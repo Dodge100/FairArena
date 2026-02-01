@@ -85,7 +85,7 @@ export const newDeviceLoginTemplate = (params: {
       <p><strong>FairArena</strong></p>
       <p>&copy; ${currentYear} FairArena. All rights reserved.</p>
       <p style="margin-top: 8px;">
-        <a href="https://fair.sakshamg.me" style="color: #3182CE; text-decoration: none;">fair.sakshamg.me</a>
+        <a href="https://www.fairarena.app" style="color: #3182CE; text-decoration: none;">www.fairarena.app</a>
       </p>
     </div>
   </div>

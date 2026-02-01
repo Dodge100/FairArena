@@ -105,7 +105,7 @@ export default function SecurityPolicy() {
                         <div className="bg-gray-900/50 rounded-lg p-6 space-y-4">
                             <div>
                                 <h3 className="font-semibold text-green-400 mb-2">{t('securityPolicy.disclosure.email.label')}</h3>
-                                <a href="mailto:fairarena.contact@gmail.com" className="text-gray-300 hover:text-green-400">
+                                <a href="mailto:support@fairarena.app" className="text-gray-300 hover:text-green-400">
                                     {t('securityPolicy.disclosure.email.value')}
                                 </a>
                             </div>

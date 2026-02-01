@@ -81,7 +81,7 @@ function Footer() {
               { label: t('footer.menu.items.changelog'), path: 'changelog' },
               { label: t('footer.menu.items.faq'), path: 'faq' },
               { label: t('footer.menu.items.pricing'), path: '#pricing', hash: true },
-              { label: t('footer.menu.items.status'), path: 'https://status.fairarena.sakshamg.me', badge: true },
+              { label: t('footer.menu.items.status'), path: 'https://status.fairarena.app', badge: true },
             ].map((item) => (
               <li
                 key={item.path}
@@ -113,8 +113,8 @@ function Footer() {
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
             {[
-              { label: t('footer.resources.items.docs'), path: 'https://docs.fair.sakshamg.me/', external: true },
-              { label: t('footer.resources.items.blog'), path: 'https://blogs.fair.sakshamg.me/', external: true },
+              { label: t('footer.resources.items.docs'), path: 'https://docs.fairarena.app', external: true },
+              { label: t('footer.resources.items.blog'), path: 'https://blogs.fairarena.app', external: true },
               { label: t('footer.resources.items.accessibility'), path: 'accessibility' },
               { label: t('footer.resources.items.communityGuidelines'), path: 'community-guidelines' },
               { label: t('footer.resources.items.securityPolicy'), path: 'security-policy' },

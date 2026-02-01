@@ -3,7 +3,7 @@
 ## Project Overview
 FairArena is a production-ready full-stack platform for fair and transparent skill assessment. Built with modern technologies and enterprise-grade architecture.
 
-**Live URL:** https://fair.sakshamg.me
+**Live URL:** https://www.fairarena.app
 **Author:** Saksham Goel (Saksham-Goel1107)
 **License:** Proprietary
 
@@ -118,7 +118,7 @@ FairArena/
 ## API Architecture
 
 ### Base URLs
-- **Production:** `https://fairarena.sakshamg.me/api/v1`
+- **Production:** `https://fairarena.app/api/v1`
 - **Development:** `http://localhost:3000/api/v1`
 
 ### Authentication
@@ -469,8 +469,8 @@ const cached = await redis.get('user:123');
 ## Support
 
 For issues or questions, contact:
-- **Email:** fairarena.contact@gmail.com
-- **Support Portal:** https://fair.sakshamg.me/support
+- **Email:** contact@fairarena.app
+- **Support Portal:** https://www.fairarena.app/support
 - **GitHub Issues:** (Internal repository)
 
 ---

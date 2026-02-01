@@ -101,7 +101,7 @@ export default function DMCA() {
                             </p>
                             <div className="bg-black/30 rounded-lg p-6 space-y-2 text-gray-300">
                                 <p><strong>{t('dmca.contact.agentLabel')}:</strong> {t('dmca.contact.agentValue')}</p>
-                                <p><strong>{t('dmca.contact.emailLabel')}:</strong> <a href="mailto:fairarena.contact@gmail.com" className="text-red-400 hover:underline">fairarena.contact@gmail.com</a></p>
+                                <p><strong>{t('dmca.contact.emailLabel')}:</strong> <a href="mailto:legal@fairarena.app" className="text-red-400 hover:underline">legal@fairarena.app</a></p>
                                 <p><strong>{t('dmca.contact.subjectLabel')}:</strong> {t('dmca.contact.subjectValue')}</p>
                             </div>
                             <p className="text-sm text-gray-400 mt-4">

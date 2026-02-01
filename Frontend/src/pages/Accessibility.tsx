@@ -134,7 +134,7 @@ export default function Accessibility() {
                             {t('accessibility.feedback.text')}
                         </p>
                         <ul className="space-y-2 text-gray-300 mb-6">
-                            <li>{t('accessibility.feedback.emailLabel')}: <a href="mailto:fairarena.contact@gmail.com" className="text-purple-400 hover:underline">fairarena.contact@gmail.com</a></li>
+                            <li>{t('accessibility.feedback.emailLabel')}: <a href="mailto:support@fairarena.app" className="text-purple-400 hover:underline">support@fairarena.app</a></li>
                             <li>{t('accessibility.feedback.supportLabel')}: <a href="/support" className="text-purple-400 hover:underline">{t('accessibility.feedback.supportButton')}</a></li>
                         </ul>
                         <p className="text-sm text-gray-400">

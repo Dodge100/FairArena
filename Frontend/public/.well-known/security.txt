@@ -1,10 +1,10 @@
-Contact: mailto:fairarena.contact@gmail.com
-Contact: https://fair.sakshamg.me/support
+Contact: mailto:support@fairarena.app
+Contact: https://www.fairarena.app/support
 Expires: 2027-01-24T00:00:00.000Z
 Preferred-Languages: en
-Canonical: https://fair.sakshamg.me/.well-known/security.txt
-Policy: https://fair.sakshamg.me/security-policy
-Acknowledgments: https://fair.sakshamg.me/security-acknowledgments
+Canonical: https://www.fairarena.app/.well-known/security.txt
+Policy: https://www.fairarena.app/security-policy
+Acknowledgments: https://www.fairarena.app/security-acknowledgments
 
 # Security Policy
 # If you discover a security vulnerability, please report it responsibly.

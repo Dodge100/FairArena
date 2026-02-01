@@ -89,7 +89,7 @@ export const weeklyFeedbackEmailTemplate = (params: {
                   <td align="center" style="padding: 0 0 16px;">
                     <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.5;">
                       FairArena Team<br>
-                      <a href="mailto:fairarena.contact@gmail.com" style="color: #667eea; text-decoration: none;">fairarena.contact@gmail.com</a>
+                      <a href="mailto:support@fairarena.app" style="color: #667eea; text-decoration: none;">support@fairarena.app</a>
                     </p>
                   </td>
                 </tr>
