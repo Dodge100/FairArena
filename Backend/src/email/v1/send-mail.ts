@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import notificationapi from 'notificationapi-node-server-sdk';
+import { Pingram } from 'pingram';
 import { Resend } from 'resend';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
@@ -41,8 +41,10 @@ import { welcomeEmailTemplate } from '../templates/welcome.js';
 
 const resend = new Resend(ENV.RESEND_API_KEY);
 
-// Initialize NotificationAPI
-notificationapi.init(ENV.NOTIFICATIONAPI_CLIENT_ID, ENV.NOTIFICATIONAPI_CLIENT_SECRET);
+const notificationapi = new Pingram({
+  apiKey: ENV.PINGRAM_API_KEY,
+  baseUrl: 'https://api.pingram.io'
+});
 
 // Create nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -388,13 +390,13 @@ export async function sendEmail<T extends TemplateType>(
                     ? att.content.toString('base64')
                     : att.content,
                   contentType: att.contentType || 'application/octet-stream',
-                }))
+                } as any))
                 : undefined,
           },
         },
       });
 
-      logger.info('Email sent successfully via NotificationAPI', { data: result.data });
+      logger.info('Email sent successfully via NotificationAPI', { data: result });
 
       return result;
     } else {

@@ -1,20 +1,13 @@
-import notificationapi from 'notificationapi-node-server-sdk';
+import { Pingram } from 'pingram';
 import { ENV } from '../../config/env.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
-// Initialize NotificationAPI
-try {
-  notificationapi.init(
-    ENV.NOTIFICATIONAPI_CLIENT_ID || '',
-    ENV.NOTIFICATIONAPI_CLIENT_SECRET || ''
-  );
-  logger.info('NotificationAPI initialized for voice calls');
-} catch (error) {
-  logger.error('Failed to initialize NotificationAPI', {
-    error: error instanceof Error ? error.message : String(error),
-  });
-}
+const notificationapi = new Pingram({
+  apiKey: ENV.PINGRAM_API_KEY,
+  baseUrl: 'https://api.pingram.io'
+});
+logger.info('NotificationAPI initialized for voice calls');
 
 const sendVoiceCall = async (userId: string, phoneNumber: string, otp: string) => {
   try {
