@@ -129,21 +129,24 @@ export const paymentVerified = inngest.createFunction(
     // Invalidate user credits cache after credits are awarded
     await step.run('invalidate-credits-cache', async () => {
       try {
-        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:balance`;
-        const historyCachePattern = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:history:*`;
-        const eligibilityCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:eligibility`;
+        const patterns = [
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`,
+        ];
 
-        // Delete specific cache keys
-        await redis.del(creditsCacheKey);
-        await redis.del(eligibilityCacheKey);
-
-        // Delete all credit history cache keys for this user (using the correct prefix from controller)
-        const historyKeys = await redis.keys(historyCachePattern);
-        if (historyKeys.length > 0) {
-          await redis.del(...historyKeys);
+        for (const pattern of patterns) {
+          if (pattern.includes('*')) {
+            const keys = await redis.keys(pattern);
+            if (keys.length > 0) {
+              await redis.del(...keys);
+            }
+          } else {
+            await redis.del(pattern);
+          }
         }
 
-        logger.info('User credits cache invalidated after payment', { userId, invalidatedKeys: [creditsCacheKey, ...historyKeys] });
+        logger.info('User credits cache invalidated after payment', { userId });
       } catch (error) {
         logger.warn('Failed to invalidate credits cache', { error, userId });
       }

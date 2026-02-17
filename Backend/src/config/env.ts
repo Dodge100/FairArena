@@ -210,11 +210,17 @@ export const ENV = {
   // Vercel OAuth
   VERCEL_CLIENT_ID: getEnv('VERCEL_CLIENT_ID', ''),
   VERCEL_CLIENT_SECRET: getEnv('VERCEL_CLIENT_SECRET', ''),
-  VERCEL_CALLBACK_URL: getEnv('VERCEL_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/vercel/callback'),
+  VERCEL_CALLBACK_URL: getEnv(
+    'VERCEL_CALLBACK_URL',
+    'http://localhost:3000/api/v1/auth/vercel/callback',
+  ),
   // Figma OAuth
   FIGMA_CLIENT_ID: getEnv('FIGMA_CLIENT_ID', ''),
   FIGMA_CLIENT_SECRET: getEnv('FIGMA_CLIENT_SECRET', ''),
-  FIGMA_CALLBACK_URL: getEnv('FIGMA_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/figma/callback'),
+  FIGMA_CALLBACK_URL: getEnv(
+    'FIGMA_CALLBACK_URL',
+    'http://localhost:3000/api/v1/auth/figma/callback',
+  ),
   // Zoom OAuth
   ZOOM_CLIENT_ID: getEnv('ZOOM_CLIENT_ID', ''),
   ZOOM_CLIENT_SECRET: getEnv('ZOOM_CLIENT_SECRET', ''),
@@ -222,7 +228,10 @@ export const ENV = {
   // Atlassian OAuth
   ATLASSIAN_CLIENT_ID: getEnv('ATLASSIAN_CLIENT_ID', ''),
   ATLASSIAN_CLIENT_SECRET: getEnv('ATLASSIAN_CLIENT_SECRET', ''),
-  ATLASSIAN_CALLBACK_URL: getEnv('ATLASSIAN_CALLBACK_URL', 'http://localhost:3000/api/v1/auth/atlassian/callback'),
+  ATLASSIAN_CALLBACK_URL: getEnv(
+    'ATLASSIAN_CALLBACK_URL',
+    'http://localhost:3000/api/v1/auth/atlassian/callback',
+  ),
   ACCESS_TOKEN_EXPIRY: getEnv('ACCESS_TOKEN_EXPIRY', '15m'),
   COOKIE_DOMAIN: getEnv('COOKIE_DOMAIN', ''),
   REFRESH_TOKEN_EXPIRY_DAYS: parseInt(getEnv('REFRESH_TOKEN_EXPIRY_DAYS', '30')),
@@ -246,6 +255,7 @@ export const ENV = {
   GOOGLE_RECAPTCHA_SECRET: getEnv('GOOGLE_RECAPTCHA_SECRET', ''),
   GOOGLE_SHEETS_CLIENT_EMAIL: getEnv('GOOGLE_SHEETS_CLIENT_EMAIL'),
   GOOGLE_SHEETS_NEWSLETTER_ID: getEnv('GOOGLE_SHEETS_NEWSLETTER_ID'),
+  GOOGLE_SHEETS_HACKATHONS_ID: getEnv('GOOGLE_SHEETS_HACKATHONS_ID'),
   SMTP_HOST: getEnv('SMTP_HOST', 'smtp.gmail.com'),
   SMTP_PORT: parseInt(getEnv('SMTP_PORT', '587')),
   SMTP_SECURE: getEnv('SMTP_SECURE') === 'true',
@@ -265,7 +275,7 @@ export const ENV = {
   HEALTHZ_HEADER_NAME: getEnv('HEALTHZ_HEADER_NAME', ''),
   HEALTHZ_HEADER_VALUE: getEnv('HEALTHZ_HEADER_VALUE', ''),
   BETTER_STACK_HEARTBEAT_ID: getEnv('BETTER_STACK_HEARTBEAT_ID', ''),
-  INNGEST_BASE_URL: getEnv('INNGEST_BASE_URL', 'http://localhost:8288'),
+  INNGEST_BASE_URL: getEnv('INNGEST_BASE_URL', 'http://127.0.0.1:8288'),
   CREDENTIAL_VALIDATOR_URL: getEnv('CREDENTIAL_VALIDATOR_URL', ''),
   AZURE_STORAGE_CONNECTION_STRING: getEnv('AZURE_STORAGE_CONNECTION_STRING'),
   AZURE_STORAGE_CONTAINER_NAME: getEnv('AZURE_STORAGE_CONTAINER_NAME'),

@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
-import { sendFreeCreditsClaimedEmail, sendPhoneNumberAddedEmail } from '../../email/v1/send-mail.js';
+import {
+  sendFreeCreditsClaimedEmail,
+  sendPhoneNumberAddedEmail,
+} from '../../email/v1/send-mail.js';
 import { inngest } from '../../inngest/v1/client.js';
 import { getUserCreditBalance, getUserCreditHistory } from '../../services/v1/creditService.js';
 import logger from '../../utils/logger.js';
@@ -30,9 +33,31 @@ const SECURITY_CONFIG = {
 
 // Input validation schemas
 const creditHistoryQuerySchema = z.object({
-  limit: z.string().regex(/^\d+$/).transform(Number).refine(n => n > 0 && n <= 100, 'Limit must be between 1 and 100').optional(),
-  offset: z.string().regex(/^\d+$/).transform(Number).refine(n => n >= 0, 'Offset must be non-negative').optional(),
-  type: z.enum(['PURCHASE', 'REFUND', 'BONUS', 'DEDUCTION', 'ADJUSTMENT', 'INITIAL_ALLOCATION', 'EXPIRY', 'TRANSFER_IN', 'TRANSFER_OUT']).optional(),
+  limit: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .refine((n) => n > 0 && n <= 100, 'Limit must be between 1 and 100')
+    .optional(),
+  offset: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .refine((n) => n >= 0, 'Offset must be non-negative')
+    .optional(),
+  type: z
+    .enum([
+      'PURCHASE',
+      'REFUND',
+      'BONUS',
+      'DEDUCTION',
+      'ADJUSTMENT',
+      'INITIAL_ALLOCATION',
+      'EXPIRY',
+      'TRANSFER_IN',
+      'TRANSFER_OUT',
+    ])
+    .optional(),
 });
 
 const sendSmsOtpSchema = z.object({
@@ -42,7 +67,9 @@ const sendSmsOtpSchema = z.object({
 });
 
 const verifySmsOtpSchema = z.object({
-  otp: z.string().refine(otp => /^\d{6}$/.test(otp) || /^[A-Z0-9]{6,12}$/i.test(otp), 'Invalid OTP format'),
+  otp: z
+    .string()
+    .refine((otp) => /^\d{6}$/.test(otp) || /^[A-Z0-9]{6,12}$/i.test(otp), 'Invalid OTP format'),
 });
 
 // Security utilities
@@ -60,14 +87,16 @@ const logSecurityEvent = (event: string, userId: string, details: Record<string,
 
 const checkDisposablePhoneNumber = async (
   phoneNumber: string,
-  userId: string
+  userId: string,
 ): Promise<{ isDisposable: boolean; error?: string }> => {
   // Strip the + from the phone number for the API call
   const phoneForApi = phoneNumber.replace(/^\+/, '');
 
   // Check if credential validator URL is configured
   if (!ENV.CREDENTIAL_VALIDATOR_URL) {
-    logger.info('CREDENTIAL_VALIDATOR_URL not configured, skipping disposable phone check', { userId });
+    logger.info('CREDENTIAL_VALIDATOR_URL not configured, skipping disposable phone check', {
+      userId,
+    });
     return { isDisposable: false };
   }
 
@@ -81,7 +110,7 @@ const checkDisposablePhoneNumber = async (
 
     const response = await fetch(checkUrl, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
+      headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
@@ -106,7 +135,7 @@ const checkDisposablePhoneNumber = async (
       });
       return {
         isDisposable: true,
-        error: 'Invalid phone number format. Please enter a valid mobile number.'
+        error: 'Invalid phone number format. Please enter a valid mobile number.',
       };
     }
 
@@ -129,7 +158,8 @@ const checkDisposablePhoneNumber = async (
       });
       return {
         isDisposable: true,
-        error: 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.'
+        error:
+          'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
       };
     }
 
@@ -148,19 +178,30 @@ const checkDisposablePhoneNumber = async (
 
 // Cache invalidation helper
 const invalidateUserCaches = async (userId: string) => {
-  const keys = [
-    `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`,
-    `${REDIS_KEYS.USER_CREDITS_CACHE}eligibility:${userId}`,
-    `${REDIS_KEYS.USER_CREDITS_CACHE}history:${userId}:*`,
-  ];
-
   try {
-    for (const key of keys) {
-      await redis.del(key);
+    // Collect all patterns that need to be invalidated
+    const patterns = [
+      `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:*`,
+      `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`,
+      // Legacy or other potential keys
+      `${REDIS_KEYS.USER_CREDITS_CACHE}eligibility:${userId}`,
+      `${REDIS_KEYS.USER_CREDITS_CACHE}history:${userId}:*`,
+      `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`,
+    ];
+
+    for (const pattern of patterns) {
+      if (pattern.includes('*')) {
+        const keys = await redis.keys(pattern);
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } else {
+        await redis.del(pattern);
+      }
     }
-    logger.info('User caches invalidated', { userId });
+    logger.info('User credit caches invalidated successfully', { userId });
   } catch (error) {
-    logger.warn('Failed to invalidate user caches', { userId, error });
+    logger.warn('Failed to invalidate user credit caches', { userId, error });
   }
 };
 
@@ -170,7 +211,9 @@ export const getCreditBalance = async (req: Request, res: Response) => {
     const userId = auth?.userId;
 
     if (!userId) {
-      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', { endpoint: 'getCreditBalance' });
+      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', {
+        endpoint: 'getCreditBalance',
+      });
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
@@ -182,8 +225,13 @@ export const getCreditBalance = async (req: Request, res: Response) => {
         await redis.expire(rateLimitKey, 60); // 1 minute window
       }
       if (currentRequests > 10) {
-        logSecurityEvent('RATE_LIMIT_EXCEEDED', userId, { endpoint: 'getCreditBalance', attempts: currentRequests });
-        return res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' });
+        logSecurityEvent('RATE_LIMIT_EXCEEDED', userId, {
+          endpoint: 'getCreditBalance',
+          attempts: currentRequests,
+        });
+        return res
+          .status(429)
+          .json({ success: false, message: 'Too many requests. Please try again later.' });
       }
     } catch (error) {
       logger.warn('Rate limiting check failed', { userId, error });
@@ -198,9 +246,11 @@ export const getCreditBalance = async (req: Request, res: Response) => {
         logger.info('Returning cached credit balance', { userId });
         const parsedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
 
-        // Add security headers
+        // Add security headers - No cache for dynamic balance
         res.set({
-          'Cache-Control': 'private, max-age=1800',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
           'X-Content-Type-Options': 'nosniff',
           'X-Frame-Options': 'DENY',
         });
@@ -232,9 +282,11 @@ export const getCreditBalance = async (req: Request, res: Response) => {
       // Don't fail the request if caching fails
     }
 
-    // Add security headers
+    // Add security headers - No cache for dynamic balance
     res.set({
-      'Cache-Control': 'private, max-age=1800',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     });
@@ -265,7 +317,9 @@ export const getCreditHistory = async (req: Request, res: Response) => {
     const userId = auth?.userId;
 
     if (!userId) {
-      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', { endpoint: 'getCreditHistory' });
+      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', {
+        endpoint: 'getCreditHistory',
+      });
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
@@ -277,8 +331,13 @@ export const getCreditHistory = async (req: Request, res: Response) => {
         await redis.expire(rateLimitKey, 60); // 1 minute window
       }
       if (currentRequests > 5) {
-        logSecurityEvent('RATE_LIMIT_EXCEEDED', userId, { endpoint: 'getCreditHistory', attempts: currentRequests });
-        return res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' });
+        logSecurityEvent('RATE_LIMIT_EXCEEDED', userId, {
+          endpoint: 'getCreditHistory',
+          attempts: currentRequests,
+        });
+        return res
+          .status(429)
+          .json({ success: false, message: 'Too many requests. Please try again later.' });
       }
     } catch (error) {
       logger.warn('Rate limiting check failed', { userId, error });
@@ -287,7 +346,10 @@ export const getCreditHistory = async (req: Request, res: Response) => {
     // Validate and sanitize query parameters
     const validation = creditHistoryQuerySchema.safeParse(req.query);
     if (!validation.success) {
-      logSecurityEvent('INVALID_INPUT', userId, { endpoint: 'getCreditHistory', errors: validation.error.issues });
+      logSecurityEvent('INVALID_INPUT', userId, {
+        endpoint: 'getCreditHistory',
+        errors: validation.error.issues,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid query parameters',
@@ -308,7 +370,12 @@ export const getCreditHistory = async (req: Request, res: Response) => {
 
     // Create secure cache key that includes sanitized query parameters
     const cacheKeyParams = JSON.stringify({ limit, offset, type });
-    const cacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'history', cacheKeyParams);
+    const cacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'history',
+      cacheKeyParams,
+    );
 
     try {
       // Try cache first with error handling
@@ -317,9 +384,11 @@ export const getCreditHistory = async (req: Request, res: Response) => {
         logger.info('Returning cached credit history', { userId, limit, offset, type });
         const parsedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
 
-        // Add security headers
+        // Add security headers - No cache for history
         res.set({
-          'Cache-Control': 'private, max-age=900',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
           'X-Content-Type-Options': 'nosniff',
           'X-Frame-Options': 'DENY',
         });
@@ -352,9 +421,11 @@ export const getCreditHistory = async (req: Request, res: Response) => {
       logger.warn('Redis cache write failed for credit history', { error, userId });
     }
 
-    // Add security headers
+    // Add security headers - No cache for history
     res.set({
-      'Cache-Control': 'private, max-age=900',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     });
@@ -391,19 +462,27 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
     const userId = auth?.userId;
 
     if (!userId) {
-      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', { endpoint: 'checkFreeCreditsEligibility' });
+      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', {
+        endpoint: 'checkFreeCreditsEligibility',
+      });
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
     // Security: Rate limit eligibility checks (max 10 per minute)
-    const eligibilityRateLimitKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'eligibility_check');
+    const eligibilityRateLimitKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'eligibility_check',
+    );
     try {
       const eligibilityRequests = await redis.incr(eligibilityRateLimitKey);
       if (eligibilityRequests === 1) {
         await redis.expire(eligibilityRateLimitKey, 60); // 1 minute window
       }
       if (eligibilityRequests > 10) {
-        logSecurityEvent('ELIGIBILITY_RATE_LIMIT_EXCEEDED', userId, { attempts: eligibilityRequests });
+        logSecurityEvent('ELIGIBILITY_RATE_LIMIT_EXCEEDED', userId, {
+          attempts: eligibilityRequests,
+        });
         return res.status(429).json({
           success: false,
           message: 'Too many requests. Please try again later.',
@@ -422,9 +501,11 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
         logger.info('Returning cached eligibility check', { userId });
         const parsedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
 
-        // Add security headers
+        // Add security headers - No cache for eligibility
         res.set({
-          'Cache-Control': 'private, max-age=300',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
           'X-Content-Type-Options': 'nosniff',
           'X-Frame-Options': 'DENY',
         });
@@ -437,7 +518,11 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
 
     // Get user data with enhanced checks
     let user;
-    const userCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'user_status');
+    const userCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'user_status',
+    );
 
     try {
       const cachedUser = await redis.get(userCacheKey);
@@ -451,7 +536,7 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
             createdAt: true,
             isDeleted: true,
             phoneNumber: true,
-            isPhoneVerified: true
+            isPhoneVerified: true,
           },
         });
 
@@ -469,7 +554,7 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
           createdAt: true,
           isDeleted: true,
           phoneNumber: true,
-          isPhoneVerified: true
+          isPhoneVerified: true,
         },
       });
     }
@@ -486,7 +571,11 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
 
     // Check if user already has INITIAL_ALLOCATION credits with caching
     let existingInitialAllocation = false;
-    const creditCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'initial_allocation_check');
+    const creditCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'initial_allocation_check',
+    );
 
     try {
       const cachedCheck = await redis.get(creditCheckCacheKey);
@@ -503,7 +592,11 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
         existingInitialAllocation = !!transaction;
 
         // Cache the result
-        await redis.setex(creditCheckCacheKey, CACHE_TTL.USER_CREDITS, existingInitialAllocation ? 'true' : 'false');
+        await redis.setex(
+          creditCheckCacheKey,
+          CACHE_TTL.USER_CREDITS,
+          existingInitialAllocation ? 'true' : 'false',
+        );
       }
     } catch (error) {
       logger.warn('Credit allocation check failed', { userId, error });
@@ -521,7 +614,12 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
     // Check if phone is verified for credits claim with enhanced security
     // Priority: Database verification status (permanent) > Redis cache (temporary)
     let isVerified = false;
-    const verificationKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'verified');
+    const verificationKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'verified',
+    );
 
     try {
       const verificationStatus = await redis.get(verificationKey);
@@ -568,9 +666,11 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
       logger.warn('Failed to cache eligibility result', { error, userId });
     }
 
-    // Add security headers
+    // Add security headers - No cache for eligibility
     res.set({
-      'Cache-Control': 'private, max-age=300',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     });
@@ -606,12 +706,18 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
     const userId = auth?.userId;
 
     if (!userId) {
-      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', { endpoint: 'claimFreeCredits' });
+      logSecurityEvent('UNAUTHORIZED_ACCESS', userId || 'unknown', {
+        endpoint: 'claimFreeCredits',
+      });
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
     // Security: Rate limit credit claims (max 3 per day)
-    const claimRateLimitKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'claim_free_credits');
+    const claimRateLimitKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'claim_free_credits',
+    );
     try {
       const claimRequests = await redis.incr(claimRateLimitKey);
       if (claimRequests === 1) {
@@ -630,7 +736,11 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
     }
 
     // Check user existence and status with caching
-    const userCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'user_status');
+    const userCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'user_status',
+    );
     let user;
 
     try {
@@ -640,7 +750,14 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
       } else {
         user = await prisma.user.findUnique({
           where: { userId },
-          select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true, email: true, firstName: true, lastName: true },
+          select: {
+            hasClaimedFreeCredits: true,
+            createdAt: true,
+            isDeleted: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
         });
 
         if (user) {
@@ -652,7 +769,14 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
       // Fallback to direct database query
       user = await prisma.user.findUnique({
         where: { userId },
-        select: { hasClaimedFreeCredits: true, createdAt: true, isDeleted: true, email: true, firstName: true, lastName: true },
+        select: {
+          hasClaimedFreeCredits: true,
+          createdAt: true,
+          isDeleted: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
       });
     }
 
@@ -674,7 +798,11 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
     }
 
     // Double-check: Ensure user doesn't already have INITIAL_ALLOCATION credits with caching
-    const creditCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'initial_allocation_check');
+    const creditCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'initial_allocation_check',
+    );
     let existingInitialAllocation = null;
 
     try {
@@ -692,7 +820,11 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
         existingInitialAllocation = !!transaction;
 
         // Cache the result
-        await redis.setex(creditCheckCacheKey, CACHE_TTL.USER_CREDITS, existingInitialAllocation ? 'true' : 'false');
+        await redis.setex(
+          creditCheckCacheKey,
+          CACHE_TTL.USER_CREDITS,
+          existingInitialAllocation ? 'true' : 'false',
+        );
       }
     } catch (error) {
       logger.warn('Credit allocation check failed', { userId, error });
@@ -711,13 +843,19 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
       logSecurityEvent('DUPLICATE_INITIAL_ALLOCATION', userId, { endpoint: 'claimFreeCredits' });
       return res.status(400).json({
         success: false,
-        message: 'You have already received free credits. You cannot claim additional free credits.',
+        message:
+          'You have already received free credits. You cannot claim additional free credits.',
       });
     }
 
     // Check if phone is verified for credits claim with enhanced security
     // CRITICAL FIX: Check database first, then Redis cache
-    const verificationKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'verified');
+    const verificationKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'verified',
+    );
     let isVerifiedInRedis = false;
 
     try {
@@ -766,68 +904,71 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
     // Atomic transaction for credit claiming to prevent race conditions
     let result;
     try {
-      result = await prisma.$transaction(async (tx) => {
-        // Double-check inside transaction to prevent race conditions
-        const userCheck = await tx.user.findUnique({
-          where: { userId },
-          select: { hasClaimedFreeCredits: true },
-        });
+      result = await prisma.$transaction(
+        async (tx) => {
+          // Double-check inside transaction to prevent race conditions
+          const userCheck = await tx.user.findUnique({
+            where: { userId },
+            select: { hasClaimedFreeCredits: true },
+          });
 
-        if (userCheck?.hasClaimedFreeCredits) {
-          throw new Error('Free credits already claimed');
-        }
+          if (userCheck?.hasClaimedFreeCredits) {
+            throw new Error('Free credits already claimed');
+          }
 
-        const creditCheck = await tx.creditTransaction.findFirst({
-          where: {
-            userId,
-            type: 'INITIAL_ALLOCATION',
-          },
-          select: { id: true },
-        });
-
-        if (creditCheck) {
-          throw new Error('Initial allocation already exists');
-        }
-
-        // Get current balance (avoid nested transaction by doing this inline)
-        const lastTransaction = await tx.creditTransaction.findFirst({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-        });
-
-        const currentBalance = lastTransaction?.balance || 0;
-        const newBalance = currentBalance + 200;
-
-        // Create credit transaction
-        const transaction = await tx.creditTransaction.create({
-          data: {
-            userId,
-            amount: 200,
-            balance: newBalance,
-            type: 'INITIAL_ALLOCATION',
-            description: 'Welcome bonus - Free credits for all users',
-            metadata: {
-              type: 'free_credits_claim',
-              ip: req.ip,
-              userAgent: req.get('User-Agent'),
+          const creditCheck = await tx.creditTransaction.findFirst({
+            where: {
+              userId,
+              type: 'INITIAL_ALLOCATION',
             },
-          },
-        });
+            select: { id: true },
+          });
 
-        // Update user to mark as claimed
-        await tx.user.update({
-          where: { userId },
-          data: { hasClaimedFreeCredits: true },
-        });
+          if (creditCheck) {
+            throw new Error('Initial allocation already exists');
+          }
 
-        return {
-          success: true,
-          newBalance,
-          transactionId: transaction.id,
-        };
-      }, {
-        timeout: 30000, // 30 second timeout for the transaction
-      });
+          // Get current balance (avoid nested transaction by doing this inline)
+          const lastTransaction = await tx.creditTransaction.findFirst({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+          });
+
+          const currentBalance = lastTransaction?.balance || 0;
+          const newBalance = currentBalance + 200;
+
+          // Create credit transaction
+          const transaction = await tx.creditTransaction.create({
+            data: {
+              userId,
+              amount: 200,
+              balance: newBalance,
+              type: 'INITIAL_ALLOCATION',
+              description: 'Welcome bonus - Free credits for all users',
+              metadata: {
+                type: 'free_credits_claim',
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+              },
+            },
+          });
+
+          // Update user to mark as claimed
+          await tx.user.update({
+            where: { userId },
+            data: { hasClaimedFreeCredits: true },
+          });
+
+          return {
+            success: true,
+            newBalance,
+            transactionId: transaction.id,
+          };
+        },
+        {
+          timeout: 30000, // 30 second timeout for the transaction
+        },
+      );
 
       // Comprehensive cache invalidation after successful transaction
       await invalidateUserCaches(userId);
@@ -848,10 +989,10 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
 
       try {
         // Delete specific cache keys
-        await redis.del(...cachesToInvalidate.filter(key => !key.includes('*')));
+        await redis.del(...cachesToInvalidate.filter((key) => !key.includes('*')));
 
         // Handle pattern-based deletions
-        const patternKeys = cachesToInvalidate.filter(key => key.includes('*'));
+        const patternKeys = cachesToInvalidate.filter((key) => key.includes('*'));
         for (const pattern of patternKeys) {
           const keys = await redis.keys(pattern);
           if (keys.length > 0) {
@@ -859,11 +1000,13 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
           }
         }
 
-        logger.info('All credit claim caches invalidated', { userId, cachesCleared: cachesToInvalidate.length });
+        logger.info('All credit claim caches invalidated', {
+          userId,
+          cachesCleared: cachesToInvalidate.length,
+        });
       } catch (error) {
         logger.warn('Failed to invalidate some claim caches', { userId, error });
       }
-
     } catch (transactionError) {
       logger.error('Credit claim transaction failed', { userId, error: transactionError });
       logSecurityEvent('TRANSACTION_FAILURE', userId, { error: transactionError });
@@ -878,7 +1021,10 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
         }
 
         // Handle transaction timeout (P2028)
-        if (transactionError.message.includes('P2028') || transactionError.message.includes('Unable to start a transaction')) {
+        if (
+          transactionError.message.includes('P2028') ||
+          transactionError.message.includes('Unable to start a transaction')
+        ) {
           logger.warn('Transaction timeout during credit claim, suggesting retry', { userId });
           return res.status(503).json({
             success: false,
@@ -917,7 +1063,7 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
         data: {
           userId,
           title: '🎉 Welcome Bonus Credits!',
-          message: 'Congratulations! You\'ve received 200 free credits to get started.',
+          message: "Congratulations! You've received 200 free credits to get started.",
           description: `Your new balance is ${result.newBalance} credits. Use them to explore our platform features.`,
           actionUrl: '/credits',
           actionLabel: 'View Credits',
@@ -929,17 +1075,24 @@ export const claimFreeCredits = async (req: Request, res: Response) => {
           },
         },
       });
-      logger.info('In-app notification sent for credit claim', { userId, transactionId: result.transactionId });
+      logger.info('In-app notification sent for credit claim', {
+        userId,
+        transactionId: result.transactionId,
+      });
     } catch (notificationError) {
-      logger.warn('Failed to send in-app notification for credit claim', { userId, error: notificationError });
+      logger.warn('Failed to send in-app notification for credit claim', {
+        userId,
+        error: notificationError,
+      });
       // Don't fail the request if notification fails
     }
 
     // Send email notification for free credits claimed
     try {
-      const userName = user.firstName && user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : user.firstName || user.lastName || 'User';
+      const userName =
+        user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || 'User';
 
       await sendFreeCreditsClaimedEmail(user.email, userName, 200, result.newBalance);
       logger.info('Free credits claimed email sent', { userId, email: user.email });
@@ -988,7 +1141,10 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
     // Validate and sanitize input using Zod schema
     const validation = sendSmsOtpSchema.safeParse(req.body);
     if (!validation.success) {
-      logSecurityEvent('INVALID_INPUT', userId, { endpoint: 'sendSmsOtp', errors: validation.error.issues });
+      logSecurityEvent('INVALID_INPUT', userId, {
+        endpoint: 'sendSmsOtp',
+        errors: validation.error.issues,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid input data',
@@ -1014,7 +1170,12 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
     }
 
     // Check for resend timing restriction (2 minutes minimum between OTP requests)
-    const otpTimestampKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'timestamp');
+    const otpTimestampKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'timestamp',
+    );
     if (isResend) {
       try {
         const lastOtpTime = await redis.get(otpTimestampKey);
@@ -1039,8 +1200,10 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
 
     // Additional security: Check for suspicious patterns
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-    if (fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
-      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
+    if (
+      fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
+      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH
+    ) {
       logSecurityEvent('SUSPICIOUS_PHONE_FORMAT', userId, { phoneLength: fullPhoneNumber.length });
       return res.status(400).json({
         success: false,
@@ -1050,7 +1213,9 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
 
     // Security: Check if phone number contains only allowed characters
     if (!/^\+\d+$/.test(fullPhoneNumber)) {
-      logSecurityEvent('MALFORMED_PHONE_NUMBER', userId, { phoneNumber: fullPhoneNumber.substring(0, 3) + '***' });
+      logSecurityEvent('MALFORMED_PHONE_NUMBER', userId, {
+        phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid phone number format.',
@@ -1066,13 +1231,19 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
       });
       return res.status(400).json({
         success: false,
-        message: disposableCheck.error || 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
+        message:
+          disposableCheck.error ||
+          'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
         code: 'DISPOSABLE_PHONE',
       });
     }
 
     // Check if phone number is already verified by another user (with caching)
-    const phoneCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, 'phone_check', fullPhoneNumber);
+    const phoneCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      'phone_check',
+      fullPhoneNumber,
+    );
     let existingVerifiedUser = null;
 
     try {
@@ -1106,15 +1277,22 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
     }
 
     if (existingVerifiedUser) {
-      logSecurityEvent('DUPLICATE_PHONE_VERIFICATION_ATTEMPT', userId, { existingUserId: existingVerifiedUser.userId });
+      logSecurityEvent('DUPLICATE_PHONE_VERIFICATION_ATTEMPT', userId, {
+        existingUserId: existingVerifiedUser.userId,
+      });
       return res.status(400).json({
         success: false,
-        message: 'This phone number is already verified by another user. Please use a different phone number.',
+        message:
+          'This phone number is already verified by another user. Please use a different phone number.',
       });
     }
 
     // CRITICAL: Check if phone number is currently being verified by another user (race condition prevention)
-    const phoneVerificationLockKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, 'phone_lock', fullPhoneNumber);
+    const phoneVerificationLockKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      'phone_lock',
+      fullPhoneNumber,
+    );
     let phoneLockOwner = null;
 
     try {
@@ -1124,22 +1302,30 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
         logSecurityEvent('RACE_CONDITION_PHONE_VERIFICATION', userId, {
           phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
           lockOwner: phoneLockOwner,
-          message: 'Phone number already being verified by another user'
+          message: 'Phone number already being verified by another user',
         });
         return res.status(409).json({
           success: false,
-          message: 'This phone number is currently being verified by another user. Please try again in a few minutes or use a different phone number.',
+          message:
+            'This phone number is currently being verified by another user. Please try again in a few minutes or use a different phone number.',
         });
       } else if (phoneLockOwner === userId && isResend) {
         // Same user resending - this is allowed, will overwrite the existing OTP
-        logger.info('Same user resending OTP - allowed', { userId, phoneNumber: fullPhoneNumber.substring(0, 3) + '***' });
+        logger.info('Same user resending OTP - allowed', {
+          userId,
+          phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+        });
       }
     } catch (error) {
       logger.warn('Phone lock check failed', { userId, error });
     }
 
     // Check if user already has INITIAL_ALLOCATION credits (with caching)
-    const creditCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'initial_allocation_check');
+    const creditCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'initial_allocation_check',
+    );
     let existingInitialAllocation = null;
 
     try {
@@ -1176,7 +1362,8 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
       logSecurityEvent('DUPLICATE_FREE_CREDITS_ATTEMPT', userId, { endpoint: 'sendSmsOtp' });
       return res.status(400).json({
         success: false,
-        message: 'You have already received free credits. You cannot claim additional free credits.',
+        message:
+          'You have already received free credits. You cannot claim additional free credits.',
       });
     }
 
@@ -1202,22 +1389,36 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
         // Lock was not acquired (already exists) and it's not the same user
         logSecurityEvent('PHONE_LOCK_ACQUISITION_FAILED', userId, {
           phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
-          message: 'Failed to acquire phone verification lock - another user is verifying this number'
+          message:
+            'Failed to acquire phone verification lock - another user is verifying this number',
         });
         return res.status(409).json({
           success: false,
-          message: 'This phone number is currently being verified by another user. Please try again in a few minutes.',
+          message:
+            'This phone number is currently being verified by another user. Please try again in a few minutes.',
         });
       }
 
-      logger.info('Phone verification lock acquired/updated', { userId, phoneNumber: fullPhoneNumber.substring(0, 3) + '***', isResend: !!isResend });
+      logger.info('Phone verification lock acquired/updated', {
+        userId,
+        phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+        isResend: !!isResend,
+      });
     } catch (redisError) {
-      logger.error('Failed to store phone number and acquire lock in Redis', { userId, error: redisError });
+      logger.error('Failed to store phone number and acquire lock in Redis', {
+        userId,
+        error: redisError,
+      });
       return res.status(500).json({ success: false, message: 'Failed to process request' });
     }
 
     // Enhanced rate limiting: 3 OTPs per 24 hours with better tracking
-    const otpCountKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'count');
+    const otpCountKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'count',
+    );
 
     try {
       const currentCount = await redis.get(otpCountKey);
@@ -1317,8 +1518,7 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-Rate-Limit-Remaining': (
-        SECURITY_CONFIG.MAX_OTP_ATTEMPTS -
-        (parseInt(await redis.get(otpCountKey) as string) || 0)
+        SECURITY_CONFIG.MAX_OTP_ATTEMPTS - (parseInt((await redis.get(otpCountKey)) as string) || 0)
       ).toString(),
     });
 
@@ -1333,7 +1533,9 @@ export const sendSmsOtp = async (req: Request, res: Response) => {
       message: 'OTP sent to your phone number',
       data: {
         expiresIn: 600, // 10 minutes
-        rateLimitRemaining: SECURITY_CONFIG.MAX_OTP_ATTEMPTS - (parseInt(await redis.get(otpCountKey) as string) || 0),
+        rateLimitRemaining:
+          SECURITY_CONFIG.MAX_OTP_ATTEMPTS -
+          (parseInt((await redis.get(otpCountKey)) as string) || 0),
       },
     });
   } catch (error) {
@@ -1364,7 +1566,12 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
     }
 
     // Security: Enhanced rate limiting for verification attempts
-    const verifyCountKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'verify-count');
+    const verifyCountKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'verify-count',
+    );
 
     try {
       const currentCount = await redis.get(verifyCountKey);
@@ -1373,7 +1580,10 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
       if (count >= SECURITY_CONFIG.MAX_OTP_ATTEMPTS) {
         const ttl = await redis.ttl(verifyCountKey);
         const remainingMinutes = Math.ceil(ttl / 60);
-        logSecurityEvent('VERIFICATION_RATE_LIMIT_EXCEEDED', userId, { attempts: count, remainingMinutes });
+        logSecurityEvent('VERIFICATION_RATE_LIMIT_EXCEEDED', userId, {
+          attempts: count,
+          remainingMinutes,
+        });
         return res.status(429).json({
           success: false,
           message: `Too many verification attempts. Try again in ${remainingMinutes} minutes.`,
@@ -1395,7 +1605,10 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
     // Validate and sanitize input
     const validation = verifySmsOtpSchema.safeParse(req.body);
     if (!validation.success) {
-      logSecurityEvent('INVALID_OTP_INPUT', userId, { endpoint: 'verifySmsOtp', errors: validation.error.issues });
+      logSecurityEvent('INVALID_OTP_INPUT', userId, {
+        endpoint: 'verifySmsOtp',
+        errors: validation.error.issues,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP format',
@@ -1482,12 +1695,19 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
       otpData.attempts = (otpData.attempts || 0) + 1;
 
       try {
-        await redis.setex(otpKey, Math.max(60, 900 - (Date.now() - otpData.createdAt) / 1000), JSON.stringify(otpData));
+        await redis.setex(
+          otpKey,
+          Math.max(60, 900 - (Date.now() - otpData.createdAt) / 1000),
+          JSON.stringify(otpData),
+        );
       } catch (updateError) {
         logger.warn('Failed to update OTP attempts', { userId, error: updateError });
       }
 
-      logSecurityEvent('INVALID_OTP_ATTEMPT', userId, { endpoint: 'verifySmsOtp', attempts: otpData.attempts });
+      logSecurityEvent('INVALID_OTP_ATTEMPT', userId, {
+        endpoint: 'verifySmsOtp',
+        attempts: otpData.attempts,
+      });
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
 
@@ -1502,7 +1722,7 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
     ];
 
     try {
-      await Promise.all(keysToDelete.map(key => key ? redis.del(key) : Promise.resolve(0)));
+      await Promise.all(keysToDelete.map((key) => (key ? redis.del(key) : Promise.resolve(0))));
     } catch (redisError) {
       logger.warn('Failed to delete verification keys from Redis', { userId, error: redisError });
       // Continue even if cleanup fails
@@ -1533,9 +1753,10 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
 
         // Send email notification for phone number addition
         try {
-          const userName = updatedUser.firstName && updatedUser.lastName
-            ? `${updatedUser.firstName} ${updatedUser.lastName}`
-            : updatedUser.firstName || updatedUser.lastName || 'User';
+          const userName =
+            updatedUser.firstName && updatedUser.lastName
+              ? `${updatedUser.firstName} ${updatedUser.lastName}`
+              : updatedUser.firstName || updatedUser.lastName || 'User';
 
           await sendPhoneNumberAddedEmail(updatedUser.email, userName, phoneNumber as string);
           logger.info('Phone number addition email sent', { userId, email: updatedUser.email });
@@ -1552,7 +1773,8 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
               userId,
               title: '📱 Phone Number Verified!',
               message: 'Your phone number has been successfully verified.',
-              description: 'You can now claim your free credits and use additional security features.',
+              description:
+                'You can now claim your free credits and use additional security features.',
               actionUrl: '/credits',
               actionLabel: 'Claim Credits',
               metadata: {
@@ -1563,7 +1785,10 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
           });
           logger.info('In-app notification sent for phone verification', { userId });
         } catch (notificationError) {
-          logger.warn('Failed to send in-app notification for phone verification', { userId, error: notificationError });
+          logger.warn('Failed to send in-app notification for phone verification', {
+            userId,
+            error: notificationError,
+          });
           // Don't fail the verification if notification fails
         }
 
@@ -1578,7 +1803,7 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
         ];
 
         try {
-          await Promise.all(cachesToInvalidate.map(key => redis.del(key)));
+          await Promise.all(cachesToInvalidate.map((key) => redis.del(key)));
           logger.info('All verification caches invalidated', { userId });
         } catch (cacheError) {
           logger.warn('Failed to invalidate some caches', { userId, error: cacheError });
@@ -1609,15 +1834,22 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
           ];
 
           try {
-            await Promise.all(cachesToInvalidate.map(key => redis.del(key)));
+            await Promise.all(cachesToInvalidate.map((key) => redis.del(key)));
           } catch (cacheError) {
-            logger.warn('Failed to invalidate caches after raw query', { userId, error: cacheError });
+            logger.warn('Failed to invalidate caches after raw query', {
+              userId,
+              error: cacheError,
+            });
           }
         } catch (retryError) {
           logger.error('Retry also failed', { userId, error: retryError });
           // Don't fail the verification - user can verify again later
           // Store in Redis as backup
-          const backupKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'verified-phone-backup');
+          const backupKey = generateSecureCacheKey(
+            REDIS_KEYS.OTP_STORE,
+            userId,
+            'verified-phone-backup',
+          );
           await redis.setex(backupKey, 86400, phoneNumber as string); // 24 hours
 
           return res.status(207).json({
@@ -1625,7 +1857,9 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
             message: 'Phone verified successfully. Database update pending.',
             data: {
               phoneVerified: true,
-              verificationExpiresAt: new Date(Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000).toISOString(),
+              verificationExpiresAt: new Date(
+                Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000,
+              ).toISOString(),
               warning: 'Please proceed to claim credits. Phone number will be saved shortly.',
             },
           });
@@ -1640,7 +1874,12 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
     }
 
     // Mark phone as verified for credits claim with enhanced caching
-    const verificationKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'sms-credits', 'verified');
+    const verificationKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'sms-credits',
+      'verified',
+    );
     try {
       await redis.setex(verificationKey, CACHE_TTL.OTP_VERIFICATION, 'true');
     } catch (redisError) {
@@ -1665,7 +1904,9 @@ export const verifySmsOtp = async (req: Request, res: Response) => {
       message: 'Phone number verified successfully',
       data: {
         phoneVerified: true,
-        verificationExpiresAt: new Date(Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000).toISOString(),
+        verificationExpiresAt: new Date(
+          Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000,
+        ).toISOString(),
       },
     });
   } catch (error) {
@@ -1698,7 +1939,10 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
     // Validate and sanitize input using Zod schema
     const validation = sendSmsOtpSchema.safeParse(req.body);
     if (!validation.success) {
-      logSecurityEvent('INVALID_INPUT', userId, { endpoint: 'sendVoiceOtp', errors: validation.error.issues });
+      logSecurityEvent('INVALID_INPUT', userId, {
+        endpoint: 'sendVoiceOtp',
+        errors: validation.error.issues,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid input data',
@@ -1715,7 +1959,9 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
     });
 
     if (currentUser?.isPhoneVerified) {
-      logSecurityEvent('OTP_REQUEST_FOR_ALREADY_VERIFIED_USER', userId, { endpoint: 'sendVoiceOtp' });
+      logSecurityEvent('OTP_REQUEST_FOR_ALREADY_VERIFIED_USER', userId, {
+        endpoint: 'sendVoiceOtp',
+      });
       return res.status(400).json({
         success: false,
         message: 'Your phone number is already verified. Please go ahead and claim your credits.',
@@ -1724,7 +1970,12 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
     }
 
     // Check for resend timing restriction (2 minutes minimum between OTP requests)
-    const otpTimestampKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'voice-credits', 'timestamp');
+    const otpTimestampKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'voice-credits',
+      'timestamp',
+    );
     if (isResend) {
       try {
         const lastOtpTime = await redis.get(otpTimestampKey);
@@ -1734,7 +1985,10 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
 
           if (timeSinceLastOtp < twoMinutes) {
             const remainingTime = Math.ceil((twoMinutes - timeSinceLastOtp) / 1000);
-            logSecurityEvent('RESEND_TOO_SOON', userId, { remainingTime, endpoint: 'sendVoiceOtp' });
+            logSecurityEvent('RESEND_TOO_SOON', userId, {
+              remainingTime,
+              endpoint: 'sendVoiceOtp',
+            });
             return res.status(429).json({
               success: false,
               message: `Please wait ${remainingTime} seconds before requesting a new code.`,
@@ -1749,8 +2003,10 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
 
     // Additional security: Check for suspicious patterns
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-    if (fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
-      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH) {
+    if (
+      fullPhoneNumber.length < SECURITY_CONFIG.MIN_PHONE_LENGTH ||
+      fullPhoneNumber.length > SECURITY_CONFIG.MAX_PHONE_LENGTH
+    ) {
       logSecurityEvent('SUSPICIOUS_PHONE_FORMAT', userId, { phoneLength: fullPhoneNumber.length });
       return res.status(400).json({
         success: false,
@@ -1760,7 +2016,9 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
 
     // Security: Check if phone number contains only allowed characters
     if (!/^\+\d+$/.test(fullPhoneNumber)) {
-      logSecurityEvent('MALFORMED_PHONE_NUMBER', userId, { phoneNumber: fullPhoneNumber.substring(0, 3) + '***' });
+      logSecurityEvent('MALFORMED_PHONE_NUMBER', userId, {
+        phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid phone number format.',
@@ -1776,13 +2034,19 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
       });
       return res.status(400).json({
         success: false,
-        message: disposableCheck.error || 'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
+        message:
+          disposableCheck.error ||
+          'Temporary or virtual phone numbers are not allowed. Please use a real mobile number.',
         code: 'DISPOSABLE_PHONE',
       });
     }
 
     // Check if phone number is already verified by another user (with caching)
-    const phoneCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, 'phone_check', fullPhoneNumber);
+    const phoneCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      'phone_check',
+      fullPhoneNumber,
+    );
     let existingVerifiedUser = null;
 
     try {
@@ -1816,15 +2080,22 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
     }
 
     if (existingVerifiedUser) {
-      logSecurityEvent('DUPLICATE_PHONE_VERIFICATION_ATTEMPT', userId, { existingUserId: existingVerifiedUser.userId });
+      logSecurityEvent('DUPLICATE_PHONE_VERIFICATION_ATTEMPT', userId, {
+        existingUserId: existingVerifiedUser.userId,
+      });
       return res.status(400).json({
         success: false,
-        message: 'This phone number is already verified by another user. Please use a different phone number.',
+        message:
+          'This phone number is already verified by another user. Please use a different phone number.',
       });
     }
 
     // CRITICAL: Check if phone number is currently being verified by another user (race condition prevention)
-    const phoneVerificationLockKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, 'phone_lock', fullPhoneNumber);
+    const phoneVerificationLockKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      'phone_lock',
+      fullPhoneNumber,
+    );
     let phoneLockOwner = null;
 
     try {
@@ -1834,22 +2105,30 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
         logSecurityEvent('RACE_CONDITION_PHONE_VERIFICATION', userId, {
           phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
           lockOwner: phoneLockOwner,
-          message: 'Phone number already being verified by another user'
+          message: 'Phone number already being verified by another user',
         });
         return res.status(409).json({
           success: false,
-          message: 'This phone number is currently being verified by another user. Please try again in a few minutes or use a different phone number.',
+          message:
+            'This phone number is currently being verified by another user. Please try again in a few minutes or use a different phone number.',
         });
       } else if (phoneLockOwner === userId && isResend) {
         // Same user resending - this is allowed, will overwrite the existing OTP
-        logger.info('Same user resending voice OTP - allowed', { userId, phoneNumber: fullPhoneNumber.substring(0, 3) + '***' });
+        logger.info('Same user resending voice OTP - allowed', {
+          userId,
+          phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+        });
       }
     } catch (error) {
       logger.warn('Phone lock check failed', { userId, error });
     }
 
     // Check if user already has INITIAL_ALLOCATION credits (with caching)
-    const creditCheckCacheKey = generateSecureCacheKey(REDIS_KEYS.USER_CREDITS_CACHE, userId, 'initial_allocation_check');
+    const creditCheckCacheKey = generateSecureCacheKey(
+      REDIS_KEYS.USER_CREDITS_CACHE,
+      userId,
+      'initial_allocation_check',
+    );
     let existingInitialAllocation = null;
 
     try {
@@ -1886,7 +2165,8 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
       logSecurityEvent('DUPLICATE_FREE_CREDITS_ATTEMPT', userId, { endpoint: 'sendVoiceOtp' });
       return res.status(400).json({
         success: false,
-        message: 'You have already received free credits. You cannot claim additional free credits.',
+        message:
+          'You have already received free credits. You cannot claim additional free credits.',
       });
     }
 
@@ -1912,22 +2192,36 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
         // Lock was not acquired (already exists) and it's not the same user
         logSecurityEvent('PHONE_LOCK_ACQUISITION_FAILED', userId, {
           phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
-          message: 'Failed to acquire phone verification lock - another user is verifying this number'
+          message:
+            'Failed to acquire phone verification lock - another user is verifying this number',
         });
         return res.status(409).json({
           success: false,
-          message: 'This phone number is currently being verified by another user. Please try again in a few minutes.',
+          message:
+            'This phone number is currently being verified by another user. Please try again in a few minutes.',
         });
       }
 
-      logger.info('Phone verification lock acquired/updated', { userId, phoneNumber: fullPhoneNumber.substring(0, 3) + '***', isResend: !!isResend });
+      logger.info('Phone verification lock acquired/updated', {
+        userId,
+        phoneNumber: fullPhoneNumber.substring(0, 3) + '***',
+        isResend: !!isResend,
+      });
     } catch (redisError) {
-      logger.error('Failed to store phone number and acquire lock in Redis', { userId, error: redisError });
+      logger.error('Failed to store phone number and acquire lock in Redis', {
+        userId,
+        error: redisError,
+      });
       return res.status(500).json({ success: false, message: 'Failed to process request' });
     }
 
     // Enhanced rate limiting: 3 OTPs per 24 hours with better tracking
-    const otpCountKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'voice-credits', 'count');
+    const otpCountKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'voice-credits',
+      'count',
+    );
 
     try {
       const currentCount = await redis.get(otpCountKey);
@@ -2038,7 +2332,8 @@ export const sendVoiceOtp = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: 'Voice call OTP sent successfully. You will receive a call with your verification code.',
+      message:
+        'Voice call OTP sent successfully. You will receive a call with your verification code.',
       data: {
         otpSent: true,
         expiresIn: 900, // 15 minutes
@@ -2075,7 +2370,10 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
     // Validate and sanitize input using Zod schema
     const validation = verifySmsOtpSchema.safeParse(req.body);
     if (!validation.success) {
-      logSecurityEvent('INVALID_INPUT', userId, { endpoint: 'verifyVoiceOtp', errors: validation.error.issues });
+      logSecurityEvent('INVALID_INPUT', userId, {
+        endpoint: 'verifyVoiceOtp',
+        errors: validation.error.issues,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid input data',
@@ -2156,12 +2454,19 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
       otpData.attempts = (otpData.attempts || 0) + 1;
 
       try {
-        await redis.setex(otpKey, Math.max(60, 900 - (Date.now() - otpData.createdAt) / 1000), JSON.stringify(otpData));
+        await redis.setex(
+          otpKey,
+          Math.max(60, 900 - (Date.now() - otpData.createdAt) / 1000),
+          JSON.stringify(otpData),
+        );
       } catch (updateError) {
         logger.warn('Failed to update voice OTP attempts', { userId, error: updateError });
       }
 
-      logSecurityEvent('INVALID_VOICE_OTP_ATTEMPT', userId, { endpoint: 'verifyVoiceOtp', attempts: otpData.attempts });
+      logSecurityEvent('INVALID_VOICE_OTP_ATTEMPT', userId, {
+        endpoint: 'verifyVoiceOtp',
+        attempts: otpData.attempts,
+      });
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
 
@@ -2177,9 +2482,12 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
     ];
 
     try {
-      await Promise.all(keysToDelete.map(key => key ? redis.del(key) : Promise.resolve(0)));
+      await Promise.all(keysToDelete.map((key) => (key ? redis.del(key) : Promise.resolve(0))));
     } catch (redisError) {
-      logger.warn('Failed to clean up Redis keys after voice OTP verification', { userId, error: redisError });
+      logger.warn('Failed to clean up Redis keys after voice OTP verification', {
+        userId,
+        error: redisError,
+      });
     }
 
     // Update user with phone verification if phone number was stored
@@ -2198,13 +2506,17 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
           },
         });
 
-        logger.info('User phone number verified and updated in database', { userId, phoneNumber: (phoneNumber as string).substring(0, 3) + '***' });
+        logger.info('User phone number verified and updated in database', {
+          userId,
+          phoneNumber: (phoneNumber as string).substring(0, 3) + '***',
+        });
 
         // Send email notification for phone number addition
         try {
-          const userName = updatedUser.firstName && updatedUser.lastName
-            ? `${updatedUser.firstName} ${updatedUser.lastName}`
-            : updatedUser.firstName || updatedUser.lastName || 'User';
+          const userName =
+            updatedUser.firstName && updatedUser.lastName
+              ? `${updatedUser.firstName} ${updatedUser.lastName}`
+              : updatedUser.firstName || updatedUser.lastName || 'User';
 
           await sendPhoneNumberAddedEmail(updatedUser.email, userName, phoneNumber as string);
           logger.info('Phone number addition email sent', { userId, email: updatedUser.email });
@@ -2221,7 +2533,8 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
               userId,
               title: '📱 Phone Number Verified!',
               message: 'Your phone number has been successfully verified.',
-              description: 'You can now claim your free credits and use additional security features.',
+              description:
+                'You can now claim your free credits and use additional security features.',
               actionUrl: '/credits',
               actionLabel: 'Claim Credits',
               metadata: {
@@ -2232,18 +2545,31 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
           });
           logger.info('In-app notification sent for phone verification', { userId });
         } catch (notificationError) {
-          logger.warn('Failed to send in-app notification for phone verification', { userId, error: notificationError });
+          logger.warn('Failed to send in-app notification for phone verification', {
+            userId,
+            error: notificationError,
+          });
           // Don't fail the verification if notification fails
         }
       } catch (dbError) {
-        logger.error('Failed to update user phone verification in database', { userId, error: dbError });
+        logger.error('Failed to update user phone verification in database', {
+          userId,
+          error: dbError,
+        });
 
         // Store in Redis as backup for 24 hours
-        const backupKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'verified-phone-backup');
+        const backupKey = generateSecureCacheKey(
+          REDIS_KEYS.OTP_STORE,
+          userId,
+          'verified-phone-backup',
+        );
         try {
           await redis.setex(backupKey, 86400, phoneNumber as string); // 24 hours
         } catch (redisError) {
-          logger.error('Failed to store phone verification backup in Redis', { userId, error: redisError });
+          logger.error('Failed to store phone verification backup in Redis', {
+            userId,
+            error: redisError,
+          });
         }
 
         return res.status(207).json({
@@ -2251,7 +2577,9 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
           message: 'Phone verified successfully. Database update pending.',
           data: {
             phoneVerified: true,
-            verificationExpiresAt: new Date(Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000).toISOString(),
+            verificationExpiresAt: new Date(
+              Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000,
+            ).toISOString(),
             warning: 'Please proceed to claim credits. Phone number will be saved shortly.',
           },
         });
@@ -2265,7 +2593,12 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
     }
 
     // Mark phone as verified for credits claim with enhanced caching
-    const verificationKey = generateSecureCacheKey(REDIS_KEYS.OTP_STORE, userId, 'voice-credits', 'verified');
+    const verificationKey = generateSecureCacheKey(
+      REDIS_KEYS.OTP_STORE,
+      userId,
+      'voice-credits',
+      'verified',
+    );
     try {
       await redis.setex(verificationKey, CACHE_TTL.OTP_VERIFICATION, 'true');
     } catch (redisError) {
@@ -2290,7 +2623,9 @@ export const verifyVoiceOtp = async (req: Request, res: Response) => {
       message: 'Phone number verified successfully',
       data: {
         phoneVerified: true,
-        verificationExpiresAt: new Date(Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000).toISOString(),
+        verificationExpiresAt: new Date(
+          Date.now() + CACHE_TTL.OTP_VERIFICATION * 1000,
+        ).toISOString(),
       },
     });
   } catch (error) {

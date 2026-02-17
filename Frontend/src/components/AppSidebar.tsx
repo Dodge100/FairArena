@@ -9,12 +9,14 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar
 } from '@/components/ui/sidebar';
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
@@ -143,8 +145,28 @@ export function AppSidebar() {
     };
   }, [socket, queryClient]);
 
+  const { setOpen, state } = useSidebar();
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        setOpen(true);
+        // Small timeout to allow expansion and mount
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setOpen]);
+
   // Menu items - defined inside component to access unreadCount and customization
-  const menuItems = customization.mainItems
+  const rawMenuItems = customization.mainItems
     .filter(item => item.visible)
     .sort((a, b) => a.order - b.order)
     .map(item => {
@@ -170,7 +192,19 @@ export function AppSidebar() {
       };
     });
 
-  const secondaryMenuItems = customization.secondaryItems
+  const menuItems = rawMenuItems.map(item => {
+    if (!searchQuery) return item;
+    const matchParent = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredChildren = item.items?.filter(sub => sub.title.toLowerCase().includes(searchQuery.toLowerCase())) || [];
+
+    if (matchParent) return item; // Showing all children if parent matches
+    if (filteredChildren.length > 0) {
+      return { ...item, items: filteredChildren };
+    }
+    return null;
+  }).filter((item): item is typeof rawMenuItems[0] => item !== null);
+
+  const rawSecondaryMenuItems = customization.secondaryItems
     .filter(item => item.visible)
     .sort((a, b) => a.order - b.order)
     .map(item => {
@@ -186,6 +220,14 @@ export function AppSidebar() {
         icon: iconMap[item.icon] || Settings,
       };
     });
+
+  const secondaryMenuItems = rawSecondaryMenuItems.map(item => {
+    // We handle Search separately at the top, so filter it out here
+    if (item.title === 'Search') return null;
+
+    if (!searchQuery) return item;
+    return item.title.toLowerCase().includes(searchQuery.toLowerCase()) ? item : null;
+  }).filter((item): item is typeof rawSecondaryMenuItems[0] => item !== null);
 
 
 
@@ -214,6 +256,37 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar scrollbar-hide group-data-[collapsible=icon]:scrollbar-default group-data-[collapsible=icon]:overflow-y-auto">
+        <SidebarGroup className="py-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              {state === 'collapsed' ? (
+                <SidebarMenuButton
+                  onClick={() => setOpen(true)}
+                  tooltip="Search (Ctrl + C)"
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Search</span>
+                </SidebarMenuButton>
+              ) : (
+                <div className="relative px-2 group-data-[collapsible=icon]:px-0">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <SidebarInput
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    placeholder="Search..."
+                    className="pl-9 h-9 bg-background/50 border-input focus:bg-background transition-colors"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none text-muted-foreground">
+                    <kbd className="h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 flex">
+                      <span className="text-xs">⌘</span>C
+                    </kbd>
+                  </div>
+                </div>
+              )}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>

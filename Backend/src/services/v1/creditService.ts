@@ -141,18 +141,23 @@ export async function addUserCredits(
         transactionId: transaction.id,
       });
 
-      // Invalidate user credits cache
+      // Invalidate user credits cache using robust pattern
       try {
-        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`;
-        const historyCachePattern = `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`;
+        const patterns = [
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`,
+        ];
 
-        // Delete specific cache keys
-        await redis.del(creditsCacheKey);
-
-        // Delete all credit history cache keys for this user
-        const historyKeys = await redis.keys(historyCachePattern);
-        if (historyKeys.length > 0) {
-          await redis.del(...historyKeys);
+        for (const pattern of patterns) {
+          if (pattern.includes('*')) {
+            const keys = await redis.keys(pattern);
+            if (keys.length > 0) {
+              await redis.del(...keys);
+            }
+          } else {
+            await redis.del(pattern);
+          }
         }
 
         logger.info('User credits cache invalidated after addition', { userId });
@@ -217,18 +222,23 @@ export async function deductUserCredits(
         transactionId: transaction.id,
       });
 
-      // Invalidate user credits cache
+      // Invalidate user credits cache using robust pattern
       try {
-        const creditsCacheKey = `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`;
-        const historyCachePattern = `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`;
+        const patterns = [
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDIT_HISTORY_CACHE}${userId}:*`,
+          `${REDIS_KEYS.USER_CREDITS_CACHE}${userId}`,
+        ];
 
-        // Delete specific cache keys
-        await redis.del(creditsCacheKey);
-
-        // Delete all credit history cache keys for this user
-        const historyKeys = await redis.keys(historyCachePattern);
-        if (historyKeys.length > 0) {
-          await redis.del(...historyKeys);
+        for (const pattern of patterns) {
+          if (pattern.includes('*')) {
+            const keys = await redis.keys(pattern);
+            if (keys.length > 0) {
+              await redis.del(...keys);
+            }
+          } else {
+            await redis.del(pattern);
+          }
         }
 
         logger.info('User credits cache invalidated after deduction', { userId });

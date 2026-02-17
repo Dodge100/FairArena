@@ -13,10 +13,14 @@ import { initializeCsrfToken } from './utils/csrfToken';
 // Critical components - loaded immediately
 import { FrontendMismatch } from "./components/FrontendMismatch";
 import NotFound from './components/NotFound';
+import AnalyticsPage from './pages/Analytics';
 import BannedAccount from './pages/BannedAccount';
+import Calendar from './pages/Calendar';
+import Hackathons from './pages/Hackathons';
 import Home from './pages/Home';
 import IPBlockedPage from './pages/IPBlocked';
 import Maintenance from './pages/Maintenance';
+import ProjectsPage from './pages/Projects';
 import Signin from './pages/Signin';
 
 // Defer analytics to reduce initial bundle
@@ -278,6 +282,11 @@ function App() {
                   <CookiePolicy />
                 </Suspense>
               } />
+              <Route path="/support" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Support />
+                </Suspense>
+              } />
               <Route path="/refund" element={
                 <Suspense fallback={<PageLoadingFallback />}>
                   <RefundPage />
@@ -308,6 +317,26 @@ function App() {
               <Route path="/dashboard/inbox" element={
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Inbox />
+                </Suspense>
+              } />
+              <Route path="/dashboard/hackathons" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Hackathons />
+                </Suspense>
+              } />
+              <Route path="/dashboard/calendar" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Calendar />
+                </Suspense>
+              } />
+              <Route path="/dashboard/analytics" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <AnalyticsPage />
+                </Suspense>
+              } />
+              <Route path="/dashboard/projects" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ProjectsPage />
                 </Suspense>
               } />
               <Route path="/dashboard/teams" element={
@@ -355,6 +384,11 @@ function App() {
                   <DeviceAuthorization />
                 </Suspense>
               } />
+              <Route path="/dashboard/support" element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Support />
+                </Suspense>
+              } />
             </Route>
             <Route path="/feedback/:feedbackCode" element={
               <Suspense fallback={<PageLoadingFallback />}>
@@ -374,11 +408,6 @@ function App() {
             <Route path="/profile/:userId/stars" element={
               <Suspense fallback={<PageLoadingFallback />}>
                 <ProfileStars />
-              </Suspense>
-            } />
-            <Route path="/support" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <Support />
               </Suspense>
             } />
             <Route path="/waitlist" element={

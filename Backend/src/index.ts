@@ -86,7 +86,10 @@ import './instrument.js';
 import { arcjetMiddleware } from './middleware/arcjet.middleware.js';
 import { setCsrfToken, validateCsrfToken } from './middleware/csrf.middleware.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware.js';
-import { intrusionDetection, trackAuthFailures } from './middleware/intrusionDetection.middleware.js';
+import {
+  intrusionDetection,
+  trackAuthFailures,
+} from './middleware/intrusionDetection.middleware.js';
 import { ipSecurityMiddleware } from './middleware/ipSecurity.middleware.js';
 import { maintenanceMiddleware } from './middleware/maintenance.middleware.js';
 import { requestValidation } from './middleware/requestValidation.middleware.js';
@@ -98,6 +101,7 @@ import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
 import githubRouter from './routes/v1/githubRoutes.js';
+import hackathonRouter from './routes/v1/hackathon.routes.js';
 import mfaRouter from './routes/v1/mfa.routes.js';
 import newsletterRouter from './routes/v1/newsletter.js';
 import notificationRouter from './routes/v1/notification.routes.js';
@@ -112,7 +116,6 @@ import profileRouter from './routes/v1/profile.js';
 import reportsRouter from './routes/v1/reports.js';
 import scimRouter from './routes/v1/scim.routes.js';
 import settingsRouter from './routes/v1/settings.js';
-
 import starsRouter from './routes/v1/stars.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
@@ -138,18 +141,13 @@ app.set('trust proxy', true);
 // Apply enhanced security headers
 app.use(securityHeaders);
 
-
 // Apply CSRF token generation (sets token in cookie and header)
 app.use(setCsrfToken);
 
 // Track authentication failures for brute force protection
 app.use(trackAuthFailures);
 
-const allowedProdOrigins = new RegExp(
-  '^https://([a-z0-9-]+\\.)*(fairarena\\.(app|live))$',
-  'i'
-);
-
+const allowedProdOrigins = new RegExp('^https://([a-z0-9-]+\\.)*(fairarena\\.(app|live))$', 'i');
 
 app.use(
   cors((req, callback) => {
@@ -183,7 +181,7 @@ app.use(
 
         logger.warn('CORS blocked origin', { origin, path: req.path });
         return cb(new Error('Not allowed by CORS'));
-      }
+      },
     };
 
     callback(null, corsOptions);
@@ -265,8 +263,6 @@ app.use('/oauth', oauthRouter);
 // SCIM 2.0 routes
 app.use('/api/v1/scim/v2', scimRouter);
 
-
-
 // Authentication routes (public)
 app.use('/api/v1/auth', authRouter);
 
@@ -341,6 +337,9 @@ app.use('/api/v1/api-keys', apiKeysRouter);
 
 // GitHub routes
 app.use('/api/v1/github', githubRouter);
+
+// Hackathon routes
+app.use('/api/v1/hackathons', hackathonRouter);
 
 // Inngest serve
 app.use(

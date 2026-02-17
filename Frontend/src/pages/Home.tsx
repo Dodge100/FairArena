@@ -1,4 +1,5 @@
 import Newsletter from '@/components/NewsLetter';
+import Pricing from '@/components/Pricing';
 import { useAuthState } from '@/lib/auth';
 import { Navigate } from 'react-router';
 import Faq from '../components/Faq';
@@ -25,7 +26,7 @@ function Home() {
       </section>
 
       <WhyChooseUs />
-
+      <Pricing />
       <Faq />
 
       <Newsletter />

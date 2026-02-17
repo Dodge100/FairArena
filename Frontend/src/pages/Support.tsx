@@ -1,134 +1,166 @@
-import { useMutation } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useTheme } from '@/hooks/useTheme';
+import { apiRequest } from '@/lib/apiClient';
+import { useAuthState } from '@/lib/auth';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ChevronDown,
-  ChevronUp,
+  Activity,
+  AlertCircle,
+  CheckCircle2,
   Clock,
+  FileText,
   HelpCircle,
   Mail,
   MessageCircle,
   MessageSquare,
+  Plus,
+  Search,
   Send,
   Shield,
   Sparkles,
-  Zap,
+  Ticket
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { FileUpload } from '../components/FileUpload';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
 import { Spotlight } from '../components/ui/Spotlight';
-import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
-import { useTheme } from '../hooks/useTheme';
-import { apiRequest } from '../lib/apiClient';
-import { useAuthState } from '../lib/auth';
+
+// --- Types ---
+
+interface SupportTicket {
+  id: string;
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface TicketSubmitData {
+  subject: string;
+  message: string;
+  name?: string;
+  email?: string;
+  captchaToken: string;
+  attachments?: string[];
+}
+
+const FAQS = [
+  {
+    question: 'How quickly will I receive a response?',
+    answer: 'Our support team typically responds within 24 hours during business days (Monday-Friday). For urgent issues, we prioritize tickets and aim to respond within 4-6 hours.',
+    category: 'General'
+  },
+  {
+    question: 'What information should I include in my support ticket?',
+    answer: 'Please include: your account email, a detailed description of the issue, any error messages you received, and steps to reproduce the problem. Screenshots are also very helpful!',
+    category: 'Support'
+  },
+  {
+    question: 'Do you offer phone support?',
+    answer: 'Currently, we provide support via email and live chat. This allows us to maintain detailed records and provide better assistance. For enterprise customers, phone support is available upon request.',
+    category: 'General'
+  },
+  {
+    question: 'Can I track my support ticket?',
+    answer: "Yes! After submitting a ticket, you'll receive a confirmation email with a ticket number. You can reply to that email to add information or check the status of your request.",
+    category: 'Support'
+  },
+  {
+    question: 'What if my issue is urgent?',
+    answer: 'For critical issues affecting your service, please mark your ticket as "Urgent" in the subject line or contact us via live chat for immediate assistance. Our team will prioritize your request.',
+    category: 'Billing'
+  },
+  {
+    question: 'Do you provide support in multiple languages?',
+    answer: "Currently, our primary support language is English. However, we're working on expanding our support to include Spanish, French, and German in the near future.",
+    category: 'General'
+  },
+];
+
+const QUICK_HELP_TOPICS = [
+  {
+    title: 'Password Reset',
+    description: 'Trouble accessing your account?',
+    subject: 'Password Reset Request',
+    message: 'I need help resetting my password. I am unable to access my account.',
+    icon: Shield
+  },
+  {
+    title: 'Billing Support',
+    description: 'Questions about payments?',
+    subject: 'Billing Support Needed',
+    message: 'I have a question regarding my billing/payment. Please assist me with this matter.',
+    icon: FileText
+  },
+  {
+    title: 'Feature Request',
+    description: 'Have an idea for us?',
+    subject: 'Feature Request',
+    message: 'I would like to suggest a new feature for FairArena: ',
+    icon: Sparkles
+  },
+];
+
+// --- Components ---
+
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'OPEN':
+      return <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800 dark:text-blue-400">Open</Badge>;
+    case 'IN_PROGRESS':
+      return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-800 dark:text-yellow-400">In Progress</Badge>;
+    case 'RESOLVED':
+      return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200 dark:border-green-800 dark:text-green-400">Resolved</Badge>;
+    case 'CLOSED':
+      return <Badge variant="secondary">Closed</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+};
 
 export default function Support() {
   const { isDark } = useTheme();
   const { isSignedIn, user } = useAuthState();
-  const { cn } = useDataSaverUtils();
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+
+  const [activeTab, setActiveTab] = useState('new-ticket');
   const [formData, setFormData] = useState({
     name: '',
     email: user?.email || '',
     subject: '',
     message: '',
   });
-  const [submitMessage, setSubmitMessage] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState('');
-  const [showFAQ, setShowFAQ] = useState(false);
-  const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const formRef = useRef<HTMLDivElement>(null);
-  const faqRef = useRef<HTMLDivElement>(null);
+  const [isCaptchaDialogOpen, setIsCaptchaDialogOpen] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const quickHelpTopics = [
-    {
-      question: 'How do I reset my password?',
-      subject: 'Password Reset Request',
-      message: 'I need help resetting my password. I am unable to access my account.',
-    },
-    {
-      question: 'Billing and payment issues',
-      subject: 'Billing Support Needed',
-      message: 'I have a question regarding my billing/payment. Please assist me with this matter.',
-    },
-    {
-      question: 'Account verification',
-      subject: 'Account Verification Help',
-      message: 'I need assistance with verifying my account. Please guide me through the process.',
-    },
-    {
-      question: 'Feature requests',
-      subject: 'Feature Request',
-      message: 'I would like to suggest a new feature for FairArena: ',
-    },
-    {
-      question: 'Technical support',
-      subject: 'Technical Issue',
-      message: 'I am experiencing a technical issue with: ',
-    },
-  ];
-
-  const faqs = [
-    {
-      question: 'How quickly will I receive a response?',
-      answer:
-        'Our support team typically responds within 24 hours during business days (Monday-Friday). For urgent issues, we prioritize tickets and aim to respond within 4-6 hours.',
-    },
-    {
-      question: 'What information should I include in my support ticket?',
-      answer:
-        'Please include: your account email, a detailed description of the issue, any error messages you received, and steps to reproduce the problem. Screenshots are also very helpful!',
-    },
-    {
-      question: 'Do you offer phone support?',
-      answer:
-        'Currently, we provide support via email and live chat. This allows us to maintain detailed records and provide better assistance. For enterprise customers, phone support is available upon request.',
-    },
-    {
-      question: 'Can I track my support ticket?',
-      answer:
-        "Yes! After submitting a ticket, you'll receive a confirmation email with a ticket number. You can reply to that email to add information or check the status of your request.",
-    },
-    {
-      question: 'What if my issue is urgent?',
-      answer:
-        'For critical issues affecting your service, please mark your ticket as "Urgent" in the subject line or contact us via live chat for immediate assistance. Our team will prioritize your request.',
-    },
-    {
-      question: 'Do you provide support in multiple languages?',
-      answer:
-        "Currently, our primary support language is English. However, we're working on expanding our support to include Spanish, French, and German in the near future.",
-    },
-  ];
-
-  const onCaptchaChange = useCallback((token: string | null) => {
-    setCaptchaToken(token);
-  }, []);
-
-  const onCaptchaExpired = useCallback(() => {
-    setCaptchaToken(null);
-  }, []);
-
-  const onCaptchaError = useCallback(() => {
-    setCaptchaToken(null);
-    setSubmitMessage('CAPTCHA verification failed. Please try again.');
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // Query for user's tickets
+  const { data: ticketsData, isLoading: isLoadingTickets } = useQuery({
+    queryKey: ['support-tickets'],
+    queryFn: () => apiRequest<{ success: boolean; supportTickets: SupportTicket[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`),
+    enabled: isSignedIn,
+  });
 
   const submitMutation = useMutation({
-    mutationFn: async (submitData: any) => {
+    mutationFn: async (submitData: TicketSubmitData) => {
       const { captchaToken: token, ...body } = submitData;
       return apiRequest<{ message: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
         method: 'POST',
@@ -140,650 +172,405 @@ export default function Support() {
       });
     },
     onSuccess: () => {
-      setSubmitMessage('Support request submitted successfully! You will receive a confirmation email shortly.');
+      toast.success('Ticket submitted successfully!', {
+        description: 'We have received your request and will get back to you shortly.',
+      });
       setFormData({
         name: '',
         email: user?.email || '',
         subject: '',
         message: '',
       });
+      setUploadedFiles([]);
       setCaptchaToken(null);
+      setIsCaptchaDialogOpen(false);
       recaptchaRef.current?.reset();
+      // Switch to tickets tab if user is signed in
+      if (isSignedIn) {
+        setActiveTab('my-tickets');
+      }
     },
-    onError: (error: any) => {
-      console.error('Error submitting support request:', error);
-      setSubmitMessage(error.message || 'Failed to submit support request. Please try again.');
+    onError: (error: Error | { message?: string }) => {
+      console.error('Error submitting ticket:', error);
+      toast.error('Failed to submit ticket', {
+        description: ('message' in error ? error.message : 'Please check your connection and try again.') || 'Please check your connection and try again.',
+      });
       setCaptchaToken(null);
       recaptchaRef.current?.reset();
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    if (!captchaToken) {
-      setSubmitMessage('Please complete the CAPTCHA verification.');
+  const handleQuickTopic = (topic: typeof QUICK_HELP_TOPICS[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      subject: topic.subject,
+      message: topic.message
+    }));
+    setActiveTab('new-ticket');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleInitialSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Basic validation before showing captcha
+    if (!formData.subject || !formData.message || (!isSignedIn && (!formData.name || !formData.email))) {
+      toast.error("Please fill in all required fields.");
       return;
     }
+    setIsCaptchaDialogOpen(true);
+  };
 
-    setSubmitMessage('');
+  const handleFinalSubmit = () => {
+    if (!captchaToken) {
+      toast.error('Please complete the CAPTCHA verifcation.');
+      return;
+    }
     submitMutation.mutate({
       ...formData,
       ...(isSignedIn ? {} : { email: formData.email }),
       captchaToken,
+      attachments: uploadedFiles
     });
   };
 
-  const isSubmitting = submitMutation.isPending;
+  const onCaptchaChange = useCallback((token: string | null) => setCaptchaToken(token), []);
 
-  const handleQuickHelp = (topic: (typeof quickHelpTopics)[0]) => {
-    setFormData({
-      name: formData.name,
-      email: formData.email,
-      subject: topic.subject,
-      message: topic.message,
-    });
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const handleContactMethod = (method: string) => {
-    switch (method) {
-      case 'email':
-        window.open('mailto:support@fairarena.app', '_blank');
-        break;
-      case 'chat':
-        // Scroll to form for now, can be integrated with a chat widget later
-        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        break;
-      case 'faq':
-        setShowFAQ(true);
-        setTimeout(() => {
-          faqRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-        break;
-    }
-  };
-
-  const toggleFAQ = (index: number) => {
-    setExpandedFAQ(expandedFAQ === index ? null : index);
-  };
+  const filteredFaqs = FAQS.filter(f =>
+    f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div
-      className={`w-full px-4 py-12 relative overflow-hidden ${showFAQ ? 'flex flex-col' : 'min-h-screen flex flex-col items-center justify-center'}`}
-    >
-      {/* Spotlight Effects */}
-      <Spotlight
-        className="-top-40 left-0 md:-top-20 md:left-60"
-        fill={isDark ? '#DDFF00' : '#b5c800'}
-      />
-      <Spotlight
-        className="top-20 right-0 md:top-40 md:right-40"
-        fill={isDark ? '#DDFF00' : '#b5c800'}
-      />
+    <div className={cn(
+      "min-h-screen w-full bg-background relative overflow-x-hidden flex flex-col items-center pb-12 px-4 md:px-8",
+      isDashboard ? "pt-4 md:pt-8" : "pt-32 md:pt-40"
+    )}>
+      <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill={isDark ? '#DDFF00' : '#b5c800'} />
 
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className={cn(`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'}`)}
-          style={{ animationDuration: '4s' }}
-        />
-        <div
-          className={cn(`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse ${isDark ? 'bg-[#DDEF00]' : 'bg-[#b5c800]'}`)}
-          style={{ animationDuration: '6s', animationDelay: '2s' }}
-        />
+      {/* Header */}
+      <div className="w-full max-w-7xl z-10 mb-10 text-center space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-muted/50 backdrop-blur-sm mb-6 text-xs font-medium text-muted-foreground">
+            <Activity className="w-3.5 h-3.5 text-primary" />
+            <span>Support Center</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+            How can we <span className="text-primary">help?</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Find answers to common questions or reach out to our team directly. We are here to ensure your experience is seamless.
+          </p>
+        </motion.div>
       </div>
 
-      {/* Main Content */}
-      <div className={`max-w-5xl w-full relative z-20 ${showFAQ ? '' : 'shrink-0'}`}>
-        {/* Header Section with Animation */}
-        <div className="text-center mb-12 space-y-4">
-          <div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-sm mb-4
-            ${isDark ? 'bg-[#DDEF00]/10 border-[#DDEF00]/20' : 'bg-[#b5c800]/10 border-[#b5c800]/20'}"
-          >
-            <Sparkles className={`w-4 h-4 ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'}`} />
-            <span className={`text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'}`}>
-              24/7 Support Available
-            </span>
-          </div>
+      {/* Main Tabs Layout */}
+      <div className="w-full max-w-7xl z-10 grid gap-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+            <TabsList className="grid w-full md:w-auto grid-cols-3 h-11 p-1 bg-muted/50 backdrop-blur-sm">
+              <TabsTrigger value="new-ticket" className="gap-2">
+                <Plus className="w-4 h-4" /> New Ticket
+              </TabsTrigger>
+              <TabsTrigger value="my-tickets" className="gap-2" disabled={!isSignedIn}>
+                <Ticket className="w-4 h-4" /> My Tickets
+              </TabsTrigger>
+              <TabsTrigger value="faq" className="gap-2">
+                <HelpCircle className="w-4 h-4" /> FAQs
+              </TabsTrigger>
+            </TabsList>
 
-          <h1
-            className={`
-              text-5xl md:text-6xl font-bold mb-4 animate-fade-in
-              bg-linear-to-r bg-clip-text text-transparent
-              ${isDark
-                ? 'from-neutral-100 via-neutral-100 to-[#DDEF00]'
-                : 'from-neutral-900 via-neutral-900 to-[#b5c800]'
-              }
-            `}
-          >
-            Get in Touch
-          </h1>
-          <p
-            className={`
-              text-lg md:text-xl max-w-2xl mx-auto
-              ${isDark ? 'text-neutral-400' : 'text-neutral-600'}
-            `}
-          >
-            Have a question or need assistance? Our dedicated support team is here to help you
-            succeed!
-          </p>
-        </div>
-
-        {/* Stats/Features Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {[
-            { icon: Clock, label: 'Fast Response', value: '< 24h', color: 'text-blue-500' },
-            { icon: Shield, label: 'Secure', value: '100%', color: 'text-green-500' },
-            {
-              icon: MessageCircle,
-              label: 'Support Tickets',
-              value: '1000+',
-              color: 'text-purple-500',
-            },
-            { icon: Zap, label: 'Resolution Rate', value: '98%', color: 'text-yellow-500' },
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className={cn(`
-                p-4 rounded-xl border text-center transition-all duration-300
-                hover:scale-105 hover:shadow-lg group cursor-pointer
-                ${isDark
-                  ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                  : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-                }
-              `)}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <stat.icon
-                className={cn(`w-6 h-6 mx-auto mb-2 ${stat.color} group-hover:scale-110 transition-transform`)}
-              />
-              <div
-                className={`text-2xl font-bold mb-1 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-              >
-                {stat.value}
-              </div>
-              <p className={`text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Contact Methods */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Email Support */}
-          <button
-            onClick={() => handleContactMethod('email')}
-            className={cn(`
-              group relative p-6 rounded-2xl border transition-all duration-300
-              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-              ${isDark
-                ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-              }
-            `)}
-          >
-            <div className={cn("absolute inset-0 bg-linear-to-br from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300")} />
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className={cn("w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-blue-500 to-cyan-500 group-hover:scale-110 transition-transform duration-300")}>
-                <Mail className="w-7 h-7 text-white" />
-              </div>
-              <h3
-                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-              >
-                Email Support
-              </h3>
-              <p
-                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-              >
-                support@fairarena.app
-              </p>
-              <div
-                className={cn(`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`)}
-              >
-                Send Email
-                <span className={cn("group-hover:translate-x-1 transition-transform duration-300")}>
-                  →
-                </span>
-              </div>
-            </div>
-          </button>
-
-          {/* Live Chat */}
-          <button
-            onClick={() => handleContactMethod('chat')}
-            className={`
-              group relative p-6 rounded-2xl border transition-all duration-300
-              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-              ${isDark
-                ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-              }
-            `}
-          >
-            <div className="absolute inset-0 bg-linear-to-br from-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-purple-500 to-pink-500 group-hover:scale-110 transition-transform duration-300">
-                <MessageSquare className="w-7 h-7 text-white" />
-              </div>
-              <h3
-                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-              >
-                Live Chat
-              </h3>
-              <p
-                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-              >
-                Available 24/7
-              </p>
-              <div
-                className={`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`}
-              >
-                Start Chat
-                <span className="group-hover:translate-x-1 transition-transform duration-300">
-                  →
-                </span>
-              </div>
-            </div>
-          </button>
-
-          {/* Help Center */}
-          <button
-            onClick={() => handleContactMethod('faq')}
-            className={`
-              group relative p-6 rounded-2xl border transition-all duration-300
-              hover:scale-105 hover:shadow-2xl cursor-pointer overflow-hidden
-              ${isDark
-                ? 'bg-[rgba(15,15,15,0.85)] border-neutral-800 backdrop-blur-xl hover:border-[#DDEF00]/50'
-                : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-              }
-            `}
-          >
-            <div className="absolute inset-0 bg-linear-to-br from-orange-500 to-red-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br from-orange-500 to-red-500 group-hover:scale-110 transition-transform duration-300">
-                <HelpCircle className="w-7 h-7 text-white" />
-              </div>
-              <h3
-                className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-              >
-                Help Center
-              </h3>
-              <p
-                className={`text-sm mb-4 text-center ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-              >
-                Browse our FAQ
-              </p>
-              <div
-                className={`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'} group-hover:gap-3 transition-all duration-300`}
-              >
-                View FAQs
-                <span className="group-hover:translate-x-1 transition-transform duration-300">
-                  →
-                </span>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Main Form Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* FAQ Quick Links - Sidebar */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3
-              className={`text-lg font-semibold mb-4 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-            >
-              Quick Help
-            </h3>
-
-            {quickHelpTopics.map((topic, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickHelp(topic)}
-                className={`
-                  w-full text-left p-3 rounded-lg border transition-all duration-200
-                  hover:scale-105 hover:shadow-lg
-                  ${isDark
-                    ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800 hover:border-[#DDEF00]/50 text-neutral-300 hover:text-[#DDEF00]'
-                    : 'bg-white border-neutral-300 hover:border-[#b5c800]/50 text-neutral-700 hover:text-[#b5c800]'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-3">
-                  <HelpCircle className="w-4 h-4 shrink-0" />
-                  <span className="text-sm">{topic.question}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Support Form */}
-          <div className="lg:col-span-2" ref={formRef}>
-            <Card
-              className={`
-              border shadow-none
-              ${isDark
-                  ? 'bg-[rgba(15,15,15,0.95)] border-neutral-800'
-                  : 'bg-white border-neutral-200'
-                }
-            `}
-            >
-              <CardHeader>
-                <CardTitle className={isDark ? 'text-neutral-100' : 'text-neutral-900'}>
-                  Send us a Message
-                </CardTitle>
-                <CardDescription className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>
-                  Fill out the form below and we'll get back to you as soon as possible.
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Name Field - Only show for non-authenticated users */}
-                  {!isSignedIn && (
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="name"
-                        className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                      >
-                        Full Name
-                      </label>
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className={`
-                          transition-all duration-200
-                          ${isDark
-                            ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-neutral-500'
-                            : 'bg-white text-neutral-900 border-neutral-300 placeholder:text-neutral-400'
-                          }
-                          focus:border-[#DDEF00] focus-visible:ring-[#DDEF00]/20
-                        `}
-                      />
-                    </div>
-                  )}
-
-                  {/* Email Field - Only show for non-authenticated users */}
-                  {!isSignedIn && (
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="email"
-                        className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                      >
-                        Email Address
-                      </label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className={`
-                          transition-all duration-200
-                          ${isDark
-                            ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-neutral-500'
-                            : 'bg-white text-neutral-900 border-neutral-300 placeholder:text-neutral-400'
-                          }
-                          focus:border-[#DDEF00] focus-visible:ring-[#DDEF00]/20
-                        `}
-                      />
-                    </div>
-                  )}
-
-                  {/* Authenticated User Info */}
-                  {isSignedIn && (
-                    <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Authenticated as:</strong> {user?.email}
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        Your support request will be linked to your account.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Subject Field */}
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="subject"
-                      className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                    >
-                      Subject
-                    </label>
-                    <Input
-                      id="subject"
-                      name="subject"
-                      type="text"
-                      placeholder="How can we help?"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      className={`
-                        transition-all duration-200
-                        ${isDark
-                          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-neutral-500'
-                          : 'bg-white text-neutral-900 border-neutral-300 placeholder:text-neutral-400'
-                        }
-                        focus:border-[#DDEF00] focus-visible:ring-[#DDEF00]/20
-                      `}
-                    />
-                  </div>
-
-                  {/* Message Field */}
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="message"
-                      className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                    >
-                      Message
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      rows={6}
-                      placeholder="Tell us more about your inquiry..."
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      className={`
-                        w-full rounded-md border px-3 py-2 text-base
-                        shadow-xs transition-all duration-200 outline-none resize-none
-                        ${isDark
-                          ? 'bg-[#1A1A1A] text-neutral-100 border-[#2B2B2B] placeholder:text-neutral-500'
-                          : 'bg-white text-neutral-900 border-neutral-300 placeholder:text-neutral-400'
-                        }
-                        focus:border-[#DDEF00] focus:ring-[3px] focus:ring-[#DDEF00]/20
-                      `}
-                    />
-                  </div>
-
-                  {/* File Upload */}
-                  <div className="space-y-2">
-                    <label
-                      className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}
-                    >
-                      Attachments (Optional)
-                    </label>
-                    <FileUpload
-                      onUploadComplete={(blobName: string) => {
-                        setUploadedFiles(prev => [...prev, blobName]);
-                        setUploadError('');
-                      }}
-                      onUploadError={(error: string) => {
-                        setUploadError(error);
-                      }}
-                      maxSizeMB={100}
-                    />
-                    {uploadError && (
-                      <p className="text-sm text-red-500 mt-2">{uploadError}</p>
-                    )}
-                    {uploadedFiles.length > 0 && (
-                      <p className={`text-sm mt-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                        {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} uploaded successfully
-                      </p>
-                    )}
-                  </div>
-
-                  {/* reCAPTCHA Verification */}
-                  <div className="flex justify-center">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
-                      onChange={onCaptchaChange}
-                      onExpired={onCaptchaExpired}
-                      onError={onCaptchaError}
-                      theme={isDark ? 'dark' : 'light'}
-                    />
-                  </div>
-
-                  {/* Submit Message */}
-                  {submitMessage && (
-                    <div className={`p-4 rounded-lg border ${submitMessage.includes('successfully')
-                      ? 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
-                      : 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
-                      }`}>
-                      {submitMessage}
-                    </div>
-                  )}
-
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
-                    className={`
-                      w-full h-11 bg-[#DDEF00] text-black font-semibold rounded-lg
-                      hover:bg-[#c9d900] active:scale-95 transition-all duration-200
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      flex items-center justify-center gap-2
-                    `}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                        Sending...
-                      </>
-                    ) : !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY ? (
-                      'CAPTCHA not configured'
-                    ) : !captchaToken ? (
-                      <>
-                        <Shield className="w-4 h-4" />
-                        Complete CAPTCHA
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Send Message
-                      </>
-                    )}
-                  </Button>
-                  <p className={`text-center text-xs mt-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
-                    By submitting this form, you agree to our{' '}
-                    <Link to="/terms-and-conditions" className="underline hover:text-[#DDEF00] transition-colors">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link to="/privacy-policy" className="underline hover:text-[#DDEF00] transition-colors">
-                      Privacy Policy
-                    </Link>.
-                  </p>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        {showFAQ && (
-          <div ref={faqRef} className="mt-16 space-y-6">
-            <div className="text-center mb-8">
-              <h2
-                className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-              >
-                Frequently Asked Questions
-              </h2>
-              <p className={`text-lg ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                Find quick answers to common questions
-              </p>
-            </div>
-
-            <div className="space-y-4 max-w-3xl mx-auto">
-              {faqs.map((faq, index) => (
-                <div
-                  key={index}
-                  className={`
-                    rounded-xl border overflow-hidden transition-all duration-300
-                    ${isDark
-                      ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800 hover:border-[#DDEF00]/50'
-                      : 'bg-white border-neutral-300 hover:border-[#b5c800]/50'
-                    }
-                  `}
-                >
-                  <button
-                    onClick={() => toggleFAQ(index)}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4"
-                  >
-                    <span
-                      className={`font-semibold ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
-                    >
-                      {faq.question}
-                    </span>
-                    {expandedFAQ === index ? (
-                      <ChevronUp
-                        className={`w-5 h-5 shrink-0 ${isDark ? 'text-[#DDEF00]' : 'text-[#b5c800]'}`}
-                      />
-                    ) : (
-                      <ChevronDown
-                        className={`w-5 h-5 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-                      />
-                    )}
-                  </button>
-
-                  {expandedFAQ === index && (
-                    <div
-                      className={`px-5 pb-5 pt-0 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-                    >
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-8">
-              <Button
-                onClick={() => setShowFAQ(false)}
-                variant="outline"
-                className={`
-                  ${isDark
-                    ? 'border-neutral-800 text-neutral-300 hover:bg-[rgba(15,15,15,0.65)] hover:text-[#DDEF00] hover:border-[#DDEF00]/50'
-                    : 'border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:text-[#b5c800] hover:border-[#b5c800]/50'
-                  }
-                `}
-              >
-                Hide FAQs
+            {/* Quick Contact Links */}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild className="hidden md:flex gap-2">
+                <a href="mailto:support@fairarena.app">
+                  <Mail className="w-3.5 h-3.5" /> Email Us
+                </a>
               </Button>
             </div>
           </div>
-        )}
 
-        {/* Footer Note */}
-        <p
-          className={`
-            text-center text-sm mt-6
-            ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-        >
-          We typically respond within 24 hours during business days.
-        </p>
+          {/* New Ticket Tab */}
+          <TabsContent value="new-ticket" className="mt-0">
+            <div className="grid lg:grid-cols-3 gap-8 items-start">
+              <div className="lg:col-span-2">
+                <Card className="border shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden relative">
+                  <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-primary/50 to-primary/10" />
+                  <CardHeader>
+                    <CardTitle>Submit a Request</CardTitle>
+                    <CardDescription>
+                      Detailed information helps us resolve your issue faster.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleInitialSubmit} className="space-y-6">
+                      {/* User Details (if not signed in) */}
+                      {!isSignedIn && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input id="name" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
+                          </div>
+                        </div>
+                      )}
+
+                      {isSignedIn && (
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm mb-4">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                            <span className="font-semibold text-primary">{user?.email?.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium">Submitting as {user?.firstName} {user?.lastName}</p>
+                            <p className="text-muted-foreground">{user?.email}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
+                        <Input id="subject" name="subject" placeholder="Brief summary of your issue" value={formData.subject} onChange={handleChange} required />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="message">Message</Label>
+                        <Textarea
+                          id="message"
+                          name="message"
+                          placeholder="Provide detailed information..."
+                          className="min-h-[150px] resize-y"
+                          value={formData.message}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Attachments (Optional)</Label>
+                        <div className="border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors">
+                          <FileUpload
+                            onUploadComplete={(blobName: string) => {
+                              setUploadedFiles(prev => [...prev, blobName]);
+                              setUploadError('');
+                            }}
+                            onUploadError={(error: string) => setUploadError(error)}
+                            maxSizeMB={100}
+                          />
+                        </div>
+                        {uploadError && <p className="text-sm text-destructive mt-2">{uploadError}</p>}
+                        {uploadedFiles.length > 0 && <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {uploadedFiles.length} file(s) attached</p>}
+                      </div>
+
+                      <Button type="submit" className="w-full h-11 text-base">
+                        <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Submit Ticket</span>
+                      </Button>
+
+                      <p className="text-xs text-center text-muted-foreground pt-2">
+                        By submitting this form, you agree to our <Link to="/terms" className="underline hover:text-primary">Terms</Link> and <Link to="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
+                      </p>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar Info */}
+              <div className="space-y-6">
+                <Card className="bg-muted/30 border-none shadow-none">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Common Topics</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {QUICK_HELP_TOPICS.map((topic, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleQuickTopic(topic)}
+                        className="w-full text-left p-3 rounded-md bg-background border hover:border-primary/50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <topic.icon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{topic.title}</p>
+                            <p className="text-xs text-muted-foreground">{topic.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-secondary/10 border-none shadow-none">
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center mx-auto shadow-sm">
+                      <MessageCircle className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1">Live Chat</h3>
+                      <p className="text-sm text-muted-foreground">Available Mon-Fri, 9am-5pm EST</p>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => toast("Chat is currently offline. Please submit a ticket.")}>
+                      Start Chat
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* My Tickets Tab (Auth only) */}
+          <TabsContent value="my-tickets" className="mt-0">
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>My Tickets</CardTitle>
+                    <CardDescription>View and manage your support requests.</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => ticketsData && !isLoadingTickets && apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`)}>
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!isSignedIn ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Shield className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
+                    <p className="text-muted-foreground max-w-sm mb-6">Please sign in to view your support ticket history.</p>
+                    <Button asChild>
+                      <Link to="/auth/sign-in">Sign In</Link>
+                    </Button>
+                  </div>
+                ) : isLoadingTickets ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-16 w-full bg-muted animate-pulse rounded-md" />
+                    ))}
+                  </div>
+                ) : ticketsData?.supportTickets.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl">
+                    <Ticket className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No Tickets Found</h3>
+                    <p className="text-muted-foreground max-w-sm">You haven't submitted any support tickets yet.</p>
+                    <Button variant="link" onClick={() => setActiveTab('new-ticket')}>Submit a Ticket</Button>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-3">
+                      {ticketsData?.supportTickets.map((ticket) => (
+                        <div key={ticket.id} className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-base">{ticket.subject}</span>
+                              <StatusBadge status={ticket.status} />
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-1">{ticket.message}</p>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(ticket.createdAt).toLocaleDateString()}</span>
+                              <span>ID: {ticket.id.slice(0, 8)}</span>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" className="shrink-0 gap-1">
+                            View Details <MessageSquare className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* FAQ Tab */}
+          <TabsContent value="faq" className="mt-0">
+            <div className="max-w-3xl mx-auto space-y-8">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search FAQs..."
+                  className="pl-10 h-11 bg-card/80 backdrop-blur-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-4">
+                <AnimatePresence>
+                  {filteredFaqs.length > 0 ? (
+                    filteredFaqs.map((faq, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Card className="overflow-hidden hover:border-primary/40 transition-colors">
+                          <CardHeader className="py-4 cursor-pointer">
+                            <CardTitle className="text-base font-medium flex items-center gap-2">
+                              <HelpCircle className="w-4 h-4 text-primary shrink-0" />
+                              {faq.question}
+                            </CardTitle>
+                          </CardHeader>
+                          <Separator />
+                          <CardContent className="py-4 bg-muted/5 text-sm leading-relaxed text-muted-foreground">
+                            {faq.answer}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                      <p>No results found for "{searchQuery}"</p>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Verification Dialog */}
+      <Dialog open={isCaptchaDialogOpen} onOpenChange={setIsCaptchaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Security Verification</DialogTitle>
+            <DialogDescription>
+              Please complete the CAPTCHA below to submit your ticket.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY || ''}
+              onChange={onCaptchaChange}
+              theme={isDark ? 'dark' : 'light'}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCaptchaDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleFinalSubmit} disabled={!captchaToken || submitMutation.isPending}>
+              {submitMutation.isPending ? 'Sending...' : 'Confirm & Send'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

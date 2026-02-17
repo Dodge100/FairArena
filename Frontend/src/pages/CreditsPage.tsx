@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useAuthState } from '../lib/auth';
+import { toast } from 'sonner';
 
 interface CreditBalance {
   balance: number;
@@ -74,11 +74,39 @@ const CreditsPage = () => {
   const [selectedPayment, setSelectedPayment] = useState<PaymentDetails | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
+  // Handle refresh logic with state to support polling
+  const [isRefreshing, setIsRefreshing] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return !!urlParams.get('refresh');
+  });
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      navigate('/signin');
+      return;
+    }
+
+    if (isRefreshing) {
+      // Clear URL parameter
+      window.history.replaceState({}, '', '/dashboard/credits');
+
+      // Invalidate immediately
+      queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['credits-history'] });
+      queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
+
+      // Stop refreshing after 5 seconds
+      const timer = setTimeout(() => setIsRefreshing(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSignedIn, navigate, queryClient, isRefreshing]);
+
   // Queries
   const { data: balanceData, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () => apiRequest<{ success: boolean, data: CreditBalance }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance`).then(res => res.data),
     enabled: isSignedIn,
+    refetchInterval: isRefreshing ? 1000 : false,
   });
 
   const { data: eligibilityData } = useQuery({
@@ -92,6 +120,7 @@ const CreditsPage = () => {
       }
     }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(res => res.data),
     enabled: isSignedIn,
+    refetchInterval: isRefreshing ? 1000 : false,
   });
 
   const {
@@ -115,6 +144,7 @@ const CreditsPage = () => {
       return nextOffset < lastPage.total ? nextOffset : undefined;
     },
     enabled: isSignedIn,
+    refetchInterval: isRefreshing ? 1000 : false,
   });
 
   const transactions = historyData?.pages.flatMap((page) => page.transactions) || [];
@@ -150,24 +180,6 @@ const CreditsPage = () => {
       toast.error('Failed to load payment details');
     }
   }, []);
-
-  useEffect(() => {
-    if (!isSignedIn) {
-      navigate('/signin');
-      return;
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const shouldRefresh = urlParams.get('refresh');
-
-    if (shouldRefresh) {
-      window.history.replaceState({}, '', '/dashboard/credits');
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['credits-history'] });
-      queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
-    }
-  }, [isSignedIn, navigate, queryClient]);
 
   const getTransactionIcon = (type: string, amount: number) => {
     switch (type) {

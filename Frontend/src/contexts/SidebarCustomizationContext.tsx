@@ -33,12 +33,7 @@ const defaultMainItems: SidebarItem[] = [
         url: '/dashboard/projects',
         icon: 'FileText',
         visible: true,
-        order: 1,
-        items: [
-            { id: 'projects-all', title: 'All Projects', url: '/dashboard/projects/all', icon: '', visible: true, order: 0 },
-            { id: 'projects-active', title: 'Active', url: '/dashboard/projects/active', icon: '', visible: true, order: 1 },
-            { id: 'projects-completed', title: 'Completed', url: '/dashboard/projects/completed', icon: '', visible: true, order: 2 },
-        ]
+        order: 1
     },
     { id: 'hackathons', title: 'Hackathons', url: '/dashboard/hackathons', icon: 'Trophy', visible: true, order: 2 },
     { id: 'analytics', title: 'Analytics', url: '/dashboard/analytics', icon: 'BarChart3', visible: true, order: 3 },
@@ -52,12 +47,7 @@ const defaultMainItems: SidebarItem[] = [
         url: '/dashboard/oauth/applications',
         icon: 'Shield',
         visible: true,
-        order: 8,
-        items: [
-            { id: 'oauth-apps', title: 'My Applications', url: '/dashboard/oauth/applications', icon: '', visible: true, order: 0 },
-            { id: 'authorized-apps', title: 'Authorized Apps', url: '/dashboard/oauth/authorized', icon: '', visible: true, order: 1 },
-            { id: 'device-auth', title: 'Device Authorization', url: '/dashboard/device', icon: '', visible: true, order: 2 },
-        ]
+        order: 8
     },
 ];
 
@@ -65,7 +55,7 @@ const defaultSecondaryItems: SidebarItem[] = [
     { id: 'search', title: 'Search', url: '/dashboard/search', icon: 'Search', visible: true, order: 0 },
     { id: 'calendar', title: 'Calendar', url: '/dashboard/calendar', icon: 'Calendar', visible: true, order: 1 },
     { id: 'settings', title: 'Settings', url: '/dashboard/account-settings', icon: 'Settings', visible: true, order: 2 },
-    { id: 'help', title: 'Help & Support', url: '/support', icon: 'HelpCircle', visible: true, order: 3 },
+    { id: 'help', title: 'Help & Support', url: '/dashboard/support', icon: 'HelpCircle', visible: true, order: 3 },
 ];
 
 interface SidebarCustomizationProviderProps {
@@ -73,42 +63,51 @@ interface SidebarCustomizationProviderProps {
 }
 
 export function SidebarCustomizationProvider({ children }: SidebarCustomizationProviderProps) {
-    const [customization, setCustomization] = useState<SidebarCustomization>({
-        mainItems: defaultMainItems,
-        secondaryItems: defaultSecondaryItems,
-    });
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    // Load customization from localStorage on mount
-    useEffect(() => {
+    const [customization, setCustomization] = useState<SidebarCustomization>(() => {
         const saved = localStorage.getItem('sidebarCustomization');
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
 
                 // Migration: Ensure new default items exist in the saved config
-                // Keep order/visibility from saved, but add missing new defaults
-                // Actually, simpler: Use saved if valid, but check for missing IDs
 
-                // We want to preserve user's order and visibility, but append new items
-                const savedMainIds = new Set(parsed.mainItems.map((i: SidebarItem) => i.id));
-                const newItems = defaultMainItems.filter(i => !savedMainIds.has(i.id));
+                // 1. Process Main Items
+                const savedMainItems = parsed.mainItems || [];
+                const savedMainIds = new Set(savedMainItems.map((i: SidebarItem) => i.id));
+                const newMainItems = defaultMainItems.filter(i => !savedMainIds.has(i.id));
+                const finalMainItems = [...savedMainItems, ...newMainItems];
 
-                const finalMainItems = [...parsed.mainItems, ...newItems];
+                // 2. Process Secondary Items
+                const savedSecondaryItems = (parsed.secondaryItems || []).map((item: SidebarItem) => {
+                    // Update Help URL if it's the old public one
+                    if (item.id === 'help' && item.url === '/support') {
+                        return { ...item, url: '/dashboard/support' };
+                    }
+                    return item;
+                });
+                const savedSecondaryIds = new Set(savedSecondaryItems.map((i: SidebarItem) => i.id));
+                const newSecondaryItems = defaultSecondaryItems.filter(i => !savedSecondaryIds.has(i.id));
+                const finalSecondaryItems = [...savedSecondaryItems, ...newSecondaryItems];
 
-                // Same for secondary if needed (none added recently)
-                const finalSecondaryItems = parsed.secondaryItems || defaultSecondaryItems;
-
-                setCustomization({
+                return {
                     mainItems: finalMainItems,
                     secondaryItems: finalSecondaryItems
-                });
+                };
             } catch (error) {
                 console.warn('Failed to load sidebar customization:', error);
+                return {
+                    mainItems: defaultMainItems,
+                    secondaryItems: defaultSecondaryItems,
+                };
             }
         }
-        setIsLoaded(true);
-    }, []);
+        return {
+            mainItems: defaultMainItems,
+            secondaryItems: defaultSecondaryItems,
+        };
+    });
+
+    const isLoaded = true; // Default to true since we load synchronously now
 
     // Save customization to localStorage whenever it changes (only after initial load)
     useEffect(() => {
