@@ -12,6 +12,7 @@ FairArena is an enterprise-grade full-stack platform for skill assessment, built
 ## Technology Stack
 
 ### Frontend (React + TypeScript)
+
 - React 19.2 with TypeScript 5.9 (strict mode)
 - Vite 7.3 for build tooling
 - TailwindCSS 4.1 for styling
@@ -24,6 +25,7 @@ FairArena is an enterprise-grade full-stack platform for skill assessment, built
 - Framer Motion for animations
 
 ### Backend (Node.js + Express)
+
 - Node.js 20 LTS with Express 5.2
 - TypeScript 5.9 (strict mode)
 - Prisma 7.2 ORM (PostgreSQL)
@@ -36,6 +38,7 @@ FairArena is an enterprise-grade full-stack platform for skill assessment, built
 - OpenTelemetry + SigNoz for observability
 
 ### Infrastructure
+
 - PostgreSQL 15+ with read replicas
 - Docker + Docker Compose
 - Caddy reverse proxy
@@ -54,6 +57,7 @@ FairArena is an enterprise-grade full-stack platform for skill assessment, built
    - Avoid `any` type; use `unknown` if needed
 
 2. **Async/Await Pattern**
+
    ```typescript
    // Always use async/await, never callbacks
    try {
@@ -292,7 +296,7 @@ export const sendWelcomeEmail = inngest.createFunction(
     });
 
     return { success: true };
-  }
+  },
 );
 
 // Trigger event
@@ -354,6 +358,7 @@ export const ProfileForm = () => {
 ## Project Structure Awareness
 
 ### Backend Structure
+
 ```
 Backend/src/
 ├── config/              # Configuration files (database, redis, etc.)
@@ -368,6 +373,7 @@ Backend/src/
 ```
 
 ### Frontend Structure
+
 ```
 Frontend/src/
 ├── components/         # Reusable UI components
@@ -428,6 +434,7 @@ Key models to be aware of when generating code:
 ## API Conventions
 
 ### Request/Response Format
+
 ```typescript
 // Success response
 {
@@ -444,12 +451,14 @@ Key models to be aware of when generating code:
 ```
 
 ### Common Headers
+
 ```
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
 
 ### Status Codes
+
 - 200: Success
 - 201: Created
 - 400: Bad Request (validation errors)
@@ -463,6 +472,7 @@ Content-Type: application/json
 When generating code that needs configuration:
 
 ### Backend
+
 ```typescript
 // Use from @/config/env.ts (validated with Zod)
 import { env } from '@/config/env';
@@ -471,6 +481,7 @@ const apiKey = env.GOOGLE_GEMINI_API_KEY;
 ```
 
 ### Frontend
+
 ```typescript
 // Access via import.meta.env (Vite)
 const apiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -541,7 +552,7 @@ Generate accessible code by default:
 
 When generating new functions/components, include JSDoc:
 
-```typescript
+````typescript
 /**
  * Fetches user profile data with caching
  *
@@ -556,13 +567,10 @@ When generating new functions/components, include JSDoc:
  * const profile = await getUserProfile('user_123');
  * ```
  */
-export async function getUserProfile(
-  userId: string,
-  options?: FetchOptions
-): Promise<UserProfile> {
+export async function getUserProfile(userId: string, options?: FetchOptions): Promise<UserProfile> {
   // Implementation
 }
-```
+````
 
 ## Git Commit Message Format
 

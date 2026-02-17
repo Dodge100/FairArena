@@ -1,6 +1,5 @@
 export { useAuth, useAuthState, useToken } from '../contexts/AuthContext';
 
-
 export interface AuthState {
   isSignedIn: boolean;
   isLoaded: boolean;

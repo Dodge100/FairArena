@@ -15,7 +15,7 @@ export {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
-  sendNotification
+  sendNotification,
 } from './notificationOperations.js';
 export { paymentOrderCreated } from './payment-order-created.js';
 export { paymentVerified } from './payment-verified.js';
@@ -29,14 +29,14 @@ export { sendWeeklyFeedbackEmail } from './sendWeeklyFeedbackEmail.js';
 export {
   createUserSettingsFunction,
   resetSettingsFunction,
-  updateSettingsFunction
+  updateSettingsFunction,
 } from './settingsOperations.js';
 export { supportRequestCreated } from './supportRequest.js';
 export { createTeamAuditLog, sendTeamInviteEmail } from './teamInvite.js';
 export {
   processBulkTeamInvites,
   processSingleTeamInvite,
-  processTeamInviteAcceptance
+  processTeamInviteAcceptance,
 } from './teamInviteProcessing.js';
 export { createTeamFunction, deleteTeamFunction, updateTeamFunction } from './teamManagement.js';
 export { updateOrganization } from './updateOrganization.js';
@@ -47,10 +47,13 @@ export { updateUser } from './userUpdate.js';
 
 // Auth email functions
 export {
-  sendBackupCodeUsedHandler, sendEmailVerification,
-  sendLoginNotification, sendPasskeyAddedHandler,
-  sendPasskeyRemovedHandler, sendPasswordChangedEmail,
-  sendPasswordResetEmail
+  sendBackupCodeUsedHandler,
+  sendEmailVerification,
+  sendLoginNotification,
+  sendPasskeyAddedHandler,
+  sendPasskeyRemovedHandler,
+  sendPasswordChangedEmail,
+  sendPasswordResetEmail,
 } from './authEmails.js';
 
 // Security email functions
@@ -61,18 +64,18 @@ export {
   sendMfaOtpEmail,
   sendNewDeviceLoginEmail,
   sendSecurityKeyAddedEmail,
-  sendSecurityKeyRemovedEmail
+  sendSecurityKeyRemovedEmail,
 } from './securityEmails.js';
 
 // OAuth background jobs
 export {
-  archiveOldAuditLogs, calculateApplicationStats, cleanupExpiredTokens, sendOAuthAppAuthorizedEmail,
+  archiveOldAuditLogs,
+  calculateApplicationStats,
+  cleanupExpiredTokens,
+  sendOAuthAppAuthorizedEmail,
   createOAuthAppAuthorizedNotification,
   logOAuthDataAccess,
 } from './oauthJobs.js';
 
 // Auth stream functions
-export {
-  emitSessionRevoked, scheduleTokenRefresh
-} from './authStream.js';
-
+export { emitSessionRevoked, scheduleTokenRefresh } from './authStream.js';

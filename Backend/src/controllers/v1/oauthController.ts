@@ -692,7 +692,7 @@ export const ssoCheck = async (req: Request, res: Response) => {
 
     const domain = email.split('@')[1];
     const ssoConfig = await prisma.organizationSSOConfig.findFirst({
-      where: { domain, isActive: true }
+      where: { domain, isActive: true },
     });
 
     if (ssoConfig) {
@@ -700,7 +700,7 @@ export const ssoCheck = async (req: Request, res: Response) => {
         success: true,
         ssoEnabled: true,
         providerType: ssoConfig.providerType,
-        ssoUrl: `${ENV.BASE_URL}/api/v1/auth/sso/login?email=${encodeURIComponent(email)}`
+        ssoUrl: `${ENV.BASE_URL}/api/v1/auth/sso/login?email=${encodeURIComponent(email)}`,
       });
     }
 
@@ -727,7 +727,7 @@ export const ssoLogin = async (req: Request, res: Response) => {
     if (!domain) return res.status(400).send('Invalid email domain');
 
     const ssoConfig = await prisma.organizationSSOConfig.findFirst({
-      where: { domain, isActive: true }
+      where: { domain, isActive: true },
     });
 
     if (!ssoConfig) return res.status(404).send('SSO not configured for this domain');
@@ -744,7 +744,7 @@ export const ssoLogin = async (req: Request, res: Response) => {
         redirect_uri: redirectUri,
         response_type: 'code',
         scope: 'openid profile email',
-        state: encodedState
+        state: encodedState,
       });
 
       return res.redirect(`${ssoConfig.authorizationUrl}?${params.toString()}`);
@@ -777,7 +777,7 @@ export const ssoCallback = async (req: Request, res: Response) => {
     }
 
     const ssoConfig = await prisma.organizationSSOConfig.findUnique({
-      where: { id: configId }
+      where: { id: configId },
     });
 
     if (!ssoConfig) {
@@ -790,15 +790,15 @@ export const ssoCallback = async (req: Request, res: Response) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       body: new URLSearchParams({
         client_id: ssoConfig.clientId!,
         client_secret: ssoConfig.clientSecret!,
         grant_type: 'authorization_code',
         code: code as string,
-        redirect_uri: redirectUri
-      })
+        redirect_uri: redirectUri,
+      }),
     });
 
     if (!tokenResponse.ok) {
@@ -819,7 +819,7 @@ export const ssoCallback = async (req: Request, res: Response) => {
       profileImageUrl = decoded.picture;
     } else if (ssoConfig.userInfoUrl) {
       const uiRes = await fetch(ssoConfig.userInfoUrl, {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       if (uiRes.ok) {
         const ui = await uiRes.json();
@@ -846,7 +846,7 @@ export const ssoCallback = async (req: Request, res: Response) => {
     // Since we can't easily reusing oauth.service.ts's logic which accepts OAuthUserData, we'll just check directly.
 
     let user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     if (!user) {
@@ -862,15 +862,15 @@ export const ssoCallback = async (req: Request, res: Response) => {
           firstName: firstName || null,
           lastName: lastName || null,
           profileImageUrl: profileImageUrl || null,
-          emailVerified: true
-        }
+          emailVerified: true,
+        },
       });
 
       // Link to Org
       if (ssoConfig.organizationId) {
         try {
           await prisma.userOrganization.create({
-            data: { userId: user.userId, organizationId: ssoConfig.organizationId }
+            data: { userId: user.userId, organizationId: ssoConfig.organizationId },
           });
         } catch (e) {
           // Ignore unique constraint violation if exists
@@ -880,7 +880,6 @@ export const ssoCallback = async (req: Request, res: Response) => {
 
     const { handleSuccessfulOAuthLogin } = await import('../../services/oauth.service.js');
     await handleSuccessfulOAuthLogin(user, req, res, target || '/dashboard');
-
   } catch (error) {
     logger.error('SSO callback error', {
       error: error instanceof Error ? error.message : String(error),

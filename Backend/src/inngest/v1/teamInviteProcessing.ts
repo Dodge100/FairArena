@@ -148,7 +148,7 @@ export const processSingleTeamInvite = inngest.createFunction(
         createdAt: invite.createdAt,
       },
     };
-  }
+  },
 );
 
 /**
@@ -164,28 +164,21 @@ export const processBulkTeamInvites = inngest.createFunction(
   },
   { event: 'team/invite.process-bulk' },
   async ({ event, step }) => {
-    const {
-      teamId,
-      teamName,
-      organizationName,
-      invites,
-      expiresInDays,
-      inviterId,
-      inviterName,
-    } = event.data as {
-      teamId: string;
-      teamName: string;
-      organizationName: string;
-      invites: Array<{
-        email: string;
-        roleId: string;
-        firstName?: string;
-        lastName?: string;
-      }>;
-      expiresInDays: number;
-      inviterId: string;
-      inviterName: string;
-    };
+    const { teamId, teamName, organizationName, invites, expiresInDays, inviterId, inviterName } =
+      event.data as {
+        teamId: string;
+        teamName: string;
+        organizationName: string;
+        invites: Array<{
+          email: string;
+          roleId: string;
+          firstName?: string;
+          lastName?: string;
+        }>;
+        expiresInDays: number;
+        inviterId: string;
+        inviterName: string;
+      };
     const readOnlyPrisma = getReadOnlyPrisma();
 
     logger.info('Processing bulk team invitations', {
@@ -212,7 +205,14 @@ export const processBulkTeamInvites = inngest.createFunction(
 
     // Step 1: Get all roles upfront
     const roles = await step.run('fetch-roles', async () => {
-      const roleIds: string[] = [...new Set(invites.map((inv: { email: string; roleId: string; firstName?: string; lastName?: string }) => inv.roleId))];
+      const roleIds: string[] = [
+        ...new Set(
+          invites.map(
+            (inv: { email: string; roleId: string; firstName?: string; lastName?: string }) =>
+              inv.roleId,
+          ),
+        ),
+      ];
       return await readOnlyPrisma.teamRole.findMany({
         where: {
           id: { in: roleIds },
@@ -367,7 +367,7 @@ export const processBulkTeamInvites = inngest.createFunction(
       },
       results,
     };
-  }
+  },
 );
 
 /**
@@ -525,7 +525,7 @@ export const processTeamInviteAcceptance = inngest.createFunction(
           redis.del(`${REDIS_KEYS.USER_TEAM_CONTEXT}${invitation.team.id}:${userId}`),
           redis.del(`${REDIS_KEYS.USER_TEAMS}${userId}`),
           redis.del(
-            `${REDIS_KEYS.USER_ORGANIZATION_CONTEXT}${invitation.team.organizationId}:${userId}`
+            `${REDIS_KEYS.USER_ORGANIZATION_CONTEXT}${invitation.team.organizationId}:${userId}`,
           ),
         ]);
       } catch (error) {
@@ -549,5 +549,5 @@ export const processTeamInviteAcceptance = inngest.createFunction(
         roleName: invitation.role.roleName,
       },
     };
-  }
+  },
 );

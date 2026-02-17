@@ -1,4 +1,7 @@
-export const waitlistConfirmationTemplate = (params: { name: string, position: number }): string => {
+export const waitlistConfirmationTemplate = (params: {
+  name: string;
+  position: number;
+}): string => {
   const currentYear = new Date().getFullYear();
   const positionText = params.position > 0 ? `#${params.position}` : 'on the list';
 

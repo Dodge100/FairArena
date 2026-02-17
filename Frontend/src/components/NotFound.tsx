@@ -20,7 +20,11 @@ function NotFound() {
 
       {/* Main Content */}
       <div className="relative flex flex-col items-center justify-center px-4">
-        <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" className="w-40 -my-5" alt="" />
+        <img
+          src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin"
+          className="w-40 -my-5"
+          alt=""
+        />
 
         {/* Heading */}
         <h2

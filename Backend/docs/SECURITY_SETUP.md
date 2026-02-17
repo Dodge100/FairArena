@@ -40,6 +40,7 @@ The backend now requires CSRF tokens for all state-changing operations (POST, PU
 #### 1. Reading the CSRF Token
 
 The CSRF token is provided in two ways:
+
 - **Cookie**: `csrf-token` (HTTP-only, SameSite=Strict)
 - **Header**: `X-CSRF-Token` (readable by JavaScript)
 
@@ -101,12 +102,14 @@ export default api;
 ## Security Features Implemented
 
 ### 1. CSRF Protection
+
 - **Pattern**: Double Submit Cookie
 - **Scope**: All POST, PUT, PATCH, DELETE requests
 - **Exempt**: GET, HEAD, OPTIONS, webhooks, health checks
 - **Token Rotation**: Automatic rotation on successful validation
 
 ### 2. Input Validation & Sanitization
+
 - **XSS Prevention**: HTML tag stripping, script removal
 - **SQL Injection**: Pattern detection and blocking
 - **NoSQL Injection**: Dangerous operator filtering
@@ -114,12 +117,14 @@ export default api;
 - **Command Injection**: Shell command character filtering
 
 ### 3. Rate Limiting
+
 - **Algorithm**: Sliding window (Redis-based)
 - **Scope**: Per-IP, per-user, per-endpoint
 - **Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 - **Fail-Safe**: Fails open if Redis is unavailable
 
 ### 4. Security Headers
+
 - **HSTS**: Strict-Transport-Security with 1-year max-age
 - **CSP**: Content-Security-Policy with strict directives
 - **X-Frame-Options**: DENY (prevents clickjacking)
@@ -127,12 +132,14 @@ export default api;
 - **Permissions-Policy**: Restricts browser features
 
 ### 5. Intrusion Detection
+
 - **Pattern Detection**: SQL injection, XSS, path traversal, command injection
 - **Automatic Blocking**: IP blocking after threshold violations
 - **Honeypots**: Fake endpoints to detect bots
 - **Brute Force Protection**: Tracks failed auth attempts
 
 ### 6. Request Validation
+
 - **Size Limits**: 100KB for JSON, 10MB for files
 - **Content-Type**: Validates allowed content types
 - **URL Length**: Maximum 2048 characters
@@ -179,6 +186,7 @@ curl -I http://localhost:3000/api/v1/auth/me
 ### Security Logs
 
 Security events are logged to:
+
 - **Console**: Development environment
 - **Files**: Production environment
   - `logs/security.log` - All security events
@@ -199,6 +207,7 @@ Security events are logged to:
 **Problem**: "CSRF token missing" error
 
 **Solutions**:
+
 1. Ensure cookies are enabled
 2. Verify `withCredentials: true` in fetch/axios
 3. Check that `X-CSRF-Token` header is being sent
@@ -209,14 +218,16 @@ Security events are logged to:
 **Problem**: Legitimate users getting rate limited
 
 **Solutions**:
+
 1. Increase rate limits in `security.config.ts`
-3. Implement user-specific rate limits for authenticated users
+2. Implement user-specific rate limits for authenticated users
 
 ### Redis Connection Issues
 
 **Problem**: Rate limiting or intrusion detection not working
 
 **Solutions**:
+
 1. Verify Redis connection in `UPSTASH_REDIS_REST_URL`
 2. Check Redis credentials in `UPSTASH_REDIS_REST_TOKEN`
 3. Monitor Redis logs for connection errors

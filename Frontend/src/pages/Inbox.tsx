@@ -192,7 +192,7 @@ export default function InboxPage() {
       }
 
       return apiRequest<{ data: { notifications: Notification[] } }>(
-        `${API_BASE}/api/v1/notifications?${params}`
+        `${API_BASE}/api/v1/notifications?${params}`,
       );
     },
     staleTime: 30000, // 30 seconds
@@ -202,7 +202,8 @@ export default function InboxPage() {
 
   const { data: unreadCountData } = useQuery({
     queryKey: ['notifications', 'unreadCount'],
-    queryFn: () => apiRequest<{ data: { count: number } }>(`${API_BASE}/api/v1/notifications/unread/count`),
+    queryFn: () =>
+      apiRequest<{ data: { count: number } }>(`${API_BASE}/api/v1/notifications/unread/count`),
     staleTime: 10000, // 10 seconds
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -223,8 +224,8 @@ export default function InboxPage() {
           return {
             ...old,
             data: {
-              notifications: [notification, ...old.data.notifications]
-            }
+              notifications: [notification, ...old.data.notifications],
+            },
           };
         });
 
@@ -233,18 +234,17 @@ export default function InboxPage() {
           if (!old?.data?.count) return old;
           return {
             ...old,
-            data: { count: old.data.count + 1 }
+            data: { count: old.data.count + 1 },
           };
         });
 
         // Play sound if enabled
         if (soundEnabled && audioRef.current) {
-          if (navigator.vibrate){
+          if (navigator.vibrate) {
             navigator.vibrate(50);
           }
-          audioRef.current.play().catch(() => { });
+          audioRef.current.play().catch(() => {});
         }
-
       } catch (error) {
         console.error('Failed to parse new notification event', error);
       }
@@ -268,9 +268,9 @@ export default function InboxPage() {
               ...old,
               data: {
                 notifications: old.data.notifications.map((n: any) =>
-                  n.id === notificationId ? { ...n, read: true } : n
-                )
-              }
+                  n.id === notificationId ? { ...n, read: true } : n,
+                ),
+              },
             };
           });
         }
@@ -280,7 +280,7 @@ export default function InboxPage() {
           if (!old?.data?.count) return old;
           return {
             ...old,
-            data: { count: Math.max(0, old.data.count + count) }
+            data: { count: Math.max(0, old.data.count + count) },
           };
         });
       } catch (error) {
@@ -417,11 +417,7 @@ export default function InboxPage() {
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className="gap-2"
               >
-                {soundEnabled ? (
-                  <Volume2 className="h-4 w-4" />
-                ) : (
-                  <VolumeX className="h-4 w-4" />
-                )}
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 Sound
               </Button>
               {unreadCount > 0 && (

@@ -1,7 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiRequest } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
@@ -16,7 +22,7 @@ import {
   RefreshCw,
   Shield,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -104,21 +110,27 @@ const CreditsPage = () => {
   // Queries
   const { data: balanceData, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
-    queryFn: () => apiRequest<{ success: boolean, data: CreditBalance }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: CreditBalance }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/balance`,
+      ).then((res) => res.data),
     enabled: isSignedIn,
     refetchInterval: isRefreshing ? 1000 : false,
   });
 
   const { data: eligibilityData } = useQuery({
     queryKey: ['credits-eligibility'],
-    queryFn: () => apiRequest<{
-      success: boolean,
-      data: {
-        canClaimFreeCredits: boolean;
-        hasClaimedFreeCredits: boolean;
-        phoneVerified: boolean;
-      }
-    }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{
+        success: boolean;
+        data: {
+          canClaimFreeCredits: boolean;
+          hasClaimedFreeCredits: boolean;
+          phoneVerified: boolean;
+        };
+      }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(
+        (res) => res.data,
+      ),
     enabled: isSignedIn,
     refetchInterval: isRefreshing ? 1000 : false,
   });
@@ -129,12 +141,12 @@ const CreditsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: historyLoading,
-    error: historyError
+    error: historyError,
   } = useInfiniteQuery({
     queryKey: ['credits-history'],
     queryFn: async ({ pageParam = 0 }) => {
-      const response = await apiRequest<{ success: boolean, data: CreditHistory }>(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${pageParam}`
+      const response = await apiRequest<{ success: boolean; data: CreditHistory }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/history?limit=20&offset=${pageParam}`,
       );
       return response.data;
     },
@@ -217,7 +229,7 @@ const CreditsPage = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => window.location.hash = 'pricing'}
+              onClick={() => (window.location.hash = 'pricing')}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -230,7 +242,9 @@ const CreditsPage = () => {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-1 border shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Available Balance</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Available Balance
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold tracking-tight">
@@ -255,34 +269,48 @@ const CreditsPage = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Claim Free Credits</h3>
-                      <p className="text-muted-foreground text-sm">Verify your phone to verify your account and get 200 free credits.</p>
+                      <p className="text-muted-foreground text-sm">
+                        Verify your phone to verify your account and get 200 free credits.
+                      </p>
                     </div>
                   </div>
-                  <Button onClick={() => navigate('/dashboard/credits/verify')} variant="outline" className="w-full sm:w-auto shrink-0">
+                  <Button
+                    onClick={() => navigate('/dashboard/credits/verify')}
+                    variant="outline"
+                    className="w-full sm:w-auto shrink-0"
+                  >
                     Claim Now <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            {eligibilityData !== undefined && !eligibilityData?.hasClaimedFreeCredits && !eligibilityData?.canClaimFreeCredits && (
-              <Card className="border bg-secondary/30 shadow-none">
-                <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <Shield className="h-6 w-6 text-primary" />
+            {eligibilityData !== undefined &&
+              !eligibilityData?.hasClaimedFreeCredits &&
+              !eligibilityData?.canClaimFreeCredits && (
+                <Card className="border bg-secondary/30 shadow-none">
+                  <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 bg-primary/10 rounded-full">
+                        <Shield className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Verify & Earn</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Secure your account with phone verification and earn 200 credits.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">Verify & Earn</h3>
-                      <p className="text-muted-foreground text-sm">Secure your account with phone verification and earn 200 credits.</p>
-                    </div>
-                  </div>
-                  <Button onClick={() => navigate('/dashboard/credits/verify')} variant="outline" className="w-full sm:w-auto shrink-0">
-                    Verify Phone <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                    <Button
+                      onClick={() => navigate('/dashboard/credits/verify')}
+                      variant="outline"
+                      className="w-full sm:w-auto shrink-0"
+                    >
+                      Verify Phone <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
           </div>
         </div>
 
@@ -296,7 +324,7 @@ const CreditsPage = () => {
             <CardContent className="p-0">
               {historyLoading ? (
                 <div className="p-6 space-y-4">
-                  {[1, 2, 3].map(i => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i} className="flex justify-between items-center">
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-48" />
@@ -322,14 +350,24 @@ const CreditsPage = () => {
                     <div
                       key={transaction.id}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 hover:bg-muted/50 transition-colors gap-4"
-                      role={transaction.type === 'PURCHASE' ? "button" : undefined}
-                      onClick={() => transaction.type === 'PURCHASE' && transaction.payment && fetchPaymentDetails(transaction)}
+                      role={transaction.type === 'PURCHASE' ? 'button' : undefined}
+                      onClick={() =>
+                        transaction.type === 'PURCHASE' &&
+                        transaction.payment &&
+                        fetchPaymentDetails(transaction)
+                      }
                     >
                       <div className="flex items-start gap-4 min-w-0">
-                        <div className={cn("mt-1 p-2 rounded-full bg-secondary shrink-0",
-                          transaction.type === 'PURCHASE' ? "text-green-600 dark:text-green-500" :
-                            transaction.type === 'DEDUCTION' ? "text-red-600 dark:text-red-500" : "text-foreground"
-                        )}>
+                        <div
+                          className={cn(
+                            'mt-1 p-2 rounded-full bg-secondary shrink-0',
+                            transaction.type === 'PURCHASE'
+                              ? 'text-green-600 dark:text-green-500'
+                              : transaction.type === 'DEDUCTION'
+                                ? 'text-red-600 dark:text-red-500'
+                                : 'text-foreground',
+                          )}
+                        >
                           {getTransactionIcon(transaction.type, transaction.amount)}
                         </div>
                         <div className="space-y-1 min-w-0">
@@ -339,17 +377,26 @@ const CreditsPage = () => {
                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                             <span>{new Date(transaction.createdAt).toLocaleDateString()}</span>
                             <span className="hidden sm:inline">•</span>
-                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal uppercase tracking-wider">
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5 px-1.5 font-normal uppercase tracking-wider"
+                            >
                               {transaction.type.replace('_', ' ')}
                             </Badge>
                           </div>
                         </div>
                       </div>
                       <div className="text-left sm:text-right pl-[52px] sm:pl-0">
-                        <span className={cn("font-semibold block",
-                          transaction.amount > 0 ? "text-green-600 dark:text-green-500" : "text-foreground"
-                        )}>
-                          {transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()}
+                        <span
+                          className={cn(
+                            'font-semibold block',
+                            transaction.amount > 0
+                              ? 'text-green-600 dark:text-green-500'
+                              : 'text-foreground',
+                          )}
+                        >
+                          {transaction.amount > 0 ? '+' : ''}
+                          {transaction.amount.toLocaleString()}
                         </span>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Bal: {transaction.balance.toLocaleString()}
@@ -362,7 +409,11 @@ const CreditsPage = () => {
             </CardContent>
             {hasNextPage && (
               <div className="p-4 border-t text-center">
-                <Button variant="ghost" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                <Button
+                  variant="ghost"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
                   {isFetchingNextPage ? 'Loading...' : 'Load more transactions'}
                 </Button>
               </div>
@@ -373,9 +424,15 @@ const CreditsPage = () => {
         {/* Footer Links */}
         <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <div className="flex gap-4">
-            <Link to="/terms-and-conditions" className="hover:underline">Terms</Link>
-            <Link to="/privacy-policy" className="hover:underline">Privacy</Link>
-            <Link to="/refund" className="hover:underline">Refunds</Link>
+            <Link to="/terms-and-conditions" className="hover:underline">
+              Terms
+            </Link>
+            <Link to="/privacy-policy" className="hover:underline">
+              Privacy
+            </Link>
+            <Link to="/refund" className="hover:underline">
+              Refunds
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-3 w-3" />
@@ -388,16 +445,16 @@ const CreditsPage = () => {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Transaction Details</DialogTitle>
-              <DialogDescription>
-                Receipt for credit purchase
-              </DialogDescription>
+              <DialogDescription>Receipt for credit purchase</DialogDescription>
             </DialogHeader>
             {selectedPayment && (
               <div className="space-y-4 pt-4">
                 <div className="rounded-lg border p-4 space-y-3">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Status</span>
-                    <Badge variant={selectedPayment.status === 'captured' ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={selectedPayment.status === 'captured' ? 'default' : 'secondary'}
+                    >
                       {selectedPayment.status}
                     </Badge>
                   </div>
@@ -422,7 +479,11 @@ const CreditsPage = () => {
                 </div>
 
                 {selectedPayment.invoiceUrl && (
-                  <Button onClick={() => window.open(selectedPayment.invoiceUrl, '_blank')} className="w-full" variant="outline">
+                  <Button
+                    onClick={() => window.open(selectedPayment.invoiceUrl, '_blank')}
+                    className="w-full"
+                    variant="outline"
+                  >
                     <ExternalLink className="mr-2 h-4 w-4" /> Download Invoice
                   </Button>
                 )}

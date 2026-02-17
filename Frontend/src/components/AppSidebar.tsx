@@ -16,7 +16,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { useDataSaver } from '@/contexts/DataSaverContext';
 import { useSidebarCustomization } from '@/contexts/SidebarCustomizationContext';
@@ -29,7 +29,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Calendar,
-
   CreditCard,
   FileText,
   HelpCircle,
@@ -40,7 +39,7 @@ import {
   Shield,
   Trophy,
   UserCircle,
-  Users
+  Users,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -51,7 +50,8 @@ interface WindowWithWebkit extends Window {
 
 const playSound = () => {
   try {
-    const AudioContextClass = window.AudioContext || (window as WindowWithWebkit).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext || (window as WindowWithWebkit).webkitAudioContext;
     const audioContext = new AudioContextClass();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -91,7 +91,10 @@ export function AppSidebar() {
 
   const { data: unreadData } = useQuery({
     queryKey: ['notifications', 'unread-count'],
-    queryFn: () => apiRequest<{ data: { count: number } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`),
+    queryFn: () =>
+      apiRequest<{ data: { count: number } }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/notifications/unread/count`,
+      ),
     enabled: isLoaded && !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications),
     staleTime: 60000,
   });
@@ -114,7 +117,6 @@ export function AppSidebar() {
 
     previousUnreadCountRef.current = unreadCount;
   }, [unreadCount, soundEnabled, isInitialLoad, unreadData]);
-
 
   // Set up socket listeners for real-time updates
   useEffect(() => {
@@ -167,9 +169,9 @@ export function AppSidebar() {
 
   // Menu items - defined inside component to access unreadCount and customization
   const rawMenuItems = customization.mainItems
-    .filter(item => item.visible)
+    .filter((item) => item.visible)
     .sort((a, b) => a.order - b.order)
-    .map(item => {
+    .map((item) => {
       // Map icon strings to actual icon components
       const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
         Home,
@@ -186,28 +188,35 @@ export function AppSidebar() {
       return {
         ...item,
         icon: iconMap[item.icon] || Home,
-        badge: item.id === 'inbox' && !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) && unreadCount > 0
-          ? unreadCount.toString()
-          : undefined,
+        badge:
+          item.id === 'inbox' &&
+          !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) &&
+          unreadCount > 0
+            ? unreadCount.toString()
+            : undefined,
       };
     });
 
-  const menuItems = rawMenuItems.map(item => {
-    if (!searchQuery) return item;
-    const matchParent = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const filteredChildren = item.items?.filter(sub => sub.title.toLowerCase().includes(searchQuery.toLowerCase())) || [];
+  const menuItems = rawMenuItems
+    .map((item) => {
+      if (!searchQuery) return item;
+      const matchParent = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const filteredChildren =
+        item.items?.filter((sub) => sub.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        [];
 
-    if (matchParent) return item; // Showing all children if parent matches
-    if (filteredChildren.length > 0) {
-      return { ...item, items: filteredChildren };
-    }
-    return null;
-  }).filter((item): item is typeof rawMenuItems[0] => item !== null);
+      if (matchParent) return item; // Showing all children if parent matches
+      if (filteredChildren.length > 0) {
+        return { ...item, items: filteredChildren };
+      }
+      return null;
+    })
+    .filter((item): item is (typeof rawMenuItems)[0] => item !== null);
 
   const rawSecondaryMenuItems = customization.secondaryItems
-    .filter(item => item.visible)
+    .filter((item) => item.visible)
     .sort((a, b) => a.order - b.order)
-    .map(item => {
+    .map((item) => {
       const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
         Search,
         Calendar,
@@ -221,15 +230,15 @@ export function AppSidebar() {
       };
     });
 
-  const secondaryMenuItems = rawSecondaryMenuItems.map(item => {
-    // We handle Search separately at the top, so filter it out here
-    if (item.title === 'Search') return null;
+  const secondaryMenuItems = rawSecondaryMenuItems
+    .map((item) => {
+      // We handle Search separately at the top, so filter it out here
+      if (item.title === 'Search') return null;
 
-    if (!searchQuery) return item;
-    return item.title.toLowerCase().includes(searchQuery.toLowerCase()) ? item : null;
-  }).filter((item): item is typeof rawSecondaryMenuItems[0] => item !== null);
-
-
+      if (!searchQuery) return item;
+      return item.title.toLowerCase().includes(searchQuery.toLowerCase()) ? item : null;
+    })
+    .filter((item): item is (typeof rawSecondaryMenuItems)[0] => item !== null);
 
   return (
     <Sidebar collapsible="icon" className="border-r bg-sidebar">
@@ -260,10 +269,7 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               {state === 'collapsed' ? (
-                <SidebarMenuButton
-                  onClick={() => setOpen(true)}
-                  tooltip="Search (Ctrl + C)"
-                >
+                <SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search (Ctrl + C)">
                   <Search className="h-4 w-4" />
                   <span>Search</span>
                 </SidebarMenuButton>
@@ -273,7 +279,9 @@ export function AppSidebar() {
                   <SidebarInput
                     ref={searchInputRef}
                     value={searchQuery}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSearchQuery(e.target.value)
+                    }
                     placeholder="Search..."
                     className="pl-9 h-9 bg-background/50 border-input focus:bg-background transition-colors"
                   />

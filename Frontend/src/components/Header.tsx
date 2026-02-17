@@ -30,9 +30,7 @@ function Header() {
           `}
         >
           {/* Line 1 */}
-          <span className="block">
-            Platform that makes
-          </span>
+          <span className="block">Platform that makes</span>
 
           {/* Line 2 – highlighted text */}
           <span className="block text-[#d9ff00] [-webkit-text-stroke:1px_black]">
@@ -72,13 +70,15 @@ function Header() {
         </motion.h1>
       )}
       {dataSaverSettings.enabled && dataSaverSettings.reduceAnimations ? (
-        <p className="
+        <p
+          className="
     text-center mt-6 text-neutral-400
     text-sm sm:text-base md:text-lg
     px-4 md:px-0
     max-w-[90%] sm:max-w-[80%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%]
     mx-auto
-  ">
+  "
+        >
           Automate Fair Judging with AI-Powered Analysis and Real-Time Insights.
         </p>
       ) : (
@@ -102,10 +102,12 @@ function Header() {
       {!isSignedIn ? (
         <Link to={isNewSignupEnabled ? '/signin' : '/waitlist'}>
           {dataSaverSettings.enabled && dataSaverSettings.reduceAnimations ? (
-            <button className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
+            <button
+              className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
           bg-[#d9ff00] flex items-center gap-2 text-neutral-800 shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
           hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
-          transition-all duration-300 cursor-pointer">
+          transition-all duration-300 cursor-pointer"
+            >
               <Zap /> {isNewSignupEnabled ? 'Get Started' : 'Join WaitList'}
             </button>
           ) : (
@@ -127,10 +129,12 @@ function Header() {
       ) : (
         <Link to={'/dashboard'}>
           {dataSaverSettings.enabled && dataSaverSettings.reduceAnimations ? (
-            <button className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
+            <button
+              className="mt-10 text-xl md:text-2xl font-semibold px-6 py-3 rounded-full
           bg-[#d9ff00] flex items-center gap-2 text-neutral-800 shadow-[0_0_15px_4px_rgba(217,255,0,0.4)]
           hover:shadow-[0_0_25px_10px_rgba(217,255,0,0.6)]
-          transition-all duration-300 cursor-pointer">
+          transition-all duration-300 cursor-pointer"
+            >
               <Zap /> Go to Dashboard
             </button>
           ) : (

@@ -1,6 +1,10 @@
 import { ENV } from '../../config/env.js';
 
-export const freeCreditsClaimedEmailTemplate = (params: { userName: string; creditsAdded: number; newBalance: number }): string => {
+export const freeCreditsClaimedEmailTemplate = (params: {
+  userName: string;
+  creditsAdded: number;
+  newBalance: number;
+}): string => {
   const dashboardUrl = ENV.FRONTEND_URL + '/dashboard';
   const creditsUrl = ENV.FRONTEND_URL + '/credits';
   const supportUrl = ENV.FRONTEND_URL + '/support';

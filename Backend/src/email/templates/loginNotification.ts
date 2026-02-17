@@ -1,4 +1,3 @@
-
 export const loginNotificationTemplate = (params: {
   firstName: string;
   ipAddress: string;

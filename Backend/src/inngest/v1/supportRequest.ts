@@ -100,7 +100,9 @@ export const supportRequestCreated = inngest.createFunction(
     // Step 2: Analyze support request with AI
     const classification = await step.run('analyze-support-request', async () => {
       try {
-        const aiService = (await import('../../services/v1/aiClassificationService.js')).getAIClassificationService();
+        const aiService = (
+          await import('../../services/v1/aiClassificationService.js')
+        ).getAIClassificationService();
         return await aiService.classifySupportTicket(subject, message);
       } catch (error) {
         logger.error('Failed to classify support request', { error });
@@ -112,22 +114,22 @@ export const supportRequestCreated = inngest.createFunction(
     // Step 3: Create support request in database
     const supportData = userId
       ? {
-        userId,
-        emailId,
-        subject,
-        message,
-        type: classification?.type,
-        severity: classification?.severity,
-        shortDescription: classification?.shortDescription
-      }
+          userId,
+          emailId,
+          subject,
+          message,
+          type: classification?.type,
+          severity: classification?.severity,
+          shortDescription: classification?.shortDescription,
+        }
       : {
-        emailId,
-        subject,
-        message,
-        type: classification?.type,
-        severity: classification?.severity,
-        shortDescription: classification?.shortDescription
-      };
+          emailId,
+          subject,
+          message,
+          type: classification?.type,
+          severity: classification?.severity,
+          shortDescription: classification?.shortDescription,
+        };
 
     const supportRequest = await step.run('create-support-request', async () => {
       return await SupportService.createSupportRequest(supportData);

@@ -56,15 +56,15 @@ flowchart TB
 
 ### Schema Summary
 
-| Category | Tables | Primary Purpose |
-|----------|--------|-----------------|
-| User Management | 4 | User identity, profiles, settings |
-| Organizations | 8 | Org structure, roles, permissions |
-| Teams | 7 | Team structure, roles, invites |
-| Projects | 6 | Project structure, roles |
-| Payments | 4 | Transactions, webhooks, plans |
-| Engagement | 5 | Stars, follows, views, reports |
-| System | 4 | Notifications, settings, logs, support |
+| Category        | Tables | Primary Purpose                        |
+| --------------- | ------ | -------------------------------------- |
+| User Management | 4      | User identity, profiles, settings      |
+| Organizations   | 8      | Org structure, roles, permissions      |
+| Teams           | 7      | Team structure, roles, invites         |
+| Projects        | 6      | Project structure, roles               |
+| Payments        | 4      | Transactions, webhooks, plans          |
+| Engagement      | 5      | Stars, follows, views, reports         |
+| System          | 4      | Notifications, settings, logs, support |
 
 ---
 
@@ -736,20 +736,20 @@ enum level {
 
 ### Common Actions
 
-| Context | Action | Level | Description |
-|---------|--------|-------|-------------|
-| User | `profile.updated` | INFO | Profile fields changed |
-| User | `settings.changed` | INFO | Settings modified |
-| User | `password.changed` | WARN | Password updated |
-| Org | `member.invited` | INFO | New member invited |
-| Org | `member.removed` | WARN | Member removed |
-| Org | `role.created` | INFO | New role defined |
-| Org | `settings.changed` | INFO | Org settings modified |
-| Team | `project.created` | INFO | New project added |
-| Team | `member.joined` | INFO | Member accepted invite |
-| Payment | `payment.completed` | INFO | Successful payment |
-| Payment | `payment.failed` | WARN | Payment failure |
-| Payment | `refund.initiated` | WARN | Refund started |
+| Context | Action              | Level | Description            |
+| ------- | ------------------- | ----- | ---------------------- |
+| User    | `profile.updated`   | INFO  | Profile fields changed |
+| User    | `settings.changed`  | INFO  | Settings modified      |
+| User    | `password.changed`  | WARN  | Password updated       |
+| Org     | `member.invited`    | INFO  | New member invited     |
+| Org     | `member.removed`    | WARN  | Member removed         |
+| Org     | `role.created`      | INFO  | New role defined       |
+| Org     | `settings.changed`  | INFO  | Org settings modified  |
+| Team    | `project.created`   | INFO  | New project added      |
+| Team    | `member.joined`     | INFO  | Member accepted invite |
+| Payment | `payment.completed` | INFO  | Successful payment     |
+| Payment | `payment.failed`    | WARN  | Payment failure        |
+| Payment | `refund.initiated`  | WARN  | Refund started         |
 
 ---
 
@@ -757,23 +757,23 @@ enum level {
 
 ### Primary Indexes
 
-| Table | Index | Type | Purpose |
-|-------|-------|------|---------|
-| User | `userId` | Unique | Primary lookup from Clerk |
-| User | `email` | Unique | Email-based lookup |
-| Payment | `razorpayOrderId` | Unique | Webhook processing |
-| Payment | `razorpayPaymentId` | Unique | Payment verification |
-| Organization | `slug` | Unique | URL-based lookup |
-| Team | `[organizationId, slug]` | Unique | Scoped URL lookup |
+| Table        | Index                    | Type   | Purpose                   |
+| ------------ | ------------------------ | ------ | ------------------------- |
+| User         | `userId`                 | Unique | Primary lookup from Clerk |
+| User         | `email`                  | Unique | Email-based lookup        |
+| Payment      | `razorpayOrderId`        | Unique | Webhook processing        |
+| Payment      | `razorpayPaymentId`      | Unique | Payment verification      |
+| Organization | `slug`                   | Unique | URL-based lookup          |
+| Team         | `[organizationId, slug]` | Unique | Scoped URL lookup         |
 
 ### Composite Indexes
 
-| Table | Index | Columns | Query Pattern |
-|-------|-------|---------|---------------|
-| CreditTransaction | `idx_user_type_created` | userId, type, createdAt | Filtered history |
-| Notification | `idx_user_read` | userId, read | Unread count |
-| OrganizationUserRole | `idx_org_user` | organizationId, userId | Permission check |
-| Payment | `idx_user_status` | userId, status | User payment list |
+| Table                | Index                   | Columns                 | Query Pattern     |
+| -------------------- | ----------------------- | ----------------------- | ----------------- |
+| CreditTransaction    | `idx_user_type_created` | userId, type, createdAt | Filtered history  |
+| Notification         | `idx_user_read`         | userId, read            | Unread count      |
+| OrganizationUserRole | `idx_org_user`          | organizationId, userId  | Permission check  |
+| Payment              | `idx_user_status`       | userId, status          | User payment list |
 
 ### Partial Indexes (Recommended Additions)
 
@@ -815,14 +815,14 @@ async function getUserCreditBalance(userId: string): Promise<number> {
 async function checkOrgPermission(
   userId: string,
   orgId: string,
-  permission: string
+  permission: string,
 ): Promise<boolean> {
   const role = await prisma.organizationUserRole.findFirst({
     where: {
       userId,
-      organizationId: orgId
+      organizationId: orgId,
     },
-    include: { role: true }
+    include: { role: true },
   });
 
   if (!role) return false;
@@ -835,10 +835,7 @@ async function checkOrgPermission(
 ### Paginated Notifications
 
 ```typescript
-async function getNotifications(
-  userId: string,
-  { limit = 20, offset = 0, read }: QueryParams
-) {
+async function getNotifications(userId: string, { limit = 20, offset = 0, read }: QueryParams) {
   const where = { userId, ...(read !== undefined && { read }) };
 
   const [notifications, total] = await Promise.all([
@@ -864,14 +861,14 @@ async function getPaymentWithEvents(paymentId: string) {
     include: {
       plan: true,
       user: {
-        select: { email: true, firstName: true, lastName: true }
+        select: { email: true, firstName: true, lastName: true },
       },
       webhookEvents: {
         orderBy: { createdAt: 'desc' },
-        take: 10
+        take: 10,
       },
-      creditTransactions: true
-    }
+      creditTransactions: true,
+    },
   });
 }
 ```
@@ -882,16 +879,16 @@ async function getPaymentWithEvents(paymentId: string) {
 
 ### Retention Schedule
 
-| Data Type | Retention | Action | Legal Basis |
-|-----------|-----------|--------|-------------|
-| User Account | Indefinite (soft delete) | Anonymize after 30 days | GDPR compliance |
-| Profile | With user | Cascade delete | User data |
-| Notifications | 90 days | Hard delete | System data |
-| Audit Logs | 365 days | Archive then delete | Compliance |
-| Payment Records | 7 years | Archive | Tax regulations |
-| Webhook Events | 90 days | Hard delete | System data |
-| Invite Codes | Until used or 30 days | Hard delete | Temporary |
-| OTP Data | 5 minutes | Auto-expire (Redis) | Security |
+| Data Type       | Retention                | Action                  | Legal Basis     |
+| --------------- | ------------------------ | ----------------------- | --------------- |
+| User Account    | Indefinite (soft delete) | Anonymize after 30 days | GDPR compliance |
+| Profile         | With user                | Cascade delete          | User data       |
+| Notifications   | 90 days                  | Hard delete             | System data     |
+| Audit Logs      | 365 days                 | Archive then delete     | Compliance      |
+| Payment Records | 7 years                  | Archive                 | Tax regulations |
+| Webhook Events  | 90 days                  | Hard delete             | System data     |
+| Invite Codes    | Until used or 30 days    | Hard delete             | Temporary       |
+| OTP Data        | 5 minutes                | Auto-expire (Redis)     | Security        |
 
 ### Cleanup Jobs
 
@@ -904,8 +901,8 @@ const dailyCleanup = inngest.createFunction(
     await prisma.organizationInviteCode.deleteMany({
       where: {
         expiresAt: { lt: new Date() },
-        used: false
-      }
+        used: false,
+      },
     });
 
     // Delete old notifications
@@ -913,7 +910,7 @@ const dailyCleanup = inngest.createFunction(
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     await prisma.notification.deleteMany({
-      where: { createdAt: { lt: ninetyDaysAgo } }
+      where: { createdAt: { lt: ninetyDaysAgo } },
     });
 
     // Anonymize soft-deleted users > 30 days
@@ -924,16 +921,16 @@ const dailyCleanup = inngest.createFunction(
       where: {
         isDeleted: true,
         deletedAt: { lt: thirtyDaysAgo },
-        email: { not: { startsWith: 'deleted_' } }
+        email: { not: { startsWith: 'deleted_' } },
       },
       data: {
         email: prisma.raw('CONCAT("deleted_", id, "@anonymized.local")'),
         firstName: null,
         lastName: null,
-        phoneNumber: null
-      }
+        phoneNumber: null,
+      },
     });
-  }
+  },
 );
 ```
 
@@ -960,4 +957,4 @@ npx prisma studio
 
 ---
 
-*This document provides comprehensive database design documentation for the FairArena platform.*
+_This document provides comprehensive database design documentation for the FairArena platform._

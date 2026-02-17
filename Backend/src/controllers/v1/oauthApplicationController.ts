@@ -161,10 +161,10 @@ export async function createApplication(req: Request, res: Response): Promise<vo
   // Public clients can't use client_credentials
   const grantTypes = data.isPublic
     ? data.grantTypes?.filter((g) => g !== 'client_credentials') || [
-      'authorization_code',
-      'refresh_token',
-      'urn:ietf:params:oauth:grant-type:device_code',
-    ]
+        'authorization_code',
+        'refresh_token',
+        'urn:ietf:params:oauth:grant-type:device_code',
+      ]
     : data.grantTypes;
 
   const application = await prisma.oAuthApplication.create({
@@ -495,14 +495,14 @@ export async function verifyApplication(req: Request, res: Response): Promise<vo
     data: {
       verificationStatus: 'pending',
       verificationSubmittedAt: new Date(),
-    }
+    },
   });
 
   await logOAuthEvent('application_verification_submitted', {
     applicationId: id as string,
     userId,
     ipAddress: req.ip,
-    metadata: { status: 'pending' }
+    metadata: { status: 'pending' },
   });
 
   res.json({ success: true, message: 'Verification request submitted' });

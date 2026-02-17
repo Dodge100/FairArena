@@ -3,7 +3,7 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { MFASetup } from '@/components/MFASetup';
 import { OTPVerification } from '@/components/OTPVerification';
 import { PasskeyManager } from '@/components/PasskeyManager';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { apiRequest } from '@/lib/apiClient';
@@ -26,7 +26,7 @@ import {
   Smartphone,
   Tablet,
   User,
-  X
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -109,10 +109,13 @@ function AccountSettings() {
   const [newBackupCodes, setNewBackupCodes] = useState<string[]>([]);
   const [copiedCodes, setCopiedCodes] = useState(false);
 
-
   const [updatingMfaPrefs, setUpdatingMfaPrefs] = useState(false);
-  const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(null);
-  const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<'disableOtp' | 'superSecure' | null>(null);
+  const [showSecurityWarning, setShowSecurityWarning] = useState<'email' | 'notification' | null>(
+    null,
+  );
+  const [showAdvancedSecurityWarning, setShowAdvancedSecurityWarning] = useState<
+    'disableOtp' | 'superSecure' | null
+  >(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -122,54 +125,74 @@ function AccountSettings() {
   const {
     data: sessions = [],
     isLoading: loadingSessions,
-    refetch: fetchSessions
+    refetch: fetchSessions,
   } = useQuery({
     queryKey: ['sessions', user?.userId],
-    queryFn: () => apiRequest<{ data: Session[] }>(`${API_BASE}/api/v1/auth/sessions`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ data: Session[] }>(`${API_BASE}/api/v1/auth/sessions`).then((res) => res.data),
     enabled: !!user && isVerified && activeTab === 'overview',
   });
 
   const {
     data: activityLogs = [],
     isLoading: loadingLogs,
-    refetch: fetchActivityLogs
+    refetch: fetchActivityLogs,
   } = useQuery({
     queryKey: ['activityLogs', user?.userId],
-    queryFn: () => apiRequest<{ data: ActivityLog[] }>(`${API_BASE}/api/v1/auth/recent-activity`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ data: ActivityLog[] }>(`${API_BASE}/api/v1/auth/recent-activity`).then(
+        (res) => res.data,
+      ),
     enabled: !!user && isVerified && activeTab === 'overview',
   });
 
   // Fetch MFA Status
-  const { data: mfaStatus = null, isLoading: loadingMfa, refetch: fetchMfaStatus } = useQuery({
+  const {
+    data: mfaStatus = null,
+    isLoading: loadingMfa,
+    refetch: fetchMfaStatus,
+  } = useQuery({
     queryKey: ['mfa-status', user?.userId],
-    queryFn: () => apiRequest<{ success: boolean, data: MFAStatus }>(`${API_BASE}/api/v1/mfa/status`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: MFAStatus }>(`${API_BASE}/api/v1/mfa/status`).then(
+        (res) => res.data,
+      ),
     enabled: !!user && isVerified && activeTab === 'security',
   });
 
   // Fetch MFA Preferences
   const { data: mfaPreferences = null, refetch: fetchMfaPreferences } = useQuery({
     queryKey: ['mfa-preferences', user?.userId],
-    queryFn: () => apiRequest<{ success: boolean, data: any }>(`${API_BASE}/api/v1/auth/mfa/preferences`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: any }>(`${API_BASE}/api/v1/auth/mfa/preferences`).then(
+        (res) => res.data,
+      ),
     enabled: !!user && isVerified && activeTab === 'security',
   });
 
   // Update MFA Preferences
   const updateMfaPreferenceMutation = useMutation({
-    mutationFn: async ({ type, enabled }: { type: 'email' | 'notification', enabled: boolean }) => {
-      const body = type === 'email'
-        ? { emailMfaEnabled: enabled, acknowledgeSecurityRisk: enabled }
-        : { notificationMfaEnabled: enabled, acknowledgeSecurityRisk: enabled };
+    mutationFn: async ({ type, enabled }: { type: 'email' | 'notification'; enabled: boolean }) => {
+      const body =
+        type === 'email'
+          ? { emailMfaEnabled: enabled, acknowledgeSecurityRisk: enabled }
+          : { notificationMfaEnabled: enabled, acknowledgeSecurityRisk: enabled };
 
-      return apiRequest<{ success: boolean, data: any, message?: string }>(`${API_BASE}/api/v1/auth/mfa/preferences`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      return apiRequest<{ success: boolean; data: any; message?: string }>(
+        `${API_BASE}/api/v1/auth/mfa/preferences`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
     },
     onSuccess: (data, variables) => {
       // Optimistically update or refetch
       queryClient.setQueryData(['mfa-preferences', user?.userId], data.data);
-      toast.success(`${variables.type === 'email' ? 'Email' : 'Notification'} MFA ${variables.enabled ? 'enabled' : 'disabled'}`);
+      toast.success(
+        `${variables.type === 'email' ? 'Email' : 'Notification'} MFA ${variables.enabled ? 'enabled' : 'disabled'}`,
+      );
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to update preferences');
@@ -177,7 +200,7 @@ function AccountSettings() {
     onSettled: () => {
       setUpdatingMfaPrefs(false);
       setShowSecurityWarning(null);
-    }
+    },
   });
 
   const updateMfaPreference = (type: 'email' | 'notification', enabled: boolean) => {
@@ -187,19 +210,29 @@ function AccountSettings() {
 
   // Update Advanced Security Settings
   const updateAdvancedSecurityMutation = useMutation({
-    mutationFn: async ({ setting, enabled }: { setting: 'disableOTPReverification' | 'superSecureAccountEnabled', enabled: boolean }) => {
+    mutationFn: async ({
+      setting,
+      enabled,
+    }: {
+      setting: 'disableOTPReverification' | 'superSecureAccountEnabled';
+      enabled: boolean;
+    }) => {
       const body = { [setting]: enabled };
-      return apiRequest<{ success: boolean, data: any, message?: string }>(`${API_BASE}/api/v1/auth/mfa/preferences`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      return apiRequest<{ success: boolean; data: any; message?: string }>(
+        `${API_BASE}/api/v1/auth/mfa/preferences`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['mfa-preferences', user?.userId], data.data);
-      const settingName = variables.setting === 'disableOTPReverification'
-        ? 'OTP Re-verification'
-        : 'Super Secure Account';
+      const settingName =
+        variables.setting === 'disableOTPReverification'
+          ? 'OTP Re-verification'
+          : 'Super Secure Account';
       toast.success(`${settingName} ${variables.enabled ? 'enabled' : 'disabled'}`);
     },
     onError: (error: any) => {
@@ -208,12 +241,12 @@ function AccountSettings() {
     onSettled: () => {
       setUpdatingMfaPrefs(false);
       setShowAdvancedSecurityWarning(null);
-    }
+    },
   });
 
   const updateAdvancedSecuritySetting = (
     setting: 'disableOTPReverification' | 'superSecureAccountEnabled',
-    enabled: boolean
+    enabled: boolean,
   ) => {
     setUpdatingMfaPrefs(true);
     updateAdvancedSecurityMutation.mutate({ setting, enabled });
@@ -256,18 +289,18 @@ function AccountSettings() {
     },
     onError: () => {
       toast.error('Failed to revoke session');
-    }
+    },
   });
 
   const handleRevokeSession = (sessionId: string) => {
     setRevokingSession(sessionId);
     revokeSessionMutation.mutate(sessionId, {
-      onSettled: () => setRevokingSession(null)
+      onSettled: () => setRevokingSession(null),
     });
   };
 
   const handleRevokeAllOtherSessions = async () => {
-    const otherSessions = sessions.filter(s => !s.isCurrent && s.id !== activeSessionId);
+    const otherSessions = sessions.filter((s) => !s.isCurrent && s.id !== activeSessionId);
     if (otherSessions.length === 0) {
       toast.info('No other sessions to revoke');
       return;
@@ -275,9 +308,11 @@ function AccountSettings() {
 
     setIsLoading(true);
     try {
-      await Promise.all(otherSessions.map(session =>
-        apiRequest(`${API_BASE}/api/v1/auth/sessions/${session.id}`, { method: 'DELETE' })
-      ));
+      await Promise.all(
+        otherSessions.map((session) =>
+          apiRequest(`${API_BASE}/api/v1/auth/sessions/${session.id}`, { method: 'DELETE' }),
+        ),
+      );
       toast.success(`Revoked ${otherSessions.length} session(s)`);
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
     } catch (error) {
@@ -290,13 +325,13 @@ function AccountSettings() {
 
   const disableMfaMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest<{ success: boolean, message?: string }>(`${API_BASE}/api/v1/mfa/disable`, {
+      return apiRequest<{ success: boolean; message?: string }>(`${API_BASE}/api/v1/mfa/disable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           password: disablePassword,
-          code: disableCode
-        })
+          code: disableCode,
+        }),
       });
     },
     onSuccess: () => {
@@ -308,7 +343,7 @@ function AccountSettings() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to disable MFA');
-    }
+    },
   });
 
   const handleDisableMfa = () => {
@@ -321,13 +356,16 @@ function AccountSettings() {
 
   const regenerateBackupCodesMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest<{ success: boolean, data: { backupCodes: string[] }, message?: string }>(`${API_BASE}/api/v1/mfa/regenerate-backup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: regenerateCode
-        })
-      });
+      return apiRequest<{ success: boolean; data: { backupCodes: string[] }; message?: string }>(
+        `${API_BASE}/api/v1/mfa/regenerate-backup`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: regenerateCode,
+          }),
+        },
+      );
     },
     onSuccess: (data) => {
       toast.success('Backup codes regenerated successfully');
@@ -337,7 +375,7 @@ function AccountSettings() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to regenerate backup codes');
-    }
+    },
   });
 
   const handleRegenerateBackupCodes = () => {
@@ -372,22 +410,25 @@ function AccountSettings() {
   };
 
   const passwordResetMutation = useMutation({
-    mutationFn: async ({ email, captchaToken }: { email: string, captchaToken?: string }) => {
-      return apiRequest<{ success: boolean, message?: string }>(`${API_BASE}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(captchaToken ? { 'X-Recaptcha-Token': captchaToken } : {})
+    mutationFn: async ({ email, captchaToken }: { email: string; captchaToken?: string }) => {
+      return apiRequest<{ success: boolean; message?: string }>(
+        `${API_BASE}/api/v1/auth/forgot-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(captchaToken ? { 'X-Recaptcha-Token': captchaToken } : {}),
+          },
+          body: JSON.stringify({ email }),
         },
-        body: JSON.stringify({ email }),
-      });
+      );
     },
     onSuccess: () => {
       toast.success('Password reset email sent! Check your inbox.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to send password reset email');
-    }
+    },
   });
 
   const sendingPasswordReset = passwordResetMutation.isPending;
@@ -407,7 +448,7 @@ function AccountSettings() {
   };
 
   const getDeviceIcon = (deviceType: string) => {
-    const iconClass = "w-5 h-5";
+    const iconClass = 'w-5 h-5';
     switch (deviceType?.toLowerCase()) {
       case 'mobile':
       case 'phone':
@@ -430,9 +471,9 @@ function AccountSettings() {
 
   const getActionLabel = (action: string) => {
     const labels: Record<string, string> = {
-      'login': 'Signed in',
-      'logout': 'Signed out',
-      'register': 'Account created',
+      login: 'Signed in',
+      logout: 'Signed out',
+      register: 'Account created',
       'password-changed': 'Password changed',
       'email-verified': 'Email verified',
       'profile-updated': 'Profile updated',
@@ -441,20 +482,27 @@ function AccountSettings() {
       'mfa-disabled': 'Two-factor auth disabled',
       'backup-codes-regenerated': 'Backup codes regenerated',
     };
-    return labels[action] || action.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+    return labels[action] || action.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
   };
 
   const getActionIcon = (action: string) => {
-    const iconClass = "w-4 h-4";
+    const iconClass = 'w-4 h-4';
     switch (action) {
-      case 'login': return <LogOut className={iconClass} style={{ transform: 'rotate(180deg)' }} />;
-      case 'logout': return <LogOut className={iconClass} />;
-      case 'register': return <User className={iconClass} />;
-      case 'password-changed': return <Lock className={iconClass} />;
+      case 'login':
+        return <LogOut className={iconClass} style={{ transform: 'rotate(180deg)' }} />;
+      case 'logout':
+        return <LogOut className={iconClass} />;
+      case 'register':
+        return <User className={iconClass} />;
+      case 'password-changed':
+        return <Lock className={iconClass} />;
       case 'mfa-enabled':
-      case 'mfa-disabled': return <Shield className={iconClass} />;
-      case 'backup-codes-regenerated': return <RefreshCw className={iconClass} />;
-      default: return <Clock className={iconClass} />;
+      case 'mfa-disabled':
+        return <Shield className={iconClass} />;
+      case 'backup-codes-regenerated':
+        return <RefreshCw className={iconClass} />;
+      default:
+        return <Clock className={iconClass} />;
     }
   };
 
@@ -481,8 +529,12 @@ function AccountSettings() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Profile Header Card */}
-      <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
-        <div className={`p-6 ${isDark ? 'bg-gradient-to-r from-[#DDEF00]/10 to-transparent' : 'bg-gradient-to-r from-primary/10 to-transparent'}`}>
+      <div
+        className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}
+      >
+        <div
+          className={`p-6 ${isDark ? 'bg-gradient-to-r from-[#DDEF00]/10 to-transparent' : 'bg-gradient-to-r from-primary/10 to-transparent'}`}
+        >
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
             <ImageUploader
               currentImageUrl={user.profileImageUrl}
@@ -518,10 +570,11 @@ function AccountSettings() {
             <button
               onClick={handleLogout}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isDark
-                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                : 'bg-red-100 text-red-600 hover:bg-red-200'
-                } disabled:opacity-50`}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                isDark
+                  ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+              } disabled:opacity-50`}
             >
               <LogOut className="w-4 h-4" />
               {isLoading ? 'Signing out...' : 'Sign Out'}
@@ -533,34 +586,37 @@ function AccountSettings() {
         <div className={`flex border-b ${isDark ? 'border-neutral-800' : 'border-neutral-200'}`}>
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'overview'
-              ? isDark
-                ? 'border-[#DDEF00] text-[#DDEF00]'
-                : 'border-black text-black'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'overview'
+                ? isDark
+                  ? 'border-[#DDEF00] text-[#DDEF00]'
+                  : 'border-black text-black'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'security'
-              ? isDark
-                ? 'border-[#DDEF00] text-[#DDEF00]'
-                : 'border-black text-black'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'security'
+                ? isDark
+                  ? 'border-[#DDEF00] text-[#DDEF00]'
+                  : 'border-black text-black'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             Security
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'settings'
-              ? isDark
-                ? 'border-[#DDEF00] text-[#DDEF00]'
-                : 'border-black text-black'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'settings'
+                ? isDark
+                  ? 'border-[#DDEF00] text-[#DDEF00]'
+                  : 'border-black text-black'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             Settings
           </button>
@@ -570,7 +626,9 @@ function AccountSettings() {
       {activeTab === 'overview' && (
         <>
           {/* Active Sessions Card */}
-          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+          <div
+            className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}
+          >
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
@@ -592,10 +650,11 @@ function AccountSettings() {
                   <button
                     onClick={handleRevokeAllOtherSessions}
                     disabled={isLoading}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                      : 'bg-red-100 text-red-600 hover:bg-red-200'
-                      } disabled:opacity-50`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      isDark
+                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                    } disabled:opacity-50`}
                   >
                     Sign out all other devices
                   </button>
@@ -619,7 +678,9 @@ function AccountSettings() {
                     key={session.id}
                     className={`p-4 flex items-center gap-4 ${session.isCurrent ? (isDark ? 'bg-[#DDEF00]/5' : 'bg-primary/5') : ''}`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}
+                    >
                       {getDeviceIcon(session.deviceType)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -628,7 +689,9 @@ function AccountSettings() {
                           {session.deviceName || 'Unknown Device'}
                         </span>
                         {(session.isCurrent || session.id === activeSessionId) && (
-                          <span className={`px-2 py-0.5 rounded-full text-xs ${isDark ? 'bg-[#DDEF00]/20 text-[#DDEF00]' : 'bg-green-100 text-green-700'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs ${isDark ? 'bg-[#DDEF00]/20 text-[#DDEF00]' : 'bg-green-100 text-green-700'}`}
+                          >
                             Current Session
                           </span>
                         )}
@@ -650,10 +713,11 @@ function AccountSettings() {
                       <button
                         onClick={() => handleRevokeSession(session.id)}
                         disabled={revokingSession === session.id}
-                        className={`p-2 rounded-lg transition-colors ${isDark
-                          ? 'hover:bg-red-500/20 text-red-400'
-                          : 'hover:bg-red-100 text-red-600'
-                          } disabled:opacity-50`}
+                        className={`p-2 rounded-lg transition-colors ${
+                          isDark
+                            ? 'hover:bg-red-500/20 text-red-400'
+                            : 'hover:bg-red-100 text-red-600'
+                        } disabled:opacity-50`}
                         title="Revoke session"
                       >
                         {revokingSession === session.id ? (
@@ -670,7 +734,9 @@ function AccountSettings() {
           </div>
 
           {/* Recent Activity Card */}
-          <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+          <div
+            className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}
+          >
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock className={`w-5 h-5 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
@@ -693,13 +759,13 @@ function AccountSettings() {
                   <p className="text-sm text-muted-foreground mt-2">Loading activity...</p>
                 </div>
               ) : activityLogs.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  No recent activity
-                </div>
+                <div className="p-8 text-center text-muted-foreground">No recent activity</div>
               ) : (
                 activityLogs.map((log) => (
                   <div key={log.id} className="p-4 flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}>
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-muted' : 'bg-gray-100'}`}
+                    >
                       {getActionIcon(log.action)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -732,11 +798,15 @@ function AccountSettings() {
           </div>
 
           {/* Security Tips */}
-          <div className={`rounded-xl border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'} p-4`}>
+          <div
+            className={`rounded-xl border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'} p-4`}
+          >
             <div className="flex items-start gap-3">
               <Shield className={`w-5 h-5 mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
               <div>
-                <h3 className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Security Tip</h3>
+                <h3 className={`font-medium ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
+                  Security Tip
+                </h3>
                 <p className={`text-sm mt-1 ${isDark ? 'text-blue-200/80' : 'text-blue-700'}`}>
                   Review your active sessions regularly. If you see any device you don't recognize,
                   revoke that session immediately and consider changing your password.
@@ -751,15 +821,23 @@ function AccountSettings() {
         <div className="space-y-6">
           <>
             {/* MFA Section */}
-            <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+            <div
+              className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}
+            >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${isDark ? 'bg-[#DDEF00]/10 text-[#DDEF00]' : 'bg-primary/10 text-primary'}`}>
+                  <div
+                    className={`p-3 rounded-lg ${isDark ? 'bg-[#DDEF00]/10 text-[#DDEF00]' : 'bg-primary/10 text-primary'}`}
+                  >
                     <Shield className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Two-Factor Authentication</h3>
-                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Two-Factor Authentication
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Add an extra layer of security to your account.
+                    </p>
                   </div>
                 </div>
                 {mfaStatus?.enabled ? (
@@ -788,20 +866,32 @@ function AccountSettings() {
                   {newBackupCodes.length > 0 ? (
                     <div className="space-y-6">
                       <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-lg text-sm text-center">
-                        Save these codes now. They will not be shown again.
-                        Previous codes have been invalidated.
+                        Save these codes now. They will not be shown again. Previous codes have been
+                        invalidated.
                       </div>
                       <div className="bg-background border rounded-lg p-4 grid grid-cols-2 gap-4 font-mono text-sm text-center">
                         {newBackupCodes.map((code) => (
-                          <div key={code} className="p-1">{code}</div>
+                          <div key={code} className="p-1">
+                            {code}
+                          </div>
                         ))}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={copyBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
-                          {copiedCodes ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        <button
+                          onClick={copyBackupCodes}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors"
+                        >
+                          {copiedCodes ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
                           Copy
                         </button>
-                        <button onClick={downloadBackupCodes} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors">
+                        <button
+                          onClick={downloadBackupCodes}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted transition-colors"
+                        >
                           <Download className="w-4 h-4" />
                           Download
                         </button>
@@ -816,8 +906,10 @@ function AccountSettings() {
                   ) : (
                     <>
                       <p className="text-sm text-muted-foreground text-center">
-                        Generate a new set of backup codes. This will invalidate any unused backup codes you previously generated.
-                        <br /><br />
+                        Generate a new set of backup codes. This will invalidate any unused backup
+                        codes you previously generated.
+                        <br />
+                        <br />
                         Enter a current 6-digit code from your authenticator app to confirm.
                       </p>
                       <div className="space-y-3">
@@ -826,7 +918,7 @@ function AccountSettings() {
                           type="text"
                           placeholder="000 000"
                           value={regenerateCode}
-                          onChange={e => setRegenerateCode(e.target.value.replace(/[^0-9]/g, ''))}
+                          onChange={(e) => setRegenerateCode(e.target.value.replace(/[^0-9]/g, ''))}
                           maxLength={6}
                           className="w-full px-3 py-2.5 rounded-lg border bg-background text-center text-xl tracking-widest font-mono"
                         />
@@ -851,7 +943,9 @@ function AccountSettings() {
                 </div>
               ) : showDisableMfa ? (
                 <div className="max-w-md mx-auto space-y-4 p-6 border rounded-xl bg-muted/20">
-                  <h4 className="font-semibold text-center text-lg">Disable Two-Factor Authentication</h4>
+                  <h4 className="font-semibold text-center text-lg">
+                    Disable Two-Factor Authentication
+                  </h4>
                   <p className="text-sm text-muted-foreground text-center">
                     Are you sure? This will remove the extra layer of security from your account.
                     <br />
@@ -862,7 +956,7 @@ function AccountSettings() {
                       type="password"
                       placeholder="Current Password"
                       value={disablePassword}
-                      onChange={e => setDisablePassword(e.target.value)}
+                      onChange={(e) => setDisablePassword(e.target.value)}
                       className="w-full px-3 py-2.5 rounded-lg border bg-background"
                     />
                     <input
@@ -870,7 +964,7 @@ function AccountSettings() {
                       placeholder="Verification Code (6 digits)"
                       value={disableCode}
                       maxLength={6}
-                      onChange={e => setDisableCode(e.target.value)}
+                      onChange={(e) => setDisableCode(e.target.value)}
                       className="w-full px-3 py-2.5 rounded-lg border bg-background"
                     />
                   </div>
@@ -902,7 +996,8 @@ function AccountSettings() {
                         <Check className="w-5 h-5 text-green-600" />
                         <div className="flex-1">
                           <p className="font-medium text-green-800 dark:text-green-300">
-                            MFA is active since {new Date(mfaStatus.enabledAt || '').toLocaleDateString()}
+                            MFA is active since{' '}
+                            {new Date(mfaStatus.enabledAt || '').toLocaleDateString()}
                           </p>
                           <p className="text-sm text-green-700 dark:text-green-400">
                             Your account is protected.
@@ -933,8 +1028,8 @@ function AccountSettings() {
                   ) : (
                     <div className="space-y-4">
                       <p className="text-muted-foreground">
-                        Protect your account from unauthorized access mainly by enabling Two-Factor Authentication.
-                        You'll need a mobile authenticator app.
+                        Protect your account from unauthorized access mainly by enabling Two-Factor
+                        Authentication. You'll need a mobile authenticator app.
                       </p>
                       <button
                         onClick={() => setShowMfaSetup(true)}
@@ -956,13 +1051,18 @@ function AccountSettings() {
 
             {/* MFA Preferences Section */}
             {mfaStatus?.enabled && (
-              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+              <div
+                className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}
+              >
                 <div className="flex items-center gap-3 mb-4">
-                  <Shield className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
+                  <Shield
+                    className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`}
+                  />
                   <h3 className="text-lg font-semibold text-foreground">Alternative MFA Methods</h3>
                 </div>
                 <p className="text-muted-foreground mb-4 text-sm">
-                  Enable additional ways to verify your identity. Note: These methods are less secure than authenticator apps or passkeys.
+                  Enable additional ways to verify your identity. Note: These methods are less
+                  secure than authenticator apps or passkeys.
                 </p>
 
                 <div className="space-y-4">
@@ -970,7 +1070,9 @@ function AccountSettings() {
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <div>
                       <p className="font-medium text-foreground">Email OTP</p>
-                      <p className="text-sm text-muted-foreground">Receive verification codes via email</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive verification codes via email
+                      </p>
                     </div>
                     <button
                       onClick={() => {
@@ -981,12 +1083,14 @@ function AccountSettings() {
                         }
                       }}
                       disabled={updatingMfaPrefs}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.emailMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
-                        } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        mfaPreferences?.emailMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                      } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.emailMfaEnabled ? 'translate-x-6' : 'translate-x-1'
-                          }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          mfaPreferences?.emailMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                       />
                     </button>
                   </div>
@@ -995,7 +1099,9 @@ function AccountSettings() {
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <div>
                       <p className="font-medium text-foreground">Push Notification OTP</p>
-                      <p className="text-sm text-muted-foreground">Receive verification codes via push notifications</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive verification codes via push notifications
+                      </p>
                     </div>
                     <button
                       onClick={() => {
@@ -1006,12 +1112,14 @@ function AccountSettings() {
                         }
                       }}
                       disabled={updatingMfaPrefs}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences?.notificationMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
-                        } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        mfaPreferences?.notificationMfaEnabled ? 'bg-green-500' : 'bg-gray-300'
+                      } ${updatingMfaPrefs ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences?.notificationMfaEnabled ? 'translate-x-6' : 'translate-x-1'
-                          }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          mfaPreferences?.notificationMfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
                       />
                     </button>
                   </div>
@@ -1020,7 +1128,9 @@ function AccountSettings() {
                 {/* Security Warning Modal */}
                 {showSecurityWarning && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}>
+                    <div
+                      className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}
+                    >
                       <div className="flex items-center gap-3 mb-4">
                         <AlertTriangle className="w-6 h-6 text-yellow-500" />
                         <h3 className="text-lg font-semibold">Security Warning</h3>
@@ -1028,11 +1138,11 @@ function AccountSettings() {
                       <p className="text-muted-foreground mb-4">
                         {showSecurityWarning === 'email'
                           ? 'Email-based MFA is less secure than authenticator apps because emails can be intercepted or your email account could be compromised.'
-                          : 'Push notification MFA is less secure than authenticator apps because notifications can be intercepted or your device could be compromised.'
-                        }
+                          : 'Push notification MFA is less secure than authenticator apps because notifications can be intercepted or your device could be compromised.'}
                       </p>
                       <p className="text-muted-foreground mb-6">
-                        We recommend using an authenticator app (TOTP) or passkeys for maximum security. Are you sure you want to enable this method?
+                        We recommend using an authenticator app (TOTP) or passkeys for maximum
+                        security. Are you sure you want to enable this method?
                       </p>
                       <div className="flex gap-3">
                         <button
@@ -1057,10 +1167,14 @@ function AccountSettings() {
 
             {/* Advanced Security Settings */}
             {mfaStatus?.enabled && mfaPreferences && (
-              <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+              <div
+                className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}
+              >
                 <div className="flex items-center gap-3 mb-4">
                   <Key className={`w-6 h-6 ${isDark ? 'text-[#DDEF00]' : 'text-primary'}`} />
-                  <h3 className="text-lg font-semibold text-foreground">Advanced Security Settings</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Advanced Security Settings
+                  </h3>
                 </div>
                 <p className="text-muted-foreground mb-4 text-sm">
                   Configure advanced security features for maximum account protection.
@@ -1089,12 +1203,16 @@ function AccountSettings() {
                         }
                       }}
                       disabled={updatingMfaPrefs || (mfaPreferences.securityKeyCount || 0) === 0}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences.disableOTPReverification ? 'bg-green-500' : 'bg-gray-300'
-                        } ${updatingMfaPrefs || (mfaPreferences.securityKeyCount || 0) === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        mfaPreferences.disableOTPReverification ? 'bg-green-500' : 'bg-gray-300'
+                      } ${updatingMfaPrefs || (mfaPreferences.securityKeyCount || 0) === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences.disableOTPReverification ? 'translate-x-6' : 'translate-x-1'
-                          }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          mfaPreferences.disableOTPReverification
+                            ? 'translate-x-6'
+                            : 'translate-x-1'
+                        }`}
                       />
                     </button>
                   </div>
@@ -1111,21 +1229,24 @@ function AccountSettings() {
                       <p className="text-sm text-muted-foreground">
                         Maximum security: Passkeys/OAuth + WebAuthn MFA only.
                       </p>
-                      {(!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) && (
-                        <p className="text-xs text-yellow-600 mt-1">
-                          ⚠️ Requires "Disable OTP Re-verification" first
-                        </p>
-                      )}
-                      {(mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled && (
-                        <p className="text-xs text-yellow-600 mt-1">
-                          ⚠️ Requires at least 1 security key
-                        </p>
-                      )}
-                      {(mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled && (
-                        <p className="text-xs text-yellow-600 mt-1">
-                          ⚠️ Requires at least 1 passkey
-                        </p>
-                      )}
+                      {!mfaPreferences.disableOTPReverification &&
+                        !mfaPreferences.superSecureAccountEnabled && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            ⚠️ Requires "Disable OTP Re-verification" first
+                          </p>
+                        )}
+                      {(mfaPreferences.securityKeyCount || 0) === 0 &&
+                        !mfaPreferences.superSecureAccountEnabled && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            ⚠️ Requires at least 1 security key
+                          </p>
+                        )}
+                      {(mfaPreferences.passkeyCount || 0) === 0 &&
+                        !mfaPreferences.superSecureAccountEnabled && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            ⚠️ Requires at least 1 passkey
+                          </p>
+                        )}
                     </div>
                     <button
                       onClick={() => {
@@ -1137,22 +1258,33 @@ function AccountSettings() {
                       }}
                       disabled={
                         updatingMfaPrefs ||
-                        (!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) ||
-                        ((mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled) ||
-                        ((mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled)
+                        (!mfaPreferences.disableOTPReverification &&
+                          !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.securityKeyCount || 0) === 0 &&
+                          !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.passkeyCount || 0) === 0 &&
+                          !mfaPreferences.superSecureAccountEnabled)
                       }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mfaPreferences.superSecureAccountEnabled ? 'bg-green-500' : 'bg-gray-300'
-                        } ${updatingMfaPrefs ||
-                          (!mfaPreferences.disableOTPReverification && !mfaPreferences.superSecureAccountEnabled) ||
-                          ((mfaPreferences.securityKeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled) ||
-                          ((mfaPreferences.passkeyCount || 0) === 0 && !mfaPreferences.superSecureAccountEnabled)
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        mfaPreferences.superSecureAccountEnabled ? 'bg-green-500' : 'bg-gray-300'
+                      } ${
+                        updatingMfaPrefs ||
+                        (!mfaPreferences.disableOTPReverification &&
+                          !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.securityKeyCount || 0) === 0 &&
+                          !mfaPreferences.superSecureAccountEnabled) ||
+                        ((mfaPreferences.passkeyCount || 0) === 0 &&
+                          !mfaPreferences.superSecureAccountEnabled)
                           ? 'opacity-50 cursor-not-allowed'
                           : ''
-                        }`}
+                      }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mfaPreferences.superSecureAccountEnabled ? 'translate-x-6' : 'translate-x-1'
-                          }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          mfaPreferences.superSecureAccountEnabled
+                            ? 'translate-x-6'
+                            : 'translate-x-1'
+                        }`}
                       />
                     </button>
                   </div>
@@ -1161,25 +1293,26 @@ function AccountSettings() {
                 {/* Advanced Security Warning Modal */}
                 {showAdvancedSecurityWarning && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}>
+                    <div
+                      className={`rounded-xl p-6 max-w-md mx-4 ${isDark ? 'bg-card' : 'bg-white'}`}
+                    >
                       <div className="flex items-center gap-3 mb-4">
                         <Shield className="w-6 h-6 text-green-500" />
                         <h3 className="text-lg font-semibold">
                           {showAdvancedSecurityWarning === 'disableOtp'
                             ? 'Disable OTP Re-verification?'
-                            : 'Enable Super Secure Account?'
-                          }
+                            : 'Enable Super Secure Account?'}
                         </h3>
                       </div>
                       <p className="text-muted-foreground mb-4">
                         {showAdvancedSecurityWarning === 'disableOtp'
                           ? 'This will require using your security key instead of email OTP for account settings verification.'
-                          : 'Password-based login will be disabled. You must use passkeys or OAuth with WebAuthn MFA.'
-                        }
+                          : 'Password-based login will be disabled. You must use passkeys or OAuth with WebAuthn MFA.'}
                       </p>
                       {showAdvancedSecurityWarning === 'superSecure' && (
                         <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-lg text-sm mb-4">
-                          <strong>Warning:</strong> If you lose all security keys and passkeys, you may be locked out permanently.
+                          <strong>Warning:</strong> If you lose all security keys and passkeys, you
+                          may be locked out permanently.
                         </div>
                       )}
                       <div className="flex gap-3">
@@ -1210,7 +1343,9 @@ function AccountSettings() {
             )}
 
             {/* Password Change Info */}
-            <div className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}>
+            <div
+              className={`rounded-xl border ${isDark ? 'bg-card border-border' : 'bg-white border-gray-200'} shadow-lg p-6`}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <Lock className={`w-6 h-6 ${isDark ? 'text-muted-foreground' : 'text-gray-500'}`} />
                 <h3 className="text-lg font-semibold text-foreground">Password</h3>
@@ -1237,7 +1372,9 @@ function AccountSettings() {
 
       {/* Captcha Modal */}
       <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
-        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+        <DialogContent
+          className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}
+        >
           <DialogHeader>
             <DialogTitle>Security Verification</DialogTitle>
           </DialogHeader>
@@ -1252,6 +1389,6 @@ function AccountSettings() {
       </Dialog>
     </div>
   );
-};
+}
 
 export default AccountSettings;

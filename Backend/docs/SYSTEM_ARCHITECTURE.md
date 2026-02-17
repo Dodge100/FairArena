@@ -34,13 +34,13 @@ FairArena is a modern, event-driven web platform built with TypeScript, Express.
 
 ### Key Architectural Decisions
 
-| Decision | Rationale | Trade-offs |
-|----------|-----------|------------|
-| **Event-Driven (Inngest)** | Decouples synchronous API from async operations | Additional infrastructure complexity |
-| **Read Replicas** | Horizontal read scaling, reduced primary DB load | Eventual consistency on reads |
-| **Redis Caching** | Sub-millisecond response times for hot data | Cache invalidation complexity |
-| **Clerk Authentication** | Enterprise-grade auth without custom implementation | Vendor lock-in |
-| **PostgreSQL + Prisma** | Type-safe queries, excellent migration tooling | ORM overhead |
+| Decision                   | Rationale                                           | Trade-offs                           |
+| -------------------------- | --------------------------------------------------- | ------------------------------------ |
+| **Event-Driven (Inngest)** | Decouples synchronous API from async operations     | Additional infrastructure complexity |
+| **Read Replicas**          | Horizontal read scaling, reduced primary DB load    | Eventual consistency on reads        |
+| **Redis Caching**          | Sub-millisecond response times for hot data         | Cache invalidation complexity        |
+| **Clerk Authentication**   | Enterprise-grade auth without custom implementation | Vendor lock-in                       |
+| **PostgreSQL + Prisma**    | Type-safe queries, excellent migration tooling      | ORM overhead                         |
 
 ---
 
@@ -168,12 +168,12 @@ flowchart TB
 
 ### 1. Core Backend Server
 
-| Component | Technology | Port | Purpose |
-|-----------|-----------|------|---------|
-| API Server | Express.js + TypeScript | 3000 | Main application server |
-| Webhook Handler | Express.js | 3000 | /webhooks/* routes for external services |
-| Swagger UI | swagger-ui-express | 3000 | API documentation (dev/staging only) |
-| Metrics Endpoint | prom-client | 3000 | /metrics for Prometheus scraping |
+| Component        | Technology              | Port | Purpose                                   |
+| ---------------- | ----------------------- | ---- | ----------------------------------------- |
+| API Server       | Express.js + TypeScript | 3000 | Main application server                   |
+| Webhook Handler  | Express.js              | 3000 | /webhooks/\* routes for external services |
+| Swagger UI       | swagger-ui-express      | 3000 | API documentation (dev/staging only)      |
+| Metrics Endpoint | prom-client             | 3000 | /metrics for Prometheus scraping          |
 
 ### 2. Container Services
 
@@ -204,16 +204,16 @@ graph LR
 
 ### 3. Service Registry
 
-| Service | Container Name | Port | Health Check | Dependencies |
-|---------|---------------|------|--------------|--------------|
-| Redis | Redis | 6379 | `redis-cli ping` | None |
-| SRH | SRH | 80 | `curl /redis/ping` | Redis |
-| Inngest | Inngest | 8288 | `curl /health` | Redis |
-| Backend | Backend | 3000 | `curl /healthz` | SRH |
-| Credential Validator | credential-validator | 3002 | `curl /health` | None |
-| Prometheus | Prometheus | 9090 | `wget /-/healthy` | Backend |
-| cAdvisor | cAdvisor | 8080 | `curl /healthz` | None |
-| n8n | n8n | 5678 | `curl /healthz` | None |
+| Service              | Container Name       | Port | Health Check       | Dependencies |
+| -------------------- | -------------------- | ---- | ------------------ | ------------ |
+| Redis                | Redis                | 6379 | `redis-cli ping`   | None         |
+| SRH                  | SRH                  | 80   | `curl /redis/ping` | Redis        |
+| Inngest              | Inngest              | 8288 | `curl /health`     | Redis        |
+| Backend              | Backend              | 3000 | `curl /healthz`    | SRH          |
+| Credential Validator | credential-validator | 3002 | `curl /health`     | None         |
+| Prometheus           | Prometheus           | 9090 | `wget /-/healthy`  | Backend      |
+| cAdvisor             | cAdvisor             | 8080 | `curl /healthz`    | None         |
+| n8n                  | n8n                  | 5678 | `curl /healthz`    | None         |
 
 ---
 
@@ -542,15 +542,15 @@ enum ReportSeverity {
 
 ### Database Indexes
 
-| Table | Index | Columns | Purpose |
-|-------|-------|---------|---------|
-| User | idx_user_userId | userId | Primary lookup |
-| User | idx_user_phone | phoneNumber, isPhoneVerified | Phone verification |
-| Payment | idx_payment_user_status | userId, status | User payment queries |
-| Payment | idx_payment_order | razorpayOrderId | Webhook processing |
-| CreditTransaction | idx_credit_user_created | userId, createdAt | Transaction history |
-| Notification | idx_notif_user_read | userId, read | Unread count |
-| OrganizationUserRole | idx_org_user | organizationId, userId | Permission checks |
+| Table                | Index                   | Columns                      | Purpose              |
+| -------------------- | ----------------------- | ---------------------------- | -------------------- |
+| User                 | idx_user_userId         | userId                       | Primary lookup       |
+| User                 | idx_user_phone          | phoneNumber, isPhoneVerified | Phone verification   |
+| Payment              | idx_payment_user_status | userId, status               | User payment queries |
+| Payment              | idx_payment_order       | razorpayOrderId              | Webhook processing   |
+| CreditTransaction    | idx_credit_user_created | userId, createdAt            | Transaction history  |
+| Notification         | idx_notif_user_read     | userId, read                 | Unread count         |
+| OrganizationUserRole | idx_org_user            | organizationId, userId       | Permission checks    |
 
 ---
 
@@ -703,20 +703,20 @@ flowchart TB
 
 ### Permission Matrix
 
-| Resource | Action | Required Permission |
-|----------|--------|---------------------|
-| Organization | Create | Authenticated user |
-| Organization | Read | `org:read` or public |
-| Organization | Update | `org:update` |
-| Organization | Delete | `org:delete` + owner |
-| Organization | Manage Members | `org:members:manage` |
-| Team | Create | `org:teams:create` |
-| Team | Read | `team:read` or visibility check |
-| Team | Update | `team:update` |
-| Team | Delete | `team:delete` |
-| Team | Invite | `team:members:invite` |
-| Project | Create | `team:projects:create` |
-| Project | Read | `project:read` or visibility check |
+| Resource     | Action         | Required Permission                |
+| ------------ | -------------- | ---------------------------------- |
+| Organization | Create         | Authenticated user                 |
+| Organization | Read           | `org:read` or public               |
+| Organization | Update         | `org:update`                       |
+| Organization | Delete         | `org:delete` + owner               |
+| Organization | Manage Members | `org:members:manage`               |
+| Team         | Create         | `org:teams:create`                 |
+| Team         | Read           | `team:read` or visibility check    |
+| Team         | Update         | `team:update`                      |
+| Team         | Delete         | `team:delete`                      |
+| Team         | Invite         | `team:members:invite`              |
+| Project      | Create         | `team:projects:create`             |
+| Project      | Read           | `project:read` or visibility check |
 
 ---
 
@@ -820,17 +820,17 @@ sequenceDiagram
 
 ### Event Types Reference
 
-| Event | Trigger | Handler Function | Side Effects |
-|-------|---------|------------------|--------------|
-| `user/sync` | Clerk webhook | `syncUser` | Create user, settings, welcome email |
-| `user/update` | Profile update | `updateUser` | Update user record, invalidate cache |
-| `user/delete` | Account deletion | `deleteUser` | Soft delete, export data, send email |
-| `payment/order.created` | Order initiation | `paymentOrderCreated` | Log order creation |
-| `payment/verified` | Payment verification | `paymentVerified` | Create credit transaction, send email |
-| `payment/webhook.received` | Razorpay webhook | `paymentWebhookReceived` | Process webhook, handle failures/refunds |
-| `notification/send` | Various triggers | `sendNotification` | Create notification, update counts |
-| `profile/star` | User stars profile | `starProfile` | Create star record, send notification |
-| `team/invite.send` | Team invite | `sendTeamInviteEmail` | Send invite email |
+| Event                      | Trigger              | Handler Function         | Side Effects                             |
+| -------------------------- | -------------------- | ------------------------ | ---------------------------------------- |
+| `user/sync`                | Clerk webhook        | `syncUser`               | Create user, settings, welcome email     |
+| `user/update`              | Profile update       | `updateUser`             | Update user record, invalidate cache     |
+| `user/delete`              | Account deletion     | `deleteUser`             | Soft delete, export data, send email     |
+| `payment/order.created`    | Order initiation     | `paymentOrderCreated`    | Log order creation                       |
+| `payment/verified`         | Payment verification | `paymentVerified`        | Create credit transaction, send email    |
+| `payment/webhook.received` | Razorpay webhook     | `paymentWebhookReceived` | Process webhook, handle failures/refunds |
+| `notification/send`        | Various triggers     | `sendNotification`       | Create notification, update counts       |
+| `profile/star`             | User stars profile   | `starProfile`            | Create star record, send notification    |
+| `team/invite.send`         | Team invite          | `sendTeamInviteEmail`    | Send invite email                        |
 
 ---
 
@@ -863,18 +863,18 @@ sequenceDiagram
 
 ### Cache TTL Settings
 
-| Cache Type | TTL | Invalidation Trigger |
-|------------|-----|---------------------|
-| User Credits | 5 minutes | Credit transaction create |
-| Credit History | 5 minutes | Credit transaction create |
-| Profile | 1 hour | Profile update |
-| Settings | 24 hours | Settings update |
-| Notifications Count | 30 seconds | Notification create/read |
-| Organizations | 5 minutes | Membership change |
-| Teams | 5 minutes | Membership change |
-| OTP | 5 minutes | OTP verification |
-| Rate Limit | 1-30 minutes | Auto-reset |
-| Environment | 24 hours | Manual refresh |
+| Cache Type          | TTL          | Invalidation Trigger      |
+| ------------------- | ------------ | ------------------------- |
+| User Credits        | 5 minutes    | Credit transaction create |
+| Credit History      | 5 minutes    | Credit transaction create |
+| Profile             | 1 hour       | Profile update            |
+| Settings            | 24 hours     | Settings update           |
+| Notifications Count | 30 seconds   | Notification create/read  |
+| Organizations       | 5 minutes    | Membership change         |
+| Teams               | 5 minutes    | Membership change         |
+| OTP                 | 5 minutes    | OTP verification          |
+| Rate Limit          | 1-30 minutes | Auto-reset                |
+| Environment         | 24 hours     | Manual refresh            |
 
 ### Cache Invalidation Flow
 
@@ -984,11 +984,11 @@ flowchart TB
 
 ### Credit Plans
 
-| Plan ID | Name | Price (INR) | Credits | Features |
-|---------|------|-------------|---------|----------|
-| `plan_starter` | Starter | ₹99 | 100 | Basic features |
-| `plan_pro` | Pro | ₹499 | 600 | +20% bonus credits |
-| `plan_enterprise` | Enterprise | ₹1,999 | 3000 | +50% bonus, priority support |
+| Plan ID           | Name       | Price (INR) | Credits | Features                     |
+| ----------------- | ---------- | ----------- | ------- | ---------------------------- |
+| `plan_starter`    | Starter    | ₹99         | 100     | Basic features               |
+| `plan_pro`        | Pro        | ₹499        | 600     | +20% bonus credits           |
+| `plan_enterprise` | Enterprise | ₹1,999      | 3000    | +50% bonus, priority support |
 
 ---
 
@@ -1053,16 +1053,16 @@ flowchart TB
 
 ### AI Tool Permissions
 
-| Tool | Read | Write | Auth Required | Rate Limited |
-|------|------|-------|---------------|--------------|
-| get_user_profile | ✅ | ❌ | ✅ | ❌ |
-| get_user_organizations | ✅ | ❌ | ✅ | ❌ |
-| get_user_teams | ✅ | ❌ | ✅ | ❌ |
-| get_user_projects | ✅ | ❌ | ✅ | ❌ |
-| get_user_notifications | ✅ | ❌ | ✅ | ❌ |
-| get_user_activity_logs | ✅ | ❌ | ✅ | ❌ |
-| update_user_profile | ❌ | ✅ | ✅ | ✅ |
-| get_platform_help | ✅ | ❌ | ❌ | ❌ |
+| Tool                   | Read | Write | Auth Required | Rate Limited |
+| ---------------------- | ---- | ----- | ------------- | ------------ |
+| get_user_profile       | ✅   | ❌    | ✅            | ❌           |
+| get_user_organizations | ✅   | ❌    | ✅            | ❌           |
+| get_user_teams         | ✅   | ❌    | ✅            | ❌           |
+| get_user_projects      | ✅   | ❌    | ✅            | ❌           |
+| get_user_notifications | ✅   | ❌    | ✅            | ❌           |
+| get_user_activity_logs | ✅   | ❌    | ✅            | ❌           |
+| update_user_profile    | ❌   | ✅    | ✅            | ✅           |
+| get_platform_help      | ✅   | ❌    | ❌            | ❌           |
 
 ---
 
@@ -1116,15 +1116,15 @@ flowchart TB
 
 ### Metrics Exposed
 
-| Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
-| `http_request_duration_seconds` | Histogram | method, route, status | Request latency |
-| `http_requests_total` | Counter | method, route, status | Total requests |
-| `nodejs_active_handles` | Gauge | - | Active handles |
-| `nodejs_heap_size_used_bytes` | Gauge | - | Heap memory usage |
-| `prisma_pool_connections_active` | Gauge | - | Active DB connections |
-| `redis_commands_total` | Counter | command | Redis command count |
-| `inngest_function_runs_total` | Counter | function, status | Function executions |
+| Metric                           | Type      | Labels                | Description           |
+| -------------------------------- | --------- | --------------------- | --------------------- |
+| `http_request_duration_seconds`  | Histogram | method, route, status | Request latency       |
+| `http_requests_total`            | Counter   | method, route, status | Total requests        |
+| `nodejs_active_handles`          | Gauge     | -                     | Active handles        |
+| `nodejs_heap_size_used_bytes`    | Gauge     | -                     | Heap memory usage     |
+| `prisma_pool_connections_active` | Gauge     | -                     | Active DB connections |
+| `redis_commands_total`           | Counter   | command               | Redis command count   |
+| `inngest_function_runs_total`    | Counter   | function, status      | Function executions   |
 
 ### Log Correlation
 
@@ -1211,14 +1211,14 @@ Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 ### Sensitive Data Handling
 
-| Data Type | Storage | Encryption | Access Control |
-|-----------|---------|------------|----------------|
-| Passwords | Not stored (Clerk) | N/A | Clerk managed |
-| JWT Tokens | Memory only | RSA signature | Short TTL |
-| OTP Codes | Redis | Bcrypt hash | 5-minute TTL |
-| Phone Numbers | PostgreSQL | AES-256 (Key Vault) | Auth required |
-| Payment IDs | PostgreSQL | N/A | Auth required |
-| API Keys | Azure Key Vault | HSM | Managed Identity |
+| Data Type     | Storage            | Encryption          | Access Control   |
+| ------------- | ------------------ | ------------------- | ---------------- |
+| Passwords     | Not stored (Clerk) | N/A                 | Clerk managed    |
+| JWT Tokens    | Memory only        | RSA signature       | Short TTL        |
+| OTP Codes     | Redis              | Bcrypt hash         | 5-minute TTL     |
+| Phone Numbers | PostgreSQL         | AES-256 (Key Vault) | Auth required    |
+| Payment IDs   | PostgreSQL         | N/A                 | Auth required    |
+| API Keys      | Azure Key Vault    | HSM                 | Managed Identity |
 
 ---
 
@@ -1314,13 +1314,13 @@ sequenceDiagram
 
 ### Backup Strategy
 
-| Component | Backup Type | Frequency | Retention | RTO | RPO |
-|-----------|-------------|-----------|-----------|-----|-----|
-| PostgreSQL | Continuous (WAL) | Streaming | 35 days | 5 min | 0 min |
-| PostgreSQL | Full Snapshot | Daily | 30 days | 30 min | 24 hrs |
-| Redis | RDB Snapshot | Every 1 min | 24 hrs | 2 min | 1 min |
-| Redis | AOF | Continuous | 24 hrs | 1 min | 0 min |
-| Secrets | Key Vault | Versioned | 90 days | Instant | 0 |
+| Component  | Backup Type      | Frequency   | Retention | RTO     | RPO    |
+| ---------- | ---------------- | ----------- | --------- | ------- | ------ |
+| PostgreSQL | Continuous (WAL) | Streaming   | 35 days   | 5 min   | 0 min  |
+| PostgreSQL | Full Snapshot    | Daily       | 30 days   | 30 min  | 24 hrs |
+| Redis      | RDB Snapshot     | Every 1 min | 24 hrs    | 2 min   | 1 min  |
+| Redis      | AOF              | Continuous  | 24 hrs    | 1 min   | 0 min  |
+| Secrets    | Key Vault        | Versioned   | 90 days   | Instant | 0      |
 
 ---
 
@@ -1329,34 +1329,34 @@ sequenceDiagram
 ### Latency Targets (P99)
 
 | Endpoint Category | Target | Actual | Status |
-|-------------------|--------|--------|--------|
-| Health Check | <50ms | 15ms | ✅ |
-| Cached Reads | <100ms | 45ms | ✅ |
-| Database Reads | <200ms | 120ms | ✅ |
-| Database Writes | <500ms | 280ms | ✅ |
-| Payment Create | <2s | 1.2s | ✅ |
-| AI Chat | <5s | 3.5s | ✅ |
-| File Export | <30s | 18s | ✅ |
+| ----------------- | ------ | ------ | ------ |
+| Health Check      | <50ms  | 15ms   | ✅     |
+| Cached Reads      | <100ms | 45ms   | ✅     |
+| Database Reads    | <200ms | 120ms  | ✅     |
+| Database Writes   | <500ms | 280ms  | ✅     |
+| Payment Create    | <2s    | 1.2s   | ✅     |
+| AI Chat           | <5s    | 3.5s   | ✅     |
+| File Export       | <30s   | 18s    | ✅     |
 
 ### Throughput Capacity
 
-| Resource | Capacity | Limit Type |
-|----------|----------|------------|
-| API Requests | 1000 req/min | Arcjet Rate Limit |
-| Webhook Events | 100 req/min | Per-endpoint |
-| Database Connections | 50 active | Pool size |
-| Redis Operations | 10,000 ops/s | SRH proxy |
-| Inngest Events | 500/min | Concurrency limit |
+| Resource             | Capacity     | Limit Type        |
+| -------------------- | ------------ | ----------------- |
+| API Requests         | 1000 req/min | Arcjet Rate Limit |
+| Webhook Events       | 100 req/min  | Per-endpoint      |
+| Database Connections | 50 active    | Pool size         |
+| Redis Operations     | 10,000 ops/s | SRH proxy         |
+| Inngest Events       | 500/min      | Concurrency limit |
 
 ### Resource Utilization Targets
 
-| Resource | Target | Alert Threshold |
-|----------|--------|-----------------|
-| CPU | <70% | >85% |
-| Memory | <80% | >90% |
-| DB Connections | <60% pool | >80% pool |
-| Redis Memory | <70% | >85% |
-| Disk I/O | <50% | >75% |
+| Resource       | Target    | Alert Threshold |
+| -------------- | --------- | --------------- |
+| CPU            | <70%      | >85%            |
+| Memory         | <80%      | >90%            |
+| DB Connections | <60% pool | >80% pool       |
+| Redis Memory   | <70%      | >85%            |
+| Disk I/O       | <50%      | >75%            |
 
 ---
 
@@ -1364,58 +1364,58 @@ sequenceDiagram
 
 ### Required Variables
 
-| Variable | Description | Source |
-|----------|-------------|--------|
-| `DATABASE_URL` | Primary PostgreSQL connection | Key Vault |
-| `DATABASE_URL_READ_ONLY_1` | Read replica 1 | Key Vault |
-| `DATABASE_URL_READ_ONLY_2` | Read replica 2 | Key Vault |
-| `CLERK_SECRET_KEY` | Clerk API secret | Key Vault |
-| `CLERK_WEBHOOK_SECRET` | Webhook signature key | Key Vault |
-| `INNGEST_SIGNING_KEY` | Inngest auth | .env.inngest |
-| `INNGEST_EVENT_KEY` | Inngest events | .env.inngest |
-| `RESEND_API_KEY` | Email service | Key Vault |
-| `RAZORPAY_KEY_ID` | Payment gateway | Key Vault |
-| `RAZORPAY_KEY_SECRET` | Payment secret | Key Vault |
-| `RAZORPAY_WEBHOOK_SECRET` | Webhook verification | Key Vault |
-| `GOOGLE_GEMINI_API_KEY` | AI service | Key Vault |
-| `UPSTASH_REDIS_REST_URL` | Redis endpoint | .env |
-| `UPSTASH_REDIS_REST_TOKEN` | Redis auth | .env |
+| Variable                   | Description                   | Source       |
+| -------------------------- | ----------------------------- | ------------ |
+| `DATABASE_URL`             | Primary PostgreSQL connection | Key Vault    |
+| `DATABASE_URL_READ_ONLY_1` | Read replica 1                | Key Vault    |
+| `DATABASE_URL_READ_ONLY_2` | Read replica 2                | Key Vault    |
+| `CLERK_SECRET_KEY`         | Clerk API secret              | Key Vault    |
+| `CLERK_WEBHOOK_SECRET`     | Webhook signature key         | Key Vault    |
+| `INNGEST_SIGNING_KEY`      | Inngest auth                  | .env.inngest |
+| `INNGEST_EVENT_KEY`        | Inngest events                | .env.inngest |
+| `RESEND_API_KEY`           | Email service                 | Key Vault    |
+| `RAZORPAY_KEY_ID`          | Payment gateway               | Key Vault    |
+| `RAZORPAY_KEY_SECRET`      | Payment secret                | Key Vault    |
+| `RAZORPAY_WEBHOOK_SECRET`  | Webhook verification          | Key Vault    |
+| `GOOGLE_GEMINI_API_KEY`    | AI service                    | Key Vault    |
+| `UPSTASH_REDIS_REST_URL`   | Redis endpoint                | .env         |
+| `UPSTASH_REDIS_REST_TOKEN` | Redis auth                    | .env         |
 
 ### Optional Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Server port |
-| `NODE_ENV` | development | Environment |
-| `CORS_URL` | localhost:5173 | Allowed origins |
-| `MAINTENANCE_MODE` | false | Enable maintenance |
-| `PAYMENTS_ENABLED` | false | Enable payments |
+| Variable           | Default        | Description        |
+| ------------------ | -------------- | ------------------ |
+| `PORT`             | 3000           | Server port        |
+| `NODE_ENV`         | development    | Environment        |
+| `CORS_URL`         | localhost:5173 | Allowed origins    |
+| `MAINTENANCE_MODE` | false          | Enable maintenance |
+| `PAYMENTS_ENABLED` | false          | Enable payments    |
 
 ---
 
 ## Appendix B: Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AUTH_REQUIRED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Input validation failed |
-| `RATE_LIMITED` | 429 | Too many requests |
-| `PAYMENT_FAILED` | 402 | Payment processing failed |
-| `INSUFFICIENT_CREDITS` | 402 | Not enough credits |
-| `DUPLICATE_REQUEST` | 409 | Idempotency violation |
-| `MAINTENANCE` | 503 | System maintenance |
-| `INTERNAL_ERROR` | 500 | Unexpected error |
+| Code                   | HTTP Status | Description               |
+| ---------------------- | ----------- | ------------------------- |
+| `AUTH_REQUIRED`        | 401         | Authentication required   |
+| `FORBIDDEN`            | 403         | Insufficient permissions  |
+| `NOT_FOUND`            | 404         | Resource not found        |
+| `VALIDATION_ERROR`     | 400         | Input validation failed   |
+| `RATE_LIMITED`         | 429         | Too many requests         |
+| `PAYMENT_FAILED`       | 402         | Payment processing failed |
+| `INSUFFICIENT_CREDITS` | 402         | Not enough credits        |
+| `DUPLICATE_REQUEST`    | 409         | Idempotency violation     |
+| `MAINTENANCE`          | 503         | System maintenance        |
+| `INTERNAL_ERROR`       | 500         | Unexpected error          |
 
 ---
 
 ## Appendix C: API Versioning
 
-| Version | Status | Deprecation | EOL |
-|---------|--------|-------------|-----|
-| v1 | Current | - | - |
-| v2 | Planning | - | - |
+| Version | Status   | Deprecation | EOL |
+| ------- | -------- | ----------- | --- |
+| v1      | Current  | -           | -   |
+| v2      | Planning | -           | -   |
 
 ### Breaking Change Policy
 
@@ -1428,10 +1428,10 @@ sequenceDiagram
 
 ## Document History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0.0 | 2025-12-30 | Engineering Team | Initial release |
+| Version | Date       | Author           | Changes         |
+| ------- | ---------- | ---------------- | --------------- |
+| 1.0.0   | 2025-12-30 | Engineering Team | Initial release |
 
 ---
 
-*This document is auto-generated from source code analysis and should be updated whenever significant architectural changes are made.*
+_This document is auto-generated from source code analysis and should be updated whenever significant architectural changes are made._

@@ -42,7 +42,8 @@ export default function MyProfile() {
 
   const { data: profile, isLoading: loading } = useQuery({
     queryKey: ['profile', 'me', user?.id],
-    queryFn: () => apiRequest<{ data: ProfileData }>(`${API_BASE}/api/v1/profile/me`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ data: ProfileData }>(`${API_BASE}/api/v1/profile/me`).then((res) => res.data),
     enabled: !!user && isLoaded,
     staleTime: 60000, // 1 minute
   });
@@ -176,7 +177,10 @@ export default function MyProfile() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={user?.profileImageUrl ?? undefined} alt={user?.firstName || 'User'} />
+              <AvatarImage
+                src={user?.profileImageUrl ?? undefined}
+                alt={user?.firstName || 'User'}
+              />
               <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
             </Avatar>
           </div>
@@ -261,10 +265,11 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${profileCompletion.percentage === 100
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                          }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          profileCompletion.percentage === 100
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
                       >
                         {profileCompletion.percentage === 100 ? 'Complete' : 'Incomplete'}
                       </div>
@@ -290,10 +295,11 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.isPublic
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                          }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          profile?.isPublic
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                       >
                         {profile?.isPublic ? 'Public' : 'Private'}
                       </div>
@@ -307,10 +313,11 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.trackViews
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-gray-100 text-gray-800'
-                          }`}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          profile?.trackViews
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                       >
                         {profile?.trackViews ? 'Enabled' : 'Disabled'}
                       </div>

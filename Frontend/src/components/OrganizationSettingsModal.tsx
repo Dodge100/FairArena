@@ -117,11 +117,15 @@ export const OrganizationSettingsModal = ({
   }, [organization]);
 
   const saveSettingsMutation = useMutation({
-    mutationFn: (data: typeof formData) => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}/settings`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: typeof formData) =>
+      apiRequest(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}/settings`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        },
+      ),
     onSuccess: () => {
       toast.success('Organization settings updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
@@ -135,9 +139,10 @@ export const OrganizationSettingsModal = ({
   });
 
   const deleteOrganizationMutation = useMutation({
-    mutationFn: () => apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}`, {
-      method: 'DELETE',
-    }),
+    mutationFn: () =>
+      apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organization?.slug}`, {
+        method: 'DELETE',
+      }),
     onSuccess: () => {
       toast.success('Organization deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
@@ -170,9 +175,7 @@ export const OrganizationSettingsModal = ({
             <Settings className="h-5 w-5" />
             Organization Settings
           </DialogTitle>
-          <DialogDescription>
-            Manage settings for {organization.name}
-          </DialogDescription>
+          <DialogDescription>Manage settings for {organization.name}</DialogDescription>
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto space-y-6">
@@ -277,13 +280,16 @@ export const OrganizationSettingsModal = ({
                     Delete Organization
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete "{organization.name}"? This action cannot be undone
-                    and will remove all associated data.
+                    Are you sure you want to delete "{organization.name}"? This action cannot be
+                    undone and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
                     Delete Organization
                   </AlertDialogAction>
                 </AlertDialogFooter>

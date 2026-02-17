@@ -14,13 +14,13 @@ Welcome to the FairArena Backend documentation. This comprehensive documentation
 
 ## 📖 Documentation Overview
 
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [System Architecture](./SYSTEM_ARCHITECTURE.md) | Complete system design with Mermaid diagrams | Architects, Senior Engineers |
-| [Data Flow](./DATA_FLOW.md) | Request lifecycle and workflow visualizations | Engineers, Tech Leads |
-| [API Reference](./API_REFERENCE.md) | Complete API endpoint documentation | Frontend Engineers, API Consumers |
-| [Database Design](./DATABASE_DESIGN.md) | Schema, indexing, and query patterns | Database Engineers, Backend Engineers |
-| [Infrastructure](./INFRASTRUCTURE.md) | Deployment, monitoring, and operations | DevOps, SRE, Platform Engineers |
+| Document                                        | Description                                   | Audience                              |
+| ----------------------------------------------- | --------------------------------------------- | ------------------------------------- |
+| [System Architecture](./SYSTEM_ARCHITECTURE.md) | Complete system design with Mermaid diagrams  | Architects, Senior Engineers          |
+| [Data Flow](./DATA_FLOW.md)                     | Request lifecycle and workflow visualizations | Engineers, Tech Leads                 |
+| [API Reference](./API_REFERENCE.md)             | Complete API endpoint documentation           | Frontend Engineers, API Consumers     |
+| [Database Design](./DATABASE_DESIGN.md)         | Schema, indexing, and query patterns          | Database Engineers, Backend Engineers |
+| [Infrastructure](./INFRASTRUCTURE.md)           | Deployment, monitoring, and operations        | DevOps, SRE, Platform Engineers       |
 
 ---
 
@@ -29,6 +29,7 @@ Welcome to the FairArena Backend documentation. This comprehensive documentation
 The complete technical architecture of the FairArena platform.
 
 **Contents:**
+
 - High-level architecture diagrams
 - System components breakdown
 - Data flow visualizations
@@ -42,6 +43,7 @@ The complete technical architecture of the FairArena platform.
 - Performance benchmarks
 
 **Key Diagrams:**
+
 - System architecture flowchart
 - Container service topology
 - Authentication flow sequence
@@ -54,6 +56,7 @@ The complete technical architecture of the FairArena platform.
 Detailed data flow documentation for all major operations.
 
 **Contents:**
+
 - HTTP request lifecycle
 - User workflows (registration, login, profile)
 - Organization workflows (creation, invites, permissions)
@@ -63,6 +66,7 @@ Detailed data flow documentation for all major operations.
 - Data synchronization patterns
 
 **Key Diagrams:**
+
 - Request middleware pipeline
 - User registration sequence
 - Organization permission flow
@@ -76,6 +80,7 @@ Detailed data flow documentation for all major operations.
 Complete REST API documentation.
 
 **Contents:**
+
 - Authentication guide
 - Common response formats
 - Rate limiting policies
@@ -98,6 +103,7 @@ Complete REST API documentation.
 - SDK examples
 
 **Formats:**
+
 - Request/response examples
 - cURL commands
 - TypeScript SDK examples
@@ -109,6 +115,7 @@ Complete REST API documentation.
 Database schema and design patterns.
 
 **Contents:**
+
 - Database topology (Primary + Replicas)
 - Entity relationship diagrams
 - Core entities (User, Profile, Settings)
@@ -121,6 +128,7 @@ Database schema and design patterns.
 - Data retention policies
 
 **Key Diagrams:**
+
 - Full ERD
 - Organization hierarchy structure
 - Payment flow schema
@@ -133,6 +141,7 @@ Database schema and design patterns.
 Deployment and operations guide.
 
 **Contents:**
+
 - Production architecture
 - Container architecture (Docker Compose)
 - Service configurations
@@ -145,6 +154,7 @@ Deployment and operations guide.
 - Operational runbooks
 
 **Key Diagrams:**
+
 - Infrastructure topology
 - Service dependency graph
 - Metrics collection flow
@@ -178,37 +188,37 @@ Deployment and operations guide.
 
 ### Core Technologies
 
-| Category | Technology | Version |
-|----------|-----------|---------|
-| Runtime | Node.js | 20 LTS |
-| Language | TypeScript | 5.x |
-| Framework | Express.js | 4.x |
-| ORM | Prisma | 6.x |
-| Database | PostgreSQL | 15+ |
-| Cache | Redis | 7 |
-| Event Processing | Inngest | latest |
+| Category         | Technology | Version |
+| ---------------- | ---------- | ------- |
+| Runtime          | Node.js    | 20 LTS  |
+| Language         | TypeScript | 5.x     |
+| Framework        | Express.js | 4.x     |
+| ORM              | Prisma     | 6.x     |
+| Database         | PostgreSQL | 15+     |
+| Cache            | Redis      | 7       |
+| Event Processing | Inngest    | latest  |
 
 ### External Services
 
-| Service | Purpose |
-|---------|---------|
-| Clerk | Authentication |
-| Razorpay | Payment processing |
-| Resend | Email delivery |
-| Google Gemini | AI/LLM |
-| SigNoz | Observability |
+| Service         | Purpose            |
+| --------------- | ------------------ |
+| Clerk           | Authentication     |
+| Razorpay        | Payment processing |
+| Resend          | Email delivery     |
+| Google Gemini   | AI/LLM             |
+| SigNoz          | Observability      |
 | Azure Key Vault | Secrets management |
 
 ### DevOps
 
-| Tool | Purpose |
-|------|---------|
-| Docker | Containerization |
-| Docker Compose | Orchestration |
-| Caddy | Reverse proxy |
-| Cloudflare | CDN/WAF |
-| Prometheus | Metrics |
-| OpenTelemetry | Tracing |
+| Tool           | Purpose          |
+| -------------- | ---------------- |
+| Docker         | Containerization |
+| Docker Compose | Orchestration    |
+| Caddy          | Reverse proxy    |
+| Cloudflare     | CDN/WAF          |
+| Prometheus     | Metrics          |
+| OpenTelemetry  | Tracing          |
 
 ---
 
@@ -240,21 +250,21 @@ Deployment and operations guide.
 
 ### Performance Targets
 
-| Metric | Target |
-|--------|--------|
-| API P99 Latency | < 200ms |
-| Availability | 99.9% |
-| Error Rate | < 0.1% |
+| Metric             | Target  |
+| ------------------ | ------- |
+| API P99 Latency    | < 200ms |
+| Availability       | 99.9%   |
+| Error Rate         | < 0.1%  |
 | Time to First Byte | < 100ms |
 
 ### Capacity
 
-| Resource | Limit |
-|----------|-------|
-| API Requests | 1000/min |
-| Database Connections | 50 |
-| Redis Operations | 10,000/s |
-| Background Events | 500/min |
+| Resource             | Limit    |
+| -------------------- | -------- |
+| API Requests         | 1000/min |
+| Database Connections | 50       |
+| Redis Operations     | 10,000/s |
+| Background Events    | 500/min  |
 
 ---
 
@@ -328,4 +338,4 @@ For questions about this documentation:
 
 ---
 
-*This documentation is generated from source code analysis and maintained by the FairArena Engineering Team.*
+_This documentation is generated from source code analysis and maintained by the FairArena Engineering Team._

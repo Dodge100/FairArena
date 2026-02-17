@@ -82,7 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         resolvedTheme: effectiveTheme,
         isDark,
         toggleTheme,
-        setTheme
+        setTheme,
       }}
     >
       {children}

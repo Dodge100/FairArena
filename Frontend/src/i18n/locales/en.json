@@ -356,14 +356,14 @@
       ]
     },
     "exceptions": {
-     "h1": "Limited Exceptions",
-     "list": [
+      "h1": "Limited Exceptions",
+      "list": [
         "Duplicate or accidental payments",
         "Third-party service complications",
         "Extended time periods since purchase",
         "Complete and prolonged platform unavailability exceeding thirty (30) consecutive days",
         "Critical security compromise directly affecting payment processing systems"
-     ]
+      ]
     },
     "contact": {
       "title": "Refund Request Submission",
@@ -774,7 +774,11 @@
         "respectful": {
           "title": "Be Respectful",
           "desc": "Treat all community members with respect and kindness. Harassment, hate speech, and discrimination will not be tolerated.",
-          "examples": ["Use inclusive language", "Respect different perspectives", "Be constructive in criticism"]
+          "examples": [
+            "Use inclusive language",
+            "Respect different perspectives",
+            "Be constructive in criticism"
+          ]
         },
         "collaborate": {
           "title": "Collaborate & Share",
@@ -1360,8 +1364,7 @@
         ]
       }
     }
-  }
-  ,
+  },
   "securityAcknowledgments": {
     "title": "Security Hall of Fame",
     "subtitle": "We would like to thank the following individuals for responsibly disclosing security vulnerabilities and helping us make FairArena safer for everyone.",

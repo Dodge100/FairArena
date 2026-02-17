@@ -29,12 +29,14 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) stand
 ```
 
 Examples:
+
 - `feat: add dark mode support`
 - `fix: resolve login button not working on mobile`
 - `docs: update README with new API details`
 - `chore: update dependencies`
 
 Common types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -74,6 +76,7 @@ If pre-commit hooks fail:
 3. Stage the fixed files and try committing again
 
 Common issues:
+
 - ESLint errors: Run `npm run lint:fix` to automatically fix many issues
 - Prettier formatting: Run `npm run format` to format your code
 - TypeScript errors: Run `npm run typecheck` to check for type errors
@@ -118,6 +121,7 @@ Your branch name **must** match one of the following patterns:
 Where `<something>` is a short, descriptive name using lowercase letters, numbers, and dashes (e.g., `feature/login-page`, `fix/button-bug`).
 
 #### Examples of Valid Branch Names
+
 - `feature/add-dark-mode`
 - `fix/navbar-overlap`
 - `chore/update-deps`
@@ -127,6 +131,7 @@ Where `<something>` is a short, descriptive name using lowercase letters, number
 - `release/v1.0.0`
 
 #### Examples of Invalid Branch Names
+
 - `dev`
 - `my-feature`
 - `feature_foo`
@@ -134,15 +139,19 @@ Where `<something>` is a short, descriptive name using lowercase letters, number
 - `feature`
 
 ### Why This Matters
+
 - **Clarity:** Makes it easy to see what each branch is for at a glance
 - **Automation:** Enables better CI/CD and release automation
 - **Consistency:** Keeps the repo clean and easy to navigate
 
 ### Troubleshooting
+
 - If you are sure you need to bypass this check (not recommended), you can use:
+
   ```bash
   git commit --no-verify
   ```
+
   But this should only be used in rare, justified cases.
 
 - If you have trouble renaming your branch, see the [git branch documentation](https://git-scm.com/docs/git-branch#_rename_a_branch).

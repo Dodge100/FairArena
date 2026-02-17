@@ -119,14 +119,15 @@ export const paymentSuccessEmailTemplate = (params: {
                   <td align="center">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        ${params.invoiceUrl
-      ? `
+                        ${
+                          params.invoiceUrl
+                            ? `
                         <td style="padding: 0 8px 0 0;">
                           <a href="${params.invoiceUrl}" style="display: inline-block; padding: 14px 28px; background-color: #1a1a1a; color: #d9ff00; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px; border: 2px solid #1a1a1a;">Download Invoice</a>
                         </td>
                         `
-      : ''
-    }
+                            : ''
+                        }
                         <td style="padding: 0 8px;">
                           <a href="${creditsUrl}" style="display: inline-block; padding: 14px 28px; background-color: ${params.invoiceUrl ? 'transparent' : '#1a1a1a'}; color: ${params.invoiceUrl ? '#1a1a1a' : '#d9ff00'}; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px; border: 2px solid ${params.invoiceUrl ? '#e5e7eb' : '#1a1a1a'};">View Credits</a>
                         </td>

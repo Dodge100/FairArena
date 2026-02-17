@@ -70,17 +70,14 @@ export class PaymentService {
 
   async createOrder(planId: string, token: string): Promise<CreateOrderResponse> {
     try {
-      return await apiRequest<CreateOrderResponse>(
-        `${this.baseURL}/api/v1/payments/create-order`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ planId }),
-        }
-      );
+      return await apiRequest<CreateOrderResponse>(`${this.baseURL}/api/v1/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ planId }),
+      });
     } catch (error) {
       console.error('Create order error:', error);
       throw error;
@@ -101,7 +98,7 @@ export class PaymentService {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(paymentData),
-        }
+        },
       );
     } catch (error) {
       console.error('Verify payment error:', error);

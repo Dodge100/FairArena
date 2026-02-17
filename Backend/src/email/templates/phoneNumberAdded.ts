@@ -1,6 +1,9 @@
 import { ENV } from '../../config/env.js';
 
-export const phoneNumberAddedEmailTemplate = (params: { userName: string; phoneNumber: string }): string => {
+export const phoneNumberAddedEmailTemplate = (params: {
+  userName: string;
+  phoneNumber: string;
+}): string => {
   const dashboardUrl = ENV.FRONTEND_URL + '/dashboard';
   const securityUrl = ENV.FRONTEND_URL + '/settings/security';
   const supportUrl = ENV.FRONTEND_URL + '/support';

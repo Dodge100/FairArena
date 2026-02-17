@@ -7,7 +7,7 @@ import {
   getWebAuthnOptions,
   sendOtp,
   verifyOtp,
-  verifyWebAuthn
+  verifyWebAuthn,
 } from '../../controllers/v1/accountSettingsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
@@ -287,4 +287,3 @@ router.post('/webauthn/options', protectRoute, getWebAuthnOptions);
 router.post('/webauthn/verify', protectRoute, verifyWebAuthn);
 
 export default router;
-

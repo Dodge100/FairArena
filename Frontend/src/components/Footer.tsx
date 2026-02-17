@@ -14,9 +14,10 @@ function Footer() {
     <footer
       className={`
         w-full pt-16 pb-8 px-6 md:px-12 lg:px-20 border-t
-        ${isDark
-          ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
-          : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
+        ${
+          isDark
+            ? 'bg-linear-to-b from-[#1a1a1a] to-[#0f0f0f] border-white/10 text-neutral-400'
+            : 'bg-linear-to-b from-[#ffffff] to-[#f2f2f2] border-black/10 text-neutral-700'
         }
       `}
     >
@@ -25,18 +26,29 @@ function Footer() {
         {/* Brand + Social */}
         <div>
           <Link to="/">
-            <LazyImage src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin" className="w-30 -mb-10 -mt-10" alt="FairArena Logo" />
+            <LazyImage
+              src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9764002453409e98/view?project=69735edc00127d2033d8&mode=admin"
+              className="w-30 -mb-10 -mt-10"
+              alt="FairArena Logo"
+            />
           </Link>
           <p
-            className={`mt-4 text-sm leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'
-              }`}
+            className={`mt-4 text-sm leading-relaxed ${
+              isDark ? 'text-neutral-400' : 'text-neutral-600'
+            }`}
           >
             {t('footer.brand.desc')}
           </p>
 
           {/* Social Icons */}
           <div className="flex items-center gap-4 mt-5">
-            <a href="https://github.com/FairArena" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+            <a
+              href="https://github.com/FairArena"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
+            >
               <Github
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -44,7 +56,13 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://www.linkedin.com/company/fairarena" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
+            <a
+              href="https://www.linkedin.com/company/fairarena"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              title="LinkedIn"
+            >
               <Linkedin
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -52,7 +70,13 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://www.instagram.com/fair.arena" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+            <a
+              href="https://www.instagram.com/fair.arena"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              title="Instagram"
+            >
               <Instagram
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -60,7 +84,13 @@ function Footer() {
                 `}
               />
             </a>
-            <a href="https://x.com/real_fairarena" target="_blank" rel="noopener noreferrer" aria-label="Twitter" title="Twitter">
+            <a
+              href="https://x.com/real_fairarena"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+              title="Twitter"
+            >
               <Twitter
                 className={`
                   w-5 h-5 cursor-pointer duration-200 hover:scale-110
@@ -73,7 +103,9 @@ function Footer() {
 
         {/* Menu */}
         <div>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{t('footer.menu.title')}</h3>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+            {t('footer.menu.title')}
+          </h3>
           <ul className="mt-4 space-y-2 text-sm">
             {[
               { label: t('footer.menu.items.about'), path: 'about' },
@@ -81,7 +113,11 @@ function Footer() {
               { label: t('footer.menu.items.changelog'), path: 'changelog' },
               { label: t('footer.menu.items.faq'), path: 'faq' },
               { label: t('footer.menu.items.pricing'), path: '#pricing', hash: true },
-              { label: t('footer.menu.items.status'), path: 'https://status.fairarena.app', badge: true },
+              {
+                label: t('footer.menu.items.status'),
+                path: 'https://status.fairarena.app',
+                badge: true,
+              },
             ].map((item) => (
               <li
                 key={item.path}
@@ -97,7 +133,13 @@ function Footer() {
                   </span>
                 )}
                 {item.hash || item.path.startsWith('http') ? (
-                  <a href={item.path} target={item.path.startsWith('http') ? '_blank' : undefined} rel={item.path.startsWith('http') ? 'noopener noreferrer' : undefined}>{item.label}</a>
+                  <a
+                    href={item.path}
+                    target={item.path.startsWith('http') ? '_blank' : undefined}
+                    rel={item.path.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {item.label}
+                  </a>
                 ) : (
                   <Link to={`/${item.path}`}>{item.label}</Link>
                 )}
@@ -113,10 +155,21 @@ function Footer() {
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
             {[
-              { label: t('footer.resources.items.docs'), path: 'https://docs.fairarena.app', external: true },
-              { label: t('footer.resources.items.blog'), path: 'https://blogs.fairarena.app', external: true },
+              {
+                label: t('footer.resources.items.docs'),
+                path: 'https://docs.fairarena.app',
+                external: true,
+              },
+              {
+                label: t('footer.resources.items.blog'),
+                path: 'https://blogs.fairarena.app',
+                external: true,
+              },
               { label: t('footer.resources.items.accessibility'), path: 'accessibility' },
-              { label: t('footer.resources.items.communityGuidelines'), path: 'community-guidelines' },
+              {
+                label: t('footer.resources.items.communityGuidelines'),
+                path: 'community-guidelines',
+              },
               { label: t('footer.resources.items.securityPolicy'), path: 'security-policy' },
             ].map((item) => (
               <li
@@ -156,7 +209,9 @@ function Footer() {
                 >
                   {t('footer.contact.support')}
                 </Link>
-                <div className={`text-xs mt-0.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                <div
+                  className={`text-xs mt-0.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+                >
                   {t('footer.contact.responseTime')}
                 </div>
               </div>

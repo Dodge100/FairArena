@@ -8,8 +8,8 @@ import logger from '../utils/logger.js';
 authenticator.options = {
   digits: 6,
   step: 30,
-  window: 3,  // ±90 seconds tolerance - fixes most sync issues without hacks [web:19][web:24]
-  crypto  // Use Node's crypto for consistency
+  window: 3, // ±90 seconds tolerance - fixes most sync issues without hacks [web:19][web:24]
+  crypto, // Use Node's crypto for consistency
 };
 
 // Encryption key - MUST be 32-byte env var in production (no fallback!)
@@ -22,7 +22,7 @@ function getEncryptionKey(): Buffer {
 }
 
 const ENCRYPTION_KEY = getEncryptionKey();
-const IV_LENGTH = 12;  // GCM recommends 12 bytes [web:21]
+const IV_LENGTH = 12; // GCM recommends 12 bytes [web:21]
 
 /** Encrypt a string using AES-256-GCM */
 export function encryptSecret(text: string): string {
@@ -67,7 +67,11 @@ export function generateEncryptedTOTPSecret(): { secret: string; encryptedSecret
 }
 
 /** Generate QR code URI for authenticator apps */
-export function generateTOTPUri(secret: string, email: string, issuer: string = 'FairArena'): string {
+export function generateTOTPUri(
+  secret: string,
+  email: string,
+  issuer: string = 'FairArena',
+): string {
   return authenticator.keyuri(email, issuer, secret);
 }
 
@@ -78,7 +82,7 @@ export async function generateQRCode(secret: string, email: string): Promise<str
     return await QRCode.toDataURL(uri, {
       width: 256,
       margin: 2,
-      color: { dark: '#000000', light: '#FFFFFF' }
+      color: { dark: '#000000', light: '#FFFFFF' },
     });
   } catch (error) {
     logger.error('QR code generation failed', { error });
@@ -93,9 +97,9 @@ export function verifyTOTPCode(token: string, encryptedSecret: string): boolean 
     const isValid = authenticator.verify({ token, secret });
     if (!isValid) {
       logger.warn('TOTP verification failed', {
-        token: token.slice(-2),  // Partial for logs
+        token: token.slice(-2), // Partial for logs
         serverTime: new Date().toISOString(),
-        window: authenticator.options.window
+        window: authenticator.options.window,
       });
     }
     return isValid;
@@ -107,11 +111,12 @@ export function verifyTOTPCode(token: string, encryptedSecret: string): boolean 
 
 /** Generate stronger backup codes (10 chars, alphanumeric) */
 export function generateBackupCodes(count: number = 10): string[] {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // Diceware-style, no I/O/0/1
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Diceware-style, no I/O/0/1
   const codes: string[] = [];
   for (let i = 0; i < count; i++) {
     let code = '';
-    for (let j = 0; j < 10; j++) {  // 10 chars ~60 bits entropy
+    for (let j = 0; j < 10; j++) {
+      // 10 chars ~60 bits entropy
       code += chars[crypto.randomInt(0, chars.length)];
     }
     codes.push(code);
@@ -121,13 +126,13 @@ export function generateBackupCodes(count: number = 10): string[] {
 
 /** Hash backup codes for storage (SHA-256) */
 export function hashBackupCodes(codes: string[]): string[] {
-  return codes.map(code => crypto.createHash('sha256').update(code).digest('hex'));
+  return codes.map((code) => crypto.createHash('sha256').update(code).digest('hex'));
 }
 
 /** Verify a backup code against stored hashes */
 export function verifyBackupCode(code: string, hashedCodes: string[]): number {
   const hashedInput = crypto.createHash('sha256').update(code).digest('hex');
-  return hashedCodes.findIndex(hash => hash === hashedInput);
+  return hashedCodes.findIndex((hash) => hash === hashedInput);
 }
 
 /** Format backup codes for display */
@@ -152,6 +157,6 @@ export async function generateMFASetup(email: string): Promise<{
     encryptedSecret,
     qrCode,
     backupCodes: backupCodes.map(formatBackupCode),
-    hashedBackupCodes
+    hashedBackupCodes,
   };
 }

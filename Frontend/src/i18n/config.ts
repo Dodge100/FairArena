@@ -9,27 +9,27 @@ import hi from './locales/hi.json';
 
 // Translation resources
 const resources = {
-    en: { translation: en },
-    es: { translation: es },
-    hi: { translation: hi },
-    fr: { translation: fr },
-    de: { translation: de },
+  en: { translation: en },
+  es: { translation: es },
+  hi: { translation: hi },
+  fr: { translation: fr },
+  de: { translation: de },
 };
 
 i18n
-    .use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        resources,
-        fallbackLng: 'en',
-        debug: false,
-        interpolation: {
-            escapeValue: false,
-        },
-        detection: {
-            order: ['localStorage', 'navigator'],
-            caches: ['localStorage'],
-        },
-    });
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'en',
+    debug: false,
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+    },
+  });
 
 export default i18n;

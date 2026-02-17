@@ -10,8 +10,8 @@ import { UpdateOrganizationSettings } from '../../controllers/v1/organization/up
 import * as ssoController from '../../controllers/v1/ssoConfigController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import {
-    loadOrganizationPermissions,
-    requirePermission,
+  loadOrganizationPermissions,
+  requirePermission,
 } from '../../middleware/organizationPermissions.middleware.js';
 import { rateLimiters } from '../../middleware/organizationRateLimit.middleware.js';
 
@@ -24,10 +24,21 @@ router.post('/:orgId/sso-config/scim-token', protectRoute, ssoController.regener
 router.post('/:orgId/sso-config/test', protectRoute, ssoController.testSSOConnection);
 
 // Domain verification
-router.get('/:orgId/sso-config/verification-status', protectRoute, ssoController.getVerificationStatus);
-router.post('/:orgId/sso-config/verify-domain/initiate', protectRoute, ssoController.initiateDomainVerification);
-router.post('/:orgId/sso-config/verify-domain/check', protectRoute, ssoController.checkDomainVerification);
-
+router.get(
+  '/:orgId/sso-config/verification-status',
+  protectRoute,
+  ssoController.getVerificationStatus,
+);
+router.post(
+  '/:orgId/sso-config/verify-domain/initiate',
+  protectRoute,
+  ssoController.initiateDomainVerification,
+);
+router.post(
+  '/:orgId/sso-config/verify-domain/check',
+  protectRoute,
+  ssoController.checkDomainVerification,
+);
 
 /**
  * @swagger
@@ -189,12 +200,12 @@ router.post('/create/new', protectRoute, rateLimiters.createOrganization, Create
  */
 router.get('/:slug', protectRoute, rateLimiters.readOrganization, GetOrganizationDetails);
 router.delete(
-    '/:slug',
-    protectRoute,
-    rateLimiters.deleteOrganization,
-    loadOrganizationPermissions,
-    requirePermission('organization', 'delete'),
-    DeleteOrganization,
+  '/:slug',
+  protectRoute,
+  rateLimiters.deleteOrganization,
+  loadOrganizationPermissions,
+  requirePermission('organization', 'delete'),
+  DeleteOrganization,
 );
 
 /**
@@ -244,12 +255,12 @@ router.delete(
  *         $ref: '#/components/responses/ServerError'
  */
 router.get(
-    '/:slug/teams',
-    protectRoute,
-    rateLimiters.readOrganization,
-    loadOrganizationPermissions,
-    requirePermission('teams', 'view'),
-    GetOrganizationTeams,
+  '/:slug/teams',
+  protectRoute,
+  rateLimiters.readOrganization,
+  loadOrganizationPermissions,
+  requirePermission('teams', 'view'),
+  GetOrganizationTeams,
 );
 
 /**
@@ -301,12 +312,12 @@ router.get(
  *         $ref: '#/components/responses/ServerError'
  */
 router.get(
-    '/:slug/members',
-    protectRoute,
-    rateLimiters.readOrganization,
-    loadOrganizationPermissions,
-    requirePermission('members', 'view'),
-    GetOrganizationMembers,
+  '/:slug/members',
+  protectRoute,
+  rateLimiters.readOrganization,
+  loadOrganizationPermissions,
+  requirePermission('members', 'view'),
+  GetOrganizationMembers,
 );
 
 /**
@@ -370,12 +381,12 @@ router.get(
  *         $ref: '#/components/responses/ServerError'
  */
 router.put(
-    '/:slug/settings',
-    protectRoute,
-    rateLimiters.updateOrganization,
-    loadOrganizationPermissions,
-    requirePermission('organization', 'edit'),
-    UpdateOrganizationSettings,
+  '/:slug/settings',
+  protectRoute,
+  rateLimiters.updateOrganization,
+  loadOrganizationPermissions,
+  requirePermission('organization', 'edit'),
+  UpdateOrganizationSettings,
 );
 
 /**
@@ -452,12 +463,12 @@ router.put(
  *         $ref: '#/components/responses/ServerError'
  */
 router.get(
-    '/:slug/audit-logs',
-    protectRoute,
-    rateLimiters.auditLogs,
-    loadOrganizationPermissions,
-    requirePermission('audit', 'view'),
-    GetOrganizationAuditLogs,
+  '/:slug/audit-logs',
+  protectRoute,
+  rateLimiters.auditLogs,
+  loadOrganizationPermissions,
+  requirePermission('audit', 'view'),
+  GetOrganizationAuditLogs,
 );
 
 export default router;

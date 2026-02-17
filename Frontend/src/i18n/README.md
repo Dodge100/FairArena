@@ -1,7 +1,9 @@
 # Internationalization (i18n) Setup
 
 ## Overview
+
 The FairArena home page now supports **5 languages** with full accessibility:
+
 - 🇬🇧 English (en)
 - 🇪🇸 Spanish (es)
 - 🇮🇳 Hindi (hi)
@@ -11,6 +13,7 @@ The FairArena home page now supports **5 languages** with full accessibility:
 ## Features
 
 ### ✅ Accessibility (WCAG 2.1 AA Compliant)
+
 - **ARIA Labels**: All interactive elements have proper `aria-label` attributes
 - **Semantic HTML**: Uses `<section>`, `<header>`, `<nav>` with proper heading hierarchy
 - **Keyboard Navigation**: Full keyboard support with visible focus indicators
@@ -19,6 +22,7 @@ The FairArena home page now supports **5 languages** with full accessibility:
 - **Focus Management**: Focus rings with `focus:ring-2` and `focus:ring-offset-2`
 
 ### 🌍 Internationalization
+
 - **Auto-detection**: Automatically detects user's browser language
 - **Persistence**: Saves language preference to localStorage
 - **Fallback**: Defaults to English if translation not available
@@ -41,10 +45,12 @@ src/
 ### Adding New Languages
 
 1. **Add translation to `src/i18n/config.ts`**:
+
 ```typescript
 const resources = {
   // ... existing languages
-  ja: {  // Japanese
+  ja: {
+    // Japanese
     translation: {
       home: {
         hero: {
@@ -58,6 +64,7 @@ const resources = {
 ```
 
 2. **Add language to selector in `src/components/LanguageSelector.tsx`**:
+
 ```typescript
 const languages = [
   // ... existing languages
@@ -111,6 +118,7 @@ function MyComponent() {
 ## Testing
 
 ### Manual Testing
+
 1. **Keyboard Navigation**: Tab through all interactive elements
 2. **Screen Reader**: Test with NVDA (Windows) or VoiceOver (Mac)
 3. **Language Switching**: Change language and verify all text updates
@@ -118,6 +126,7 @@ function MyComponent() {
 5. **Color Contrast**: Use browser DevTools to check contrast ratios
 
 ### Automated Testing
+
 ```bash
 # Install axe-core for accessibility testing
 pnpm add -D @axe-core/react
@@ -127,18 +136,21 @@ pnpm test:a11y
 ```
 
 ## Browser Support
+
 - Chrome/Edge (latest 2 versions)
 - Firefox (latest 2 versions)
 - Safari (latest 2 versions)
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
 ## Performance
+
 - Translations are bundled (no runtime fetching)
 - Language detection happens once on mount
 - No layout shift when changing languages
 - Optimized with React.memo where appropriate
 
 ## Future Enhancements
+
 - [ ] Add more languages (Portuguese, Chinese, Japanese, Korean)
 - [ ] Implement lazy loading for translation files
 - [ ] Add RTL (Right-to-Left) support for Arabic/Hebrew

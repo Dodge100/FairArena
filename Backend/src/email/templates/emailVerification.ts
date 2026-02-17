@@ -1,8 +1,7 @@
-
 export const emailVerificationTemplate = (params: {
   firstName: string;
   verificationUrl: string;
-  expiryHours: number
+  expiryHours: number;
 }): string => {
   const currentYear = new Date().getFullYear();
 

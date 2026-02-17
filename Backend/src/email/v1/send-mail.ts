@@ -43,7 +43,7 @@ const resend = new Resend(ENV.RESEND_API_KEY);
 
 const notificationapi = new Pingram({
   apiKey: ENV.PINGRAM_API_KEY,
-  baseUrl: 'https://api.pingram.io'
+  baseUrl: 'https://api.pingram.io',
 });
 
 // Create nodemailer transporter
@@ -204,7 +204,8 @@ type NewDeviceLoginParams = {
   ipAddress: string;
   location: string;
   securityUrl: string;
-}; type MfaOtpParams = {
+};
+type MfaOtpParams = {
   firstName: string;
   otp: string;
   expiryMinutes: number;
@@ -317,9 +318,13 @@ export const emailTemplates = {
   'passkey-added': passkeyAddedTemplate as (params: PasskeyAddedParams) => string,
   'passkey-removed': passkeyRemovedTemplate as (params: PasskeyRemovedParams) => string,
   'security-key-added': securityKeyAddedTemplate as (params: SecurityKeyAddedParams) => string,
-  'security-key-removed': securityKeyRemovedTemplate as (params: SecurityKeyRemovedParams) => string,
+  'security-key-removed': securityKeyRemovedTemplate as (
+    params: SecurityKeyRemovedParams,
+  ) => string,
   'backup-code-used': backupCodeUsedTemplate as (params: BackupCodeUsedParams) => string,
-  'oauth-app-authorized': oauthAppAuthorizedTemplate as (params: OAuthAppAuthorizedParams) => string,
+  'oauth-app-authorized': oauthAppAuthorizedTemplate as (
+    params: OAuthAppAuthorizedParams,
+  ) => string,
 };
 
 type TemplateType = keyof typeof emailTemplates;
@@ -384,13 +389,16 @@ export async function sendEmail<T extends TemplateType>(
             fromName: 'FairArena',
             attachments:
               attachments && attachments.length > 0
-                ? attachments.map((att) => ({
-                  filename: att.filename,
-                  content: Buffer.isBuffer(att.content)
-                    ? att.content.toString('base64')
-                    : att.content,
-                  contentType: att.contentType || 'application/octet-stream',
-                } as any))
+                ? attachments.map(
+                    (att) =>
+                      ({
+                        filename: att.filename,
+                        content: Buffer.isBuffer(att.content)
+                          ? att.content.toString('base64')
+                          : att.content,
+                        contentType: att.contentType || 'application/octet-stream',
+                      }) as any,
+                  )
                 : undefined,
           },
         },

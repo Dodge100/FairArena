@@ -47,12 +47,18 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
   const { isSignedIn } = useAuthState();
   const [currentOrganization, setCurrentOrganizationState] = useState<Organization | null>(null);
 
-  const { data: organizations = [], isLoading: loading, refetch } = useQuery({
+  const {
+    data: organizations = [],
+    isLoading: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
       const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
       if (!isSignedIn) return [];
-      const data = await apiRequest<{ organizations: Organization[] }>(`${API_BASE}/api/v1/organization`);
+      const data = await apiRequest<{ organizations: Organization[] }>(
+        `${API_BASE}/api/v1/organization`,
+      );
       return data.organizations || [];
     },
     enabled: isSignedIn,
@@ -82,9 +88,5 @@ export const OrganizationProvider = ({ children }: OrganizationProviderProps) =>
     refreshOrganizations,
   };
 
-  return (
-    <OrganizationContext.Provider value={value}>
-      {children}
-    </OrganizationContext.Provider>
-  );
+  return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 };

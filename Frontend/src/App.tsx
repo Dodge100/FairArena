@@ -1,7 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
-import { LazyErrorBoundary, ModalLoadingFallback, PageLoadingFallback } from './components/LazyComponents';
+import {
+  LazyErrorBoundary,
+  ModalLoadingFallback,
+  PageLoadingFallback,
+} from './components/LazyComponents';
 import { useCookieConsent } from './contexts/CookieConsentContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import ProtectedLayout from './layout/ProtectedLayout';
@@ -11,7 +15,7 @@ import { useAuth, useToken } from './lib/auth';
 import { initializeCsrfToken } from './utils/csrfToken';
 
 // Critical components - loaded immediately
-import { FrontendMismatch } from "./components/FrontendMismatch";
+import { FrontendMismatch } from './components/FrontendMismatch';
 import NotFound from './components/NotFound';
 import AnalyticsPage from './pages/Analytics';
 import BannedAccount from './pages/BannedAccount';
@@ -24,13 +28,21 @@ import ProjectsPage from './pages/Projects';
 import Signin from './pages/Signin';
 
 // Defer analytics to reduce initial bundle
-const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
-const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
+const Analytics = lazy(() =>
+  import('@vercel/analytics/react').then((m) => ({ default: m.Analytics })),
+);
+const SpeedInsights = lazy(() =>
+  import('@vercel/speed-insights/react').then((m) => ({ default: m.SpeedInsights })),
+);
 
 // Lazy load modals
 const PricingModal = lazy(() => import('./components/PricingModal'));
-const CookieConsentModal = lazy(() => import('./components/CookieConsentModal').then(m => ({ default: m.CookieConsentModal })));
-const GoogleOneTap = lazy(() => import('./components/GoogleOneTap').then(m => ({ default: m.GoogleOneTap })));
+const CookieConsentModal = lazy(() =>
+  import('./components/CookieConsentModal').then((m) => ({ default: m.CookieConsentModal })),
+);
+const GoogleOneTap = lazy(() =>
+  import('./components/GoogleOneTap').then((m) => ({ default: m.GoogleOneTap })),
+);
 const WaitList = lazy(() => import('./components/WaitList'));
 
 // Lazy load public pages
@@ -122,7 +134,7 @@ function App() {
       console.log('%cSTOP!', titleStyle);
       console.log(
         '%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a "hidden feature" or "hack", it is a scam and will give them access to your FairArena account.',
-        textStyle
+        textStyle,
       );
       console.log('%cSee https://en.wikipedia.org/wiki/Self-XSS for more information.', textStyle);
     }, 1000);
@@ -227,229 +239,362 @@ function App() {
             <Route path="/maintenance" element={<Maintenance />} />
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/why-choose-us" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <HowItWorks />
-                </Suspense>
-              } />
-              <Route path="/about" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <About />
-                </Suspense>
-              } />
-              <Route path="/changelog" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Changelog />
-                </Suspense>
-              } />
-              <Route path="/faq" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <FAQ />
-                </Suspense>
-              } />
-              <Route path="/accessibility" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Accessibility />
-                </Suspense>
-              } />
-              <Route path="/community-guidelines" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <CommunityGuidelines />
-                </Suspense>
-              } />
-              <Route path="/security-policy" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <SecurityPolicy />
-                </Suspense>
-              } />
-              <Route path="/security-acknowledgments" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <SecurityAcknowledgments />
-                </Suspense>
-              } />
-              <Route path="/dmca" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <DMCA />
-                </Suspense>
-              } />
-              <Route path="/privacy-policy" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <PrivacyPolicy />
-                </Suspense>
-              } />
-              <Route path="/cookie-policy" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <CookiePolicy />
-                </Suspense>
-              } />
-              <Route path="/support" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Support />
-                </Suspense>
-              } />
-              <Route path="/refund" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <RefundPage />
-                </Suspense>
-              } />
-              <Route path="/terms-and-conditions" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <TermsAndConditions />
-                </Suspense>
-              } />
+              <Route
+                path="/why-choose-us"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <HowItWorks />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <About />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/changelog"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Changelog />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/faq"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <FAQ />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/accessibility"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Accessibility />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/community-guidelines"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <CommunityGuidelines />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/security-policy"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <SecurityPolicy />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/security-acknowledgments"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <SecurityAcknowledgments />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dmca"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <DMCA />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/privacy-policy"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <PrivacyPolicy />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/cookie-policy"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <CookiePolicy />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/support"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Support />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/refund"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <RefundPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/terms-and-conditions"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <TermsAndConditions />
+                  </Suspense>
+                }
+              />
             </Route>
             <Route path="/dashboard" element={<ProtectedLayout />}>
-              <Route index element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Dashboard />
-                </Suspense>
-              } />
-              <Route path="/dashboard/credits" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <CreditsPage />
-                </Suspense>
-              } />
-              <Route path="/dashboard/credits/verify" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <CreditsVerificationPage />
-                </Suspense>
-              } />
-              <Route path="/dashboard/inbox" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Inbox />
-                </Suspense>
-              } />
-              <Route path="/dashboard/hackathons" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Hackathons />
-                </Suspense>
-              } />
-              <Route path="/dashboard/calendar" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Calendar />
-                </Suspense>
-              } />
-              <Route path="/dashboard/analytics" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <AnalyticsPage />
-                </Suspense>
-              } />
-              <Route path="/dashboard/projects" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <ProjectsPage />
-                </Suspense>
-              } />
-              <Route path="/dashboard/teams" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <TeamsPage />
-                </Suspense>
-              } />
-              <Route path="/dashboard/profile/edit" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <EditProfile />
-                </Suspense>
-              } />
-              <Route path="/dashboard/profile/views" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <ProfileViews />
-                </Suspense>
-              } />
-              <Route path="/dashboard/public-profile" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <MyProfile />
-                </Suspense>
-              } />
-              <Route path="/dashboard/account-settings" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <AccountSettings />
-                </Suspense>
-              } />
-              <Route path="/dashboard/account-settings/logs" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <AccountLogs />
-                </Suspense>
-              } />
-              <Route path="/dashboard/oauth/applications" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <OAuthApplications />
-                </Suspense>
-              } />
-              <Route path="/dashboard/oauth/authorized" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <AuthorizedApps />
-                </Suspense>
-              } />
-              <Route path="/dashboard/device" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <DeviceAuthorization />
-                </Suspense>
-              } />
-              <Route path="/dashboard/support" element={
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <Support />
-                </Suspense>
-              } />
+              <Route
+                index
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Dashboard />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/credits"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <CreditsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/credits/verify"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <CreditsVerificationPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/inbox"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Inbox />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/hackathons"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Hackathons />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/calendar"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Calendar />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/analytics"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AnalyticsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/projects"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <ProjectsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/teams"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <TeamsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/profile/edit"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <EditProfile />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/profile/views"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <ProfileViews />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/public-profile"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <MyProfile />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/account-settings"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AccountSettings />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/account-settings/logs"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AccountLogs />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/oauth/applications"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <OAuthApplications />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/oauth/authorized"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AuthorizedApps />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/device"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <DeviceAuthorization />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/support"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Support />
+                  </Suspense>
+                }
+              />
             </Route>
-            <Route path="/feedback/:feedbackCode" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <Feedback />
-              </Suspense>
-            } />
-            <Route path="/invite/team/:inviteCode" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <TeamInviteAcceptPage />
-              </Suspense>
-            } />
-            <Route path="/profile/:userId" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <PublicProfile />
-              </Suspense>
-            } />
-            <Route path="/profile/:userId/stars" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <ProfileStars />
-              </Suspense>
-            } />
-            <Route path="/waitlist" element={
-              isNewSignupEnabled ? <Navigate to="/signup" replace /> : (
+            <Route
+              path="/feedback/:feedbackCode"
+              element={
                 <Suspense fallback={<PageLoadingFallback />}>
-                  <WaitList />
+                  <Feedback />
                 </Suspense>
-              )
-            } />
+              }
+            />
+            <Route
+              path="/invite/team/:inviteCode"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <TeamInviteAcceptPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/profile/:userId"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <PublicProfile />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/profile/:userId/stars"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ProfileStars />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/waitlist"
+              element={
+                isNewSignupEnabled ? (
+                  <Navigate to="/signup" replace />
+                ) : (
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <WaitList />
+                  </Suspense>
+                )
+              }
+            />
             <Route path="/signin" element={<Signin />} />
-            <Route path="/signup" element={
-              isNewSignupEnabled ? (
+            <Route
+              path="/signup"
+              element={
+                isNewSignupEnabled ? (
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Signup />
+                  </Suspense>
+                ) : (
+                  <Navigate to="/waitlist" replace />
+                )
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
                 <Suspense fallback={<PageLoadingFallback />}>
-                  <Signup />
+                  <ForgotPassword />
                 </Suspense>
-              ) : <Navigate to="/waitlist" replace />
-            } />
-            <Route path="/forgot-password" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <ForgotPassword />
-              </Suspense>
-            } />
-            <Route path="/reset-password/:token" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <ResetPassword />
-              </Suspense>
-            } />
-            <Route path="/verify-email/:token" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <VerifyEmail />
-              </Suspense>
-            } />
-            <Route path="/unsubscribe/:email" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <Unsubscribe />
-              </Suspense>
-            } />
-            <Route path="/oauth/consent" element={
-              <Suspense fallback={<PageLoadingFallback />}>
-                <OAuthConsent />
-              </Suspense>
-            } />
+              }
+            />
+            <Route
+              path="/reset-password/:token"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <ResetPassword />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/verify-email/:token"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <VerifyEmail />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/unsubscribe/:email"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Unsubscribe />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/oauth/consent"
+              element={
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OAuthConsent />
+                </Suspense>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </OnboardingProvider>

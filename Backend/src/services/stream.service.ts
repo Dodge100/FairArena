@@ -4,26 +4,29 @@ import logger from '../utils/logger.js';
 // Global event emitter for stream events
 // Note: This works for single-instance deployments.
 // For multi-instance scaling, this should be replaced with Redis Pub/Sub (ioredis).
-class StreamService extends EventEmitter { }
+class StreamService extends EventEmitter {}
 
 export const streamEmitter = new StreamService();
 
 export interface StreamEventPayload {
-    type: string;
-    data: any;
+  type: string;
+  data: any;
 }
 
 /**
  * Publish an event to a specific session's stream
  */
-export const publishToStream = async (sessionId: string, event: StreamEventPayload): Promise<void> => {
-    try {
-        const channel = `stream:${sessionId}`;
-        streamEmitter.emit(channel, event);
-        logger.debug('Published to stream', { sessionId, type: event.type });
-    } catch (error) {
-        logger.error('Failed to publish to stream', { error, sessionId });
-    }
+export const publishToStream = async (
+  sessionId: string,
+  event: StreamEventPayload,
+): Promise<void> => {
+  try {
+    const channel = `stream:${sessionId}`;
+    streamEmitter.emit(channel, event);
+    logger.debug('Published to stream', { sessionId, type: event.type });
+  } catch (error) {
+    logger.error('Failed to publish to stream', { error, sessionId });
+  }
 };
 
 /**
@@ -31,21 +34,21 @@ export const publishToStream = async (sessionId: string, event: StreamEventPaylo
  * Returns a cleanup function
  */
 export const subscribeToStream = (
-    sessionId: string,
-    callback: (event: StreamEventPayload) => void
-): () => void => {
-    const channel = `stream:${sessionId}`;
+  sessionId: string,
+  callback: (event: StreamEventPayload) => void,
+): (() => void) => {
+  const channel = `stream:${sessionId}`;
 
-    const handler = (event: StreamEventPayload) => {
-        callback(event);
-    };
+  const handler = (event: StreamEventPayload) => {
+    callback(event);
+  };
 
-    streamEmitter.on(channel, handler);
-    logger.debug('Subscribed to stream', { sessionId });
+  streamEmitter.on(channel, handler);
+  logger.debug('Subscribed to stream', { sessionId });
 
-    // Return cleanup function
-    return () => {
-        streamEmitter.off(channel, handler);
-        logger.debug('Unsubscribed from stream', { sessionId });
-    };
+  // Return cleanup function
+  return () => {
+    streamEmitter.off(channel, handler);
+    logger.debug('Unsubscribed from stream', { sessionId });
+  };
 };

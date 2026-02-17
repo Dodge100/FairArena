@@ -863,35 +863,35 @@ flowchart TB
 
 ### All Inngest Events
 
-| Event Name | Trigger | Handler | Data Payload |
-|------------|---------|---------|--------------|
-| `user/sync` | Clerk webhook | syncUser | `{userId, email, firstName, lastName}` |
-| `user/update` | Clerk webhook | updateUser | `{userId, changes}` |
-| `user/delete` | Clerk webhook | deleteUser | `{userId}` |
-| `user/data.export` | API request | exportUserDataHandler | `{userId, format}` |
-| `profile/update` | API request | updateProfileFunction | `{userId, data}` |
-| `profile/view.record` | Profile view | recordProfileView | `{profileId, viewerId}` |
-| `profile/star` | Star action | starProfile | `{profileId, userId}` |
-| `profile/unstar` | Unstar action | unstarProfile | `{profileId, userId}` |
-| `payment/order.created` | Order creation | paymentOrderCreated | `{orderId, userId, planId}` |
-| `payment/verified` | Payment verify | paymentVerified | `{paymentId, userId}` |
-| `payment/webhook.received` | Razorpay webhook | paymentWebhookReceived | `{eventId, eventType, payload}` |
-| `notification/send` | Various | sendNotification | `{userId, type, title, message}` |
-| `notification/mark-read` | API request | markNotificationsAsRead | `{notificationIds}` |
-| `notification/mark-all-read` | API request | markAllNotificationsAsRead | `{userId}` |
-| `notification/delete` | API request | deleteNotifications | `{notificationIds}` |
-| `org/invite.send` | Org invite | sendOrgInviteEmail | `{email, orgId, roleId}` |
-| `team/invite.send` | Team invite | sendTeamInviteEmail | `{email, teamId, roleId}` |
-| `team/invite.process` | Invite processing | processSingleTeamInvite | `{inviteId}` |
-| `team/invite.accept` | Accept invite | processTeamInviteAcceptance | `{code, userId}` |
-| `settings/update` | Settings update | updateSettingsFunction | `{userId, settings}` |
-| `settings/reset` | Settings reset | resetSettingsFunction | `{userId}` |
-| `support/request.created` | Support ticket | supportRequestCreated | `{ticketId, userId}` |
-| `feedback/submit` | Feedback form | processFeedbackSubmission | `{code, rating, message}` |
-| `email/send` | Email trigger | sendEmailHandler | `{to, template, data}` |
-| `cleanup/daily` | Cron (3AM) | dailyCleanup | `{}` |
-| `email/weekly-feedback` | Cron (Sunday) | sendWeeklyFeedbackEmail | `{}` |
+| Event Name                   | Trigger           | Handler                     | Data Payload                           |
+| ---------------------------- | ----------------- | --------------------------- | -------------------------------------- |
+| `user/sync`                  | Clerk webhook     | syncUser                    | `{userId, email, firstName, lastName}` |
+| `user/update`                | Clerk webhook     | updateUser                  | `{userId, changes}`                    |
+| `user/delete`                | Clerk webhook     | deleteUser                  | `{userId}`                             |
+| `user/data.export`           | API request       | exportUserDataHandler       | `{userId, format}`                     |
+| `profile/update`             | API request       | updateProfileFunction       | `{userId, data}`                       |
+| `profile/view.record`        | Profile view      | recordProfileView           | `{profileId, viewerId}`                |
+| `profile/star`               | Star action       | starProfile                 | `{profileId, userId}`                  |
+| `profile/unstar`             | Unstar action     | unstarProfile               | `{profileId, userId}`                  |
+| `payment/order.created`      | Order creation    | paymentOrderCreated         | `{orderId, userId, planId}`            |
+| `payment/verified`           | Payment verify    | paymentVerified             | `{paymentId, userId}`                  |
+| `payment/webhook.received`   | Razorpay webhook  | paymentWebhookReceived      | `{eventId, eventType, payload}`        |
+| `notification/send`          | Various           | sendNotification            | `{userId, type, title, message}`       |
+| `notification/mark-read`     | API request       | markNotificationsAsRead     | `{notificationIds}`                    |
+| `notification/mark-all-read` | API request       | markAllNotificationsAsRead  | `{userId}`                             |
+| `notification/delete`        | API request       | deleteNotifications         | `{notificationIds}`                    |
+| `org/invite.send`            | Org invite        | sendOrgInviteEmail          | `{email, orgId, roleId}`               |
+| `team/invite.send`           | Team invite       | sendTeamInviteEmail         | `{email, teamId, roleId}`              |
+| `team/invite.process`        | Invite processing | processSingleTeamInvite     | `{inviteId}`                           |
+| `team/invite.accept`         | Accept invite     | processTeamInviteAcceptance | `{code, userId}`                       |
+| `settings/update`            | Settings update   | updateSettingsFunction      | `{userId, settings}`                   |
+| `settings/reset`             | Settings reset    | resetSettingsFunction       | `{userId}`                             |
+| `support/request.created`    | Support ticket    | supportRequestCreated       | `{ticketId, userId}`                   |
+| `feedback/submit`            | Feedback form     | processFeedbackSubmission   | `{code, rating, message}`              |
+| `email/send`                 | Email trigger     | sendEmailHandler            | `{to, template, data}`                 |
+| `cleanup/daily`              | Cron (3AM)        | dailyCleanup                | `{}`                                   |
+| `email/weekly-feedback`      | Cron (Sunday)     | sendWeeklyFeedbackEmail     | `{}`                                   |
 
 ---
 
-*This document provides detailed data flow visualizations for all major operations in the FairArena platform.*
+_This document provides detailed data flow visualizations for all major operations in the FairArena platform._

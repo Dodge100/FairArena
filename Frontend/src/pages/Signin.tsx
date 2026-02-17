@@ -102,12 +102,19 @@ export default function Signin() {
     const val = e.target.value;
     if (!val || !val.includes('@')) return;
 
-    setSsoState(p => ({ ...p, checking: true }));
+    setSsoState((p) => ({ ...p, checking: true }));
     try {
-      const res = await publicApiFetch(`${apiUrl}/api/v1/auth/sso/check?email=${encodeURIComponent(val)}`);
+      const res = await publicApiFetch(
+        `${apiUrl}/api/v1/auth/sso/check?email=${encodeURIComponent(val)}`,
+      );
       const data = await res.json();
       if (data.ssoEnabled) {
-        setSsoState({ enabled: true, providerType: data.providerType, loginUrl: data.ssoUrl, checking: false });
+        setSsoState({
+          enabled: true,
+          providerType: data.providerType,
+          loginUrl: data.ssoUrl,
+          checking: false,
+        });
       } else {
         setSsoState({ enabled: false, checking: false });
       }
@@ -732,9 +739,7 @@ export default function Signin() {
     if (mfaPreferences.superSecureAccountEnabled) {
       return (
         <div className="text-center w-full px-4 flex flex-col justify-center h-full">
-          <h1 className="text-3xl font-bold mb-2 text-white">
-            Security Check
-          </h1>
+          <h1 className="text-3xl font-bold mb-2 text-white">Security Check</h1>
           <p className="mb-8 text-neutral-400">
             Super Secure Account enabled. Only security keys are allowed.
           </p>
@@ -801,9 +806,7 @@ export default function Signin() {
       <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full">
         {/* Header */}
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-white">
-            2-Step Verification
-          </h1>
+          <h1 className="text-3xl font-bold mb-2 text-white">2-Step Verification</h1>
 
           <p className="text-center max-w-md mb-2 text-neutral-400">
             {isBackupCode
@@ -815,7 +818,9 @@ export default function Signin() {
 
           {/* Session timer */}
           {timeRemaining > 0 && (
-            <p className={`text-xs ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : 'text-neutral-500'}`}>
+            <p
+              className={`text-xs ${timeRemaining <= 60 ? 'text-orange-500 font-medium animate-pulse' : 'text-neutral-500'}`}
+            >
               Session expires in {formatTimeRemaining(timeRemaining)}
             </p>
           )}
@@ -872,7 +877,9 @@ export default function Signin() {
                 className="w-full px-4 py-5 rounded-2xl border-2 transition-all font-mono text-center text-3xl tracking-[0.5em] bg-white/5 text-white border-neutral-800 focus:border-[#DDEF00] focus:bg-neutral-900 focus:outline-none focus:ring-4 focus:ring-[#DDEF00]/10 placeholder:text-neutral-700"
               />
               {mfaSession.attemptsRemaining < 5 && (
-                <p className={`text-xs mt-3 text-center ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : 'text-neutral-500'}`}>
+                <p
+                  className={`text-xs mt-3 text-center ${mfaSession.attemptsRemaining <= 2 ? 'text-orange-500' : 'text-neutral-500'}`}
+                >
                   {mfaSession.attemptsRemaining} attempt
                   {mfaSession.attemptsRemaining !== 1 ? 's' : ''} remaining
                 </p>
@@ -1129,12 +1136,7 @@ export default function Signin() {
       />
 
       <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg
-          className="w-8 h-8 text-red-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
+        <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1144,9 +1146,7 @@ export default function Signin() {
         </svg>
       </div>
 
-      <h1 className="text-2xl font-bold mb-3 text-white">
-        Device Not Supported
-      </h1>
+      <h1 className="text-2xl font-bold mb-3 text-white">Device Not Supported</h1>
 
       <p className="mb-8 text-neutral-400">
         This account requires a security key for verification, but your current device or browser
@@ -1154,12 +1154,10 @@ export default function Signin() {
       </p>
 
       <div className="p-4 rounded-xl text-left text-sm mb-8 bg-neutral-900 border border-neutral-800">
-        <p className="font-medium mb-1 text-neutral-200">
-          Recommended Action:
-        </p>
+        <p className="font-medium mb-1 text-neutral-200">Recommended Action:</p>
         <p className="text-neutral-400">
-          Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a
-          different device.
+          Please sign in using a supported OAuth provider (Google, GitHub, etc.) or use a different
+          device.
         </p>
       </div>
 
@@ -1181,12 +1179,8 @@ export default function Signin() {
           className="h-10 mx-auto mb-6"
           alt="FairArena Logo"
         />
-        <h1 className="text-3xl font-bold mb-2 text-white">
-          Welcome back
-        </h1>
-        <p className="text-neutral-400">
-          Sign in to your FairArena account
-        </p>
+        <h1 className="text-3xl font-bold mb-2 text-white">Welcome back</h1>
+        <p className="text-neutral-400">Sign in to your FairArena account</p>
       </div>
 
       {/* Primary OAuth - Google */}
@@ -1251,7 +1245,12 @@ export default function Signin() {
             className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1zm10 0h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V9a1 1 0 011-1zM5 8v4m4 0V8m6 0v4m4 0V8m-6 11v4m-2 0h2"
+              />
             </svg>
             QR Code
           </button>
@@ -1261,8 +1260,18 @@ export default function Signin() {
             disabled={isLoading}
             className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"
+              />
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 11V8a4 4 0 118 0v3" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 21a8 8 0 0116 0" />
             </svg>
@@ -1273,9 +1282,19 @@ export default function Signin() {
 
       {!showQRDialog && !showDeviceAuth && (
         <div className="flex gap-3 mb-4">
-          <button onClick={() => setShowQRDialog(true)} className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Sign in with QR</button>
+          <button
+            onClick={() => setShowQRDialog(true)}
+            className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+          >
+            Sign in with QR
+          </button>
           <span className="text-neutral-700">|</span>
-          <button onClick={() => setShowDeviceAuth(true)} className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Device Code</button>
+          <button
+            onClick={() => setShowDeviceAuth(true)}
+            className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+          >
+            Device Code
+          </button>
         </div>
       )}
 
@@ -1285,9 +1304,7 @@ export default function Signin() {
           <div className="w-full border-t border-neutral-200"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase tracking-wide">
-          <span className="px-4 bg-[#0a0a0a] text-neutral-500">
-            Or continue with email
-          </span>
+          <span className="px-4 bg-[#0a0a0a] text-neutral-500">Or continue with email</span>
         </div>
       </div>
 
@@ -1406,9 +1423,20 @@ export default function Signin() {
         <div className="mt-8 pt-6 border-t border-neutral-800 text-center">
           <p className="text-xs text-neutral-600">
             By signing in, you agree to our{' '}
-            <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
+            <Link
+              to="/terms-and-conditions"
+              className="hover:text-white transition-colors underline decoration-neutral-700"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              to="/privacy-policy"
+              className="hover:text-white transition-colors underline decoration-neutral-700"
+            >
+              Privacy Policy
+            </Link>
+            .
           </p>
         </div>
       </form>
@@ -1451,10 +1479,10 @@ export default function Signin() {
             subtitle="Manage your projects, track progress, and collaborate with your team in one centralized platform."
             icon={<Shield className="w-10 h-10 text-black font-bold" />}
             features={[
-              { icon: Shield, text: "Secure Access", desc: "MFA Protected" },
-              { icon: LayoutDashboard, text: "Smart Dashboard", desc: "Project overview" },
-              { icon: RefreshCw, text: "Live Updates", desc: "Real-time sync" },
-              { icon: Zap, text: "Quick Login", desc: "Passkey support" }
+              { icon: Shield, text: 'Secure Access', desc: 'MFA Protected' },
+              { icon: LayoutDashboard, text: 'Smart Dashboard', desc: 'Project overview' },
+              { icon: RefreshCw, text: 'Live Updates', desc: 'Real-time sync' },
+              { icon: Zap, text: 'Quick Login', desc: 'Passkey support' },
             ]}
           />
         </div>

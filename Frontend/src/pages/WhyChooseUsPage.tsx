@@ -34,8 +34,8 @@ function HowItWorks() {
     3: LayoutDashboard,
     4: BarChart3,
     5: LineChart,
-    6: CheckCircle2
-  }
+    6: CheckCircle2,
+  };
 
   return (
     <div className="w-full h-auto mb-40 flex flex-col items-center justify-center">

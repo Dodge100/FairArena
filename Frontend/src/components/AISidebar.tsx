@@ -584,8 +584,9 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             setAutoScroll(newValue);
                             localStorage.setItem('ai-auto-scroll', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
-                            }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${
+                            autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
+                          }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -606,8 +607,9 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             setSoundNotifications(newValue);
                             localStorage.setItem('ai-sound-notifications', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
-                            }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${
+                            soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
+                          }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -633,10 +635,11 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setAIButtonPosition(option.value as AIButtonPosition)}
-                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${aiButtonPosition === option.value
-                              ? 'bg-[#DDEF00] text-black'
-                              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                              }`}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                              aiButtonPosition === option.value
+                                ? 'bg-[#DDEF00] text-black'
+                                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                            }`}
                           >
                             {option.label}
                           </motion.button>
@@ -646,13 +649,16 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
 
                     {/* Hide for Session */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">Hide for this session</span>
+                      <span className="text-sm font-medium text-foreground">
+                        Hide for this session
+                      </span>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setAiButtonHidden(!aiButtonHidden)}
-                        className={`w-10 h-6 rounded-full relative transition-colors ${aiButtonHidden ? 'bg-red-500' : 'bg-muted'
-                          }`}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${
+                          aiButtonHidden ? 'bg-red-500' : 'bg-muted'
+                        }`}
                       >
                         <motion.div
                           className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -986,10 +992,11 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                                         speakMessage(message.content);
                                       }
                                     }}
-                                    className={`p-1.5 rounded-lg transition-colors ${aiSpeaking
-                                      ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
-                                      : 'hover:bg-muted'
-                                      }`}
+                                    className={`p-1.5 rounded-lg transition-colors ${
+                                      aiSpeaking
+                                        ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
+                                        : 'hover:bg-muted'
+                                    }`}
                                     title={aiSpeaking ? 'Stop speaking' : 'Read aloud'}
                                   >
                                     <svg
@@ -1025,7 +1032,10 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         </div>
                         {message.role === 'user' && (
                           <img
-                            src={user?.profileImageUrl || `https://ui-avatars.com/api/?name=${user?.firstName || 'User'}`}
+                            src={
+                              user?.profileImageUrl ||
+                              `https://ui-avatars.com/api/?name=${user?.firstName || 'User'}`
+                            }
                             alt="User avatar"
                             className="w-6 h-6 rounded-full object-cover"
                           />
@@ -1073,10 +1083,11 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleVoiceInput}
-                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${isListening
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                          }`}
+                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${
+                          isListening
+                            ? 'bg-red-500 hover:bg-red-600 text-white'
+                            : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                        }`}
                         title={isListening ? 'Stop recording' : 'Voice input'}
                       >
                         <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />

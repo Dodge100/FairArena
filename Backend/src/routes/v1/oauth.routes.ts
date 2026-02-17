@@ -6,45 +6,52 @@
 
 import { Router } from 'express';
 import { optionalAuth, protectRoute } from '../../middleware/auth.middleware.js';
-import { deviceAuthRateLimit, deviceConsentRateLimit, deviceVerifyRateLimit } from '../../middleware/deviceAuthRateLimit.middleware.js';
+import {
+  deviceAuthRateLimit,
+  deviceConsentRateLimit,
+  deviceVerifyRateLimit,
+} from '../../middleware/deviceAuthRateLimit.middleware.js';
 import { oauthBearerAuth } from '../../middleware/oauthBearer.middleware.js';
-import { oauthClientAuth, requireConfidentialClient } from '../../middleware/oauthClient.middleware.js';
+import {
+  oauthClientAuth,
+  requireConfidentialClient,
+} from '../../middleware/oauthClient.middleware.js';
 
 // Provider endpoints
 import {
-    authorizeEndpoint,
-    consentEndpoint,
-    deviceAuthorizeEndpoint,
-    deviceConsentEndpoint,
-    discoveryEndpoint,
-    getAuthorizationRequest,
-    getDeviceRequest,
-    introspectEndpoint,
-    jwksEndpoint,
-    revokeEndpoint,
-    tokenEndpoint,
-    userinfoEndpoint,
+  authorizeEndpoint,
+  consentEndpoint,
+  deviceAuthorizeEndpoint,
+  deviceConsentEndpoint,
+  discoveryEndpoint,
+  getAuthorizationRequest,
+  getDeviceRequest,
+  introspectEndpoint,
+  jwksEndpoint,
+  revokeEndpoint,
+  tokenEndpoint,
+  userinfoEndpoint,
 } from '../../controllers/v1/oauthProviderController.js';
 
 // Application management
 import {
-    createApplication,
-    deleteApplication,
-    getApplication,
-    getApplicationPublicInfo,
-    listApplications,
-    regenerateSecret,
-    updateApplication,
-    verifyApplication,
+  createApplication,
+  deleteApplication,
+  getApplication,
+  getApplicationPublicInfo,
+  listApplications,
+  regenerateSecret,
+  updateApplication,
+  verifyApplication,
 } from '../../controllers/v1/oauthApplicationController.js';
 
 // Consent management
 import {
-    getConsent,
-    listConsents,
-    listOAuthSessions,
-    revokeConsent,
-    revokeOAuthSession,
+  getConsent,
+  listConsents,
+  listOAuthSessions,
+  revokeConsent,
+  revokeOAuthSession,
 } from '../../controllers/v1/oauthConsentController.js';
 
 const router = Router();

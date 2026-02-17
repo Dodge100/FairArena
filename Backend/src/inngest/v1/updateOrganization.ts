@@ -122,7 +122,10 @@ export const updateOrganization = inngest.createFunction(
           },
         });
 
-        logger.info('Organization audit log created for settings update', { organizationId, userId });
+        logger.info('Organization audit log created for settings update', {
+          organizationId,
+          userId,
+        });
       });
     } catch (error) {
       logger.error('Failed to update organization', {

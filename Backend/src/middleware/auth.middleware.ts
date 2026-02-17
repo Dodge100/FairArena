@@ -1,9 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import {
-  ApiKeyData,
-  updateApiKeyLastUsed,
-  validateApiKey
-} from '../services/apiKey.service.js';
+import { ApiKeyData, updateApiKeyLastUsed, validateApiKey } from '../services/apiKey.service.js';
 import {
   extractBearerToken,
   getSession,
@@ -39,7 +35,10 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
 
     if (authHeader?.startsWith('Bearer fa_')) {
       apiKeyStr = authHeader.substring(7);
-    } else if (typeof req.headers['x-api-key'] === 'string' && req.headers['x-api-key'].startsWith('fa_')) {
+    } else if (
+      typeof req.headers['x-api-key'] === 'string' &&
+      req.headers['x-api-key'].startsWith('fa_')
+    ) {
       apiKeyStr = req.headers['x-api-key'];
     }
 
@@ -65,8 +64,9 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       req.apiKeyAuth = true;
 
       // Update last used (fire and forget)
-      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
-      updateApiKeyLastUsed(validation.apiKey.id, ipAddress).catch(() => { });
+      const ipAddress =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+      updateApiKeyLastUsed(validation.apiKey.id, ipAddress).catch(() => {});
 
       return next();
     }
@@ -231,7 +231,7 @@ export const protectStreamRoute = async (req: Request, res: Response, next: Next
     }
 
     // Update activity
-    updateSessionActivity(sessionId).catch(() => { });
+    updateSessionActivity(sessionId).catch(() => {});
 
     // Attach user info
     req.user = {

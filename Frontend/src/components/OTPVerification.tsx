@@ -4,7 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, ChevronRight, Clock, Key, Loader2, Lock, Mail, Shield, XCircle } from 'lucide-react';
+import {
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  Key,
+  Loader2,
+  Lock,
+  Mail,
+  Shield,
+  XCircle,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useTheme } from '../hooks/useTheme';
@@ -51,12 +61,18 @@ export function OTPVerification({
 
   const { data: statusData, isLoading: isLoadingStatus } = useQuery({
     queryKey: ['account-verification-status'],
-    queryFn: () => apiRequest<{ success: boolean, verified: boolean }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`),
+    queryFn: () =>
+      apiRequest<{ success: boolean; verified: boolean }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/status`,
+      ),
   });
 
   const { data: webauthnData } = useQuery({
     queryKey: ['webauthn-availability'],
-    queryFn: () => apiRequest<{ success: boolean, data: { webauthnAvailable: boolean, otpDisabled: boolean } }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/available`),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: { webauthnAvailable: boolean; otpDisabled: boolean } }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/available`,
+      ),
   });
 
   // Check WebAuthn browser support
@@ -67,7 +83,8 @@ export function OTPVerification({
   useEffect(() => {
     if (statusData?.success && statusData.verified) {
       setIsVerified(true);
-      if (statusData.verified !== isVerified) { // Prevent loop if onVerified causes re-render/fetch
+      if (statusData.verified !== isVerified) {
+        // Prevent loop if onVerified causes re-render/fetch
         onVerified();
       }
     } else {
@@ -99,7 +116,7 @@ export function OTPVerification({
 
   const { mutate: sendOtp, isPending: isSendingOtp } = useMutation({
     mutationFn: async (token: string) => {
-      return apiRequest<{ success: boolean, message?: string }>(
+      return apiRequest<{ success: boolean; message?: string }>(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/send-otp`,
         {
           method: 'POST',
@@ -124,19 +141,22 @@ export function OTPVerification({
       if (error instanceof ApiError && error.status === 429) {
         setIsRateLimited(true);
         setRetryAfter(error.data?.retryAfter || 1800);
-        setMessage({ type: 'error', text: error.data?.message || 'Too many OTP requests. Please try again later.' });
+        setMessage({
+          type: 'error',
+          text: error.data?.message || 'Too many OTP requests. Please try again later.',
+        });
       } else {
         setMessage({ type: 'error', text: 'Failed to send OTP' });
       }
     },
     onSettled: () => {
       if (recaptchaRef.current) recaptchaRef.current.reset();
-    }
+    },
   });
 
   const { mutate: verifyOtp, isPending: isVerifyingOtp } = useMutation({
-    mutationFn: async ({ token, otpCode }: { token: string, otpCode: string }) => {
-      return apiRequest<{ success: boolean, message?: string }>(
+    mutationFn: async ({ token, otpCode }: { token: string; otpCode: string }) => {
+      return apiRequest<{ success: boolean; message?: string }>(
         `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/verify-otp`,
         {
           method: 'POST',
@@ -166,33 +186,38 @@ export function OTPVerification({
       if (error instanceof ApiError && error.status === 429) {
         setIsRateLimited(true);
         setRetryAfter(error.data?.retryAfter || 900);
-        setMessage({ type: 'error', text: error.data?.message || 'Too many attempts. Please try again later.' });
+        setMessage({
+          type: 'error',
+          text: error.data?.message || 'Too many attempts. Please try again later.',
+        });
       } else {
         setMessage({ type: 'error', text: 'Verification failed' });
       }
     },
     onSettled: () => {
       if (recaptchaRef.current) recaptchaRef.current.reset();
-    }
+    },
   });
 
   // WebAuthn Mutations
   const webAuthnOptionsMutation = useMutation({
-    mutationFn: () => apiRequest<{ success: boolean, data: any }>(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/options`,
-      { method: 'POST' }
-    ),
+    mutationFn: () =>
+      apiRequest<{ success: boolean; data: any }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/options`,
+        { method: 'POST' },
+      ),
   });
 
   const webAuthnVerifyMutation = useMutation({
-    mutationFn: (credential: any) => apiRequest<{ success: boolean, message?: string }>(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/verify`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: credential }),
-      }
-    ),
+    mutationFn: (credential: any) =>
+      apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/webauthn/verify`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ response: credential }),
+        },
+      ),
     onSuccess: (verifyData) => {
       if (verifyData.success) {
         setIsVerified(true);
@@ -209,7 +234,7 @@ export function OTPVerification({
     if (!webauthnSupported) {
       setMessage({
         type: 'error',
-        text: 'Your device or browser does not support security keys. Please use email verification instead.'
+        text: 'Your device or browser does not support security keys. Please use email verification instead.',
       });
       return;
     }
@@ -226,11 +251,14 @@ export function OTPVerification({
 
       // Step 3: Verify with backend
       await webAuthnVerifyMutation.mutateAsync(credential);
-
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Security key verification failed';
       // Handle user cancellation gracefully
-      if (message.includes('cancelled') || message.includes('canceled') || message.includes('AbortError')) {
+      if (
+        message.includes('cancelled') ||
+        message.includes('canceled') ||
+        message.includes('AbortError')
+      ) {
         setMessage({ type: 'error', text: 'Security key verification was cancelled' });
       } else {
         setMessage({ type: 'error', text: message });
@@ -292,7 +320,9 @@ export function OTPVerification({
 
   if (isVerifying) {
     return (
-      <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' : ''} p-4 ${className}`}>
+      <div
+        className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' : ''} p-4 ${className}`}
+      >
         <Card className="w-full max-w-md shadow-lg border border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16 px-8">
             <div className="relative">
@@ -314,7 +344,9 @@ export function OTPVerification({
   }
 
   return (
-    <div className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-gradient-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}>
+    <div
+      className={`${fullScreen ? 'min-h-screen' : 'py-8'} flex items-center justify-center ${fullScreen ? 'bg-gradient-to-br from-background via-background to-muted/20' : ''} p-4 ${className}`}
+    >
       <Card className="w-full max-w-md shadow-2xl border-border/50 bg-card overflow-hidden">
         {/* Header Section */}
         <div className="relative overflow-hidden">
@@ -323,9 +355,7 @@ export function OTPVerification({
             <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl flex items-center justify-center ring-1 ring-primary/20 shadow-lg shadow-primary/5">
               <Shield className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              {title}
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
             <CardDescription className="text-center mt-3 text-muted-foreground text-base max-w-[85%] mx-auto leading-relaxed">
               {description}
             </CardDescription>
@@ -338,8 +368,11 @@ export function OTPVerification({
             <span className="text-sm font-medium text-muted-foreground">Status</span>
             <Badge
               variant={isVerified ? 'default' : 'secondary'}
-              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider ${isVerified ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25 border-green-500/20' : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25 border-red-500/20'
-                }`}
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+                isVerified
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25 border-green-500/20'
+                  : 'bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/25 border-red-500/20'
+              }`}
             >
               {isVerified ? 'Verified' : 'Unverified'}
             </Badge>
@@ -352,7 +385,8 @@ export function OTPVerification({
                 <div className="space-y-4">
                   <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
                     <p className="text-sm text-center text-muted-foreground">
-                      OTP verification is disabled for your account. Please use your security key to verify.
+                      OTP verification is disabled for your account. Please use your security key to
+                      verify.
                     </p>
                   </div>
 
@@ -360,17 +394,19 @@ export function OTPVerification({
                     <div className="text-sm text-red-700 bg-red-50 dark:bg-red-950/30 p-4 rounded-xl border border-red-200 dark:border-red-800/50 flex items-start gap-3">
                       <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
                       <span className="font-medium">
-                        Your browser doesn't support security keys. Please use a compatible browser like Chrome, Firefox, Edge, or Safari to access your account settings.
+                        Your browser doesn't support security keys. Please use a compatible browser
+                        like Chrome, Firefox, Edge, or Safari to access your account settings.
                       </span>
                     </div>
                   )}
 
                   {message && (
                     <div
-                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
-                        ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
-                        : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
-                        }`}
+                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${
+                        message.type === 'success'
+                          ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
+                          : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
+                      }`}
                     >
                       {message.type === 'success' ? (
                         <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -423,16 +459,19 @@ export function OTPVerification({
                   {isRateLimited && retryAfter > 0 && (
                     <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                       <Clock className="h-5 w-5 shrink-0 mt-0.5" />
-                      <span>Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.</span>
+                      <span>
+                        Too many attempts. Try again in {Math.ceil(retryAfter / 60)} minutes.
+                      </span>
                     </div>
                   )}
 
                   {message && (
                     <div
-                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
-                        ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
-                        : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
-                        }`}
+                      className={`text-sm p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${
+                        message.type === 'success'
+                          ? 'text-green-700 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800/50'
+                          : 'text-red-700 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800/50'
+                      }`}
                     >
                       {message.type === 'success' ? (
                         <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -458,7 +497,11 @@ export function OTPVerification({
                         ) : (
                           <Mail className="h-4 w-4 transition-transform group-hover:scale-110" />
                         )}
-                        {isSendingOtp ? 'Sending...' : otpCooldown > 0 ? `${otpCooldown}s` : 'Send Code'}
+                        {isSendingOtp
+                          ? 'Sending...'
+                          : otpCooldown > 0
+                            ? `${otpCooldown}s`
+                            : 'Send Code'}
                       </span>
                     </Button>
 
@@ -481,7 +524,9 @@ export function OTPVerification({
                     <div className="pt-4">
                       <div className="relative flex items-center">
                         <div className="flex-grow border-t border-border"></div>
-                        <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">Or</span>
+                        <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider">
+                          Or
+                        </span>
                         <div className="flex-grow border-t border-border"></div>
                       </div>
                       <Button
@@ -507,13 +552,16 @@ export function OTPVerification({
       </Card>
 
       {/* ReCAPTCHA Modal */}
-      <Dialog open={showCaptchaModal} onOpenChange={(open) => {
-        if (!open) {
-          setShowCaptchaModal(false);
-          setPendingAction(null);
-          // recaptchaRef.current?.reset(); // Optional: reset on close? No, might want to keep if solved but just closed?
-        }
-      }}>
+      <Dialog
+        open={showCaptchaModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCaptchaModal(false);
+            setPendingAction(null);
+            // recaptchaRef.current?.reset(); // Optional: reset on close? No, might want to keep if solved but just closed?
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Security Check</DialogTitle>

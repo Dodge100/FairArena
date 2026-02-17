@@ -52,9 +52,9 @@ const token = await getToken();
 // API Call
 fetch('/api/v1/profile', {
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
 });
 ```
 
@@ -106,11 +106,11 @@ fetch('/api/v1/profile', {
 
 ### Default Limits
 
-| Tier | Requests/Minute | Burst |
-|------|-----------------|-------|
-| Standard | 60 | 10 |
-| Premium | 120 | 20 |
-| Enterprise | 300 | 50 |
+| Tier       | Requests/Minute | Burst |
+| ---------- | --------------- | ----- |
+| Standard   | 60              | 10    |
+| Premium    | 120             | 20    |
+| Enterprise | 300             | 50    |
 
 ### Rate Limit Headers
 
@@ -211,9 +211,9 @@ GET /profile/view/:userId
 
 **Query Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| userId | string | Yes | Target user's ID |
+| Parameter | Type   | Required | Description      |
+| --------- | ------ | -------- | ---------------- |
+| userId    | string | Yes      | Target user's ID |
 
 **Response:**
 
@@ -399,11 +399,11 @@ GET /organization/:orgId/audit
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| limit | number | 50 | Max results |
-| offset | number | 0 | Pagination offset |
-| action | string | - | Filter by action type |
+| Parameter | Type   | Default | Description           |
+| --------- | ------ | ------- | --------------------- |
+| limit     | number | 50      | Max results           |
+| offset    | number | 0       | Pagination offset     |
+| action    | string | -       | Filter by action type |
 
 **Response:**
 
@@ -528,11 +528,11 @@ GET /credits/history
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| limit | number | 50 | Max results (1-100) |
-| offset | number | 0 | Pagination offset |
-| type | string | - | Filter by transaction type |
+| Parameter | Type   | Default | Description                |
+| --------- | ------ | ------- | -------------------------- |
+| limit     | number | 50      | Max results (1-100)        |
+| offset    | number | 0       | Pagination offset          |
+| type      | string | -       | Filter by transaction type |
 
 **Response:**
 
@@ -817,11 +817,7 @@ GET /plans
       "currency": "INR",
       "credits": 100,
       "description": "Perfect for getting started",
-      "features": [
-        "100 credits",
-        "Basic support",
-        "Standard processing"
-      ],
+      "features": ["100 credits", "Basic support", "Standard processing"],
       "isActive": true
     },
     {
@@ -832,11 +828,7 @@ GET /plans
       "currency": "INR",
       "credits": 600,
       "description": "Best value for regular users",
-      "features": [
-        "600 credits (+20% bonus)",
-        "Priority support",
-        "Faster processing"
-      ],
+      "features": ["600 credits (+20% bonus)", "Priority support", "Faster processing"],
       "isActive": true
     },
     {
@@ -877,12 +869,12 @@ GET /notifications
 
 **Query Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| limit | number | 20 | Max results |
-| offset | number | 0 | Pagination offset |
-| read | boolean | - | Filter by read status |
-| type | string | - | Filter by notification type |
+| Parameter | Type    | Default | Description                 |
+| --------- | ------- | ------- | --------------------------- |
+| limit     | number  | 20      | Max results                 |
+| offset    | number  | 0       | Pagination offset           |
+| read      | boolean | -       | Filter by read status       |
+| type      | string  | -       | Filter by notification type |
 
 **Response:**
 
@@ -1269,11 +1261,13 @@ POST /webhooks/v1/clerk
 ```
 
 **Supported Events:**
+
 - `user.created`
 - `user.updated`
 - `user.deleted`
 
 **Headers:**
+
 ```http
 svix-id: msg_abc123
 svix-timestamp: 1703958000
@@ -1287,6 +1281,7 @@ POST /webhooks/v1/razorpay
 ```
 
 **Supported Events:**
+
 - `payment.captured`
 - `payment.failed`
 - `refund.created`
@@ -1294,6 +1289,7 @@ POST /webhooks/v1/razorpay
 - `refund.failed`
 
 **Headers:**
+
 ```http
 X-Razorpay-Signature: hmac_signature
 ```
@@ -1305,6 +1301,7 @@ POST /webhooks/v1/github
 ```
 
 **Supported Events:**
+
 - `push`
 - `pull_request`
 - `issues`
@@ -1315,62 +1312,62 @@ POST /webhooks/v1/github
 
 ### Authentication Errors (4xx)
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AUTH_REQUIRED` | 401 | No authentication provided |
-| `AUTH_INVALID` | 401 | Invalid or expired token |
-| `AUTH_FORBIDDEN` | 403 | Insufficient permissions |
+| Code             | HTTP Status | Description                |
+| ---------------- | ----------- | -------------------------- |
+| `AUTH_REQUIRED`  | 401         | No authentication provided |
+| `AUTH_INVALID`   | 401         | Invalid or expired token   |
+| `AUTH_FORBIDDEN` | 403         | Insufficient permissions   |
 
 ### Validation Errors (400)
 
-| Code | Description |
-|------|-------------|
-| `VALIDATION_ERROR` | Request body validation failed |
-| `INVALID_PHONE` | Invalid phone number format |
-| `INVALID_EMAIL` | Invalid email format |
-| `INVALID_PLAN` | Plan does not exist or is inactive |
+| Code               | Description                        |
+| ------------------ | ---------------------------------- |
+| `VALIDATION_ERROR` | Request body validation failed     |
+| `INVALID_PHONE`    | Invalid phone number format        |
+| `INVALID_EMAIL`    | Invalid email format               |
+| `INVALID_PLAN`     | Plan does not exist or is inactive |
 
 ### Rate Limiting (429)
 
-| Code | Description |
-|------|-------------|
-| `RATE_LIMITED` | Too many requests |
-| `OTP_RATE_LIMITED` | Too many OTP requests |
-| `LOCKOUT` | Account temporarily locked |
+| Code               | Description                |
+| ------------------ | -------------------------- |
+| `RATE_LIMITED`     | Too many requests          |
+| `OTP_RATE_LIMITED` | Too many OTP requests      |
+| `LOCKOUT`          | Account temporarily locked |
 
 ### Payment Errors (402)
 
-| Code | Description |
-|------|-------------|
-| `PAYMENT_FAILED` | Payment processing failed |
-| `INSUFFICIENT_CREDITS` | Not enough credits for operation |
-| `SIGNATURE_MISMATCH` | Payment signature verification failed |
+| Code                   | Description                           |
+| ---------------------- | ------------------------------------- |
+| `PAYMENT_FAILED`       | Payment processing failed             |
+| `INSUFFICIENT_CREDITS` | Not enough credits for operation      |
+| `SIGNATURE_MISMATCH`   | Payment signature verification failed |
 
 ### Resource Errors (404)
 
-| Code | Description |
-|------|-------------|
-| `USER_NOT_FOUND` | User does not exist |
-| `ORG_NOT_FOUND` | Organization does not exist |
-| `TEAM_NOT_FOUND` | Team does not exist |
-| `PROFILE_NOT_FOUND` | Profile does not exist |
+| Code                | Description                 |
+| ------------------- | --------------------------- |
+| `USER_NOT_FOUND`    | User does not exist         |
+| `ORG_NOT_FOUND`     | Organization does not exist |
+| `TEAM_NOT_FOUND`    | Team does not exist         |
+| `PROFILE_NOT_FOUND` | Profile does not exist      |
 
 ### Conflict Errors (409)
 
-| Code | Description |
-|------|-------------|
-| `DUPLICATE_ENTRY` | Resource already exists |
+| Code              | Description                  |
+| ----------------- | ---------------------------- |
+| `DUPLICATE_ENTRY` | Resource already exists      |
 | `ALREADY_CLAIMED` | Free credits already claimed |
-| `INVITE_USED` | Invite code already used |
+| `INVITE_USED`     | Invite code already used     |
 
 ### Server Errors (5xx)
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
-| `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
-| `MAINTENANCE` | 503 | System under maintenance |
+| Code                  | HTTP Status | Description                     |
+| --------------------- | ----------- | ------------------------------- |
+| `INTERNAL_ERROR`      | 500         | Unexpected server error         |
+| `SERVICE_UNAVAILABLE` | 503         | Service temporarily unavailable |
+| `MAINTENANCE`         | 503         | System under maintenance        |
 
 ---
 
-*For interactive API testing, visit `/api-docs` in development/staging environments.*
+_For interactive API testing, visit `/api-docs` in development/staging environments._

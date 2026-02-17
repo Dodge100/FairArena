@@ -283,9 +283,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
             <DialogTitle className="text-center text-2xl font-bold text-[#d9ff00]">
               {t('pricing.title')}
             </DialogTitle>
-            <p className="text-center text-muted-foreground">
-              {t('pricing.subtitle')}
-            </p>
+            <p className="text-center text-muted-foreground">{t('pricing.subtitle')}</p>
             {!paymentsEnabled && (
               <div className="text-center mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <p className="text-yellow-600 dark:text-yellow-400 font-medium">
@@ -308,8 +306,9 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
               plans.map((plan) => (
                 <Card
                   key={plan.id}
-                  className={`relative transition-all duration-200 hover:shadow-lg ${plan.planId === 'business_plan' ? 'border-[#d9ff00] border-2' : ''
-                    }`}
+                  className={`relative transition-all duration-200 hover:shadow-lg ${
+                    plan.planId === 'business_plan' ? 'border-[#d9ff00] border-2' : ''
+                  }`}
                 >
                   {plan.planId === 'business_plan' && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -328,7 +327,9 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       ) : (
                         <>
                           <div className="text-3xl font-bold">₹{plan.amount / 100}</div>
-                          <div className="text-sm text-muted-foreground">{t('pricing.oneTime')}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('pricing.oneTime')}
+                          </div>
                         </>
                       )}
                     </div>
@@ -347,10 +348,11 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     <Button
                       onClick={() => handlePayment(plan)}
                       disabled={!paymentsEnabled || loadingPlan === plan.id}
-                      className={`w-full ${plan.planId === 'business_plan'
-                        ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
-                        : ''
-                        }`}
+                      className={`w-full ${
+                        plan.planId === 'business_plan'
+                          ? 'bg-[#d9ff00] text-black hover:bg-[#c0e600]'
+                          : ''
+                      }`}
                       variant={plan.planId === 'business_plan' ? 'default' : 'outline'}
                     >
                       {loadingPlan === plan.id ? (
@@ -381,10 +383,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
           <div className="text-center mt-6 text-sm text-muted-foreground">
             <p>
               {t('pricing.help.text')}{' '}
-              <a
-                href="mailto:support@fairarena.app"
-                className="text-[#d9ff00] hover:underline"
-              >
+              <a href="mailto:support@fairarena.app" className="text-[#d9ff00] hover:underline">
                 {t('pricing.help.link')}
               </a>
             </p>

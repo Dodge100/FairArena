@@ -13,22 +13,28 @@ interface RazorpayInvoice {
     email: string;
     contact: string;
     gstin: string | null;
-    billing_address: {
-      street?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-      country?: string;
-      [key: string]: unknown;
-    } | null | undefined;
-    shipping_address: {
-      street?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-      country?: string;
-      [key: string]: unknown;
-    } | null | undefined;
+    billing_address:
+      | {
+          street?: string;
+          city?: string;
+          state?: string;
+          zip?: string;
+          country?: string;
+          [key: string]: unknown;
+        }
+      | null
+      | undefined;
+    shipping_address:
+      | {
+          street?: string;
+          city?: string;
+          state?: string;
+          zip?: string;
+          country?: string;
+          [key: string]: unknown;
+        }
+      | null
+      | undefined;
   };
   order_id: string;
   line_items: Array<{

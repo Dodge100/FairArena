@@ -163,7 +163,8 @@ export const performCleanup = async () => {
               subject: 'Account Deletion Failed',
               template: 'account-deletion-failed',
               templateData: {
-                message: 'We were unable to permanently delete your account data. Please contact support for assistance.',
+                message:
+                  'We were unable to permanently delete your account data. Please contact support for assistance.',
               },
             },
           });

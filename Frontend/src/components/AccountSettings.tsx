@@ -19,7 +19,7 @@ import {
   Search,
   Settings,
   Shield,
-  Smartphone
+  Smartphone,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -65,7 +65,9 @@ export default function AccountSettingsComponent() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
   const [confirmationText, setConfirmationText] = useState('');
-  const [disableHomePage, setDisableHomePage] = useState(() => localStorage.getItem('disableHomePage') === 'true');
+  const [disableHomePage, setDisableHomePage] = useState(
+    () => localStorage.getItem('disableHomePage') === 'true',
+  );
 
   const toggleDisableHomePage = (checked: boolean) => {
     setDisableHomePage(checked);
@@ -76,23 +78,29 @@ export default function AccountSettingsComponent() {
 
   const { data: settings = null, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['account-settings'],
-    queryFn: () => apiRequest<{ success: boolean, data: UserSettings }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: UserSettings }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`,
+      ).then((res) => res.data),
   });
 
   const updateSettingsMutation = useMutation({
-    mutationFn: ({ key, value }: { key: keyof UserSettings, value: boolean }) =>
-      apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [key]: value }),
-      }),
+    mutationFn: ({ key, value }: { key: keyof UserSettings; value: boolean }) =>
+      apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/settings`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: value }),
+        },
+      ),
     onMutate: async ({ key, value }) => {
       await queryClient.cancelQueries({ queryKey: ['account-settings'] });
       const previousSettings = queryClient.getQueryData<UserSettings>(['account-settings']);
       if (previousSettings) {
         queryClient.setQueryData(['account-settings'], {
           ...previousSettings,
-          [key]: value
+          [key]: value,
         });
       }
       return { previousSettings };
@@ -110,7 +118,11 @@ export default function AccountSettingsComponent() {
   });
 
   const resetSettingsMutation = useMutation({
-    mutationFn: () => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`, { method: 'POST' }),
+    mutationFn: () =>
+      apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/settings/reset`,
+        { method: 'POST' },
+      ),
     onSuccess: () => {
       toast.success('Settings reset to default successfully');
       queryClient.invalidateQueries({ queryKey: ['account-settings'] });
@@ -119,10 +131,16 @@ export default function AccountSettingsComponent() {
   });
 
   const exportDataMutation = useMutation({
-    mutationFn: () => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`, { method: 'POST' }),
+    mutationFn: () =>
+      apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/export-data`,
+        { method: 'POST' },
+      ),
     onSuccess: (data) => {
       if (data.success) {
-        setExportMessage('Data export initiated! Check your email for the download link. You will recieve an email Soon...');
+        setExportMessage(
+          'Data export initiated! Check your email for the download link. You will recieve an email Soon...',
+        );
         setConfirmationText('');
       } else {
         setExportMessage(data.message || 'Failed to initiate data export');
@@ -130,7 +148,7 @@ export default function AccountSettingsComponent() {
     },
     onError: () => {
       setExportMessage('Failed to initiate data export. Please try again.');
-    }
+    },
   });
 
   const isSavingSettings = updateSettingsMutation.isPending || resetSettingsMutation.isPending;
@@ -146,7 +164,9 @@ export default function AccountSettingsComponent() {
 
   const fetchReports = useCallback(async (): Promise<Report[]> => {
     try {
-      const data = await apiRequest<{ success: boolean, reports: Report[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`);
+      const data = await apiRequest<{ success: boolean; reports: Report[] }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/reports`,
+      );
       if (data.success) {
         return data.reports || [];
       } else {
@@ -160,7 +180,9 @@ export default function AccountSettingsComponent() {
 
   const fetchSupportTickets = useCallback(async (): Promise<SupportTicket[]> => {
     try {
-      const data = await apiRequest<{ success: boolean, supportTickets: SupportTicket[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`);
+      const data = await apiRequest<{ success: boolean; supportTickets: SupportTicket[] }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/support`,
+      );
       if (data.success) {
         return data.supportTickets || [];
       } else {
@@ -185,9 +207,13 @@ export default function AccountSettingsComponent() {
 
   // Fetch settings when verified
 
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [openSections, setOpenSections] = useState<string[]>(['activity', 'preferences', 'data', 'privacy']);
+  const [openSections, setOpenSections] = useState<string[]>([
+    'activity',
+    'preferences',
+    'data',
+    'privacy',
+  ]);
 
   const toggleSection = (sectionId: string) => {
     setOpenSections((prev) =>
@@ -253,7 +279,9 @@ export default function AccountSettingsComponent() {
           <Card>
             <CardHeader>
               <CardTitle>Your Support Tickets</CardTitle>
-              <CardDescription>View the status of support requests you've submitted.</CardDescription>
+              <CardDescription>
+                View the status of support requests you've submitted.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ItemListModal
@@ -389,9 +417,7 @@ export default function AccountSettingsComponent() {
                 <Settings className="h-5 w-5" />
                 <span>General Settings</span>
               </CardTitle>
-              <CardDescription>
-                Manage your general application preferences
-              </CardDescription>
+              <CardDescription>Manage your general application preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -401,7 +427,8 @@ export default function AccountSettingsComponent() {
                       Disable Home Page
                     </Label>
                     <p className="text-sm text-muted-foreground mt-1">
-                      If enabled, you will be redirected to the dashboard when visiting the home page
+                      If enabled, you will be redirected to the dashboard when visiting the home
+                      page
                     </p>
                   </div>
                   <Switch
@@ -433,13 +460,13 @@ export default function AccountSettingsComponent() {
                     <div>
                       <span className="text-muted-foreground">Visible Main Items:</span>
                       <span className="ml-2 font-medium">
-                        {customization.mainItems.filter(item => item.visible).length}
+                        {customization.mainItems.filter((item) => item.visible).length}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Visible Tools:</span>
                       <span className="ml-2 font-medium">
-                        {customization.secondaryItems.filter(item => item.visible).length}
+                        {customization.secondaryItems.filter((item) => item.visible).length}
                       </span>
                     </div>
                   </div>
@@ -448,11 +475,10 @@ export default function AccountSettingsComponent() {
                 {/* Customize Button */}
                 <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
                   <div className="flex-1">
-                    <Label className="text-sm font-medium">
-                      Customize Sidebar Layout
-                    </Label>
+                    <Label className="text-sm font-medium">Customize Sidebar Layout</Label>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Reorder menu items, hide unwanted sections, and personalize your navigation experience
+                      Reorder menu items, hide unwanted sections, and personalize your navigation
+                      experience
                     </p>
                   </div>
                   <SidebarCustomizationModal>
@@ -496,14 +522,25 @@ export default function AccountSettingsComponent() {
                 <span>Cross-Device Login</span>
               </CardTitle>
               <CardDescription>
-                Securely sign in to FairArena on another device by scanning a QR code with this device.
+                Securely sign in to FairArena on another device by scanning a QR code with this
+                device.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/50 border">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  <svg
+                    className="w-5 h-5 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                    />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -516,12 +553,19 @@ export default function AccountSettingsComponent() {
                   </ol>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowQRScanner(true)}
-                className="w-full"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              <Button onClick={() => setShowQRScanner(true)} className="w-full">
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                  />
                 </svg>
                 Scan QR Code
               </Button>
@@ -536,7 +580,17 @@ export default function AccountSettingsComponent() {
       title: 'Data & Performance',
       icon: Smartphone,
       description: 'Manage data usage, battery settings, and exports',
-      keywords: ['data', 'saver', 'battery', 'performance', 'bandwidth', 'export', 'download', 'animations', 'dark mode'],
+      keywords: [
+        'data',
+        'saver',
+        'battery',
+        'performance',
+        'bandwidth',
+        'export',
+        'download',
+        'animations',
+        'dark mode',
+      ],
       content: (
         <div className="space-y-6">
           <Card>
@@ -546,7 +600,8 @@ export default function AccountSettingsComponent() {
                 <span>Data Saver Mode</span>
               </CardTitle>
               <CardDescription>
-                Reduce data usage, battery consumption, and improve performance by enabling data saver features
+                Reduce data usage, battery consumption, and improve performance by enabling data
+                saver features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -583,7 +638,9 @@ export default function AccountSettingsComponent() {
                       <Switch
                         id="disable-notifications"
                         checked={dataSaverSettings.disableNotifications}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableNotifications', checked)}
+                        onCheckedChange={(checked) =>
+                          updateDataSaverSetting('disableNotifications', checked)
+                        }
                       />
                     </div>
 
@@ -600,7 +657,9 @@ export default function AccountSettingsComponent() {
                       <Switch
                         id="disable-images"
                         checked={dataSaverSettings.disableImages}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableImages', checked)}
+                        onCheckedChange={(checked) =>
+                          updateDataSaverSetting('disableImages', checked)
+                        }
                       />
                     </div>
 
@@ -617,7 +676,9 @@ export default function AccountSettingsComponent() {
                       <Switch
                         id="reduce-animations"
                         checked={dataSaverSettings.reduceAnimations}
-                        onCheckedChange={(checked) => updateDataSaverSetting('reduceAnimations', checked)}
+                        onCheckedChange={(checked) =>
+                          updateDataSaverSetting('reduceAnimations', checked)
+                        }
                       />
                     </div>
 
@@ -634,7 +695,9 @@ export default function AccountSettingsComponent() {
                       <Switch
                         id="disable-auto-refresh"
                         checked={dataSaverSettings.disableAutoRefresh}
-                        onCheckedChange={(checked) => updateDataSaverSetting('disableAutoRefresh', checked)}
+                        onCheckedChange={(checked) =>
+                          updateDataSaverSetting('disableAutoRefresh', checked)
+                        }
                       />
                     </div>
 
@@ -651,7 +714,9 @@ export default function AccountSettingsComponent() {
                       <Switch
                         id="force-dark-theme"
                         checked={dataSaverSettings.forceDarkTheme}
-                        onCheckedChange={(checked) => updateDataSaverSetting('forceDarkTheme', checked)}
+                        onCheckedChange={(checked) =>
+                          updateDataSaverSetting('forceDarkTheme', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -720,10 +785,11 @@ export default function AccountSettingsComponent() {
 
               {exportMessage && (
                 <div
-                  className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
-                    ? 'text-green-600 bg-green-50 border border-green-200'
-                    : 'text-red-600 bg-red-50 border border-red-200'
-                    }`}
+                  className={`text-sm p-3 rounded-md ${
+                    exportMessage.includes('Check your email')
+                      ? 'text-green-600 bg-green-50 border border-green-200'
+                      : 'text-red-600 bg-red-50 border border-red-200'
+                  }`}
                 >
                   {exportMessage}
                 </div>
@@ -747,31 +813,45 @@ export default function AccountSettingsComponent() {
                 <Shield className="h-5 w-5" />
                 <span>Legal Documents</span>
               </CardTitle>
-              <CardDescription>
-                Review our terms, policies, and legal information
-              </CardDescription>
+              <CardDescription>Review our terms, policies, and legal information</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/privacy-policy')}>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4"
+                  onClick={() => navigate('/privacy-policy')}
+                >
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-semibold">Privacy Policy</span>
                     <span className="text-xs text-muted-foreground">How we handle your data</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/terms-and-conditions')}>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4"
+                  onClick={() => navigate('/terms-and-conditions')}
+                >
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-semibold">Terms of Service</span>
                     <span className="text-xs text-muted-foreground">Rules and regulations</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/cookie-policy')}>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4"
+                  onClick={() => navigate('/cookie-policy')}
+                >
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-semibold">Cookie Policy</span>
                     <span className="text-xs text-muted-foreground">Cookie usage and tracking</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="justify-start h-auto py-4 px-4" onClick={() => navigate('/refund')}>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4"
+                  onClick={() => navigate('/refund')}
+                >
                   <div className="flex flex-col items-start gap-1">
                     <span className="font-semibold">Refund Policy</span>
                     <span className="text-xs text-muted-foreground">Returns and refunds</span>
@@ -800,32 +880,41 @@ export default function AccountSettingsComponent() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">Necessary Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.necessary ? 'text-green-600' : 'text-red-600'}`}>
+                        <span
+                          className={`ml-2 ${consentSettings.necessary ? 'text-green-600' : 'text-red-600'}`}
+                        >
                           {consentSettings.necessary ? '✓ Accepted' : '✗ Rejected'}
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Analytics Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.analytics ? 'text-green-600' : 'text-red-600'}`}>
+                        <span
+                          className={`ml-2 ${consentSettings.analytics ? 'text-green-600' : 'text-red-600'}`}
+                        >
                           {consentSettings.analytics ? '✓ Accepted' : '✗ Rejected'}
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Functional Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.functional ? 'text-green-600' : 'text-red-600'}`}>
+                        <span
+                          className={`ml-2 ${consentSettings.functional ? 'text-green-600' : 'text-red-600'}`}
+                        >
                           {consentSettings.functional ? '✓ Accepted' : '✗ Rejected'}
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Marketing Cookies:</span>
-                        <span className={`ml-2 ${consentSettings.marketing ? 'text-green-600' : 'text-red-600'}`}>
+                        <span
+                          className={`ml-2 ${consentSettings.marketing ? 'text-green-600' : 'text-red-600'}`}
+                        >
                           {consentSettings.marketing ? '✓ Accepted' : '✗ Rejected'}
                         </span>
                       </div>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No cookie preferences set yet. Click "Manage Preferences" to configure your cookie settings.
+                      No cookie preferences set yet. Click "Manage Preferences" to configure your
+                      cookie settings.
                     </p>
                   )}
                 </div>
@@ -833,9 +922,7 @@ export default function AccountSettingsComponent() {
                 {/* Manage Preferences Button */}
                 <div className="flex items-center justify-between space-x-4 p-4 border rounded-lg">
                   <div className="flex-1">
-                    <Label className="text-sm font-medium">
-                      Modify Cookie Preferences
-                    </Label>
+                    <Label className="text-sm font-medium">Modify Cookie Preferences</Label>
                     <p className="text-sm text-muted-foreground mt-1">
                       Review and update your cookie consent choices at any time
                     </p>
@@ -883,7 +970,9 @@ export default function AccountSettingsComponent() {
         <h1 className="text-3xl font-bold flex items-center space-x-2">
           <span>Account Settings</span>
         </h1>
-        <p className="text-muted-foreground">Manage your account preferences, security, and personal data.</p>
+        <p className="text-muted-foreground">
+          Manage your account preferences, security, and personal data.
+        </p>
       </div>
 
       <div className="space-y-6 mt-6">
@@ -902,7 +991,10 @@ export default function AccountSettingsComponent() {
             const Icon = section.icon;
             const isOpen = openSections.includes(section.id);
             return (
-              <div key={section.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+              <div
+                key={section.id}
+                className="border rounded-lg bg-card text-card-foreground shadow-sm"
+              >
                 <button
                   onClick={() => toggleSection(section.id)}
                   className="flex items-center justify-between w-full p-6 text-left"
@@ -959,10 +1051,7 @@ export default function AccountSettingsComponent() {
           setShowCookieModal(false);
         }}
       />
-      <QRScannerDialog
-        open={showQRScanner}
-        onOpenChange={setShowQRScanner}
-      />
-    </div >
+      <QRScannerDialog open={showQRScanner} onOpenChange={setShowQRScanner} />
+    </div>
   );
 }

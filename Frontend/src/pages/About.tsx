@@ -38,9 +38,7 @@ function About() {
           <p>
             {t('about.intro.part1')}
             <br />
-            <span className="font-semibold">
-              {t('about.intro.highlight')}
-            </span>
+            <span className="font-semibold">{t('about.intro.highlight')}</span>
           </p>
           <p className="mt-4">
             {t('about.intro.part2')}
@@ -58,9 +56,7 @@ function About() {
             {t('about.mission.title')}
           </h2>
           <p>{t('about.mission.desc1')}</p>
-          <p className="mt-3">
-            {t('about.mission.desc2')}
-          </p>
+          <p className="mt-3">{t('about.mission.desc2')}</p>
         </section>
 
         {/* VISION */}
@@ -69,9 +65,7 @@ function About() {
             <Star className="w-6 h-6" />
             {t('about.vision.title')}
           </h2>
-          <p>
-            {t('about.vision.desc1')}
-          </p>
+          <p>{t('about.vision.desc1')}</p>
 
           <p className="mt-3">{t('about.vision.listTitle')}</p>
           <ul className="list-disc ml-6 mt-2 space-y-2">
@@ -89,10 +83,20 @@ function About() {
           </h2>
 
           <ol className="list-decimal ml-6 space-y-4">
-            {(t('about.different.list', { returnObjects: true }) as Array<{ title: string, desc: string }>).map((item, i) => (
+            {(
+              t('about.different.list', { returnObjects: true }) as Array<{
+                title: string;
+                desc: string;
+              }>
+            ).map((item, i) => (
               <li key={i}>
                 <strong>{item.title}</strong>
-                {item.desc && <><br />{item.desc}</>}
+                {item.desc && (
+                  <>
+                    <br />
+                    {item.desc}
+                  </>
+                )}
               </li>
             ))}
           </ol>
@@ -112,9 +116,7 @@ function About() {
             ))}
           </ul>
 
-          <p className="mt-4">
-            {t('about.whoUses.desc2')}
-          </p>
+          <p className="mt-4">{t('about.whoUses.desc2')}</p>
         </section>
 
         {/* TECHNOLOGY */}
@@ -147,9 +149,7 @@ function About() {
             {t('about.passion.title')}
           </h2>
 
-          <p>
-            {t('about.passion.desc1')}
-          </p>
+          <p>{t('about.passion.desc1')}</p>
 
           <p className="mt-4">
             <strong>{t('about.passion.promise.label')}</strong>
@@ -164,9 +164,7 @@ function About() {
             {t('about.cta.title')}
           </h2>
 
-          <p>
-            {t('about.cta.desc')}
-          </p>
+          <p>{t('about.cta.desc')}</p>
 
           <ul className="list-none ml-0 mt-3 space-y-2">
             <li className="flex items-center gap-2">
@@ -179,12 +177,15 @@ function About() {
             </li>
             <li className="flex items-center gap-2">
               <ArrowRight className="w-5 h-5 text-[#ddef00]" />
-              {t('about.cta.contact')} <a className="text-[#ddef00]" href="mailto:contact@fairarena.app">contact@fairarena.app</a>
+              {t('about.cta.contact')}{' '}
+              <a className="text-[#ddef00]" href="mailto:contact@fairarena.app">
+                contact@fairarena.app
+              </a>
             </li>
           </ul>
         </section>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
 

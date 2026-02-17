@@ -5,11 +5,13 @@ This directory contains production-ready context files for various AI coding ass
 ## Available Context Files
 
 ### 1. **Cursor AI** (`.cursorrules`)
+
 **Location:** `.cursorrules`
 **Format:** Markdown
 **Size:** Comprehensive (~15KB)
 
 The most detailed context file with:
+
 - Complete tech stack breakdown
 - Detailed architecture explanation
 - Comprehensive coding guidelines
@@ -24,11 +26,13 @@ The most detailed context file with:
 **Best for:** Deep understanding of the entire project architecture and standards.
 
 ### 2. **GitHub Copilot** (`copilot-instructions.md`)
+
 **Location:** `.github/copilot-instructions.md`
 **Format:** Markdown
 **Size:** Comprehensive (~12KB)
 
 Focuses on:
+
 - Code generation patterns
 - Type safety guidelines
 - Component patterns (React & Express)
@@ -42,11 +46,13 @@ Focuses on:
 **Best for:** Inline code suggestions and auto-completion that follow project standards.
 
 ### 3. **Windsurf AI** (`.windsurfrules`)
+
 **Location:** `.windsurfrules`
 **Format:** Markdown
 **Size:** Medium (~8KB)
 
 Concise but complete:
+
 - Architecture decisions with rationale
 - Core code patterns
 - Project structure
@@ -57,11 +63,13 @@ Concise but complete:
 **Best for:** Quick context loading with essential information.
 
 ### 4. **Cline AI** (`.clinerules`)
+
 **Location:** `.clinerules`
 **Format:** Markdown
 **Size:** Compact (~5KB)
 
 Essential information only:
+
 - Quick facts
 - Code standards
 - Common patterns
@@ -72,11 +80,13 @@ Essential information only:
 **Best for:** Lightweight context for fast responses.
 
 ### 5. **Aider AI** (`.aider.conf.yml`)
+
 **Location:** `.aider.conf.yml`
 **Format:** YAML/Markdown hybrid
 **Size:** Compact (~4KB)
 
 Focused on:
+
 - Code editing patterns
 - Quick reference
 - Essential rules
@@ -85,11 +95,13 @@ Focused on:
 **Best for:** File editing and refactoring tasks.
 
 ### 6. **Continue.dev** (`.continuerc.json`)
+
 **Location:** `.continuerc.json`
 **Format:** Markdown (in JSON string)
 **Size:** Medium (~6KB)
 
 Balanced approach:
+
 - Tech stack overview
 - Code standards
 - API patterns
@@ -186,10 +198,12 @@ You can add team-specific guidelines:
 ## Team Conventions
 
 ### Commit Messages
+
 - Use conventional commits
 - Reference Jira ticket numbers
 
 ### Code Reviews
+
 - Require 2 approvals
 - Run all tests before merge
 ```
@@ -214,12 +228,14 @@ You can add team-specific guidelines:
 ### Common Pitfalls
 
 ❌ **Don't:**
+
 - Include sensitive information (API keys, passwords)
 - Make files too large (>20KB)
 - Use vague descriptions
 - Forget to update after major changes
 
 ✅ **Do:**
+
 - Use concrete examples from the codebase
 - Include version numbers
 - Explain architectural decisions
@@ -227,19 +243,20 @@ You can add team-specific guidelines:
 
 ## File Comparison
 
-| Feature | Cursor | Copilot | Windsurf | Cline | Aider | Continue |
-|---------|--------|---------|----------|-------|-------|----------|
-| Size | Large | Large | Medium | Small | Small | Medium |
-| Detail | High | High | Medium | Low | Low | Medium |
-| Examples | Many | Many | Some | Few | Few | Some |
-| Use Case | All | Code Gen | Chat | Tasks | Editing | VS Code |
-| Load Time | Slow | Slow | Medium | Fast | Fast | Medium |
+| Feature   | Cursor | Copilot  | Windsurf | Cline | Aider   | Continue |
+| --------- | ------ | -------- | -------- | ----- | ------- | -------- |
+| Size      | Large  | Large    | Medium   | Small | Small   | Medium   |
+| Detail    | High   | High     | Medium   | Low   | Low     | Medium   |
+| Examples  | Many   | Many     | Some     | Few   | Few     | Some     |
+| Use Case  | All    | Code Gen | Chat     | Tasks | Editing | VS Code  |
+| Load Time | Slow   | Slow     | Medium   | Fast  | Fast    | Medium   |
 
 ## Impact on AI Performance
 
 ### With Context Files
 
 ✅ **Advantages:**
+
 - AI understands project architecture
 - Generates code following project standards
 - Suggests appropriate patterns and libraries
@@ -249,6 +266,7 @@ You can add team-specific guidelines:
 ### Without Context Files
 
 ❌ **Disadvantages:**
+
 - Generic code suggestions
 - May not follow project conventions
 - Could suggest incompatible libraries
@@ -272,7 +290,7 @@ Recommended update frequency:
 ```typescript
 // Generic suggestion
 function getUser(id) {
-  return fetch(`/api/users/${id}`).then(r => r.json());
+  return fetch(`/api/users/${id}`).then((r) => r.json());
 }
 ```
 

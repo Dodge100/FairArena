@@ -29,9 +29,10 @@ export default function AccountLogs() {
 
   const { data: logs = [], isLoading: isLoadingLogs } = useQuery({
     queryKey: ['account-logs'],
-    queryFn: () => apiRequest<{ success: boolean; logs: Log[] }>(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`
-    ).then((res) => res.logs),
+    queryFn: () =>
+      apiRequest<{ success: boolean; logs: Log[] }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/account-settings/logs`,
+      ).then((res) => res.logs),
     enabled: isVerified,
     staleTime: 60 * 60 * 1000, // 1 hour as per previous description "Logs are cached and update every hour"
   });
@@ -66,9 +67,7 @@ export default function AccountLogs() {
           <span>Account Logs</span>
         </h1>
 
-        {!isVerified && (
-          <OTPVerification onVerified={() => setIsVerified(true)} />
-        )}
+        {!isVerified && <OTPVerification onVerified={() => setIsVerified(true)} />}
 
         {isVerified && (
           <Card className="mt-6">

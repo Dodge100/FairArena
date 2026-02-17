@@ -178,16 +178,16 @@ docker compose down
 
 ## 📚 Documentation
 
-| Document                | Location                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| **Frontend README**     | [Frontend/README.md](./Frontend/README.md)                                   |
-| **Backend README**      | [Backend/README.md](./Backend/README.md)                                     |
-| **API Reference**       | [Backend/docs/API_REFERENCE.md](./Backend/docs/API_REFERENCE.md)             |
-| **System Architecture** | [Backend/docs/SYSTEM_ARCHITECTURE.md](./Backend/docs/SYSTEM_ARCHITECTURE.md) |
-| **System Architecture Eraser Diagram** | [docs/architecture/README.md](./docs/architecture/README.md)                  |
-| **Database Design**     | [Backend/docs/DATABASE_DESIGN.md](./Backend/docs/DATABASE_DESIGN.md)         |
-| **Infrastructure**      | [Backend/docs/INFRASTRUCTURE.md](./Backend/docs/INFRASTRUCTURE.md)           |
-| **Postman Collection**  | [Backend/postman/](./Backend/postman/)                                       |
+| Document                               | Location                                                                     |
+| -------------------------------------- | ---------------------------------------------------------------------------- |
+| **Frontend README**                    | [Frontend/README.md](./Frontend/README.md)                                   |
+| **Backend README**                     | [Backend/README.md](./Backend/README.md)                                     |
+| **API Reference**                      | [Backend/docs/API_REFERENCE.md](./Backend/docs/API_REFERENCE.md)             |
+| **System Architecture**                | [Backend/docs/SYSTEM_ARCHITECTURE.md](./Backend/docs/SYSTEM_ARCHITECTURE.md) |
+| **System Architecture Eraser Diagram** | [docs/architecture/README.md](./docs/architecture/README.md)                 |
+| **Database Design**                    | [Backend/docs/DATABASE_DESIGN.md](./Backend/docs/DATABASE_DESIGN.md)         |
+| **Infrastructure**                     | [Backend/docs/INFRASTRUCTURE.md](./Backend/docs/INFRASTRUCTURE.md)           |
+| **Postman Collection**                 | [Backend/postman/](./Backend/postman/)                                       |
 
 ---
 

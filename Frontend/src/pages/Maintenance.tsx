@@ -14,9 +14,7 @@ export default function Maintenance() {
             <AlertTriangle className="w-10 h-10 text-yellow-600 dark:text-yellow-500" />
           </div>
           <CardTitle className="text-3xl font-bold">{t('maintenance.title')}</CardTitle>
-          <CardDescription className="text-lg">
-            {t('maintenance.description')}
-          </CardDescription>
+          <CardDescription className="text-lg">{t('maintenance.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 space-y-3">

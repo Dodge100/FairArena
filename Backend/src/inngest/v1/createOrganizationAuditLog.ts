@@ -46,10 +46,13 @@ export const createOrganizationAuditLog = inngest.createFunction(
         try {
           const pattern = `${REDIS_KEYS.USER_ORGANIZATION_AUDIT_LOGS}${organizationId}:*`;
           const keys = await redis.keys(pattern);
-          
+
           if (keys.length > 0) {
             await redis.del(...keys);
-            logger.info('Invalidated audit log caches', { organizationId, keysInvalidated: keys.length });
+            logger.info('Invalidated audit log caches', {
+              organizationId,
+              keysInvalidated: keys.length,
+            });
           }
         } catch (cacheError) {
           logger.warn('Failed to invalidate audit log caches', { cacheError, organizationId });

@@ -31,7 +31,7 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
 
   // Prepare headers
   const headers: Record<string, string> = {
-    ...(init.headers as any || {}),
+    ...((init.headers as any) || {}),
   };
 
   // Add authorization token
@@ -74,7 +74,7 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
         // Try to extract reasons from HTML
         const reasonMatches = html.match(/<li>([^<]+)<\/li>/g);
         if (reasonMatches) {
-          reasonMatches.forEach(match => {
+          reasonMatches.forEach((match) => {
             const reason = match.replace(/<\/?li>/g, '').trim();
             if (reason && !reason.startsWith('→') && reason !== 'Suggestions:') {
               reasons.push(reason);
@@ -83,20 +83,27 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
         }
 
         if (onIPBlocked) {
-          onIPBlocked(reasons.length > 0 ? reasons : ['Your IP has been blocked due to security policy violations']);
+          onIPBlocked(
+            reasons.length > 0
+              ? reasons
+              : ['Your IP has been blocked due to security policy violations'],
+          );
         }
       } else {
         // Try to parse as JSON for user ban
         const body = await clonedResponse.json();
         if (body.code === 'USER_BANNED') {
-          const reason = body.message?.replace('Your account has been suspended. Reason: ', '') || undefined;
+          const reason =
+            body.message?.replace('Your account has been suspended. Reason: ', '') || undefined;
           if (onUserBanned) {
             onUserBanned(reason);
           }
         } else if (body.code === 'IP_BLOCKED') {
           // Backend might also send JSON for IP blocks
           if (onIPBlocked) {
-            onIPBlocked(body.reasons || ['Your IP has been blocked due to security policy violations']);
+            onIPBlocked(
+              body.reasons || ['Your IP has been blocked due to security policy violations'],
+            );
           }
         }
       }
@@ -115,7 +122,7 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
 
   // Prepare headers
   const headers: Record<string, string> = {
-    ...(init.headers as any || {}),
+    ...((init.headers as any) || {}),
   };
 
   // Add CSRF token for state-changing requests
@@ -153,7 +160,7 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
         // Try to extract reasons from HTML
         const reasonMatches = html.match(/<li>([^<]+)<\/li>/g);
         if (reasonMatches) {
-          reasonMatches.forEach(match => {
+          reasonMatches.forEach((match) => {
             const reason = match.replace(/<\/?li>/g, '').trim();
             if (reason && !reason.startsWith('→') && reason !== 'Suggestions:') {
               reasons.push(reason);
@@ -162,7 +169,11 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
         }
 
         if (onIPBlocked) {
-          onIPBlocked(reasons.length > 0 ? reasons : ['Your IP has been blocked due to security policy violations']);
+          onIPBlocked(
+            reasons.length > 0
+              ? reasons
+              : ['Your IP has been blocked due to security policy violations'],
+          );
         }
       } else {
         // Try to parse as JSON for user ban/block
@@ -170,7 +181,9 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
         // Public API usually doesn't have user ban context, but might have IP block JSON
         if (body.code === 'IP_BLOCKED') {
           if (onIPBlocked) {
-            onIPBlocked(body.reasons || ['Your IP has been blocked due to security policy violations']);
+            onIPBlocked(
+              body.reasons || ['Your IP has been blocked due to security policy violations'],
+            );
           }
         }
       }

@@ -1,6 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiRequest } from '@/lib/apiClient';
@@ -15,7 +21,7 @@ import {
   Loader2,
   MessageSquare,
   Phone,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -56,16 +62,20 @@ const countries = [
   { code: '+351', name: 'Portugal', flag: '🇵🇹', search: 'portugal portuguese' },
 ];
 
-type PendingAction = {
-  type: 'send_otp';
-  method: 'sms' | 'voice';
-  isResend?: boolean;
-} | {
-  type: 'verify_otp';
-  method: 'sms' | 'voice';
-} | {
-  type: 'claim';
-} | null;
+type PendingAction =
+  | {
+      type: 'send_otp';
+      method: 'sms' | 'voice';
+      isResend?: boolean;
+    }
+  | {
+      type: 'verify_otp';
+      method: 'sms' | 'voice';
+    }
+  | {
+      type: 'claim';
+    }
+  | null;
 
 const CreditsVerificationPage = () => {
   const { isSignedIn } = useAuthState();
@@ -104,12 +114,15 @@ const CreditsVerificationPage = () => {
     (country) =>
       country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
       country.code.includes(countrySearch) ||
-      country.search.toLowerCase().includes(countrySearch.toLowerCase())
+      country.search.toLowerCase().includes(countrySearch.toLowerCase()),
   );
 
   const { data: eligibilityData, isLoading: checkingEligibility } = useQuery({
     queryKey: ['credits-eligibility', isSignedIn],
-    queryFn: () => apiRequest<{ success: boolean, data: any }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(res => res.data),
+    queryFn: () =>
+      apiRequest<{ success: boolean; data: any }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`,
+      ).then((res) => res.data),
     enabled: isSignedIn,
   });
 
@@ -144,12 +157,15 @@ const CreditsVerificationPage = () => {
     }
   }, [resendTimer]);
 
-  const onCaptchaChange = useCallback((token: string | null) => {
-    if (token && pendingAction) {
-      // Automatically trigger action when captcha is solved
-      executePendingAction(token);
-    }
-  }, [pendingAction]); // Added dependency
+  const onCaptchaChange = useCallback(
+    (token: string | null) => {
+      if (token && pendingAction) {
+        // Automatically trigger action when captcha is solved
+        executePendingAction(token);
+      }
+    },
+    [pendingAction],
+  ); // Added dependency
 
   const executePendingAction = async (captcha: string) => {
     if (!pendingAction) return;
@@ -174,7 +190,7 @@ const CreditsVerificationPage = () => {
           break;
       }
     } catch (e) {
-      console.error("Error executing action", e);
+      console.error('Error executing action', e);
     } finally {
       setPendingAction(null);
     }
@@ -214,12 +230,25 @@ const CreditsVerificationPage = () => {
     setIsCaptchaModalOpen(true);
   };
 
-
   const sendOtpMutation = useMutation({
-    mutationFn: async ({ method, isResend, captcha }: { method: 'sms' | 'voice', isResend: boolean, captcha: string }) => {
+    mutationFn: async ({
+      method,
+      isResend,
+      captcha,
+    }: {
+      method: 'sms' | 'voice';
+      isResend: boolean;
+      captcha: string;
+    }) => {
       const cleanPhone = phoneNumber.trim().replace(/\D/g, '');
-      const endpoint = method === 'voice' ? '/api/v1/credits/send-voice-otp' : '/api/v1/credits/send-sms-otp';
-      return apiRequest<{ success: boolean, alreadyVerified?: boolean, retryAfter?: number, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
+      const endpoint =
+        method === 'voice' ? '/api/v1/credits/send-voice-otp' : '/api/v1/credits/send-sms-otp';
+      return apiRequest<{
+        success: boolean;
+        alreadyVerified?: boolean;
+        retryAfter?: number;
+        message?: string;
+      }>(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'X-Recaptcha-Token': captcha,
@@ -228,14 +257,16 @@ const CreditsVerificationPage = () => {
         body: JSON.stringify({
           phoneNumber: cleanPhone,
           countryCode: countryCode,
-          isResend
+          isResend,
         }),
       });
     },
     onSuccess: (data, variables) => {
       if (data.success) {
         const methodText = variables.method === 'voice' ? 'voice call' : 'SMS';
-        toast.success(variables.isResend ? `New code sent via ${methodText}` : `Code sent via ${methodText}`);
+        toast.success(
+          variables.isResend ? `New code sent via ${methodText}` : `Code sent via ${methodText}`,
+        );
         if (!variables.isResend) setStep('otp');
         if (variables.isResend) setOtp('');
         setResendTimer(120);
@@ -261,25 +292,33 @@ const CreditsVerificationPage = () => {
     onSettled: () => {
       setIsSendingOtp(false);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
-  const performSendOtp = async (method: 'sms' | 'voice', isResend: boolean = false, captcha: string) => {
+  const performSendOtp = async (
+    method: 'sms' | 'voice',
+    isResend: boolean = false,
+    captcha: string,
+  ) => {
     setIsSendingOtp(true);
     sendOtpMutation.mutate({ method, isResend, captcha });
   };
 
   const verifyOtpMutation = useMutation({
-    mutationFn: async ({ method, captcha }: { method: 'sms' | 'voice', captcha: string }) => {
-      const endpoint = method === 'voice' ? '/api/v1/credits/verify-voice-otp' : '/api/v1/credits/verify-sms-otp';
-      return apiRequest<{ success: boolean, expired?: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'X-Recaptcha-Token': captcha,
-          'Content-Type': 'application/json',
+    mutationFn: async ({ method, captcha }: { method: 'sms' | 'voice'; captcha: string }) => {
+      const endpoint =
+        method === 'voice' ? '/api/v1/credits/verify-voice-otp' : '/api/v1/credits/verify-sms-otp';
+      return apiRequest<{ success: boolean; expired?: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}${endpoint}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Recaptcha-Token': captcha,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ otp }),
         },
-        body: JSON.stringify({ otp }),
-      });
+      );
     },
     onSuccess: () => {
       toast.success('Phone verified successfully');
@@ -298,7 +337,7 @@ const CreditsVerificationPage = () => {
     onSettled: () => {
       setIsVerifyingOtp(false);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
   const performVerifyOtp = async (method: 'sms' | 'voice', captcha: string) => {
@@ -308,13 +347,16 @@ const CreditsVerificationPage = () => {
 
   const claimMutation = useMutation({
     mutationFn: async (captcha: string) => {
-      return apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`, {
-        method: 'POST',
-        headers: {
-          'X-Recaptcha-Token': captcha,
-          'Content-Type': 'application/json',
+      return apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/claim-free`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Recaptcha-Token': captcha,
+            'Content-Type': 'application/json',
+          },
         },
-      });
+      );
     },
     onSuccess: () => {
       toast.success('Credits claimed successfully!');
@@ -330,7 +372,7 @@ const CreditsVerificationPage = () => {
     onSettled: () => {
       setIsClaiming(false);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
   const performClaimCredits = async (captcha: string) => {
@@ -353,7 +395,6 @@ const CreditsVerificationPage = () => {
     // Keep resend timer running? Usually better to keep it if it's running
   };
 
-
   if (!isSignedIn || isCheckingEligibility) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -370,11 +411,10 @@ const CreditsVerificationPage = () => {
           <div className="inline-flex items-center justify-center p-3 bg-primary/5 rounded-2xl mb-4 ring-1 ring-primary/10">
             <Gift className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Claim Free Credits
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Claim Free Credits</h1>
           <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-            Verify your phone number to unlock <span className="font-semibold text-foreground">200 credits</span>.
+            Verify your phone number to unlock{' '}
+            <span className="font-semibold text-foreground">200 credits</span>.
           </p>
         </div>
 
@@ -383,16 +423,14 @@ const CreditsVerificationPage = () => {
           {['phone', 'otp', 'claim'].map((s, i) => {
             const isActive = step === s;
             const isCompleted =
-              (step === 'otp' && i === 0) ||
-              (step === 'claim' && i <= 1) ||
-              hasClaimed;
+              (step === 'otp' && i === 0) || (step === 'claim' && i <= 1) || hasClaimed;
 
             return (
               <div key={s} className="flex items-center">
                 <div
                   className={cn(
-                    "h-2 w-16 rounded-full transition-all duration-300",
-                    isActive ? "bg-primary" : isCompleted ? "bg-primary/40" : "bg-secondary"
+                    'h-2 w-16 rounded-full transition-all duration-300',
+                    isActive ? 'bg-primary' : isCompleted ? 'bg-primary/40' : 'bg-secondary',
                   )}
                 />
               </div>
@@ -406,9 +444,7 @@ const CreditsVerificationPage = () => {
             <Card className="border shadow-none bg-card">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-medium">Phone Verification</CardTitle>
-                <CardDescription>
-                  Enter your phone number to verify your identity.
-                </CardDescription>
+                <CardDescription>Enter your phone number to verify your identity.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
@@ -422,7 +458,9 @@ const CreditsVerificationPage = () => {
                         onClick={() => setShowCountryDropdown(!showCountryDropdown)}
                       >
                         <span className="flex items-center gap-2 truncate">
-                          <span className="text-base">{countries.find(c => c.code === countryCode)?.flag}</span>
+                          <span className="text-base">
+                            {countries.find((c) => c.code === countryCode)?.flag}
+                          </span>
                           <span className="text-xs text-muted-foreground">{countryCode}</span>
                         </span>
                         <ChevronDown className="h-3 w-3 opacity-50" />
@@ -448,13 +486,15 @@ const CreditsVerificationPage = () => {
                                   setCountrySearch('');
                                 }}
                                 className={cn(
-                                  "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-left transition-colors",
-                                  countryCode === country.code && "bg-accent/50"
+                                  'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-left transition-colors',
+                                  countryCode === country.code && 'bg-accent/50',
                                 )}
                               >
                                 <span className="text-lg">{country.flag}</span>
                                 <span className="flex-1 truncate">{country.name}</span>
-                                <span className="text-muted-foreground text-xs">{country.code}</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {country.code}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -482,10 +522,10 @@ const CreditsVerificationPage = () => {
                       role="button"
                       onClick={() => setVerificationMethod('sms')}
                       className={cn(
-                        "flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all",
+                        'flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all',
                         verificationMethod === 'sms'
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                          : "bg-background hover:bg-muted"
+                          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                          : 'bg-background hover:bg-muted',
                       )}
                     >
                       <MessageSquare className="h-4 w-4" />
@@ -495,10 +535,10 @@ const CreditsVerificationPage = () => {
                       role="button"
                       onClick={() => setVerificationMethod('voice')}
                       className={cn(
-                        "flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all",
+                        'flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-all',
                         verificationMethod === 'voice'
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                          : "bg-background hover:bg-muted"
+                          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                          : 'bg-background hover:bg-muted',
                       )}
                     >
                       <Phone className="h-4 w-4" />
@@ -515,7 +555,9 @@ const CreditsVerificationPage = () => {
                     size="lg"
                   >
                     {isSendingOtp ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
+                      </>
                     ) : (
                       'Send Verification Code'
                     )}
@@ -538,16 +580,28 @@ const CreditsVerificationPage = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-medium">Enter Code</CardTitle>
                 <CardDescription>
-                  We sent a code to <span className="font-mono text-foreground">{countryCode} {phoneNumber}</span>
+                  We sent a code to{' '}
+                  <span className="font-mono text-foreground">
+                    {countryCode} {phoneNumber}
+                  </span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="otp" className="sr-only">Verification Code</Label>
+                  <Label htmlFor="otp" className="sr-only">
+                    Verification Code
+                  </Label>
                   <Input
                     id="otp"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12))}
+                    onChange={(e) =>
+                      setOtp(
+                        e.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z0-9]/g, '')
+                          .slice(0, 12),
+                      )
+                    }
                     placeholder="ENTER CODE"
                     className="text-center text-2xl font-mono tracking-[0.5em] h-14 uppercase"
                     maxLength={12}
@@ -582,7 +636,8 @@ const CreditsVerificationPage = () => {
                     {resendTimer > 0 ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        Resend in {Math.floor(resendTimer / 60)}:{String(resendTimer % 60).padStart(2, '0')}
+                        Resend in {Math.floor(resendTimer / 60)}:
+                        {String(resendTimer % 60).padStart(2, '0')}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -603,13 +658,13 @@ const CreditsVerificationPage = () => {
                   <Check className="h-8 w-8 text-green-600 dark:text-green-500" />
                 </div>
                 <CardTitle className="text-2xl font-bold">Verified!</CardTitle>
-                <CardDescription>
-                  Your phone number has been successfully linked.
-                </CardDescription>
+                <CardDescription>Your phone number has been successfully linked.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8 pb-8">
                 <div className="bg-secondary/50 rounded-xl p-6 border border-border/50">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Claim Reward</p>
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Claim Reward
+                  </p>
                   <div className="text-5xl font-extrabold text-foreground mb-1">200</div>
                   <div className="text-sm font-semibold text-foreground">Free Credits</div>
                 </div>
@@ -633,7 +688,9 @@ const CreditsVerificationPage = () => {
                     size="lg"
                   >
                     {isClaiming ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Claiming...</>
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Claiming...
+                      </>
                     ) : (
                       'Claim Credits Now'
                     )}

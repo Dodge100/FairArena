@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import {
-    disableMFA,
-    getMFAStatus,
-    regenerateBackupCodes,
-    startMFASetup,
-    verifyMFA,
-    verifyMFASetup,
+  disableMFA,
+  getMFAStatus,
+  regenerateBackupCodes,
+  startMFASetup,
+  verifyMFA,
+  verifyMFASetup,
 } from '../../controllers/v1/mfaController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
@@ -42,14 +42,14 @@ router.get('/status', getMFAStatus);
  *         description: QR code and backup codes
  */
 router.post(
-    '/setup',
-    createAuthRateLimiter({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5, // 5 requests per 15 minutes
-        message: 'Too many MFA setup attempts. Please try again later.',
-    }),
-    requireSettingsVerification,
-    startMFASetup,
+  '/setup',
+  createAuthRateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 requests per 15 minutes
+    message: 'Too many MFA setup attempts. Please try again later.',
+  }),
+  requireSettingsVerification,
+  startMFASetup,
 );
 
 /**
@@ -80,13 +80,13 @@ router.post(
  *         description: Verification successful
  */
 router.post(
-    '/verify-setup',
-    createAuthRateLimiter({
-        windowMs: 15 * 60 * 1000,
-        max: 10,
-        message: 'Too many verification attempts. Please try again later.',
-    }),
-    verifyMFASetup,
+  '/verify-setup',
+  createAuthRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: 'Too many verification attempts. Please try again later.',
+  }),
+  verifyMFASetup,
 );
 
 /**
@@ -115,13 +115,13 @@ router.post(
  *         description: Verification successful
  */
 router.post(
-    '/verify',
-    createAuthRateLimiter({
-        windowMs: 15 * 60 * 1000,
-        max: 10,
-        message: 'Too many verification attempts. Please try again later.',
-    }),
-    verifyMFA,
+  '/verify',
+  createAuthRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: 'Too many verification attempts. Please try again later.',
+  }),
+  verifyMFA,
 );
 
 /**
@@ -151,14 +151,14 @@ router.post(
  *         description: MFA disabled
  */
 router.post(
-    '/disable',
-    createAuthRateLimiter({
-        windowMs: 15 * 60 * 1000,
-        max: 5,
-        message: 'Too many disable attempts. Please try again later.',
-    }),
-    requireSettingsVerification,
-    disableMFA,
+  '/disable',
+  createAuthRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: 'Too many disable attempts. Please try again later.',
+  }),
+  requireSettingsVerification,
+  disableMFA,
 );
 
 /**
@@ -185,14 +185,14 @@ router.post(
  *         description: New backup codes
  */
 router.post(
-    '/regenerate-backup',
-    createAuthRateLimiter({
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 3, // 3 requests per hour
-        message: 'Too many backup code regeneration attempts. Please try again later.',
-    }),
-    requireSettingsVerification,
-    regenerateBackupCodes,
+  '/regenerate-backup',
+  createAuthRateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 requests per hour
+    message: 'Too many backup code regeneration attempts. Please try again later.',
+  }),
+  requireSettingsVerification,
+  regenerateBackupCodes,
 );
 
 export default router;

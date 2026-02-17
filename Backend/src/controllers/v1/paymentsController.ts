@@ -46,12 +46,10 @@ export const createOrder = async (req: Request, res: Response) => {
     const userEmail = userInfo?.email || null;
 
     if (ENV.PAYMENTS_ENABLED === false) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: 'Payments are currently disabled. Please try again later.',
-        });
+      return res.status(403).json({
+        success: false,
+        message: 'Payments are currently disabled. Please try again later.',
+      });
     }
 
     if (!userId) {
@@ -113,7 +111,6 @@ export const createOrder = async (req: Request, res: Response) => {
       currency: plan.currency,
       credits: plan.credits,
     };
-
 
     // Additional security: Log payment attempt for fraud monitoring
     logger.info('Payment order creation attempt', {

@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import {
-    checkWaitlistStatus,
-    getWaitlistStats,
-    joinWaitlist,
+  checkWaitlistStatus,
+  getWaitlistStats,
+  joinWaitlist,
 } from '../../controllers/v1/waitlistController.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
@@ -40,14 +40,14 @@ const router = Router();
  *         description: Rate limited
  */
 router.post(
-    '/',
-    createAuthRateLimiter({
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 5, // 5 requests per hour per IP
-        message: 'Too many waitlist requests. Please try again later.',
-    }),
-    verifyRecaptcha,
-    joinWaitlist,
+  '/',
+  createAuthRateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // 5 requests per hour per IP
+    message: 'Too many waitlist requests. Please try again later.',
+  }),
+  verifyRecaptcha,
+  joinWaitlist,
 );
 
 /**
@@ -70,13 +70,13 @@ router.post(
  *         description: Email not found
  */
 router.get(
-    '/status/:email',
-    createAuthRateLimiter({
-        windowMs: 60 * 1000, // 1 minute
-        max: 10, // 10 requests per minute per IP
-        message: 'Too many status checks. Please try again later.',
-    }),
-    checkWaitlistStatus,
+  '/status/:email',
+  createAuthRateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // 10 requests per minute per IP
+    message: 'Too many status checks. Please try again later.',
+  }),
+  checkWaitlistStatus,
 );
 
 /**

@@ -5,7 +5,7 @@ import { inngest } from './client.js';
 
 const notificationapi = new Pingram({
   apiKey: ENV.PINGRAM_API_KEY,
-  baseUrl: 'https://api.pingram.io'
+  baseUrl: 'https://api.pingram.io',
 });
 logger.info('NotificationAPI initialized for SMS');
 
@@ -64,7 +64,10 @@ export const creditsSendSmsOtp = inngest.createFunction(
       const smsResult = await sendSms(phoneNumber, otp);
 
       if (smsResult.success) {
-        logger.info('SMS OTP sent successfully', { userId, phoneNumber: phoneNumber.toString().slice(-4) });
+        logger.info('SMS OTP sent successfully', {
+          userId,
+          phoneNumber: phoneNumber.toString().slice(-4),
+        });
 
         // Log the action
         await inngest.send({
@@ -84,7 +87,10 @@ export const creditsSendSmsOtp = inngest.createFunction(
 
         return { success: true };
       } else {
-        logger.error('Failed to send SMS OTP', { userId, phoneNumber: phoneNumber.toString().slice(-4) });
+        logger.error('Failed to send SMS OTP', {
+          userId,
+          phoneNumber: phoneNumber.toString().slice(-4),
+        });
         return { success: false, error: 'Failed to send SMS' };
       }
     } catch (error) {

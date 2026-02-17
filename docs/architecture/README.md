@@ -5,14 +5,14 @@ We use [Eraser.io](https://eraser.io) for diagramming.
 
 ## Files
 
-| Diagram | Source | Rendered |
-|---------|--------|----------|
-| **Database Schema** | [`database-schema.eraserdiagram`](./database-schema.eraserdiagram) | ![Database Schema](./database-schema.svg) |
-| **System Infrastructure** | [`system-infrastructure.eraserdiagram`](./system-infrastructure.eraserdiagram) | ![Infrastructure](./system-infrastructure.svg) |
-| **Auth System Flow** | [`auth-system-flow.eraserdiagram`](./auth-system-flow.eraserdiagram) | ![Auth System Flow](./auth-system-flow.svg) |
-| **Razorpay Credits System** | [`razorpay-credits-system-flow.eraserdiagram`](./razorpay-credits-system-flow.eraserdiagram) | ![Razorpay Credits System Flow](./razorpay-credits-system-flow.svg) |
-| **Organization Permissions** | [`organization-permission-flow.eraserdiagram`](./organization-permission-flow.eraserdiagram) | ![Org Permissions](./organization-permission-flow.svg) |
-| **Inbox & Settings** | [`inbox-settings-system-flow.eraserdiagram`](./inbox-settings-system-flow.eraserdiagram) | ![Inbox Settings](./inbox-settings-system-flow.svg) |
+| Diagram                      | Source                                                                                       | Rendered                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Database Schema**          | [`database-schema.eraserdiagram`](./database-schema.eraserdiagram)                           | ![Database Schema](./database-schema.svg)                           |
+| **System Infrastructure**    | [`system-infrastructure.eraserdiagram`](./system-infrastructure.eraserdiagram)               | ![Infrastructure](./system-infrastructure.svg)                      |
+| **Auth System Flow**         | [`auth-system-flow.eraserdiagram`](./auth-system-flow.eraserdiagram)                         | ![Auth System Flow](./auth-system-flow.svg)                         |
+| **Razorpay Credits System**  | [`razorpay-credits-system-flow.eraserdiagram`](./razorpay-credits-system-flow.eraserdiagram) | ![Razorpay Credits System Flow](./razorpay-credits-system-flow.svg) |
+| **Organization Permissions** | [`organization-permission-flow.eraserdiagram`](./organization-permission-flow.eraserdiagram) | ![Org Permissions](./organization-permission-flow.svg)              |
+| **Inbox & Settings**         | [`inbox-settings-system-flow.eraserdiagram`](./inbox-settings-system-flow.eraserdiagram)     | ![Inbox Settings](./inbox-settings-system-flow.svg)                 |
 
 ## How to edit diagrams
 

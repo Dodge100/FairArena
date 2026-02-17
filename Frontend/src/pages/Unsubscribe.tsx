@@ -1,6 +1,6 @@
 import { DataSaverImage } from '@/components/ui/DataSaverImage';
 import { Spotlight } from '@/components/ui/Spotlight';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,11 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import { useDataSaverUtils } from '@/hooks/useDataSaverUtils';
 import { publicApiFetch } from '@/lib/apiClient';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -62,10 +62,7 @@ function Unsubscribe() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/[0.96] antialiased bg-grid-white/[0.02] overflow-y-auto w-full h-full flex items-center justify-center">
-      <Spotlight
-        className="-top-40 left-0 md:left-60 md:-top-20"
-        fill="white"
-      />
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       <div className="p-4 max-w-4xl mx-auto relative z-10 w-full flex flex-col items-center">
         <div className="flex justify-center mb-8">
           <DataSaverImage
@@ -86,7 +83,9 @@ function Unsubscribe() {
 
         <Card className="w-full bg-zinc-900 border-zinc-800 text-zinc-100 shadow-2xl backdrop-blur-xl bg-opacity-80">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold tracking-tight text-white mb-2">{t('unsubscribe.title')}</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-white mb-2">
+              {t('unsubscribe.title')}
+            </CardTitle>
             <CardDescription className="text-zinc-400">
               {t('unsubscribe.description')}
             </CardDescription>
@@ -94,7 +93,9 @@ function Unsubscribe() {
           <CardContent className="flex flex-col items-center justify-center py-6 min-h-[160px]">
             {status === 'loading' && (
               <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-500">
-                <Loader2 className={cn("h-10 w-10 text-zinc-500", shouldLoadImage && "animate-spin")} />
+                <Loader2
+                  className={cn('h-10 w-10 text-zinc-500', shouldLoadImage && 'animate-spin')}
+                />
                 <p className="text-zinc-500 text-sm font-medium">{t('unsubscribe.processing')}</p>
               </div>
             )}
@@ -103,7 +104,9 @@ function Unsubscribe() {
               <div className="flex flex-col items-center space-y-4 animate-in zoom-in-95 duration-500">
                 <CheckCircle2 className="h-12 w-12 text-green-500" />
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg font-semibold text-white">{t('unsubscribe.success.title')}</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                    {t('unsubscribe.success.title')}
+                  </h3>
                   <p className="text-zinc-400 text-sm max-w-[280px] mx-auto">{message}</p>
                 </div>
               </div>
@@ -113,7 +116,9 @@ function Unsubscribe() {
               <div className="flex flex-col items-center space-y-4 animate-in zoom-in-95 duration-500">
                 <XCircle className="h-12 w-12 text-red-500" />
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg font-semibold text-white">{t('unsubscribe.error.title')}</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                    {t('unsubscribe.error.title')}
+                  </h3>
                   <p className="text-zinc-400 text-sm max-w-[280px] mx-auto">{message}</p>
                 </div>
               </div>

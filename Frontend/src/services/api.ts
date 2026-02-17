@@ -16,7 +16,7 @@ class ApiClient {
     // Prepare headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers as any || {}),
+      ...((options.headers as any) || {}),
     };
 
     // Add CSRF token for state-changing requests

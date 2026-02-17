@@ -50,10 +50,10 @@
 
 ### Prerequisites
 
-| Requirement | Version | Purpose |
-|-------------|---------|---------|
-| Node.js | 20 LTS+ | JavaScript runtime |
-| pnpm | 10.x+ | Package manager |
+| Requirement | Version | Purpose            |
+| ----------- | ------- | ------------------ |
+| Node.js     | 20 LTS+ | JavaScript runtime |
+| pnpm        | 10.x+   | Package manager    |
 
 ### Installation
 
@@ -71,10 +71,10 @@ pnpm dev
 
 ### Development URLs
 
-| Service | URL | Description |
-|---------|-----|-------------|
+| Service    | URL                   | Description      |
+| ---------- | --------------------- | ---------------- |
 | 🌐 **App** | http://localhost:5173 | Main application |
-| 🔧 **API** | http://localhost:3000 | Backend API |
+| 🔧 **API** | http://localhost:3000 | Backend API      |
 
 ---
 
@@ -82,39 +82,39 @@ pnpm dev
 
 ### User Experience
 
-| Feature | Description |
-|---------|-------------|
-| 🎨 **Dark/Light Mode** | Theme switching with system preference detection |
-| 📱 **Responsive Design** | Mobile-first, works on all devices |
-| ⚡ **Instant Navigation** | React Router with lazy loading |
-| 🔔 **Real-time Notifications** | Live notification system |
-| 🤖 **AI Assistant** | Context-aware AI chat sidebar |
-| 🎯 **Smooth Animations** | Motion library animations |
-| 🍪 **Cookie Consent** | GDPR-compliant cookie management |
+| Feature                        | Description                                      |
+| ------------------------------ | ------------------------------------------------ |
+| 🎨 **Dark/Light Mode**         | Theme switching with system preference detection |
+| 📱 **Responsive Design**       | Mobile-first, works on all devices               |
+| ⚡ **Instant Navigation**      | React Router with lazy loading                   |
+| 🔔 **Real-time Notifications** | Live notification system                         |
+| 🤖 **AI Assistant**            | Context-aware AI chat sidebar                    |
+| 🎯 **Smooth Animations**       | Motion library animations                        |
+| 🍪 **Cookie Consent**          | GDPR-compliant cookie management                 |
 
 ### Core Functionality
 
-| Feature | Description |
-|---------|-------------|
-| 🔐 **Authentication** | Clerk-based sign in/up with OAuth |
-| 👤 **Profile Management** | Complete profile with social links |
-| 🏢 **Organizations** | Create & manage organizations |
-| 👥 **Teams** | Team management with roles & invites |
-| 💳 **Payments** | Razorpay integration for credits |
-| 📧 **Newsletter** | Email subscription management |
-| 🆘 **Support** | In-app support ticket system |
-| ⭐ **Profile Stars** | Star/follow user profiles |
+| Feature                   | Description                          |
+| ------------------------- | ------------------------------------ |
+| 🔐 **Authentication**     | Clerk-based sign in/up with OAuth    |
+| 👤 **Profile Management** | Complete profile with social links   |
+| 🏢 **Organizations**      | Create & manage organizations        |
+| 👥 **Teams**              | Team management with roles & invites |
+| 💳 **Payments**           | Razorpay integration for credits     |
+| 📧 **Newsletter**         | Email subscription management        |
+| 🆘 **Support**            | In-app support ticket system         |
+| ⭐ **Profile Stars**      | Star/follow user profiles            |
 
 ### Technical Features
 
-| Feature | Description |
-|---------|-------------|
-| 🔒 **Protected Routes** | Authentication guards |
-| 📊 **Analytics** | Firebase + Microsoft Clarity |
-| 🐛 **Error Tracking** | Sentry integration |
-| ✅ **Form Validation** | React Hook Form + Zod |
-| 🎨 **Design System** | shadcn/ui + Radix primitives |
-| 🚀 **Code Splitting** | Lazy loading for performance |
+| Feature                 | Description                  |
+| ----------------------- | ---------------------------- |
+| 🔒 **Protected Routes** | Authentication guards        |
+| 📊 **Analytics**        | Firebase + Microsoft Clarity |
+| 🐛 **Error Tracking**   | Sentry integration           |
+| ✅ **Form Validation**  | React Hook Form + Zod        |
+| 🎨 **Design System**    | shadcn/ui + Radix primitives |
+| 🚀 **Code Splitting**   | Lazy loading for performance |
 
 ---
 
@@ -122,42 +122,42 @@ pnpm dev
 
 ### Core Technologies
 
-| Technology | Version | Purpose |
-|------------|:-------:|---------|
-| **React** | 19.2 | UI library |
-| **TypeScript** | 5.9 | Type-safe development |
-| **Vite** | 7.3 | Build tool & dev server |
-| **TailwindCSS** | 4.1 | Utility-first CSS |
-| **React Router** | 7.11 | Client-side routing |
+| Technology       | Version | Purpose                 |
+| ---------------- | :-----: | ----------------------- |
+| **React**        |  19.2   | UI library              |
+| **TypeScript**   |   5.9   | Type-safe development   |
+| **Vite**         |   7.3   | Build tool & dev server |
+| **TailwindCSS**  |   4.1   | Utility-first CSS       |
+| **React Router** |  7.11   | Client-side routing     |
 
 ### UI Components
 
-| Library | Purpose |
-|---------|---------|
-| **Radix UI** | Accessible primitives (15+ components) |
-| **shadcn/ui** | Pre-built components |
-| **Lucide React** | Icon library |
-| **Motion** | Animation library |
-| **Sonner** | Toast notifications |
+| Library          | Purpose                                |
+| ---------------- | -------------------------------------- |
+| **Radix UI**     | Accessible primitives (15+ components) |
+| **shadcn/ui**    | Pre-built components                   |
+| **Lucide React** | Icon library                           |
+| **Motion**       | Animation library                      |
+| **Sonner**       | Toast notifications                    |
 
 ### Integrations
 
-| Service | Purpose |
-|---------|---------|
-| **Clerk** | Authentication & user management |
-| **Razorpay** | Payment processing |
-| **Firebase** | Analytics |
-| **Microsoft Clarity** | Session replay & heatmaps |
-| **Sentry** | Error monitoring |
-| **reCAPTCHA** | Bot protection |
+| Service               | Purpose                          |
+| --------------------- | -------------------------------- |
+| **Clerk**             | Authentication & user management |
+| **Razorpay**          | Payment processing               |
+| **Firebase**          | Analytics                        |
+| **Microsoft Clarity** | Session replay & heatmaps        |
+| **Sentry**            | Error monitoring                 |
+| **reCAPTCHA**         | Bot protection                   |
 
 ### Form & Validation
 
-| Library | Purpose |
-|---------|---------|
+| Library             | Purpose               |
+| ------------------- | --------------------- |
 | **React Hook Form** | Form state management |
-| **Zod** | Schema validation |
-| **DOMPurify** | XSS sanitization |
+| **Zod**             | Schema validation     |
+| **DOMPurify**       | XSS sanitization      |
 
 ---
 
@@ -255,26 +255,26 @@ Frontend/
 
 Create `.env.local` with these variables:
 
-| Variable | Source | Description |
-|----------|--------|-------------|
-| `VITE_API_BASE_URL` | Backend | API server URL |
-| `VITE_CLERK_PUBLISHABLE_KEY` | [Clerk Dashboard](https://dashboard.clerk.com) | Auth key (`pk_...`) |
-| `VITE_RECAPTCHA_SITE_KEY` | [Google reCAPTCHA](https://www.google.com/recaptcha) | Site key |
-| `VITE_RAZORPAY_KEY_ID` | [Razorpay Dashboard](https://dashboard.razorpay.com) | Public key (`rzp_...`) |
-| `VITE_FIREBASE_API_KEY` | [Firebase Console](https://console.firebase.google.com) | Analytics key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Console | Auth domain |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase Console | Project ID |
-| `VITE_FIREBASE_APP_ID` | Firebase Console | App ID |
-| `VITE_FIREBASE_MEASUREMENT_ID` | Firebase Console | Analytics ID |
-| `VITE_CLARITY_PROJECT_ID` | [Microsoft Clarity](https://clarity.microsoft.com) | Project ID |
-| `VITE_SENTRY_DSN` | [Sentry Dashboard](https://sentry.io) | Error tracking DSN |
+| Variable                       | Source                                                  | Description            |
+| ------------------------------ | ------------------------------------------------------- | ---------------------- |
+| `VITE_API_BASE_URL`            | Backend                                                 | API server URL         |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | [Clerk Dashboard](https://dashboard.clerk.com)          | Auth key (`pk_...`)    |
+| `VITE_RECAPTCHA_SITE_KEY`      | [Google reCAPTCHA](https://www.google.com/recaptcha)    | Site key               |
+| `VITE_RAZORPAY_KEY_ID`         | [Razorpay Dashboard](https://dashboard.razorpay.com)    | Public key (`rzp_...`) |
+| `VITE_FIREBASE_API_KEY`        | [Firebase Console](https://console.firebase.google.com) | Analytics key          |
+| `VITE_FIREBASE_AUTH_DOMAIN`    | Firebase Console                                        | Auth domain            |
+| `VITE_FIREBASE_PROJECT_ID`     | Firebase Console                                        | Project ID             |
+| `VITE_FIREBASE_APP_ID`         | Firebase Console                                        | App ID                 |
+| `VITE_FIREBASE_MEASUREMENT_ID` | Firebase Console                                        | Analytics ID           |
+| `VITE_CLARITY_PROJECT_ID`      | [Microsoft Clarity](https://clarity.microsoft.com)      | Project ID             |
+| `VITE_SENTRY_DSN`              | [Sentry Dashboard](https://sentry.io)                   | Error tracking DSN     |
 
 ### Optional Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_APP_ENV` | `development` | Environment mode |
-| `VITE_ENABLE_ANALYTICS` | `false` | Enable analytics |
+| Variable                | Default       | Description      |
+| ----------------------- | ------------- | ---------------- |
+| `VITE_APP_ENV`          | `development` | Environment mode |
+| `VITE_ENABLE_ANALYTICS` | `false`       | Enable analytics |
 
 ### Example `.env.local`
 
@@ -309,18 +309,18 @@ VITE_SENTRY_DSN=https://xxxx@xxx.ingest.sentry.io/xxxxx
 
 ### Development
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server with HMR |
-| `pnpm build` | Build for production |
-| `pnpm preview` | Preview production build |
+| Command        | Description               |
+| -------------- | ------------------------- |
+| `pnpm dev`     | Start dev server with HMR |
+| `pnpm build`   | Build for production      |
+| `pnpm preview` | Preview production build  |
 
 ### Code Quality
 
-| Command | Description |
-|---------|-------------|
+| Command          | Description             |
+| ---------------- | ----------------------- |
 | `pnpm typecheck` | Type check without emit |
-| `pnpm lint` | Run ESLint |
+| `pnpm lint`      | Run ESLint              |
 
 ---
 
@@ -328,49 +328,49 @@ VITE_SENTRY_DSN=https://xxxx@xxx.ingest.sentry.io/xxxxx
 
 ### Pages (27)
 
-| Page | Route | Description |
-|------|-------|-------------|
-| **Home** | `/` | Landing page |
-| **Dashboard** | `/dashboard` | User dashboard |
-| **Sign In** | `/sign-in` | Authentication |
-| **Sign Up** | `/sign-up` | Registration |
-| **My Profile** | `/profile` | View own profile |
-| **Edit Profile** | `/profile/edit` | Edit profile |
-| **Public Profile** | `/profile/:userId` | View user profile |
-| **Profile Stars** | `/profile/stars` | Profile stars list |
-| **Profile Views** | `/profile/views` | Who viewed profile |
-| **Inbox** | `/inbox` | Notifications |
-| **Credits** | `/credits` | Credit balance |
-| **Credits Verification** | `/credits/verify` | Phone verification |
-| **Teams** | `/teams` | Team management |
-| **Team Invite Accept** | `/invite/:code` | Accept invite |
-| **Account Settings** | `/settings` | User settings |
-| **Account Logs** | `/settings/logs` | Activity logs |
-| **Support** | `/support` | Help & tickets |
-| **Feedback** | `/feedback/:code` | Submit feedback |
-| **About** | `/about` | About page |
-| **Why Choose Us** | `/why-choose-us` | Features page |
-| **Privacy Policy** | `/privacy` | Privacy policy |
-| **Terms** | `/terms` | Terms & conditions |
-| **Cookie Policy** | `/cookies` | Cookie policy |
-| **Refund** | `/refund` | Refund policy |
-| **Unsubscribe** | `/unsubscribe` | Email unsubscribe |
-| **Maintenance** | `/maintenance` | Maintenance mode |
+| Page                     | Route              | Description        |
+| ------------------------ | ------------------ | ------------------ |
+| **Home**                 | `/`                | Landing page       |
+| **Dashboard**            | `/dashboard`       | User dashboard     |
+| **Sign In**              | `/sign-in`         | Authentication     |
+| **Sign Up**              | `/sign-up`         | Registration       |
+| **My Profile**           | `/profile`         | View own profile   |
+| **Edit Profile**         | `/profile/edit`    | Edit profile       |
+| **Public Profile**       | `/profile/:userId` | View user profile  |
+| **Profile Stars**        | `/profile/stars`   | Profile stars list |
+| **Profile Views**        | `/profile/views`   | Who viewed profile |
+| **Inbox**                | `/inbox`           | Notifications      |
+| **Credits**              | `/credits`         | Credit balance     |
+| **Credits Verification** | `/credits/verify`  | Phone verification |
+| **Teams**                | `/teams`           | Team management    |
+| **Team Invite Accept**   | `/invite/:code`    | Accept invite      |
+| **Account Settings**     | `/settings`        | User settings      |
+| **Account Logs**         | `/settings/logs`   | Activity logs      |
+| **Support**              | `/support`         | Help & tickets     |
+| **Feedback**             | `/feedback/:code`  | Submit feedback    |
+| **About**                | `/about`           | About page         |
+| **Why Choose Us**        | `/why-choose-us`   | Features page      |
+| **Privacy Policy**       | `/privacy`         | Privacy policy     |
+| **Terms**                | `/terms`           | Terms & conditions |
+| **Cookie Policy**        | `/cookies`         | Cookie policy      |
+| **Refund**               | `/refund`          | Refund policy      |
+| **Unsubscribe**          | `/unsubscribe`     | Email unsubscribe  |
+| **Maintenance**          | `/maintenance`     | Maintenance mode   |
 
 ### Key Components (60+)
 
-| Category | Components |
-|----------|------------|
-| **Navigation** | Navbar, AppSidebar, Footer, Header |
-| **Authentication** | OTPVerification, ErrorBoundary |
-| **Organizations** | CreateOrganizationModal, OrganizationDetailsModal, OrganizationSettingsModal, OrganizationAuditLogsModal, OrganizationSwitcher |
-| **Teams** | CreateTeamModal, TeamInviteModal, TeamManagementModal |
-| **Payments** | PricingModal, PaymentSuccessModal, PaymentFailureModal |
-| **AI** | AIButton, AISidebar |
-| **Social** | InviteFriend, WaitList, NewsLetter |
-| **Legal** | CookieConsentModal |
-| **Analytics** | ClarityManager, FirebaseAnalyticsManager |
-| **UI** | 26 shadcn/ui components (Button, Card, Dialog, etc.) |
+| Category           | Components                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Navigation**     | Navbar, AppSidebar, Footer, Header                                                                                             |
+| **Authentication** | OTPVerification, ErrorBoundary                                                                                                 |
+| **Organizations**  | CreateOrganizationModal, OrganizationDetailsModal, OrganizationSettingsModal, OrganizationAuditLogsModal, OrganizationSwitcher |
+| **Teams**          | CreateTeamModal, TeamInviteModal, TeamManagementModal                                                                          |
+| **Payments**       | PricingModal, PaymentSuccessModal, PaymentFailureModal                                                                         |
+| **AI**             | AIButton, AISidebar                                                                                                            |
+| **Social**         | InviteFriend, WaitList, NewsLetter                                                                                             |
+| **Legal**          | CookieConsentModal                                                                                                             |
+| **Analytics**      | ClarityManager, FirebaseAnalyticsManager                                                                                       |
+| **UI**             | 26 shadcn/ui components (Button, Card, Dialog, etc.)                                                                           |
 
 ---
 
@@ -422,11 +422,11 @@ docker run -p 80:80 fairarena-frontend
 ### Browser Support
 
 | Browser | Minimum Version |
-|---------|-----------------|
-| Chrome | 88+ |
-| Firefox | 78+ |
-| Safari | 14+ |
-| Edge | 88+ |
+| ------- | --------------- |
+| Chrome  | 88+             |
+| Firefox | 78+             |
+| Safari  | 14+             |
+| Edge    | 88+             |
 
 ---
 

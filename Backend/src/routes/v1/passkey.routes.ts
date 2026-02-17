@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import {
-    deletePasskey,
-    getAuthenticationOptions,
-    getRegistrationOptions,
-    listPasskeys,
-    renamePasskey,
-    verifyAuthentication,
-    verifyRegistration,
+  deletePasskey,
+  getAuthenticationOptions,
+  getRegistrationOptions,
+  listPasskeys,
+  renamePasskey,
+  verifyAuthentication,
+  verifyRegistration,
 } from '../../controllers/v1/passkeyController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
@@ -15,15 +15,15 @@ const router = Router();
 
 // Rate limiters
 const registrationLimiter = createAuthRateLimiter({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 registration attempts per 15 minutes
-    message: 'Too many passkey registration attempts. Please try again later.',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 registration attempts per 15 minutes
+  message: 'Too many passkey registration attempts. Please try again later.',
 });
 
 const authenticationLimiter = createAuthRateLimiter({
-    windowMs: 60 * 1000, // 1 minute
-    max: 10, // 10 authentication attempts per minute
-    message: 'Too many passkey authentication attempts. Please try again later.',
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 authentication attempts per minute
+  message: 'Too many passkey authentication attempts. Please try again later.',
 });
 
 // --- Registration Routes (authenticated) ---
@@ -43,12 +43,7 @@ const authenticationLimiter = createAuthRateLimiter({
  *       401:
  *         description: Authentication required
  */
-router.post(
-    '/register/options',
-    registrationLimiter,
-    protectRoute,
-    getRegistrationOptions
-);
+router.post('/register/options', registrationLimiter, protectRoute, getRegistrationOptions);
 
 /**
  * @openapi
@@ -81,12 +76,7 @@ router.post(
  *       401:
  *         description: Authentication required
  */
-router.post(
-    '/register/verify',
-    registrationLimiter,
-    protectRoute,
-    verifyRegistration
-);
+router.post('/register/verify', registrationLimiter, protectRoute, verifyRegistration);
 
 // --- Authentication Routes (public) ---
 
@@ -112,11 +102,7 @@ router.post(
  *       200:
  *         description: Authentication options generated
  */
-router.post(
-    '/login/options',
-    authenticationLimiter,
-    getAuthenticationOptions
-);
+router.post('/login/options', authenticationLimiter, getAuthenticationOptions);
 
 /**
  * @openapi
@@ -143,11 +129,7 @@ router.post(
  *       401:
  *         description: Authentication failed
  */
-router.post(
-    '/login/verify',
-    authenticationLimiter,
-    verifyAuthentication
-);
+router.post('/login/verify', authenticationLimiter, verifyAuthentication);
 
 // --- Management Routes (authenticated) ---
 

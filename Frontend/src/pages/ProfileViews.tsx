@@ -20,11 +20,17 @@ interface ProfileView {
 
 export default function ProfileViews() {
   const navigate = useNavigate();
-  const { data: profileData = { views: [], missing: false }, isLoading: loading, error: queryError } = useQuery({
+  const {
+    data: profileData = { views: [], missing: false },
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
     queryKey: ['profile-views'],
     queryFn: async () => {
       try {
-        const res = await apiRequest<{ data: ProfileView[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/profile/views`);
+        const res = await apiRequest<{ data: ProfileView[] }>(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/profile/views`,
+        );
         return { views: res.data || [], missing: false };
       } catch (err: any) {
         // Check if it's an ApiError (or similar structure)
@@ -39,7 +45,7 @@ export default function ProfileViews() {
         }
         throw err;
       }
-    }
+    },
   });
 
   const views = profileData.views;
@@ -168,10 +174,10 @@ export default function ProfileViews() {
                 {views.map((view) => {
                   const initials = view.viewerName
                     ? view.viewerName
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase()
                     : view.viewerEmail[0].toUpperCase();
 
                   return (

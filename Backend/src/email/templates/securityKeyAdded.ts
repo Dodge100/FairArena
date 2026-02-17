@@ -1,15 +1,15 @@
 export const securityKeyAddedTemplate = (params: {
-    firstName: string;
-    keyName: string;
-    addedAt: string;
-    securityUrl: string;
-    ipAddress?: string;
-    location?: string;
-    deviceName?: string;
+  firstName: string;
+  keyName: string;
+  addedAt: string;
+  securityUrl: string;
+  ipAddress?: string;
+  location?: string;
+  deviceName?: string;
 }): string => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>

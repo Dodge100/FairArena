@@ -1,7 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,7 +36,7 @@ import {
   Send,
   Shield,
   Sparkles,
-  Ticket
+  Ticket,
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -61,33 +68,39 @@ interface TicketSubmitData {
 const FAQS = [
   {
     question: 'How quickly will I receive a response?',
-    answer: 'Our support team typically responds within 24 hours during business days (Monday-Friday). For urgent issues, we prioritize tickets and aim to respond within 4-6 hours.',
-    category: 'General'
+    answer:
+      'Our support team typically responds within 24 hours during business days (Monday-Friday). For urgent issues, we prioritize tickets and aim to respond within 4-6 hours.',
+    category: 'General',
   },
   {
     question: 'What information should I include in my support ticket?',
-    answer: 'Please include: your account email, a detailed description of the issue, any error messages you received, and steps to reproduce the problem. Screenshots are also very helpful!',
-    category: 'Support'
+    answer:
+      'Please include: your account email, a detailed description of the issue, any error messages you received, and steps to reproduce the problem. Screenshots are also very helpful!',
+    category: 'Support',
   },
   {
     question: 'Do you offer phone support?',
-    answer: 'Currently, we provide support via email and live chat. This allows us to maintain detailed records and provide better assistance. For enterprise customers, phone support is available upon request.',
-    category: 'General'
+    answer:
+      'Currently, we provide support via email and live chat. This allows us to maintain detailed records and provide better assistance. For enterprise customers, phone support is available upon request.',
+    category: 'General',
   },
   {
     question: 'Can I track my support ticket?',
-    answer: "Yes! After submitting a ticket, you'll receive a confirmation email with a ticket number. You can reply to that email to add information or check the status of your request.",
-    category: 'Support'
+    answer:
+      "Yes! After submitting a ticket, you'll receive a confirmation email with a ticket number. You can reply to that email to add information or check the status of your request.",
+    category: 'Support',
   },
   {
     question: 'What if my issue is urgent?',
-    answer: 'For critical issues affecting your service, please mark your ticket as "Urgent" in the subject line or contact us via live chat for immediate assistance. Our team will prioritize your request.',
-    category: 'Billing'
+    answer:
+      'For critical issues affecting your service, please mark your ticket as "Urgent" in the subject line or contact us via live chat for immediate assistance. Our team will prioritize your request.',
+    category: 'Billing',
   },
   {
     question: 'Do you provide support in multiple languages?',
-    answer: "Currently, our primary support language is English. However, we're working on expanding our support to include Spanish, French, and German in the near future.",
-    category: 'General'
+    answer:
+      "Currently, our primary support language is English. However, we're working on expanding our support to include Spanish, French, and German in the near future.",
+    category: 'General',
   },
 ];
 
@@ -97,21 +110,21 @@ const QUICK_HELP_TOPICS = [
     description: 'Trouble accessing your account?',
     subject: 'Password Reset Request',
     message: 'I need help resetting my password. I am unable to access my account.',
-    icon: Shield
+    icon: Shield,
   },
   {
     title: 'Billing Support',
     description: 'Questions about payments?',
     subject: 'Billing Support Needed',
     message: 'I have a question regarding my billing/payment. Please assist me with this matter.',
-    icon: FileText
+    icon: FileText,
   },
   {
     title: 'Feature Request',
     description: 'Have an idea for us?',
     subject: 'Feature Request',
     message: 'I would like to suggest a new feature for FairArena: ',
-    icon: Sparkles
+    icon: Sparkles,
   },
 ];
 
@@ -120,11 +133,32 @@ const QUICK_HELP_TOPICS = [
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
     case 'OPEN':
-      return <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800 dark:text-blue-400">Open</Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800 dark:text-blue-400"
+        >
+          Open
+        </Badge>
+      );
     case 'IN_PROGRESS':
-      return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-800 dark:text-yellow-400">In Progress</Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="bg-yellow-500/10 text-yellow-600 border-yellow-200 dark:border-yellow-800 dark:text-yellow-400"
+        >
+          In Progress
+        </Badge>
+      );
     case 'RESOLVED':
-      return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200 dark:border-green-800 dark:text-green-400">Resolved</Badge>;
+      return (
+        <Badge
+          variant="outline"
+          className="bg-green-500/10 text-green-600 border-green-200 dark:border-green-800 dark:text-green-400"
+        >
+          Resolved
+        </Badge>
+      );
     case 'CLOSED':
       return <Badge variant="secondary">Closed</Badge>;
     default:
@@ -155,21 +189,27 @@ export default function Support() {
   // Query for user's tickets
   const { data: ticketsData, isLoading: isLoadingTickets } = useQuery({
     queryKey: ['support-tickets'],
-    queryFn: () => apiRequest<{ success: boolean; supportTickets: SupportTicket[] }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`),
+    queryFn: () =>
+      apiRequest<{ success: boolean; supportTickets: SupportTicket[] }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/support`,
+      ),
     enabled: isSignedIn,
   });
 
   const submitMutation = useMutation({
     mutationFn: async (submitData: TicketSubmitData) => {
       const { captchaToken: token, ...body } = submitData;
-      return apiRequest<{ message: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Recaptcha-Token': token,
+      return apiRequest<{ message: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/support`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Recaptcha-Token': token,
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      });
+      );
     },
     onSuccess: () => {
       toast.success('Ticket submitted successfully!', {
@@ -193,11 +233,13 @@ export default function Support() {
     onError: (error: Error | { message?: string }) => {
       console.error('Error submitting ticket:', error);
       toast.error('Failed to submit ticket', {
-        description: ('message' in error ? error.message : 'Please check your connection and try again.') || 'Please check your connection and try again.',
+        description:
+          ('message' in error ? error.message : 'Please check your connection and try again.') ||
+          'Please check your connection and try again.',
       });
       setCaptchaToken(null);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -205,11 +247,11 @@ export default function Support() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleQuickTopic = (topic: typeof QUICK_HELP_TOPICS[0]) => {
-    setFormData(prev => ({
+  const handleQuickTopic = (topic: (typeof QUICK_HELP_TOPICS)[0]) => {
+    setFormData((prev) => ({
       ...prev,
       subject: topic.subject,
-      message: topic.message
+      message: topic.message,
     }));
     setActiveTab('new-ticket');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -218,8 +260,12 @@ export default function Support() {
   const handleInitialSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Basic validation before showing captcha
-    if (!formData.subject || !formData.message || (!isSignedIn && (!formData.name || !formData.email))) {
-      toast.error("Please fill in all required fields.");
+    if (
+      !formData.subject ||
+      !formData.message ||
+      (!isSignedIn && (!formData.name || !formData.email))
+    ) {
+      toast.error('Please fill in all required fields.');
       return;
     }
     setIsCaptchaDialogOpen(true);
@@ -234,23 +280,29 @@ export default function Support() {
       ...formData,
       ...(isSignedIn ? {} : { email: formData.email }),
       captchaToken,
-      attachments: uploadedFiles
+      attachments: uploadedFiles,
     });
   };
 
   const onCaptchaChange = useCallback((token: string | null) => setCaptchaToken(token), []);
 
-  const filteredFaqs = FAQS.filter(f =>
-    f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFaqs = FAQS.filter(
+    (f) =>
+      f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      f.answer.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className={cn(
-      "min-h-screen w-full bg-background relative overflow-x-hidden flex flex-col items-center pb-12 px-4 md:px-8",
-      isDashboard ? "pt-4 md:pt-8" : "pt-32 md:pt-40"
-    )}>
-      <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill={isDark ? '#DDFF00' : '#b5c800'} />
+    <div
+      className={cn(
+        'min-h-screen w-full bg-background relative overflow-x-hidden flex flex-col items-center pb-12 px-4 md:px-8',
+        isDashboard ? 'pt-4 md:pt-8' : 'pt-32 md:pt-40',
+      )}
+    >
+      <Spotlight
+        className="-top-40 left-0 md:-top-20 md:left-60"
+        fill={isDark ? '#DDFF00' : '#b5c800'}
+      />
 
       {/* Header */}
       <div className="w-full max-w-7xl z-10 mb-10 text-center space-y-4">
@@ -267,7 +319,8 @@ export default function Support() {
             How can we <span className="text-primary">help?</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Find answers to common questions or reach out to our team directly. We are here to ensure your experience is seamless.
+            Find answers to common questions or reach out to our team directly. We are here to
+            ensure your experience is seamless.
           </p>
         </motion.div>
       </div>
@@ -317,11 +370,26 @@ export default function Support() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
+                            <Input
+                              id="name"
+                              name="name"
+                              placeholder="John Doe"
+                              value={formData.name}
+                              onChange={handleChange}
+                              required
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="email">Email Address</Label>
-                            <Input id="email" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
+                            <Input
+                              id="email"
+                              name="email"
+                              type="email"
+                              placeholder="john@example.com"
+                              value={formData.email}
+                              onChange={handleChange}
+                              required
+                            />
                           </div>
                         </div>
                       )}
@@ -329,10 +397,14 @@ export default function Support() {
                       {isSignedIn && (
                         <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm mb-4">
                           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                            <span className="font-semibold text-primary">{user?.email?.charAt(0).toUpperCase()}</span>
+                            <span className="font-semibold text-primary">
+                              {user?.email?.charAt(0).toUpperCase()}
+                            </span>
                           </div>
                           <div>
-                            <p className="font-medium">Submitting as {user?.firstName} {user?.lastName}</p>
+                            <p className="font-medium">
+                              Submitting as {user?.firstName} {user?.lastName}
+                            </p>
                             <p className="text-muted-foreground">{user?.email}</p>
                           </div>
                         </div>
@@ -340,7 +412,14 @@ export default function Support() {
 
                       <div className="space-y-2">
                         <Label htmlFor="subject">Subject</Label>
-                        <Input id="subject" name="subject" placeholder="Brief summary of your issue" value={formData.subject} onChange={handleChange} required />
+                        <Input
+                          id="subject"
+                          name="subject"
+                          placeholder="Brief summary of your issue"
+                          value={formData.subject}
+                          onChange={handleChange}
+                          required
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -361,23 +440,40 @@ export default function Support() {
                         <div className="border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors">
                           <FileUpload
                             onUploadComplete={(blobName: string) => {
-                              setUploadedFiles(prev => [...prev, blobName]);
+                              setUploadedFiles((prev) => [...prev, blobName]);
                               setUploadError('');
                             }}
                             onUploadError={(error: string) => setUploadError(error)}
                             maxSizeMB={100}
                           />
                         </div>
-                        {uploadError && <p className="text-sm text-destructive mt-2">{uploadError}</p>}
-                        {uploadedFiles.length > 0 && <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {uploadedFiles.length} file(s) attached</p>}
+                        {uploadError && (
+                          <p className="text-sm text-destructive mt-2">{uploadError}</p>
+                        )}
+                        {uploadedFiles.length > 0 && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" /> {uploadedFiles.length} file(s)
+                            attached
+                          </p>
+                        )}
                       </div>
 
                       <Button type="submit" className="w-full h-11 text-base">
-                        <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Submit Ticket</span>
+                        <span className="flex items-center gap-2">
+                          <Send className="w-4 h-4" /> Submit Ticket
+                        </span>
                       </Button>
 
                       <p className="text-xs text-center text-muted-foreground pt-2">
-                        By submitting this form, you agree to our <Link to="/terms" className="underline hover:text-primary">Terms</Link> and <Link to="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
+                        By submitting this form, you agree to our{' '}
+                        <Link to="/terms" className="underline hover:text-primary">
+                          Terms
+                        </Link>{' '}
+                        and{' '}
+                        <Link to="/privacy" className="underline hover:text-primary">
+                          Privacy Policy
+                        </Link>
+                        .
                       </p>
                     </form>
                   </CardContent>
@@ -418,9 +514,15 @@ export default function Support() {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Live Chat</h3>
-                      <p className="text-sm text-muted-foreground">Available Mon-Fri, 9am-5pm EST</p>
+                      <p className="text-sm text-muted-foreground">
+                        Available Mon-Fri, 9am-5pm EST
+                      </p>
                     </div>
-                    <Button variant="outline" className="w-full" onClick={() => toast("Chat is currently offline. Please submit a ticket.")}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => toast('Chat is currently offline. Please submit a ticket.')}
+                    >
                       Start Chat
                     </Button>
                   </CardContent>
@@ -438,7 +540,15 @@ export default function Support() {
                     <CardTitle>My Tickets</CardTitle>
                     <CardDescription>View and manage your support requests.</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => ticketsData && !isLoadingTickets && apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      ticketsData &&
+                      !isLoadingTickets &&
+                      apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support`)
+                    }
+                  >
                     Refresh
                   </Button>
                 </div>
@@ -448,14 +558,16 @@ export default function Support() {
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Shield className="w-12 h-12 text-muted-foreground/30 mb-4" />
                     <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
-                    <p className="text-muted-foreground max-w-sm mb-6">Please sign in to view your support ticket history.</p>
+                    <p className="text-muted-foreground max-w-sm mb-6">
+                      Please sign in to view your support ticket history.
+                    </p>
                     <Button asChild>
                       <Link to="/auth/sign-in">Sign In</Link>
                     </Button>
                   </div>
                 ) : isLoadingTickets ? (
                   <div className="space-y-4">
-                    {[1, 2, 3].map(i => (
+                    {[1, 2, 3].map((i) => (
                       <div key={i} className="h-16 w-full bg-muted animate-pulse rounded-md" />
                     ))}
                   </div>
@@ -463,22 +575,34 @@ export default function Support() {
                   <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl">
                     <Ticket className="w-12 h-12 text-muted-foreground/30 mb-4" />
                     <h3 className="text-lg font-medium mb-2">No Tickets Found</h3>
-                    <p className="text-muted-foreground max-w-sm">You haven't submitted any support tickets yet.</p>
-                    <Button variant="link" onClick={() => setActiveTab('new-ticket')}>Submit a Ticket</Button>
+                    <p className="text-muted-foreground max-w-sm">
+                      You haven't submitted any support tickets yet.
+                    </p>
+                    <Button variant="link" onClick={() => setActiveTab('new-ticket')}>
+                      Submit a Ticket
+                    </Button>
                   </div>
                 ) : (
                   <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
                       {ticketsData?.supportTickets.map((ticket) => (
-                        <div key={ticket.id} className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        <div
+                          key={ticket.id}
+                          className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+                        >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-base">{ticket.subject}</span>
                               <StatusBadge status={ticket.status} />
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1">{ticket.message}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {ticket.message}
+                            </p>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(ticket.createdAt).toLocaleDateString()}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />{' '}
+                                {new Date(ticket.createdAt).toLocaleDateString()}
+                              </span>
                               <span>ID: {ticket.id.slice(0, 8)}</span>
                             </div>
                           </div>
@@ -563,14 +687,18 @@ export default function Support() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCaptchaDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleFinalSubmit} disabled={!captchaToken || submitMutation.isPending}>
+            <Button variant="outline" onClick={() => setIsCaptchaDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFinalSubmit}
+              disabled={!captchaToken || submitMutation.isPending}
+            >
               {submitMutation.isPending ? 'Sending...' : 'Confirm & Send'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

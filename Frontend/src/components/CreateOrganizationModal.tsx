@@ -71,15 +71,19 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
   }, [watchedName, setValue]);
 
   const createOrgMutation = useMutation({
-    mutationFn: (data: CreateOrganizationFormData) => apiRequest<{ error?: string, suggestion?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...data,
-        joinEnabled,
-        isPublic,
-      }),
-    }),
+    mutationFn: (data: CreateOrganizationFormData) =>
+      apiRequest<{ error?: string; suggestion?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/create/new`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            joinEnabled,
+            isPublic,
+          }),
+        },
+      ),
     onSuccess: async () => {
       toast.success('Organization created successfully!');
       await refreshOrganizations();
@@ -94,9 +98,8 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
       } else {
         toast.error(error.message || 'Failed to create organization');
       }
-    }
+    },
   });
-
 
   const onSubmit = (data: CreateOrganizationFormData) => {
     return createOrgMutation.mutateAsync(data);

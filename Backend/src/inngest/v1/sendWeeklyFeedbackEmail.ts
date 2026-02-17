@@ -29,52 +29,48 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
 
     try {
       // Step 1: Fetch and categorize users
-      const { emailUsers, notificationUsers } = await step.run(
-        'fetch-target-users',
-        async () => {
-          // Get all users with their settings (if any)
-          const allUsers = await getReadOnlyPrisma().user.findMany({
-            select: {
-              userId: true,
-              email: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-              settings: {
-                select: {
-                  settings: true,
-                },
+      const { emailUsers, notificationUsers } = await step.run('fetch-target-users', async () => {
+        // Get all users with their settings (if any)
+        const allUsers = await getReadOnlyPrisma().user.findMany({
+          select: {
+            userId: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
               },
             },
-          });
+            settings: {
+              select: {
+                settings: true,
+              },
+            },
+          },
+        });
 
-          // Filter users who want feedback emails
-          const emailUsers = allUsers.filter((user) => {
-            const userSettings = user.settings?.settings as UserSettings;
-            const wantFeedbackMail =
-              userSettings?.wantToGetFeedbackMail ?? DEFAULT_SETTINGS.wantToGetFeedbackMail;
-            return wantFeedbackMail === true;
-          });
+        // Filter users who want feedback emails
+        const emailUsers = allUsers.filter((user) => {
+          const userSettings = user.settings?.settings as UserSettings;
+          const wantFeedbackMail =
+            userSettings?.wantToGetFeedbackMail ?? DEFAULT_SETTINGS.wantToGetFeedbackMail;
+          return wantFeedbackMail === true;
+        });
 
-          // Filter users who want feedback notifications
-          const notificationUsers = allUsers.filter((user) => {
-            const userSettings = user.settings?.settings as UserSettings;
-            const wantFeedbackNotifications =
-              userSettings?.wantFeedbackNotifications ??
-              DEFAULT_SETTINGS.wantFeedbackNotifications;
-            return wantFeedbackNotifications === true;
-          });
+        // Filter users who want feedback notifications
+        const notificationUsers = allUsers.filter((user) => {
+          const userSettings = user.settings?.settings as UserSettings;
+          const wantFeedbackNotifications =
+            userSettings?.wantFeedbackNotifications ?? DEFAULT_SETTINGS.wantFeedbackNotifications;
+          return wantFeedbackNotifications === true;
+        });
 
-          logger.info(
-            `Found ${emailUsers.length} users for emails and ${notificationUsers.length} users for notifications`
-          );
+        logger.info(
+          `Found ${emailUsers.length} users for emails and ${notificationUsers.length} users for notifications`,
+        );
 
-          return { emailUsers, notificationUsers };
-        }
-      );
+        return { emailUsers, notificationUsers };
+      });
 
       // Step 2: Send emails
       await step.run('send-feedback-emails', async () => {
@@ -122,7 +118,7 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
                   error: error instanceof Error ? error.message : String(error),
                 });
               }
-            })
+            }),
           );
 
           // Small delay between batches
@@ -179,7 +175,7 @@ export const sendWeeklyFeedbackEmail = inngest.createFunction(
                   error: error instanceof Error ? error.message : String(error),
                 });
               }
-            })
+            }),
           );
         }
         return { sent: sentCount };

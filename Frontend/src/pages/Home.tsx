@@ -10,10 +10,7 @@ import WhyChooseUs from '../components/WhyChooseUs';
 function Home() {
   const { isSignedIn } = useAuthState();
 
-  if (
-    isSignedIn &&
-    localStorage.getItem('disableHomePage') === 'true'
-  ) {
+  if (isSignedIn && localStorage.getItem('disableHomePage') === 'true') {
     return <Navigate to="/dashboard" replace />;
   }
 

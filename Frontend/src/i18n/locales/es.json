@@ -801,11 +801,7 @@
         "communicate": {
           "title": "Comunicarse claramente",
           "desc": "Utilice un lenguaje claro y profesional. Evite el spam, el contenido fuera de tema y la autopromoción excesiva.",
-          "examples": [
-            "Mantente en el tema",
-            "Evite el spam",
-            "Utilice canales apropiados"
-          ]
+          "examples": ["Mantente en el tema", "Evite el spam", "Utilice canales apropiados"]
         }
       }
     },

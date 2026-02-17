@@ -39,17 +39,12 @@ export const OrganizationAuditLogsModal = ({
   onOpenChange,
   organizationSlug,
 }: OrganizationAuditLogsModalProps) => {
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading
-  } = useInfiniteQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ['auditLogs', organizationSlug],
-    queryFn: ({ pageParam = 1 }) => apiRequest<{ auditLogs: AuditLog[], pagination: { totalPages: number } }>(
-      `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageParam}&limit=20`
-    ),
+    queryFn: ({ pageParam = 1 }) =>
+      apiRequest<{ auditLogs: AuditLog[]; pagination: { totalPages: number } }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/organization/${organizationSlug}/audit-logs?page=${pageParam}&limit=20`,
+      ),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       const nextPage = allPages.length + 1;
@@ -59,9 +54,7 @@ export const OrganizationAuditLogsModal = ({
     staleTime: 60000,
   });
 
-  const auditLogs = data?.pages.flatMap(page => page.auditLogs) || [];
-
-
+  const auditLogs = data?.pages.flatMap((page) => page.auditLogs) || [];
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -120,7 +113,10 @@ export const OrganizationAuditLogsModal = ({
             ) : (
               <div className="space-y-3">
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={log.user.profileImageUrl || undefined} alt="User avatar" />
                       <AvatarFallback>
@@ -180,9 +176,7 @@ export const OrganizationAuditLogsModal = ({
         </div>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
+          <Button onClick={() => onOpenChange(false)}>Close</Button>
         </div>
       </DialogContent>
     </Dialog>

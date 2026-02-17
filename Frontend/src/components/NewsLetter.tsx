@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
 import { publicApiFetch } from '@/lib/apiClient';
 import { useMutation } from '@tanstack/react-query';
@@ -58,7 +64,7 @@ function Newsletter() {
       toast.error(error.message || 'Failed to subscribe. Please try again.');
       setCaptchaToken(null);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
   const isLoading = subscribeMutation.isPending;
@@ -154,9 +160,10 @@ function Newsletter() {
             px-5 py-3 rounded-full text-sm md:text-base outline-none
             transition-opacity
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-            ${isDark
-              ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
-              : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
+            ${
+              isDark
+                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700'
+                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300'
             }
           `}
         />
@@ -185,7 +192,9 @@ function Newsletter() {
           `}
         >
           <DialogHeader>
-            <DialogTitle className={`flex items-center gap-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}>
+            <DialogTitle
+              className={`flex items-center gap-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
+            >
               <Shield className="w-5 h-5 text-[#ddef00]" />
               Verify You're Human
             </DialogTitle>
@@ -214,9 +223,10 @@ function Newsletter() {
                 disabled={isLoading}
                 className={`
                   flex-1 px-4 py-2.5 rounded-lg font-medium transition-all
-                  ${isDark
-                    ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
+                  ${
+                    isDark
+                      ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
@@ -226,7 +236,9 @@ function Newsletter() {
               </button>
               <button
                 onClick={handleCaptchaSubmit}
-                disabled={isLoading || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+                disabled={
+                  isLoading || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY
+                }
                 className="
                   flex-1 px-4 py-2.5 rounded-lg font-semibold
                   bg-[#ddef00] text-black

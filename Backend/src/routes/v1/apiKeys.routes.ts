@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createKey,
-    deleteKey,
-    getCurrentKey,
-    listKeys,
-    updateKey,
+  createKey,
+  deleteKey,
+  getCurrentKey,
+  listKeys,
+  updateKey,
 } from '../../controllers/v1/apiKeyController.js';
 import { apiKeyAuth } from '../../middleware/apiKey.middleware.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';

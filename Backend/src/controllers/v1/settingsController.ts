@@ -59,7 +59,9 @@ export const getSettings = async (req: Request, res: Response) => {
     // If not found, create them now
     let settingsData;
     if (!settings) {
-      logger.warn('Settings not found for user - creating default settings', { userId: auth.userId });
+      logger.warn('Settings not found for user - creating default settings', {
+        userId: auth.userId,
+      });
 
       try {
         const newSettings = await prisma.settings.create({
@@ -76,7 +78,7 @@ export const getSettings = async (req: Request, res: Response) => {
       } catch (createError) {
         logger.error('Failed to create default settings', {
           userId: auth.userId,
-          error: createError instanceof Error ? createError.message : String(createError)
+          error: createError instanceof Error ? createError.message : String(createError),
         });
         return res.status(500).json({
           success: false,

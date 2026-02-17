@@ -1,14 +1,13 @@
-
 export const backupCodeUsedTemplate = (params: {
-    firstName: string;
-    ipAddress: string;
-    deviceName: string;
-    remainingCodes: number;
-    securityUrl: string;
+  firstName: string;
+  ipAddress: string;
+  deviceName: string;
+  remainingCodes: number;
+  securityUrl: string;
 }): string => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>

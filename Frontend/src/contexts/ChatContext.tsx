@@ -275,10 +275,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prev.map((session) =>
         session.id === (currentSessionId || sessions[0]?.id)
           ? {
-            ...session,
-            messages: [...session.messages, userMessage],
-            updatedAt: new Date(),
-          }
+              ...session,
+              messages: [...session.messages, userMessage],
+              updatedAt: new Date(),
+            }
           : session,
       ),
     );
@@ -297,10 +297,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prev.map((session) =>
         session.id === (currentSessionId || sessions[0]?.id)
           ? {
-            ...session,
-            messages: [...session.messages, aiMessage],
-            updatedAt: new Date(),
-          }
+              ...session,
+              messages: [...session.messages, aiMessage],
+              updatedAt: new Date(),
+            }
           : session,
       ),
     );
@@ -357,9 +357,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             prev.map((session) =>
               session.id === (currentSessionId || sessions[0]?.id)
                 ? {
-                  ...session,
-                  messages: session.messages.filter((msg) => msg.id !== aiMessageId),
-                }
+                    ...session,
+                    messages: session.messages.filter((msg) => msg.id !== aiMessageId),
+                  }
                 : session,
             ),
           );
@@ -398,12 +398,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                   prev.map((session) =>
                     session.id === (currentSessionId || sessions[0]?.id)
                       ? {
-                        ...session,
-                        messages: session.messages.map((msg) =>
-                          msg.id === aiMessageId ? { ...msg, content: accumulatedContent } : msg,
-                        ),
-                        updatedAt: new Date(),
-                      }
+                          ...session,
+                          messages: session.messages.map((msg) =>
+                            msg.id === aiMessageId ? { ...msg, content: accumulatedContent } : msg,
+                          ),
+                          updatedAt: new Date(),
+                        }
                       : session,
                   ),
                 );
@@ -413,11 +413,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                   prev.map((session) =>
                     session.id === (currentSessionId || sessions[0]?.id)
                       ? {
-                        ...session,
-                        messages: session.messages.map((msg) =>
-                          msg.id === aiMessageId ? { ...msg, isStreaming: false } : msg,
-                        ),
-                      }
+                          ...session,
+                          messages: session.messages.map((msg) =>
+                            msg.id === aiMessageId ? { ...msg, isStreaming: false } : msg,
+                          ),
+                        }
                       : session,
                   ),
                 );
@@ -437,11 +437,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           prev.map((session) =>
             session.id === (currentSessionId || sessions[0]?.id)
               ? {
-                ...session,
-                messages: session.messages.map((msg) =>
-                  msg.id === aiMessageId ? { ...msg, isStreaming: false } : msg,
-                ),
-              }
+                  ...session,
+                  messages: session.messages.map((msg) =>
+                    msg.id === aiMessageId ? { ...msg, isStreaming: false } : msg,
+                  ),
+                }
               : session,
           ),
         );
@@ -454,9 +454,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           prev.map((session) =>
             session.id === (currentSessionId || sessions[0]?.id)
               ? {
-                ...session,
-                messages: session.messages.filter((msg) => msg.id !== aiMessageId),
-              }
+                  ...session,
+                  messages: session.messages.filter((msg) => msg.id !== aiMessageId),
+                }
               : session,
           ),
         );
@@ -484,9 +484,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prev.map((session) =>
         session.id === currentSessionId
           ? {
-            ...session,
-            messages: session.messages.slice(0, -1),
-          }
+              ...session,
+              messages: session.messages.slice(0, -1),
+            }
           : session,
       ),
     );

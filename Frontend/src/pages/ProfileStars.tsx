@@ -43,7 +43,8 @@ export default function ProfileStars() {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await publicApiFetch(
-          `${apiUrl}/api/v1/stars/profile/${userId}?page=${pageNum}&limit=20`);
+          `${apiUrl}/api/v1/stars/profile/${userId}?page=${pageNum}&limit=20`,
+        );
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -299,7 +300,9 @@ export default function ProfileStars() {
             {filteredStars.map((star, index) => (
               <Card
                 key={star.id}
-                className={cn("p-8 hover:shadow-lg hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/50 transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-yellow-400 shadow-sm cursor-pointer")}
+                className={cn(
+                  'p-8 hover:shadow-lg hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/50 transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-yellow-400 shadow-sm cursor-pointer',
+                )}
                 style={{
                   animationDelay: `${index * 100}ms`,
                   animation: 'fadeInUp 0.6s ease-out forwards',
@@ -343,7 +346,7 @@ export default function ProfileStars() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1 text-yellow-500">
-                    <Star className={cn("h-8 w-8 fill-current animate-pulse")} />
+                    <Star className={cn('h-8 w-8 fill-current animate-pulse')} />
                   </div>
                 </div>
               </Card>
@@ -356,11 +359,17 @@ export default function ProfileStars() {
                   disabled={loading}
                   variant="outline"
                   size="lg"
-                  className={cn("px-8 py-3 border-yellow-200 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-950/20 transition-all duration-200")}
+                  className={cn(
+                    'px-8 py-3 border-yellow-200 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-950/20 transition-all duration-200',
+                  )}
                 >
                   {loading ? (
                     <>
-                      <div className={cn("animate-spin rounded-full h-4 w-4 border-2 border-yellow-500 border-t-transparent mr-2")} />
+                      <div
+                        className={cn(
+                          'animate-spin rounded-full h-4 w-4 border-2 border-yellow-500 border-t-transparent mr-2',
+                        )}
+                      />
                       Loading...
                     </>
                   ) : (

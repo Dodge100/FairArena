@@ -1,13 +1,8 @@
 import { AuthIllustration } from '@/components/auth/AuthIllustration';
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { publicApiFetch } from '@/lib/apiClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -141,7 +136,6 @@ function WaitList() {
             className="w-full h-full overflow-y-auto no-scrollbar py-8 px-6 flex flex-col items-center"
           >
             <div className="w-full max-w-sm px-4 flex flex-col justify-center h-full">
-
               {/* Header */}
               {!isSubmitted && (
                 <div className="mb-8 text-center">
@@ -150,12 +144,8 @@ function WaitList() {
                     className="h-10 mx-auto mb-6"
                     alt="FairArena Logo"
                   />
-                  <h1 className="text-3xl font-bold mb-2 text-white">
-                    Join the Waitlist
-                  </h1>
-                  <p className="text-neutral-400">
-                    Be the first to experience the future
-                  </p>
+                  <h1 className="text-3xl font-bold mb-2 text-white">Join the Waitlist</h1>
+                  <p className="text-neutral-400">Be the first to experience the future</p>
                   {totalWaitlist !== null && (
                     <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mx-auto">
                       <span className="relative flex h-2 w-2">
@@ -163,7 +153,8 @@ function WaitList() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-[#DDEF00]"></span>
                       </span>
                       <span className="text-xs text-neutral-300">
-                        <strong className="text-white">{totalWaitlist.toLocaleString()}</strong> people waiting
+                        <strong className="text-white">{totalWaitlist.toLocaleString()}</strong>{' '}
+                        people waiting
                       </span>
                     </div>
                   )}
@@ -184,7 +175,9 @@ function WaitList() {
                       </div>
                     )}
                     <p className="text-neutral-400 max-w-xs mx-auto">
-                      We'll send an email to <span className="font-semibold text-white">{email}</span> when your spot opens up.
+                      We'll send an email to{' '}
+                      <span className="font-semibold text-white">{email}</span> when your spot opens
+                      up.
                     </p>
                     <Button
                       onClick={() => navigate('/')}
@@ -274,9 +267,20 @@ function WaitList() {
                   <div className="mt-6 pt-6 border-t border-neutral-800 text-center">
                     <p className="text-xs text-neutral-600">
                       By joining, you agree to our{' '}
-                      <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms</Link>
-                      {' '}and{' '}
-                      <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
+                      <Link
+                        to="/terms-and-conditions"
+                        className="hover:text-white transition-colors underline decoration-neutral-700"
+                      >
+                        Terms
+                      </Link>{' '}
+                      and{' '}
+                      <Link
+                        to="/privacy-policy"
+                        className="hover:text-white transition-colors underline decoration-neutral-700"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
                     </p>
                   </div>
                 </form>
@@ -291,17 +295,19 @@ function WaitList() {
           subtitle="Join the exclusive early access program and be the first to experience the next level of project management."
           icon={<Sparkles className="w-10 h-10 text-black font-bold" />}
           features={[
-            { icon: Clock, text: "Priority Access", desc: "First in line" },
-            { icon: Trophy, text: "Founder Badge", desc: "Exclusive reward" },
-            { icon: Bell, text: "Live Updates", desc: "Status alerts" },
-            { icon: Zap, text: "Beta Testing", desc: "Try new features" }
+            { icon: Clock, text: 'Priority Access', desc: 'First in line' },
+            { icon: Trophy, text: 'Founder Badge', desc: 'Exclusive reward' },
+            { icon: Bell, text: 'Live Updates', desc: 'Status alerts' },
+            { icon: Zap, text: 'Beta Testing', desc: 'Try new features' },
           ]}
         />
       </div>
 
       {/* Captcha Modal */}
       <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
-        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+        <DialogContent
+          className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}
+        >
           <DialogHeader>
             <DialogTitle>Security Verification</DialogTitle>
           </DialogHeader>

@@ -138,9 +138,7 @@ export const OrganizationsModal = ({ open, onOpenChange }: OrganizationsModalPro
         <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>My Organizations</DialogTitle>
-            <DialogDescription>
-              Manage and explore your organizations
-            </DialogDescription>
+            <DialogDescription>Manage and explore your organizations</DialogDescription>
           </DialogHeader>
 
           <div className="max-h-[70vh] overflow-y-auto space-y-6">
@@ -235,7 +233,10 @@ export const OrganizationsModal = ({ open, onOpenChange }: OrganizationsModalPro
                             <CardDescription className="truncate">@{org.slug}</CardDescription>
                           </div>
                         </div>
-                        <Badge variant={org.isPublic ? 'default' : 'secondary'} className="shrink-0 ml-2">
+                        <Badge
+                          variant={org.isPublic ? 'default' : 'secondary'}
+                          className="shrink-0 ml-2"
+                        >
                           {org.isPublic ? (
                             <>
                               <Globe className="mr-1 h-3 w-3" />
@@ -310,10 +311,7 @@ export const OrganizationsModal = ({ open, onOpenChange }: OrganizationsModalPro
           </div>
         </DialogContent>
       </Dialog>
-      <CreateOrganizationModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-      />
+      <CreateOrganizationModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
       <OrganizationDetailsModal
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}

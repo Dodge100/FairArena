@@ -104,15 +104,15 @@ flowchart TB
 
 ### Resource Inventory
 
-| Resource | Provider | SKU/Tier | Purpose |
-|----------|----------|----------|---------|
-| DNS | Cloudflare | Pro | DNS + CDN + WAF |
-| Container Instances | Azure | 2 vCPU, 4GB | Application hosting |
-| PostgreSQL | Azure Flexible | Standard_D2ds_v5 | Primary database |
-| PostgreSQL Read Replica | Azure Flexible | Standard_D2ds_v5 x2 | Read scaling |
-| Key Vault | Azure | Standard | Secrets management |
-| Blob Storage | Azure | Standard LRS | Static assets |
-| Redis | Self-hosted | 7-alpine | Caching & queues |
+| Resource                | Provider       | SKU/Tier            | Purpose             |
+| ----------------------- | -------------- | ------------------- | ------------------- |
+| DNS                     | Cloudflare     | Pro                 | DNS + CDN + WAF     |
+| Container Instances     | Azure          | 2 vCPU, 4GB         | Application hosting |
+| PostgreSQL              | Azure Flexible | Standard_D2ds_v5    | Primary database    |
+| PostgreSQL Read Replica | Azure Flexible | Standard_D2ds_v5 x2 | Read scaling        |
+| Key Vault               | Azure          | Standard            | Secrets management  |
+| Blob Storage            | Azure          | Standard LRS        | Static assets       |
+| Redis                   | Self-hosted    | 7-alpine            | Caching & queues    |
 
 ---
 
@@ -185,16 +185,16 @@ services:
 
 ### Health Check Configuration
 
-| Service | Endpoint | Interval | Timeout | Retries | Start Period |
-|---------|----------|----------|---------|---------|--------------|
-| Redis | `redis-cli ping` | 30s | 10s | 3 | 5s |
-| SRH | `curl /redis/ping` | 30s | 10s | 3 | 60s |
-| Inngest | `curl /health` | 30s | 10s | 3 | 120s |
-| Backend | `curl /healthz` | 30s | 10s | 3 | 60s |
-| Credential Validator | `curl /health` | 30s | 10s | 3 | 40s |
-| Prometheus | `wget /-/healthy` | 30s | 10s | 3 | 30s |
-| cAdvisor | `curl /healthz` | 30s | 10s | 3 | 30s |
-| n8n | `curl /healthz` | 30s | 10s | 3 | 60s |
+| Service              | Endpoint           | Interval | Timeout | Retries | Start Period |
+| -------------------- | ------------------ | -------- | ------- | ------- | ------------ |
+| Redis                | `redis-cli ping`   | 30s      | 10s     | 3       | 5s           |
+| SRH                  | `curl /redis/ping` | 30s      | 10s     | 3       | 60s          |
+| Inngest              | `curl /health`     | 30s      | 10s     | 3       | 120s         |
+| Backend              | `curl /healthz`    | 30s      | 10s     | 3       | 60s          |
+| Credential Validator | `curl /health`     | 30s      | 10s     | 3       | 40s          |
+| Prometheus           | `wget /-/healthy`  | 30s      | 10s     | 3       | 30s          |
+| cAdvisor             | `curl /healthz`    | 30s      | 10s     | 3       | 30s          |
+| n8n                  | `curl /healthz`    | 30s      | 10s     | 3       | 60s          |
 
 ---
 
@@ -227,7 +227,7 @@ CMD ["node", "dist/index.js"]
 # Redis service
 redis:
   image: redis:7-alpine
-  container_name: "Redis"
+  container_name: 'Redis'
   restart: unless-stopped
   command: redis-server --appendonly yes --logfile /data/redis-server.log
   volumes:
@@ -235,7 +235,7 @@ redis:
   networks:
     - backend-net
   healthcheck:
-    test: ["CMD", "redis-cli", "ping"]
+    test: ['CMD', 'redis-cli', 'ping']
     interval: 30s
     timeout: 10s
     retries: 3
@@ -248,10 +248,10 @@ redis:
 # Inngest service
 inngest:
   image: inngest/inngest:latest
-  container_name: "Inngest"
+  container_name: 'Inngest'
   restart: unless-stopped
   ports:
-    - "127.0.0.1:8288:8288"
+    - '127.0.0.1:8288:8288'
   command:
     - sh
     - -c
@@ -561,14 +561,14 @@ scrape_configs:
 
 ### Key Metrics
 
-| Metric | Type | Alert Threshold | Description |
-|--------|------|-----------------|-------------|
-| `http_request_duration_seconds_p99` | Histogram | > 2s | Request latency |
-| `http_requests_total{status="5xx"}` | Counter | > 10/min | Error rate |
-| `nodejs_heap_size_used_bytes` | Gauge | > 80% of max | Memory usage |
-| `pg_stat_activity_count` | Gauge | > 80% of max | DB connections |
-| `redis_connected_clients` | Gauge | > 100 | Redis connections |
-| `inngest_function_runs_failed_total` | Counter | > 5/min | Background job failures |
+| Metric                               | Type      | Alert Threshold | Description             |
+| ------------------------------------ | --------- | --------------- | ----------------------- |
+| `http_request_duration_seconds_p99`  | Histogram | > 2s            | Request latency         |
+| `http_requests_total{status="5xx"}`  | Counter   | > 10/min        | Error rate              |
+| `nodejs_heap_size_used_bytes`        | Gauge     | > 80% of max    | Memory usage            |
+| `pg_stat_activity_count`             | Gauge     | > 80% of max    | DB connections          |
+| `redis_connected_clients`            | Gauge     | > 100           | Redis connections       |
+| `inngest_function_runs_failed_total` | Counter   | > 5/min         | Background job failures |
 
 ### Alerting Rules
 
@@ -582,7 +582,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "High error rate detected"
+          summary: 'High error rate detected'
 
       - alert: HighLatency
         expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2
@@ -590,7 +590,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "P99 latency above 2 seconds"
+          summary: 'P99 latency above 2 seconds'
 
       - alert: HighMemoryUsage
         expr: nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes > 0.85
@@ -598,7 +598,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Memory usage above 85%"
+          summary: 'Memory usage above 85%'
 
       - alert: DatabaseConnectionsHigh
         expr: pg_stat_activity_count > 40
@@ -606,7 +606,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Database connections above 80%"
+          summary: 'Database connections above 80%'
 ```
 
 ---
@@ -655,15 +655,15 @@ flowchart TB
 
 ### Port Exposure
 
-| Service | Container Port | Host Binding | Accessible From |
-|---------|---------------|--------------|-----------------|
-| Backend | 3000 | 127.0.0.1:3000 | Caddy only |
-| Inngest | 8288 | 127.0.0.1:8288 | Internal only |
-| Credential Validator | 3002 | 127.0.0.1:3002 | Internal only |
-| Redis | 6379 | None | Container network |
-| Prometheus | 9090 | 127.0.0.1:9090 | Internal only |
-| cAdvisor | 8080 | 127.0.0.1:8080 | Internal only |
-| n8n | 5678 | 0.0.0.0:5678 | Authenticated access |
+| Service              | Container Port | Host Binding   | Accessible From      |
+| -------------------- | -------------- | -------------- | -------------------- |
+| Backend              | 3000           | 127.0.0.1:3000 | Caddy only           |
+| Inngest              | 8288           | 127.0.0.1:8288 | Internal only        |
+| Credential Validator | 3002           | 127.0.0.1:3002 | Internal only        |
+| Redis                | 6379           | None           | Container network    |
+| Prometheus           | 9090           | 127.0.0.1:9090 | Internal only        |
+| cAdvisor             | 8080           | 127.0.0.1:8080 | Internal only        |
+| n8n                  | 5678           | 0.0.0.0:5678   | Authenticated access |
 
 ### Secrets Management
 
@@ -717,12 +717,12 @@ graph TB
 
 ### Scaling Triggers
 
-| Metric | Scale Up | Scale Down | Cooldown |
-|--------|----------|------------|----------|
-| CPU | > 70% for 5min | < 30% for 10min | 5 min |
-| Memory | > 80% for 5min | < 40% for 10min | 5 min |
-| Request Rate | > 100 req/s | < 20 req/s | 5 min |
-| Latency P99 | > 1s for 5min | < 200ms for 10min | 10 min |
+| Metric       | Scale Up       | Scale Down        | Cooldown |
+| ------------ | -------------- | ----------------- | -------- |
+| CPU          | > 70% for 5min | < 30% for 10min   | 5 min    |
+| Memory       | > 80% for 5min | < 40% for 10min   | 5 min    |
+| Request Rate | > 100 req/s    | < 20 req/s        | 5 min    |
+| Latency P99  | > 1s for 5min  | < 200ms for 10min | 10 min   |
 
 ### Resource Limits
 
@@ -766,13 +766,13 @@ services:
 
 ### Backup Strategy
 
-| Component | Backup Type | Frequency | Retention | RTO | RPO |
-|-----------|-------------|-----------|-----------|-----|-----|
-| PostgreSQL | Continuous WAL | Streaming | 35 days | 5 min | 0 min |
-| PostgreSQL | Full snapshot | Daily 2AM | 30 days | 30 min | 24 hrs |
-| Redis | RDB + AOF | 1 min / continuous | 24 hrs | 2 min | 1 min |
-| Key Vault | Versioned | Automatic | 90 days | Instant | 0 |
-| Container Images | Registry | Each deploy | 30 versions | Instant | 0 |
+| Component        | Backup Type    | Frequency          | Retention   | RTO     | RPO    |
+| ---------------- | -------------- | ------------------ | ----------- | ------- | ------ |
+| PostgreSQL       | Continuous WAL | Streaming          | 35 days     | 5 min   | 0 min  |
+| PostgreSQL       | Full snapshot  | Daily 2AM          | 30 days     | 30 min  | 24 hrs |
+| Redis            | RDB + AOF      | 1 min / continuous | 24 hrs      | 2 min   | 1 min  |
+| Key Vault        | Versioned      | Automatic          | 90 days     | Instant | 0      |
+| Container Images | Registry       | Each deploy        | 30 versions | Instant | 0      |
 
 ### Failover Procedures
 
@@ -825,21 +825,25 @@ docker compose logs --tail=100
 
 ### High CPU Alert
 
-```markdown
+````markdown
 ## Runbook: High CPU Usage
 
 ### Symptoms
+
 - Alert: CPU usage > 70% for 5 minutes
 - Slow response times
 - Request timeouts
 
 ### Investigation Steps
+
 1. Check which container is consuming CPU:
    ```bash
    docker stats --no-stream
    ```
+````
 
 2. Check for spike in traffic:
+
    ```bash
    curl localhost:9090/api/v1/query?query=rate(http_requests_total[5m])
    ```
@@ -853,10 +857,12 @@ docker compose logs --tail=100
    ```
 
 ### Resolution
+
 1. If traffic spike: Scale up instances
 2. If slow query: Optimize or kill query
 3. If memory leak: Restart container
-```
+
+````
 
 ### Database Connection Exhaustion
 
@@ -873,7 +879,7 @@ docker compose logs --tail=100
    ```sql
    SELECT count(*) FROM pg_stat_activity;
    SELECT state, count(*) FROM pg_stat_activity GROUP BY state;
-   ```
+````
 
 2. Identify connection hogs:
    ```sql
@@ -884,7 +890,9 @@ docker compose logs --tail=100
    ```
 
 ### Resolution
+
 1. Kill idle connections:
+
    ```sql
    SELECT pg_terminate_backend(pid)
    FROM pg_stat_activity
@@ -893,12 +901,14 @@ docker compose logs --tail=100
    ```
 
 2. Restart backend to reset connection pool:
+
    ```bash
    docker compose restart backend
    ```
 
 3. If persistent: Increase max_connections in PostgreSQL
-```
+
+````
 
 ### Payment Webhook Failures
 
@@ -917,7 +927,7 @@ docker compose logs --tail=100
    WHERE processed = false
    ORDER BY "createdAt" DESC
    LIMIT 20;
-   ```
+````
 
 2. Check Inngest dashboard for failed functions:
    - URL: http://localhost:8288
@@ -928,6 +938,7 @@ docker compose logs --tail=100
    ```
 
 ### Resolution
+
 1. Retry failed webhooks via Inngest UI
 
 2. Manual credit adjustment:
@@ -948,7 +959,8 @@ docker compose logs --tail=100
      'Manual adjustment - webhook failure'
    FROM "Payment" p WHERE p.id = 'payment_id_here';
    ```
-```
+
+````
 
 ---
 
@@ -976,7 +988,7 @@ docker compose exec redis redis-cli
 
 # View resource usage
 docker stats --no-stream
-```
+````
 
 ### Database Commands
 
@@ -1012,4 +1024,4 @@ curl -H "X-Health-Check: ${HEALTHZ_HEADER_VALUE}" http://localhost:3000/healthz
 
 ---
 
-*This document provides comprehensive infrastructure and deployment documentation for the FairArena platform.*
+_This document provides comprehensive infrastructure and deployment documentation for the FairArena platform._

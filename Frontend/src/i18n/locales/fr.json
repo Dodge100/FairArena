@@ -648,11 +648,7 @@
         "communicate": {
           "title": "Communiquez Clairement",
           "desc": "Utilisez un langage clair et professionnel. Évitez le spam, le contenu hors sujet et l'autopromotion excessive.",
-          "examples": [
-            "Restez sur le sujet",
-            "Évitez le spam",
-            "Utilisez les canaux appropriés"
-          ]
+          "examples": ["Restez sur le sujet", "Évitez le spam", "Utilisez les canaux appropriés"]
         }
       }
     },

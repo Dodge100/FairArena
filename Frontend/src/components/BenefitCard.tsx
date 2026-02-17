@@ -14,9 +14,10 @@ const BenefitCard = ({ icon: Icon, title, desc, isDark }: BenefitCardProps) => {
       className={`
         p-8 rounded-3xl transition duration-300 shadow-[0_0_30px_-10px_rgba(0,0,0,0.1)]
         border hover:-translate-y-2
-        ${isDark
-          ? 'bg-neutral-900/50 border-neutral-800 hover:border-[#d9ff00]/50 hover:shadow-[0_0_30px_-10px_rgba(217,255,0,0.15)]'
-          : 'bg-white border-neutral-200 hover:border-[#d9ff00]/50 hover:shadow-xl'
+        ${
+          isDark
+            ? 'bg-neutral-900/50 border-neutral-800 hover:border-[#d9ff00]/50 hover:shadow-[0_0_30px_-10px_rgba(217,255,0,0.15)]'
+            : 'bg-white border-neutral-200 hover:border-[#d9ff00]/50 hover:shadow-xl'
         }
       `}
     >

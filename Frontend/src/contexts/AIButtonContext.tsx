@@ -3,53 +3,56 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 export type AIButtonPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'hidden';
 
 interface AIButtonContextType {
-    position: AIButtonPosition;
-    setPosition: (position: AIButtonPosition) => void;
+  position: AIButtonPosition;
+  setPosition: (position: AIButtonPosition) => void;
 }
 
 const AIButtonContext = createContext<AIButtonContextType | null>(null);
 
 interface AIButtonProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
 export function AIButtonProvider({ children }: AIButtonProviderProps) {
-    const [position, setPosition] = useState<AIButtonPosition>('top-right');
-    const [isLoaded, setIsLoaded] = useState(false);
+  const [position, setPosition] = useState<AIButtonPosition>('top-right');
+  const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load position from localStorage on mount
-    useEffect(() => {
-        const saved = localStorage.getItem('aiButtonPosition');
-        if (saved && ['top-right', 'top-left', 'bottom-right', 'bottom-left', 'hidden'].includes(saved)) {
-            setPosition(saved as AIButtonPosition);
-        }
-        setIsLoaded(true);
-    }, []);
+  // Load position from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('aiButtonPosition');
+    if (
+      saved &&
+      ['top-right', 'top-left', 'bottom-right', 'bottom-left', 'hidden'].includes(saved)
+    ) {
+      setPosition(saved as AIButtonPosition);
+    }
+    setIsLoaded(true);
+  }, []);
 
-    // Save position to localStorage whenever it changes (only after initial load)
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('aiButtonPosition', position);
-        }
-    }, [position, isLoaded]);
+  // Save position to localStorage whenever it changes (only after initial load)
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('aiButtonPosition', position);
+    }
+  }, [position, isLoaded]);
 
-    return (
-        <AIButtonContext.Provider
-            value={{
-                position,
-                setPosition,
-            }}
-        >
-            {children}
-        </AIButtonContext.Provider>
-    );
+  return (
+    <AIButtonContext.Provider
+      value={{
+        position,
+        setPosition,
+      }}
+    >
+      {children}
+    </AIButtonContext.Provider>
+  );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAIButton() {
-    const context = useContext(AIButtonContext);
-    if (!context) {
-        throw new Error('useAIButton must be used within an AIButtonProvider');
-    }
-    return context;
+  const context = useContext(AIButtonContext);
+  if (!context) {
+    throw new Error('useAIButton must be used within an AIButtonProvider');
+  }
+  return context;
 }

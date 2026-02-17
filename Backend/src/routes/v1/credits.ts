@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { checkFreeCreditsEligibility, claimFreeCredits, getCreditBalance, getCreditHistory, sendSmsOtp, sendVoiceOtp, verifySmsOtp, verifyVoiceOtp } from '../../controllers/v1/creditsController.js';
+import {
+  checkFreeCreditsEligibility,
+  claimFreeCredits,
+  getCreditBalance,
+  getCreditHistory,
+  sendSmsOtp,
+  sendVoiceOtp,
+  verifySmsOtp,
+  verifyVoiceOtp,
+} from '../../controllers/v1/creditsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 

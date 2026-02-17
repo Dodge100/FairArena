@@ -31,8 +31,9 @@ function Faq() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className={`px-4 py-1 rounded-full text-[#d9ff00] text-sm font-medium mb-6 ${isDark ? 'bg-[#111]/90' : 'bg-black/90'
-          }`}
+        className={`px-4 py-1 rounded-full text-[#d9ff00] text-sm font-medium mb-6 ${
+          isDark ? 'bg-[#111]/90' : 'bg-black/90'
+        }`}
       >
         {t('home.faq.badge')}
       </motion.div>
@@ -86,7 +87,9 @@ function Faq() {
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
             >
               <div className="flex items-center justify-between gap-4">
-                <span className={`text-lg font-medium flex-1 text-left ${textPrimary}`}>{item.q}</span>
+                <span className={`text-lg font-medium flex-1 text-left ${textPrimary}`}>
+                  {item.q}
+                </span>
 
                 {/* Animated Icon */}
                 <motion.div

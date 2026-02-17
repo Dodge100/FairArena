@@ -1,23 +1,23 @@
 export const oauthAppAuthorizedTemplate = (params: {
-    firstName: string;
-    appName: string;
-    appLogoUrl?: string;
-    appDeveloper?: string;
-    permissions: string[];
-    authorizedAt: string;
-    ipAddress: string;
-    location: string;
-    deviceName: string;
-    revokeUrl: string;
-    securityUrl: string;
+  firstName: string;
+  appName: string;
+  appLogoUrl?: string;
+  appDeveloper?: string;
+  permissions: string[];
+  authorizedAt: string;
+  ipAddress: string;
+  location: string;
+  deviceName: string;
+  revokeUrl: string;
+  securityUrl: string;
 }): string => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    const permissionsList = params.permissions
-        .map(p => `<li style="margin-bottom: 4px;">${p}</li>`)
-        .join('');
+  const permissionsList = params.permissions
+    .map((p) => `<li style="margin-bottom: 4px;">${p}</li>`)
+    .join('');
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,10 +61,11 @@ export const oauthAppAuthorizedTemplate = (params: {
             <p style="margin-top: 12px;">A new application was granted access to your FairArena account.</p>
 
             <div class="app-card">
-                ${params.appLogoUrl
-            ? `<img src="${params.appLogoUrl}" alt="${params.appName}" class="app-logo" />`
-            : `<div class="app-logo-placeholder"><span style="color: white; font-size: 24px; font-weight: bold;">${params.appName.charAt(0).toUpperCase()}</span></div>`
-        }
+                ${
+                  params.appLogoUrl
+                    ? `<img src="${params.appLogoUrl}" alt="${params.appName}" class="app-logo" />`
+                    : `<div class="app-logo-placeholder"><span style="color: white; font-size: 24px; font-weight: bold;">${params.appName.charAt(0).toUpperCase()}</span></div>`
+                }
                 <div class="app-name">${params.appName}</div>
                 ${params.appDeveloper ? `<div class="app-developer">by ${params.appDeveloper}</div>` : ''}
             </div>

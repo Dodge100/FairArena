@@ -66,10 +66,9 @@ async function fetchIPSecurityData(ip: string): Promise<IPRegistryResponse | nul
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    const response = await fetch(
-      `https://api.ipregistry.co/${ip}?key=${apiKey}`,
-      { signal: controller.signal }
-    );
+    const response = await fetch(`https://api.ipregistry.co/${ip}?key=${apiKey}`, {
+      signal: controller.signal,
+    });
 
     clearTimeout(timeoutId);
 
@@ -82,7 +81,7 @@ async function fetchIPSecurityData(ip: string): Promise<IPRegistryResponse | nul
       return null;
     }
 
-    const data = await response.json() as IPRegistryResponse;
+    const data = (await response.json()) as IPRegistryResponse;
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -199,11 +198,7 @@ async function getIPSecurityResult(ip: string): Promise<CachedIPResult | null> {
     const result = analyzeIPSecurity(data);
 
     // Cache the result for 24 hours
-    await redis.setex(
-      cacheKey,
-      IP_SECURITY_CONFIG.cacheTTL,
-      JSON.stringify(result)
-    );
+    await redis.setex(cacheKey, IP_SECURITY_CONFIG.cacheTTL, JSON.stringify(result));
 
     logger.info('IP security result cached', {
       ip,
@@ -378,7 +373,10 @@ function createBlockedOverlay(title: string, messages: string[]): string {
     <div class="reasons">
       <h2>Security Flags Detected</h2>
       <ul>
-        ${messages.filter(m => !m.startsWith('•') && m !== 'Suggestions:').map(m => `<li>${m}</li>`).join('')}
+        ${messages
+          .filter((m) => !m.startsWith('•') && m !== 'Suggestions:')
+          .map((m) => `<li>${m}</li>`)
+          .join('')}
       </ul>
     </div>
 
@@ -406,7 +404,7 @@ function createBlockedOverlay(title: string, messages: string[]): string {
 export const ipSecurityMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   // Check if IP security is enabled
   if (!IP_SECURITY_CONFIG.enabled) {
@@ -415,9 +413,8 @@ export const ipSecurityMiddleware = async (
 
   try {
     // Extract IP address
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
-      || req.ip
-      || 'unknown';
+    const ip =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
 
     // Skip check for unknown IPs
     if (ip === 'unknown') {
@@ -439,27 +436,25 @@ export const ipSecurityMiddleware = async (
 
     // If IP is blocked, return blocked overlay
     if (result.isBlocked) {
-      logSecurityEvent(
-        SecurityEventType.IP_BLOCKED,
-        'IP blocked by security middleware',
-        {
-          ip,
-          path: req.path,
-          method: req.method,
-          userAgent: req.headers['user-agent'],
-          details: {
-            reasons: result.reasons,
-            location: result.location,
-          },
-        }
-      );
+      logSecurityEvent(SecurityEventType.IP_BLOCKED, 'IP blocked by security middleware', {
+        ip,
+        path: req.path,
+        method: req.method,
+        userAgent: req.headers['user-agent'],
+        details: {
+          reasons: result.reasons,
+          location: result.location,
+        },
+      });
 
-      res.status(403).send(
-        createBlockedOverlay(
-          'Your request has been blocked due to security policy violations.',
-          result.reasons
-        )
-      );
+      res
+        .status(403)
+        .send(
+          createBlockedOverlay(
+            'Your request has been blocked due to security policy violations.',
+            result.reasons,
+          ),
+        );
       return;
     }
 

@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useTheme } from '@/hooks/useTheme';
 import { useMutation } from '@tanstack/react-query';
 import { Lock, Mail, Shield, X } from 'lucide-react';
@@ -34,14 +40,18 @@ function InviteFriend() {
   }, []);
 
   const inviteMutation = useMutation({
-    mutationFn: (token: string) => apiRequest<{ success: boolean, message?: string }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/platform/invite`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Recaptcha-Token': token,
-      },
-      body: JSON.stringify({ email }),
-    }),
+    mutationFn: (token: string) =>
+      apiRequest<{ success: boolean; message?: string }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/platform/invite`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Recaptcha-Token': token,
+          },
+          body: JSON.stringify({ email }),
+        },
+      ),
     onSuccess: (data) => {
       if (data.success) {
         toast.success(data.message || 'Invitation sent successfully!');
@@ -60,7 +70,7 @@ function InviteFriend() {
       toast.error('Something went wrong. Please try again later.');
       setCaptchaToken(null);
       recaptchaRef.current?.reset();
-    }
+    },
   });
 
   if (!isSignedIn) {
@@ -126,9 +136,10 @@ function InviteFriend() {
             placeholder={t('footer.invite.placeholder')}
             className={`
               flex-1 px-3 py-2.5 text-sm rounded-lg outline-none transition
-              ${isDark
-                ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700 focus:border-[#DDFF00]'
-                : 'bg-white text-black placeholder-neutral-500 border border-neutral-300 focus:border-[#556000]'
+              ${
+                isDark
+                  ? 'bg-neutral-800 text-white placeholder-neutral-500 border border-neutral-700 focus:border-[#DDFF00]'
+                  : 'bg-white text-black placeholder-neutral-500 border border-neutral-300 focus:border-[#556000]'
               }
             `}
           />
@@ -139,9 +150,10 @@ function InviteFriend() {
               px-4 py-2.5 text-sm font-medium rounded-lg transition
               flex items-center gap-2 whitespace-nowrap justify-center
               disabled:opacity-50 disabled:cursor-not-allowed
-              ${isDark
-                ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
-                : 'bg-[#556000] text-white hover:bg-[#8aa300]'
+              ${
+                isDark
+                  ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
+                  : 'bg-[#556000] text-white hover:bg-[#8aa300]'
               }
             `}
           >
@@ -161,7 +173,9 @@ function InviteFriend() {
 
         {/* Trust Signals */}
         <div className="flex items-center gap-4 text-xs">
-          <div className={`flex items-center gap-1.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+          <div
+            className={`flex items-center gap-1.5 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          >
             <Lock className="w-3 h-3" />
             <span>{t('footer.invite.trust')}</span>
           </div>
@@ -177,7 +191,9 @@ function InviteFriend() {
           `}
         >
           <DialogHeader>
-            <DialogTitle className={`flex items-center gap-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}>
+            <DialogTitle
+              className={`flex items-center gap-2 ${isDark ? 'text-neutral-100' : 'text-neutral-900'}`}
+            >
               <Shield className="w-5 h-5 text-[#DDFF00]" />
               Verify You're Human
             </DialogTitle>
@@ -206,9 +222,10 @@ function InviteFriend() {
                 disabled={isLoading}
                 className={`
                   flex-1 px-4 py-2.5 rounded-lg font-medium transition-all
-                  ${isDark
-                    ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
+                  ${
+                    isDark
+                      ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-neutral-300'
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
@@ -218,14 +235,17 @@ function InviteFriend() {
               </button>
               <button
                 onClick={handleCaptchaSubmit}
-                disabled={isLoading || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY}
+                disabled={
+                  isLoading || !captchaToken || !import.meta.env.VITE_GOOGLE_RECAPTCHA_SITE_KEY
+                }
                 className={`
                   flex-1 px-4 py-2.5 rounded-lg font-semibold transition-all
                   flex items-center justify-center gap-2
                   disabled:opacity-50 disabled:cursor-not-allowed
-                  ${isDark
-                    ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
-                    : 'bg-[#556000] text-white hover:bg-[#8aa300]'
+                  ${
+                    isDark
+                      ? 'bg-[#DDFF00] text-black hover:bg-[#DDFF00]/80'
+                      : 'bg-[#556000] text-white hover:bg-[#8aa300]'
                   }
                 `}
               >

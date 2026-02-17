@@ -4,47 +4,47 @@ import { useCookieConsent } from '../contexts/CookieConsentContext';
 import { useDataSaverUtils } from '../hooks/useDataSaverUtils';
 
 export function ClarityManager() {
-    const { dataSaverSettings } = useDataSaverUtils();
-    const { consentSettings, hasConsented } = useCookieConsent();
-    const isInitializedRef = useRef(false);
+  const { dataSaverSettings } = useDataSaverUtils();
+  const { consentSettings, hasConsented } = useCookieConsent();
+  const isInitializedRef = useRef(false);
 
-    useEffect(() => {
-        const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
+  useEffect(() => {
+    const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
 
-        if (!projectId) {
-            console.warn('Clarity project ID not found');
-            return;
+    if (!projectId) {
+      console.warn('Clarity project ID not found');
+      return;
+    }
+
+    // Don't initialize if user hasn't consented yet
+    if (!hasConsented) {
+      return;
+    }
+
+    // If data saver is enabled OR analytics consent is denied, stop/disable Clarity
+    if (dataSaverSettings.enabled || !consentSettings?.analytics) {
+      if (isInitializedRef.current) {
+        try {
+          Clarity.consent(false);
+          isInitializedRef.current = false;
+        } catch (error) {
+          console.warn('Failed to stop Clarity:', error);
         }
+      }
+      return;
+    }
 
-        // Don't initialize if user hasn't consented yet
-        if (!hasConsented) {
-            return;
-        }
+    // If data saver is disabled AND analytics consent is given, initialize Clarity
+    if (!dataSaverSettings.enabled && consentSettings?.analytics && !isInitializedRef.current) {
+      try {
+        Clarity.init(projectId);
+        Clarity.consent(true);
+        isInitializedRef.current = true;
+      } catch (error) {
+        console.warn('Failed to initialize Clarity:', error);
+      }
+    }
+  }, [dataSaverSettings.enabled, consentSettings?.analytics, hasConsented]);
 
-        // If data saver is enabled OR analytics consent is denied, stop/disable Clarity
-        if (dataSaverSettings.enabled || !consentSettings?.analytics) {
-            if (isInitializedRef.current) {
-                try {
-                    Clarity.consent(false);
-                    isInitializedRef.current = false;
-                } catch (error) {
-                    console.warn('Failed to stop Clarity:', error);
-                }
-            }
-            return;
-        }
-
-        // If data saver is disabled AND analytics consent is given, initialize Clarity
-        if (!dataSaverSettings.enabled && consentSettings?.analytics && !isInitializedRef.current) {
-            try {
-                Clarity.init(projectId);
-                Clarity.consent(true);
-                isInitializedRef.current = true;
-            } catch (error) {
-                console.warn('Failed to initialize Clarity:', error);
-            }
-        }
-    }, [dataSaverSettings.enabled, consentSettings?.analytics, hasConsented]);
-
-    return null; // This component doesn't render anything
+  return null; // This component doesn't render anything
 }

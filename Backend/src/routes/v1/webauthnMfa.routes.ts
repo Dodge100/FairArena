@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import {
-    deleteSecurityKey,
-    getAuthenticationOptions,
-    getRegistrationOptions,
-    listSecurityKeys,
-    renameSecurityKey,
-    verifyAuthentication,
-    verifyRegistration,
+  deleteSecurityKey,
+  getAuthenticationOptions,
+  getRegistrationOptions,
+  listSecurityKeys,
+  renameSecurityKey,
+  verifyAuthentication,
+  verifyRegistration,
 } from '../../controllers/v1/webauthnMfaController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 import { createAuthRateLimiter } from '../../middleware/authRateLimit.middleware.js';
@@ -16,15 +16,15 @@ const router = Router();
 
 // Rate limiters
 const registrationLimiter = createAuthRateLimiter({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Max 10 registration attempts
-    message: 'Too many registration attempts, please try again later',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Max 10 registration attempts
+  message: 'Too many registration attempts, please try again later',
 });
 
 const authLimiter = createAuthRateLimiter({
-    windowMs: 60 * 1000, // 1 minute
-    max: 10, // Max 10 auth attempts
-    message: 'Too many authentication attempts, please try again later',
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Max 10 auth attempts
+  message: 'Too many authentication attempts, please try again later',
 });
 
 // Registration Routes (Authenticated users only, requires settings verification)
@@ -53,7 +53,13 @@ const authLimiter = createAuthRateLimiter({
  *       401:
  *         description: Unauthorized
  */
-router.post('/register/options', protectRoute, requireSettingsVerification, registrationLimiter, getRegistrationOptions);
+router.post(
+  '/register/options',
+  protectRoute,
+  requireSettingsVerification,
+  registrationLimiter,
+  getRegistrationOptions,
+);
 
 /**
  * @openapi
@@ -84,7 +90,13 @@ router.post('/register/options', protectRoute, requireSettingsVerification, regi
  *       400:
  *         description: Verification failed or invalid request
  */
-router.post('/register/verify', protectRoute, requireSettingsVerification, registrationLimiter, verifyRegistration);
+router.post(
+  '/register/verify',
+  protectRoute,
+  requireSettingsVerification,
+  registrationLimiter,
+  verifyRegistration,
+);
 
 // Authentication Routes (Can be called with temp MFA token - no settings verification needed)
 

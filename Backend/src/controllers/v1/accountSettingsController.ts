@@ -370,7 +370,11 @@ export const verifyOtp = async (req: Request, res: Response) => {
     );
 
     // Set secure cookie
-    res.cookie('account-settings-token', token, getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES));
+    res.cookie(
+      'account-settings-token',
+      token,
+      getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES),
+    );
 
     inngest.send({
       name: 'log.create',
@@ -584,11 +588,15 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
-import type { AuthenticationResponseJSON, AuthenticatorTransportFuture } from '@simplewebauthn/types';
+import type {
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
+} from '@simplewebauthn/types';
 import { prisma } from '../../config/database.js';
 
-const WEBAUTHN_RP_ID = ENV.NODE_ENV === 'production' ? new URL(ENV.FRONTEND_URL).hostname : 'localhost';
-const WEBAUTHN_ORIGIN = ENV.FRONTEND_URL
+const WEBAUTHN_RP_ID =
+  ENV.NODE_ENV === 'production' ? new URL(ENV.FRONTEND_URL).hostname : 'localhost';
+const WEBAUTHN_ORIGIN = ENV.FRONTEND_URL;
 const WEBAUTHN_CHALLENGE_PREFIX = 'account_settings_webauthn:challenge:';
 const WEBAUTHN_CHALLENGE_TTL = 300; // 5 minutes
 
@@ -615,7 +623,8 @@ export const getWebAuthnOptions = async (req: Request, res: Response) => {
     if (securityKeys.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No security keys registered. Please use OTP verification or add a security key first.',
+        message:
+          'No security keys registered. Please use OTP verification or add a security key first.',
         code: 'NO_SECURITY_KEYS',
       });
     }
@@ -635,7 +644,7 @@ export const getWebAuthnOptions = async (req: Request, res: Response) => {
     await redis.setex(
       `${WEBAUTHN_CHALLENGE_PREFIX}${auth.userId}`,
       WEBAUTHN_CHALLENGE_TTL,
-      options.challenge
+      options.challenge,
     );
 
     logger.info('WebAuthn options generated for account settings verification', {
@@ -751,11 +760,15 @@ export const verifyWebAuthn = async (req: Request, res: Response) => {
       ENV.JWT_SECRET,
       {
         expiresIn: `${TOKEN_EXPIRY_MINUTES}m`,
-      }
+      },
     );
 
     // Set secure cookie
-    res.cookie('account-settings-token', token, getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES));
+    res.cookie(
+      'account-settings-token',
+      token,
+      getAccountSettingsCookieOptions(TOKEN_EXPIRY_MINUTES),
+    );
 
     // Log the verification
     inngest.send({

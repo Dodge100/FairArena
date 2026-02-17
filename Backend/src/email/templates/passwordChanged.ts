@@ -1,4 +1,3 @@
-
 export const passwordChangedTemplate = (params: {
   firstName: string;
   supportUrl: string;

@@ -1,11 +1,7 @@
 import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Separator } from '../components/ui/separator';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
@@ -19,11 +15,7 @@ export const OrganizationSwitcher = () => {
 
   if (loading) {
     return (
-      <Button
-        variant="outline"
-        disabled
-        className="w-full sm:w-[280px] justify-start"
-      >
+      <Button variant="outline" disabled className="w-full sm:w-[280px] justify-start">
         <Building2 className="mr-2 h-4 w-4 animate-pulse" />
         Loading...
       </Button>
@@ -41,10 +33,7 @@ export const OrganizationSwitcher = () => {
           <Plus className="mr-2 h-4 w-4" />
           Create Organization
         </Button>
-        <CreateOrganizationModal
-          open={createModalOpen}
-          onOpenChange={setCreateModalOpen}
-        />
+        <CreateOrganizationModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
       </>
     );
   }
@@ -62,18 +51,12 @@ export const OrganizationSwitcher = () => {
           >
             <div className="flex items-center gap-2 min-w-0">
               <Building2 className="h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {currentOrganization?.name || 'Select organization'}
-              </span>
+              <span className="truncate">{currentOrganization?.name || 'Select organization'}</span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-full sm:w-[280px] p-0"
-          align="start"
-          sideOffset={4}
-        >
+        <PopoverContent className="w-full sm:w-[280px] p-0" align="start" sideOffset={4}>
           <div className="flex flex-col">
             <div className="px-2 py-2">
               <p className="text-xs font-medium text-muted-foreground px-2">Organizations</p>
@@ -93,9 +76,7 @@ export const OrganizationSwitcher = () => {
                     <Building2 className="h-4 w-4" />
                   </div>
                   <span className="flex-1 truncate text-left">{org.name}</span>
-                  {currentOrganization?.id === org.id && (
-                    <Check className="h-4 w-4 shrink-0" />
-                  )}
+                  {currentOrganization?.id === org.id && <Check className="h-4 w-4 shrink-0" />}
                 </button>
               ))}
             </div>
@@ -131,14 +112,8 @@ export const OrganizationSwitcher = () => {
           </div>
         </PopoverContent>
       </Popover>
-      <CreateOrganizationModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-      />
-      <OrganizationsModal
-        open={manageModalOpen}
-        onOpenChange={setManageModalOpen}
-      />
+      <CreateOrganizationModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
+      <OrganizationsModal open={manageModalOpen} onOpenChange={setManageModalOpen} />
     </>
   );
 };

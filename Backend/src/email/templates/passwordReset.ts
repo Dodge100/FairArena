@@ -1,8 +1,7 @@
-
 export const passwordResetTemplate = (params: {
   firstName: string;
   resetUrl: string;
-  expiryMinutes: number
+  expiryMinutes: number;
 }): string => {
   const currentYear = new Date().getFullYear();
 

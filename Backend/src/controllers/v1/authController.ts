@@ -296,8 +296,8 @@ export const login = async (req: Request, res: Response) => {
         superSecureAccountEnabled: true,
         // Check if user has any registered security keys
         _count: {
-          select: { securityKeys: true }
-        }
+          select: { securityKeys: true },
+        },
       },
     });
 
@@ -322,7 +322,8 @@ export const login = async (req: Request, res: Response) => {
     if (user.superSecureAccountEnabled) {
       return res.status(403).json({
         success: false,
-        message: 'Super Secure Account enabled. Password login is disabled. Please use Passkey or OAuth + Security Key.',
+        message:
+          'Super Secure Account enabled. Password login is disabled. Please use Passkey or OAuth + Security Key.',
         code: 'SUPER_SECURE_LOGIN_REQUIRED',
       });
     }
@@ -421,7 +422,6 @@ export const login = async (req: Request, res: Response) => {
     const isKnownDevice = await redis.exists(newDeviceRecentDeviceKey as string);
 
     if (!isKnownDevice) {
-
       const jwt = await import('jsonwebtoken');
       const tempToken = jwt.default.sign(
         {
@@ -466,14 +466,18 @@ export const login = async (req: Request, res: Response) => {
     logger.info('Password login multi-account check', {
       userId: user.userId,
       existingSessionCount: allSessionCookies.length,
-      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      sessionIds: allSessionCookies.map((s) => s.sessionId.substring(0, 8) + '...'),
       activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
       hasCookies: Object.keys(req.cookies || {}).length > 0,
     });
 
     // Check if this user is already logged in (has existing session in cookies)
     const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, deviceFingerprint);
+    const existingSession = await findExistingUserSession(
+      req.cookies || {},
+      user.userId,
+      deviceFingerprint,
+    );
 
     if (existingSession) {
       // If same device, prevent duplicate login
@@ -481,12 +485,13 @@ export const login = async (req: Request, res: Response) => {
         logger.warn('Duplicate login attempt from same device', {
           userId: user.userId,
           sessionId: existingSession.sessionId,
-          deviceFingerprint: newDeviceFingerprint
+          deviceFingerprint: newDeviceFingerprint,
         });
 
         return res.status(409).json({
           success: false,
-          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          message:
+            'You are already logged in on this device. Please use account switcher to access your account.',
           code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
         });
       }
@@ -494,7 +499,10 @@ export const login = async (req: Request, res: Response) => {
       // Different device - just switch to their session
       res.cookie('active_session', existingSession.sessionId, SESSION_COOKIE_OPTIONS);
 
-      logger.info('Switched to existing session', { userId: user.userId, sessionId: existingSession.sessionId });
+      logger.info('Switched to existing session', {
+        userId: user.userId,
+        sessionId: existingSession.sessionId,
+      });
 
       return res.status(200).json({
         success: true,
@@ -519,7 +527,7 @@ export const login = async (req: Request, res: Response) => {
       logger.info('account_limit_hit', {
         userId: user.userId,
         count: currentSessionCount,
-        limit: ENV.MAX_CONCURRENT_ACCOUNTS
+        limit: ENV.MAX_CONCURRENT_ACCOUNTS,
       });
 
       return res.status(409).json({
@@ -623,7 +631,6 @@ export const login = async (req: Request, res: Response) => {
     });
 
     logger.info('New device login detected', { userId: user.userId, deviceType, sessionId });
-
 
     await inngest.send({
       name: 'notification/send',
@@ -830,7 +837,8 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     if (user.superSecureAccountEnabled) {
       return res.status(403).json({
         success: false,
-        message: 'TOTP and Backup Codes are disabled for Super Secure Accounts. Please use your Security Key.',
+        message:
+          'TOTP and Backup Codes are disabled for Super Secure Accounts. Please use your Security Key.',
         code: 'SUPER_SECURE_ENFORCED',
       });
     }
@@ -916,7 +924,10 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
           },
         });
 
-        logger.info('Backup code usage alert sent', { userId, remainingCodes: updatedCodes.length });
+        logger.info('Backup code usage alert sent', {
+          userId,
+          remainingCodes: updatedCodes.length,
+        });
       }
     } else {
       isValid = verifyTOTPCode(code, user.mfaSecret);
@@ -951,13 +962,17 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
     logger.info('MFA verify multi-account check', {
       userId: user.userId,
       existingSessionCount: allSessionCookies.length,
-      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      sessionIds: allSessionCookies.map((s) => s.sessionId.substring(0, 8) + '...'),
       activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
       hasCookies: Object.keys(req.cookies || {}).length > 0,
     });
 
     // Check if this user is already logged in (has existing session in cookies)
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, currentFingerprint);
+    const existingSession = await findExistingUserSession(
+      req.cookies || {},
+      user.userId,
+      currentFingerprint,
+    );
 
     if (existingSession) {
       // If same device, prevent duplicate login
@@ -967,12 +982,13 @@ export const verifyLoginMFA = async (req: Request, res: Response) => {
         logger.warn('Duplicate MFA login attempt from same device', {
           userId: user.userId,
           sessionId: existingSession.sessionId,
-          deviceFingerprint: currentFingerprint
+          deviceFingerprint: currentFingerprint,
         });
 
         return res.status(409).json({
           success: false,
-          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          message:
+            'You are already logged in on this device. Please use account switcher to access your account.',
           code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
         });
       }
@@ -1275,7 +1291,7 @@ export const logout = async (req: Request, res: Response) => {
 
         // Find next available session to switch to
         const allSessions = parseSessionCookies(req.cookies || {});
-        const remainingSessions = allSessions.filter(s => s.sessionId !== sessionId);
+        const remainingSessions = allSessions.filter((s) => s.sessionId !== sessionId);
 
         if (remainingSessions.length > 0) {
           // Switch to first remaining session
@@ -1287,7 +1303,7 @@ export const logout = async (req: Request, res: Response) => {
 
             logger.info('Switched to next session after logout', {
               oldSessionId: sessionId,
-              newSessionId: nextSession.sessionId
+              newSessionId: nextSession.sessionId,
             });
 
             return res.status(200).json({
@@ -1990,8 +2006,8 @@ export const checkMfaSession = async (req: Request, res: Response) => {
           notificationMfaEnabled: true,
           superSecureAccountEnabled: true,
           _count: {
-            select: { securityKeys: true }
-          }
+            select: { securityKeys: true },
+          },
         },
       });
 
@@ -2002,13 +2018,17 @@ export const checkMfaSession = async (req: Request, res: Response) => {
 
       // Cache for 1 hour to match getMfaPreferences
       if (user) {
-        await redis.setex(prefsCacheKey, 3600, JSON.stringify({
-          mfaEnabled: user.mfaEnabled,
-          emailMfaEnabled,
-          notificationMfaEnabled,
-          webauthnMfaAvailable,
-          superSecureAccountEnabled
-        }));
+        await redis.setex(
+          prefsCacheKey,
+          3600,
+          JSON.stringify({
+            mfaEnabled: user.mfaEnabled,
+            emailMfaEnabled,
+            notificationMfaEnabled,
+            webauthnMfaAvailable,
+            superSecureAccountEnabled,
+          }),
+        );
       }
     }
 
@@ -2108,7 +2128,6 @@ export const invalidateMfaSession = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 /**
  * Get recent security activity
@@ -2219,17 +2238,17 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       notificationMfaEnabled,
       acknowledgeSecurityRisk,
       disableOTPReverification,
-      superSecureAccountEnabled
+      superSecureAccountEnabled,
     } = validation.data;
 
     // If enabling email or notification MFA, require user to acknowledge security risk
-    const isEnablingLessSecure =
-      (emailMfaEnabled === true) || (notificationMfaEnabled === true);
+    const isEnablingLessSecure = emailMfaEnabled === true || notificationMfaEnabled === true;
 
     if (isEnablingLessSecure && !acknowledgeSecurityRisk) {
       return res.status(400).json({
         success: false,
-        message: 'You must acknowledge the security risk before enabling email or notification-based MFA. These methods are less secure than TOTP or passkeys.',
+        message:
+          'You must acknowledge the security risk before enabling email or notification-based MFA. These methods are less secure than TOTP or passkeys.',
         code: 'SECURITY_RISK_NOT_ACKNOWLEDGED',
       });
     }
@@ -2265,7 +2284,8 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
     if (disableOTPReverification === true && securityKeyCount === 0) {
       return res.status(400).json({
         success: false,
-        message: 'You must have at least one security key registered before disabling OTP re-verification.',
+        message:
+          'You must have at least one security key registered before disabling OTP re-verification.',
         code: 'PREREQUISITE_NOT_MET',
         requirement: 'security_key_required',
       });
@@ -2280,14 +2300,16 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       if (!user.mfaEnabled) {
         return res.status(400).json({
           success: false,
-          message: 'You must enable Two-Factor Authentication (MFA) before enabling Super Secure Account.',
+          message:
+            'You must enable Two-Factor Authentication (MFA) before enabling Super Secure Account.',
           code: 'PREREQUISITE_NOT_MET',
           requirement: 'mfa_required',
         });
       }
 
       // Check if OTP re-verification is disabled (either already or being disabled in this request)
-      const willHaveOTPDisabled = disableOTPReverification === true ||
+      const willHaveOTPDisabled =
+        disableOTPReverification === true ||
         (disableOTPReverification !== false && user.disableOTPReverification);
 
       if (!willHaveOTPDisabled) {
@@ -2302,7 +2324,8 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       if (securityKeyCount === 0) {
         return res.status(400).json({
           success: false,
-          message: 'You must have at least one security key registered before enabling Super Secure Account.',
+          message:
+            'You must have at least one security key registered before enabling Super Secure Account.',
           code: 'PREREQUISITE_NOT_MET',
           requirement: 'security_key_required',
         });
@@ -2311,7 +2334,8 @@ export const updateMfaPreferences = async (req: Request, res: Response) => {
       if (passkeyCount === 0) {
         return res.status(400).json({
           success: false,
-          message: 'You must have at least one passkey registered before enabling Super Secure Account.',
+          message:
+            'You must have at least one passkey registered before enabling Super Secure Account.',
           code: 'PREREQUISITE_NOT_MET',
           requirement: 'passkey_required',
         });
@@ -2514,7 +2538,7 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
         email: true,
         firstName: true,
         emailMfaEnabled: true,
-        _count: { select: { securityKeys: true } }
+        _count: { select: { securityKeys: true } },
       },
     });
 
@@ -2534,7 +2558,8 @@ export const sendEmailOtp = async (req: Request, res: Response) => {
       });
       return res.status(403).json({
         success: false,
-        message: 'Security key verification required. Email verification is not available for accounts with security keys.',
+        message:
+          'Security key verification required. Email verification is not available for accounts with security keys.',
         code: 'SECURITY_KEY_REQUIRED',
       });
     }
@@ -2619,7 +2644,7 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
       where: { userId },
       select: {
         notificationMfaEnabled: true,
-        _count: { select: { securityKeys: true } }
+        _count: { select: { securityKeys: true } },
       },
     });
 
@@ -2639,7 +2664,8 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
       });
       return res.status(403).json({
         success: false,
-        message: 'Security key verification required. Notification verification is not available for accounts with security keys.',
+        message:
+          'Security key verification required. Notification verification is not available for accounts with security keys.',
         code: 'SECURITY_KEY_REQUIRED',
       });
     }
@@ -2648,7 +2674,8 @@ export const sendNotificationOtp = async (req: Request, res: Response) => {
     if (payload.type === 'mfa_pending' && !user.notificationMfaEnabled) {
       return res.status(400).json({
         success: false,
-        message: 'Notification MFA is not enabled for your account. Enable it in security settings.',
+        message:
+          'Notification MFA is not enabled for your account. Enable it in security settings.',
       });
     }
 
@@ -2766,7 +2793,8 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     if (user.superSecureAccountEnabled) {
       return res.status(403).json({
         success: false,
-        message: 'OTP verification is disabled for Super Secure Accounts. Please use your Security Key.',
+        message:
+          'OTP verification is disabled for Super Secure Accounts. Please use your Security Key.',
         code: 'SUPER_SECURE_ENFORCED',
       });
     }
@@ -2818,14 +2846,18 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     logger.info('OTP verify multi-account check', {
       userId: user.userId,
       existingSessionCount: allSessionCookies.length,
-      sessionIds: allSessionCookies.map(s => s.sessionId.substring(0, 8) + '...'),
+      sessionIds: allSessionCookies.map((s) => s.sessionId.substring(0, 8) + '...'),
       activeSession: req.cookies?.active_session?.substring(0, 8) + '...',
       hasCookies: Object.keys(req.cookies || {}).length > 0,
     });
 
     // Check if this user is already logged in (has existing session in cookies)
     const otpDeviceFingerprint = `${uaInfo.deviceType}:${userAgentRaw?.substring(0, 50) || 'unknown'}`;
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, otpDeviceFingerprint);
+    const existingSession = await findExistingUserSession(
+      req.cookies || {},
+      user.userId,
+      otpDeviceFingerprint,
+    );
 
     if (existingSession) {
       // If same device, prevent duplicate login
@@ -2835,12 +2867,13 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
         logger.warn('Duplicate OTP login attempt from same device', {
           userId: user.userId,
           sessionId: existingSession.sessionId,
-          deviceFingerprint: otpDeviceFingerprint
+          deviceFingerprint: otpDeviceFingerprint,
         });
 
         return res.status(409).json({
           success: false,
-          message: 'You are already logged in on this device. Please use account switcher to access your account.',
+          message:
+            'You are already logged in on this device. Please use account switcher to access your account.',
           code: 'ALREADY_LOGGED_IN_SAME_DEVICE',
         });
       }
@@ -2895,7 +2928,7 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
         userAgent: userAgentRaw,
         ipAddress,
       },
-      { isBanned: user.isBanned, banReason: user.banReason }
+      { isBanned: user.isBanned, banReason: user.banReason },
     );
     const accessToken = generateAccessToken(user.userId, sessionId);
 
@@ -2923,7 +2956,10 @@ export const verifyMfaOtp = async (req: Request, res: Response) => {
     if (payload.type === 'new_device_pending' && payload.deviceFingerprint) {
       const recentDeviceKey = `recent_device:${userId}:${payload.deviceFingerprint}`;
       await redis.setex(recentDeviceKey, 7 * 24 * 60 * 60, '1'); // 7 days
-      logger.info('New device verified and registered', { userId, deviceFingerprint: payload.deviceFingerprint });
+      logger.info('New device verified and registered', {
+        userId,
+        deviceFingerprint: payload.deviceFingerprint,
+      });
     }
 
     logger.info('MFA OTP verified successfully', { userId, method });
@@ -3031,7 +3067,7 @@ export const switchAccount = async (req: Request, res: Response) => {
 
     // Verify the session exists in cookies
     const allSessions = parseSessionCookies(req.cookies || {});
-    const targetSession = allSessions.find(s => s.sessionId === sessionId);
+    const targetSession = allSessions.find((s) => s.sessionId === sessionId);
 
     if (!targetSession) {
       return res.status(404).json({
@@ -3176,11 +3212,14 @@ export const exchangeOAuthTokenForSession = async (req: Request, res: Response) 
       }
 
       // Now verify the token signature
-      tokenPayload = jwt.default.verify(access_token, ENV.OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY || ENV.JWT_SECRET, {
-        issuer: ENV.OAUTH_ISSUER,
-        algorithms: ['RS256', 'HS256'],
-      });
-
+      tokenPayload = jwt.default.verify(
+        access_token,
+        ENV.OAUTH_BOOTSTRAP_RSA_PUBLIC_KEY || ENV.JWT_SECRET,
+        {
+          issuer: ENV.OAUTH_ISSUER,
+          algorithms: ['RS256', 'HS256'],
+        },
+      );
     } catch (jwtError) {
       logger.warn('OAuth token verification failed', {
         error: jwtError instanceof Error ? jwtError.message : 'Unknown error',
@@ -3254,7 +3293,11 @@ export const exchangeOAuthTokenForSession = async (req: Request, res: Response) 
 
     // Check if user already has a session (multi-account support)
     const deviceFingerprint = `${deviceType}:${userAgent?.substring(0, 50) || 'unknown'}`;
-    const existingSession = await findExistingUserSession(req.cookies || {}, user.userId, deviceFingerprint);
+    const existingSession = await findExistingUserSession(
+      req.cookies || {},
+      user.userId,
+      deviceFingerprint,
+    );
 
     if (existingSession) {
       // User already has a session, just switch to it

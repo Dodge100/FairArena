@@ -1,12 +1,11 @@
-
 export const passkeyAddedTemplate = (params: {
-    firstName: string;
-    passkeyName: string;
-    securityUrl: string;
+  firstName: string;
+  passkeyName: string;
+  securityUrl: string;
 }): string => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>

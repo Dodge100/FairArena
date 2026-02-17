@@ -146,10 +146,10 @@ docker compose logs -f backend
 
 ### Base URLs
 
-| Environment     | URL                                    |
-| --------------- | -------------------------------------- |
+| Environment     | URL                            |
+| --------------- | ------------------------------ |
 | **Production**  | `https://fairarena.app/api/v1` |
-| **Development** | `http://localhost:3000/api/v1`         |
+| **Development** | `http://localhost:3000/api/v1` |
 
 ### Authentication
 

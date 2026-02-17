@@ -1,12 +1,7 @@
 import { AuthIllustration } from '@/components/auth/AuthIllustration';
 import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
 import { FolderCode, Globe, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -77,7 +72,11 @@ export default function Signup() {
     // If oauth_request is in storage but not in URL, restore it to URL
     else if (storedOAuthRequest && !urlOAuthRequest) {
       params.set('oauth_request', storedOAuthRequest);
-      window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}?${params.toString()}`,
+      );
     }
   }, []);
 
@@ -123,12 +122,15 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      }, token);
+      await register(
+        {
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        },
+        token,
+      );
       setSuccess(true);
       toast.success('Registration successful! Please check your email to verify your account.');
     } catch (err) {
@@ -148,17 +150,30 @@ export default function Signup() {
           ${isDark ? 'bg-[#030303]' : 'bg-neutral-100'}
         `}
       >
-        <div className={`max-w-md p-8 rounded-2xl text-center ${isDark ? 'bg-neutral-900' : 'bg-white'}`}>
+        <div
+          className={`max-w-md p-8 rounded-2xl text-center ${isDark ? 'bg-neutral-900' : 'bg-white'}`}
+        >
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/10 flex items-center justify-center">
-            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-8 h-8 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
             Check your email
           </h2>
           <p className={`mb-6 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-            We've sent a verification link to <strong>{formData.email}</strong>. Click the link to verify your account.
+            We've sent a verification link to <strong>{formData.email}</strong>. Click the link to
+            verify your account.
           </p>
           <Link
             to={`/signin${sessionStorage.getItem('oauth_request_id') ? `?oauth_request=${sessionStorage.getItem('oauth_request_id')}` : ''}`}
@@ -171,7 +186,6 @@ export default function Signup() {
       </div>
     );
   }
-
 
   return (
     <>
@@ -193,9 +207,7 @@ export default function Signup() {
                     className="h-10 mx-auto mb-6"
                     alt="FairArena Logo"
                   />
-                  <h1 className="text-3xl font-bold mb-2 text-white">
-                    Create your account
-                  </h1>
+                  <h1 className="text-3xl font-bold mb-2 text-white">Create your account</h1>
                   <p className="text-neutral-400">
                     Join thousands of developers building on FairArena
                   </p>
@@ -226,7 +238,10 @@ export default function Signup() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label htmlFor="firstName" className="block text-sm font-medium text-neutral-300">
+                      <label
+                        htmlFor="firstName"
+                        className="block text-sm font-medium text-neutral-300"
+                      >
                         First Name
                       </label>
                       <input
@@ -240,7 +255,10 @@ export default function Signup() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label htmlFor="lastName" className="block text-sm font-medium text-neutral-300">
+                      <label
+                        htmlFor="lastName"
+                        className="block text-sm font-medium text-neutral-300"
+                      >
                         Last Name
                       </label>
                       <input
@@ -272,7 +290,10 @@ export default function Signup() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="password" className="block text-sm font-medium text-neutral-300">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-neutral-300"
+                    >
                       Password
                     </label>
                     <input
@@ -292,7 +313,10 @@ export default function Signup() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-300">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-neutral-300"
+                    >
                       Confirm Password
                     </label>
                     <input
@@ -318,7 +342,10 @@ export default function Signup() {
 
                   <p className="text-center text-sm text-neutral-500 pt-4">
                     Already have an account?{' '}
-                    <Link to="/signin" className="font-medium text-[#DDEF00] hover:text-[#efff5e] transition-colors">
+                    <Link
+                      to="/signin"
+                      className="font-medium text-[#DDEF00] hover:text-[#efff5e] transition-colors"
+                    >
                       Sign in here
                     </Link>
                   </p>
@@ -327,9 +354,20 @@ export default function Signup() {
                 <div className="mt-8 pt-6 border-t border-neutral-800 text-center">
                   <p className="text-xs text-neutral-600">
                     By clicking create account, you agree to our{' '}
-                    <Link to="/terms-and-conditions" className="hover:text-white transition-colors underline decoration-neutral-700">Terms of Service</Link>
-                    {' '}and{' '}
-                    <Link to="/privacy-policy" className="hover:text-white transition-colors underline decoration-neutral-700">Privacy Policy</Link>.
+                    <Link
+                      to="/terms-and-conditions"
+                      className="hover:text-white transition-colors underline decoration-neutral-700"
+                    >
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link
+                      to="/privacy-policy"
+                      className="hover:text-white transition-colors underline decoration-neutral-700"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
                   </p>
                 </div>
               </div>
@@ -342,17 +380,19 @@ export default function Signup() {
             subtitle="Connect with thousands of developers, find your ideal team, and build projects that matter."
             icon={<Users className="w-10 h-10 text-black font-bold" />}
             features={[
-              { icon: User, text: "Developer Profiles", desc: "Showcase your skills" },
-              { icon: Users, text: "Team Matching", desc: "Find collaborators" },
-              { icon: FolderCode, text: "Project Hub", desc: "Manage submissions" },
-              { icon: Globe, text: "Global Access", desc: "Work from anywhere" }
+              { icon: User, text: 'Developer Profiles', desc: 'Showcase your skills' },
+              { icon: Users, text: 'Team Matching', desc: 'Find collaborators' },
+              { icon: FolderCode, text: 'Project Hub', desc: 'Manage submissions' },
+              { icon: Globe, text: 'Global Access', desc: 'Work from anywhere' },
             ]}
           />
         </div>
 
         {/* Captcha Modal */}
         <Dialog open={showCaptcha} onOpenChange={setShowCaptcha}>
-          <DialogContent className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}>
+          <DialogContent
+            className={`sm:max-w-md ${isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white'}`}
+          >
             <DialogHeader>
               <DialogTitle>Security Verification</DialogTitle>
             </DialogHeader>

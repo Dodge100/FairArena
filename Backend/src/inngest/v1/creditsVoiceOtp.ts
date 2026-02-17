@@ -5,7 +5,7 @@ import { inngest } from './client.js';
 
 const notificationapi = new Pingram({
   apiKey: ENV.PINGRAM_API_KEY,
-  baseUrl: 'https://api.pingram.io'
+  baseUrl: 'https://api.pingram.io',
 });
 logger.info('NotificationAPI initialized for voice calls');
 
@@ -62,7 +62,10 @@ export const creditsSendVoiceOtp = inngest.createFunction(
       const voiceResult = await sendVoiceCall(userId, phoneNumber, otp);
 
       if (voiceResult.success) {
-        logger.info('Voice call OTP sent successfully', { userId, phoneNumber: phoneNumber.toString().slice(-4) });
+        logger.info('Voice call OTP sent successfully', {
+          userId,
+          phoneNumber: phoneNumber.toString().slice(-4),
+        });
 
         // Log the action
         await inngest.send({

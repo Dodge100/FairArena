@@ -37,9 +37,7 @@ function PrivacyPolicy() {
           {t('privacyPolicy.lastUpdated')}
         </p>
 
-        <p className="mb-10">
-          {t('privacyPolicy.intro')}
-        </p>
+        <p className="mb-10">{t('privacyPolicy.intro')}</p>
 
         {/* --------------------------------------------- */}
         {/* SECTION 1 */}
@@ -47,25 +45,49 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.collection.title')} isDark={isDark}>
           <p className="mb-4">{t('privacyPolicy.sections.collection.description')}</p>
 
-          <h3 className="text-xl font-semibold mb-2">{t('privacyPolicy.sections.collection.subsections.personalData.title')}</h3>
-          <p className="mb-2">{t('privacyPolicy.sections.collection.subsections.personalData.description')}</p>
+          <h3 className="text-xl font-semibold mb-2">
+            {t('privacyPolicy.sections.collection.subsections.personalData.title')}
+          </h3>
+          <p className="mb-2">
+            {t('privacyPolicy.sections.collection.subsections.personalData.description')}
+          </p>
           <LegalList
             isDark={isDark}
-            items={t('privacyPolicy.sections.collection.subsections.personalData.list', { returnObjects: true }) as string[]}
+            items={
+              t('privacyPolicy.sections.collection.subsections.personalData.list', {
+                returnObjects: true,
+              }) as string[]
+            }
           />
 
-          <h3 className="text-xl font-semibold mb-2 mt-6">{t('privacyPolicy.sections.collection.subsections.usageData.title')}</h3>
-          <p className="mb-2">{t('privacyPolicy.sections.collection.subsections.usageData.description')}</p>
+          <h3 className="text-xl font-semibold mb-2 mt-6">
+            {t('privacyPolicy.sections.collection.subsections.usageData.title')}
+          </h3>
+          <p className="mb-2">
+            {t('privacyPolicy.sections.collection.subsections.usageData.description')}
+          </p>
           <LegalList
             isDark={isDark}
-            items={t('privacyPolicy.sections.collection.subsections.usageData.list', { returnObjects: true }) as string[]}
+            items={
+              t('privacyPolicy.sections.collection.subsections.usageData.list', {
+                returnObjects: true,
+              }) as string[]
+            }
           />
 
-          <h3 className="text-xl font-semibold mb-2 mt-6">{t('privacyPolicy.sections.collection.subsections.tracking.title')}</h3>
-          <p className="mb-2">{t('privacyPolicy.sections.collection.subsections.tracking.description')}</p>
+          <h3 className="text-xl font-semibold mb-2 mt-6">
+            {t('privacyPolicy.sections.collection.subsections.tracking.title')}
+          </h3>
+          <p className="mb-2">
+            {t('privacyPolicy.sections.collection.subsections.tracking.description')}
+          </p>
           <LegalList
             isDark={isDark}
-            items={t('privacyPolicy.sections.collection.subsections.tracking.list', { returnObjects: true }) as string[]}
+            items={
+              t('privacyPolicy.sections.collection.subsections.tracking.list', {
+                returnObjects: true,
+              }) as string[]
+            }
           />
         </LegalSection>
 
@@ -86,7 +108,8 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.retention.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.retention.content1')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.retention.content2')}
           </p>
         </LegalSection>
@@ -97,9 +120,11 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.transfer.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.transfer.content1')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.transfer.content2')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.transfer.content3')}
           </p>
         </LegalSection>
@@ -108,7 +133,9 @@ function PrivacyPolicy() {
         {/* SECTION 5 */}
         {/* --------------------------------------------- */}
         <LegalSection title={t('privacyPolicy.sections.disclosure.title')} isDark={isDark}>
-          <h3 className="text-xl font-semibold mb-2">{t('privacyPolicy.sections.disclosure.subtitle')}</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            {t('privacyPolicy.sections.disclosure.subtitle')}
+          </h3>
           <p className="mb-2">{t('privacyPolicy.sections.disclosure.description')}</p>
           <LegalList
             isDark={isDark}
@@ -120,9 +147,7 @@ function PrivacyPolicy() {
         {/* SECTION 6 */}
         {/* --------------------------------------------- */}
         <LegalSection title={t('privacyPolicy.sections.security.title')} isDark={isDark}>
-          <p>
-            {t('privacyPolicy.sections.security.content')}
-          </p>
+          <p>{t('privacyPolicy.sections.security.content')}</p>
         </LegalSection>
 
         {/* --------------------------------------------- */}
@@ -142,7 +167,8 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.links.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.links.content1')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.links.content2')}
           </p>
         </LegalSection>
@@ -153,7 +179,8 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.children.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.children.content1')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.children.content2')}
           </p>
         </LegalSection>
@@ -164,9 +191,11 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.changes.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.changes.content1')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.changes.content2')}
-            <br /><br />
+            <br />
+            <br />
             {t('privacyPolicy.sections.changes.content3')}
           </p>
         </LegalSection>
@@ -177,7 +206,9 @@ function PrivacyPolicy() {
         <LegalSection title={t('privacyPolicy.sections.contact.title')} isDark={isDark}>
           <p>
             {t('privacyPolicy.sections.contact.description')}
-            <a className="text-[#879400]" href="mailto:legal@fairarena.app">legal@fairarena.app</a>
+            <a className="text-[#879400]" href="mailto:legal@fairarena.app">
+              legal@fairarena.app
+            </a>
           </p>
         </LegalSection>
       </div>

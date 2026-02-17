@@ -1,9 +1,9 @@
 import express from 'express';
 import {
-    completeOnboarding,
-    getOnboardingStatus,
-    skipOnboarding,
-    trackOnboardingProgress,
+  completeOnboarding,
+  getOnboardingStatus,
+  skipOnboarding,
+  trackOnboardingProgress,
 } from '../../controllers/v1/onboardingController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
 

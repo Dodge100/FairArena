@@ -118,7 +118,9 @@ export const UpdateOrganizationSettings = async (req: Request, res: Response) =>
       },
     });
 
-    logger.info(`Organization update queued: ${organizationContext.organizationId} by user ${userId}`);
+    logger.info(
+      `Organization update queued: ${organizationContext.organizationId} by user ${userId}`,
+    );
 
     // Return immediate response
     res.status(202).json({
