@@ -7,7 +7,7 @@ import { initiatePasskeyLogin, usePasskeySupport } from '@/components/PasskeyMan
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { publicApiFetch } from '@/lib/apiClient';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
-import { LayoutDashboard, RefreshCw, Shield, Zap } from 'lucide-react';
+import { Eye, EyeOff, LayoutDashboard, RefreshCw, Shield, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -25,11 +25,18 @@ interface MfaSessionState {
   attemptsRemaining: number;
 }
 
+const LastUsedBadge = () => (
+  <span className="absolute -top-3 right-2 bg-[#DDEF00] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm border border-black/10 animate-in zoom-in duration-200 z-20">
+    Last Used
+  </span>
+);
+
 export default function Signin() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const [lastUsedMethod, setLastUsedMethod] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,12 +50,6 @@ export default function Signin() {
     localStorage.setItem('lastUsedAuthMethod', method);
     setLastUsedMethod(method);
   };
-
-  const LastUsedBadge = () => (
-    <span className="absolute -top-2.5 -right-2 bg-[#DDEF00] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm border border-black/10 animate-in zoom-in duration-200">
-      Last Used
-    </span>
-  );
 
   // Form state
   const [email, setEmail] = useState('');
@@ -1355,27 +1356,37 @@ export default function Signin() {
                 Forgot password?
               </Link>
             </div>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError('');
-              }}
-              required={!ssoState.enabled}
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
+                required={!ssoState.enabled}
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className="w-full px-4 py-3 pr-10 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
         )}
 
         {/* Submit button */}
         <button
-          type="submit"
+          type="button"
+          onClick={handleCredentialsSubmit}
           disabled={isLoading || !email || (!ssoState.enabled && !password)}
-          className="w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
+          className="relative w-full py-3.5 px-4 bg-[#DDEF00] hover:bg-[#cbe600] text-black rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(221,239,0,0.2)] hover:shadow-[0_0_30px_rgba(221,239,0,0.3)]"
         >
           {lastUsedMethod === 'email' && <LastUsedBadge />}
           {isLoading ? (
@@ -1395,7 +1406,7 @@ export default function Signin() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Signing in...
+              {ssoState.enabled ? 'Signing in with SSO...' : 'Signing in...'}
             </span>
           ) : ssoState.enabled ? (
             'Continue with SSO'

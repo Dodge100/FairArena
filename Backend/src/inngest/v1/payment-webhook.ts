@@ -61,7 +61,7 @@ export const paymentWebhookReceived = inngest.createFunction(
       return { success: true, skipped: true, reason: 'duplicate_webhook' };
     }
 
-    // Step 2: Store webhook event
+    // Step 2: Store webhook event (or retrieve existing)
     const webhookEvent = await step.run('store-webhook-event', async () => {
       try {
         // Extract payment entity to link webhook to payment immediately if possible
@@ -77,6 +77,26 @@ export const paymentWebhookReceived = inngest.createFunction(
           paymentId = payment?.id || null;
         }
 
+        // Check if webhook already exists (handles Inngest retries)
+        const existingWebhook = await prisma.paymentWebhookEvent.findUnique({
+          where: { razorpayEventId: eventId },
+        });
+
+        if (existingWebhook) {
+          logger.info('Webhook event already stored, using existing record', {
+            webhookId: existingWebhook.id,
+            eventId,
+            eventType,
+            paymentId: existingWebhook.paymentId,
+          });
+          return {
+            success: true,
+            webhookId: existingWebhook.id,
+            paymentId: existingWebhook.paymentId,
+          };
+        }
+
+        // Create new webhook record
         const webhook = await prisma.paymentWebhookEvent.create({
           data: {
             razorpayEventId: eventId,
@@ -183,6 +203,18 @@ export const paymentWebhookReceived = inngest.createFunction(
                 paymentId: payment.id,
               });
               return { success: false, reason: 'amount_mismatch' };
+            }
+
+            // Security check: Verify currency matches (Prevent Cross-Currency Fraud)
+            // e.g. Paying 100 INR vs 100 USD (Both might be represented as 10000 small units)
+            if (paymentEntity.currency !== payment.currency) {
+              logger.error('Payment currency mismatch in webhook', {
+                webhookCurrency: paymentEntity.currency,
+                storedCurrency: payment.currency,
+                orderId: paymentEntity.order_id,
+                paymentId: payment.id,
+              });
+              return { success: false, reason: 'currency_mismatch' };
             }
 
             // Security check: Ensure payment is in expected state

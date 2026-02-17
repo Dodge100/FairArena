@@ -3,7 +3,7 @@ import { OAuthBanner } from '@/components/auth/OAuthBanner';
 import { OAuthSocials } from '@/components/auth/OAuthSocials';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { FolderCode, Globe, User, Users } from 'lucide-react';
+import { Eye, EyeOff, FolderCode, Globe, User, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -37,6 +37,8 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Redirect if already authenticated or if signup is disabled
   useEffect(() => {
@@ -296,17 +298,26 @@ export default function Signup() {
                     >
                       Password
                     </label>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      placeholder="Create a password"
-                      autoComplete="new-password"
-                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
-                    />
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                        placeholder="Create a password"
+                        autoComplete="new-password"
+                        className="w-full px-4 py-3 pr-10 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
                     <p className="text-xs text-neutral-500">
                       Must contain at least 8 characters, 1 uppercase, 1 lowercase, and 1 number
                     </p>
@@ -319,17 +330,30 @@ export default function Signup() {
                     >
                       Confirm Password
                     </label>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                      placeholder="Confirm your password"
-                      autoComplete="new-password"
-                      className="w-full px-4 py-3 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
-                    />
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        required
+                        placeholder="Confirm your password"
+                        autoComplete="new-password"
+                        className="w-full px-4 py-3 pr-10 rounded-xl border bg-white/5 border-neutral-800 text-white placeholder:text-neutral-500 focus:border-[#DDEF00] focus:ring-1 focus:ring-[#DDEF00] transition-all outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <button

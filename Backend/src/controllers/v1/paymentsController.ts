@@ -395,7 +395,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
     await inngest.send({
       name: 'payment/webhook.received',
       data: {
-        eventId: event,
+        eventId,
         eventType: event,
         payload: req.body,
         signature: razorpaySignature,

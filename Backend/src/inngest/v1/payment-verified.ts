@@ -37,14 +37,30 @@ export const paymentVerified = inngest.createFunction(
     const result = await step.run('check-duplicate-verification', async () => {
       const existingPayment = await readOnlyPrisma.payment.findUnique({
         where: { razorpayPaymentId: paymentId },
+        include: { creditTransactions: true }, // Include transactions to verify
       });
 
       if (existingPayment && existingPayment.status === 'COMPLETED') {
-        logger.warn('Payment already completed', {
-          paymentId,
-          existingStatus: existingPayment.status,
+        // CORRECTION: Only treat as duplicate if credits were ACTUALLY awarded
+        // This fixes "Zombie" payments (Completed status but no credits)
+        const creditsAwarded = await readOnlyPrisma.creditTransaction.findFirst({
+          where: { paymentId: existingPayment.id },
         });
-        return { success: false, reason: 'already_completed', paymentDbId: existingPayment.id };
+
+        if (creditsAwarded) {
+          logger.warn('Payment already completed and credits awarded', {
+            paymentId,
+            existingStatus: existingPayment.status,
+            creditTxId: creditsAwarded.id,
+          });
+          return { success: false, reason: 'already_completed', paymentDbId: existingPayment.id };
+        }
+
+        logger.warn('Payment marked COMPLETED but credits missing - Repairing...', {
+          paymentId,
+          userId: existingPayment.userId,
+        });
+        // Proceed to award credits (Repair mode)
       }
 
       return { success: true, existingPayment };

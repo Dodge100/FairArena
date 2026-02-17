@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Copy, RefreshCw, TestTube2 } from 'lucide-react';
+import { AlertCircle, Check, Copy, Eye, EyeOff, RefreshCw, TestTube2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { apiRequest } from '../../lib/apiClient';
@@ -48,6 +48,7 @@ export const SSOConfigSettings: React.FC<Props> = ({ organizationId }) => {
   const [testing, setTesting] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [scimEndpointCopied, setScimEndpointCopied] = useState(false);
+  const [showClientSecret, setShowClientSecret] = useState(false);
 
   // Verification State
   const [verificationStatus, setVerificationStatus] = useState<{
@@ -435,13 +436,27 @@ export const SSOConfigSettings: React.FC<Props> = ({ organizationId }) => {
 
                   <div className="space-y-2">
                     <Label htmlFor="clientSecret">Client Secret</Label>
-                    <Input
-                      id="clientSecret"
-                      type="password"
-                      value={formData.clientSecret}
-                      onChange={(e) => setFormData({ ...formData, clientSecret: e.target.value })}
-                      placeholder={config ? '********' : 'your-client-secret'}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="clientSecret"
+                        type={showClientSecret ? 'text' : 'password'}
+                        value={formData.clientSecret}
+                        onChange={(e) => setFormData({ ...formData, clientSecret: e.target.value })}
+                        placeholder={config ? '********' : 'your-client-secret'}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowClientSecret(!showClientSecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors"
+                      >
+                        {showClientSecret ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     {config && (
                       <p className="text-xs text-neutral-500">Leave blank to keep current secret</p>
                     )}

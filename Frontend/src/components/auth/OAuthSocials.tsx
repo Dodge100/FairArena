@@ -7,15 +7,15 @@ interface OAuthSocialsProps {
   lastUsedMethod?: string | null;
 }
 
+const LastUsedBadge = () => (
+  <span className="absolute -top-3 right-2 bg-[#DDEF00] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm border border-black/10 animate-in zoom-in duration-200 z-20">
+    Last Used
+  </span>
+);
+
 export function OAuthSocials({ getRedirectPath, children, lastUsedMethod }: OAuthSocialsProps) {
   const { isDark } = useTheme();
   const { handleOAuthLogin, isLoading } = useOAuthLogin({ getRedirectPath });
-
-  const LastUsedBadge = () => (
-    <span className="absolute -top-2.5 -right-2 bg-[#DDEF00] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm border border-black/10 animate-in zoom-in duration-200 z-10">
-      Last Used
-    </span>
-  );
 
   return (
     <>
