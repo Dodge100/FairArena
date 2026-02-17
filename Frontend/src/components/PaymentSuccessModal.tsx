@@ -14,6 +14,7 @@ interface PaymentSuccessModalProps {
     currency: string;
     orderId: string;
     paymentId: string;
+    awaitingWebhook?: boolean;
   } | null;
 }
 
@@ -107,10 +108,12 @@ export default function PaymentSuccessModal({
             {/* Success message */}
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
-                Payment Successful! 🎉
+                Payment {paymentData.awaitingWebhook ? 'Verified' : 'Successful'}! 🎉
               </h2>
               <p className="text-gray-400 text-base">
-                Your payment has been processed successfully
+                {paymentData.awaitingWebhook
+                  ? 'Payment verified. Credits will be awarded shortly...'
+                  : 'Your payment has been processed successfully'}
               </p>
             </div>
 
@@ -143,7 +146,9 @@ export default function PaymentSuccessModal({
                           fill="currentColor"
                         />
                       </div>
-                      <span className="text-white font-semibold text-base">Credits Awarded</span>
+                      <span className="text-white font-semibold text-base">
+                        {paymentData.awaitingWebhook ? 'Credits Pending' : 'Credits Awarded'}
+                      </span>
                     </div>
                     <span className="text-[#d9ff00] font-bold text-2xl">
                       +{paymentData.credits.toLocaleString()}
@@ -175,12 +180,25 @@ export default function PaymentSuccessModal({
             {/* Success message */}
             <div className="bg-linear-to-r from-[#d9ff00]/15 via-[#d9ff00]/10 to-transparent rounded-xl p-4 mb-6 border border-[#d9ff00]/30 shadow-lg">
               <p className="text-center text-sm text-gray-300 leading-relaxed">
-                <span className="text-[#d9ff00] font-bold text-base">
-                  {paymentData.credits.toLocaleString()} credits
-                </span>{' '}
-                have been added to your account.
-                <br />
-                <span className="text-gray-400">You can now create and manage hackathons!</span>
+                {paymentData.awaitingWebhook ? (
+                  <>
+                    <span className="text-[#d9ff00] font-bold text-base">
+                      {paymentData.credits.toLocaleString()} credits
+                    </span>{' '}
+                    are being confirmed and will be added to your account within 30 seconds.
+                    <br />
+                    <span className="text-gray-400">Your balance will update automatically.</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[#d9ff00] font-bold text-base">
+                      {paymentData.credits.toLocaleString()} credits
+                    </span>{' '}
+                    have been added to your account.
+                    <br />
+                    <span className="text-gray-400">You can now create and manage hackathons!</span>
+                  </>
+                )}
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 enum PaymentStatus {
   PENDING
   PROCESSING
+  VERIFIED // Frontend signature verified, awaiting webhook confirmation
   COMPLETED
   FAILED
   CANCELLED

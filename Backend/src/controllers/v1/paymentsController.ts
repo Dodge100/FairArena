@@ -301,25 +301,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Update payment record and award credits
-    // Send verification event to Inngest for async processing
-    await inngest.send({
-      name: 'payment/verified',
+    // SECURITY: Do NOT award credits here - only mark as verified
+    // Credits will be awarded ONLY via webhook to prevent frontend manipulation
+
+    // Update payment record to VERIFIED status (not COMPLETED)
+    await prisma.payment.update({
+      where: { razorpayOrderId: razorpay_order_id },
       data: {
-        userId,
-        orderId: razorpay_order_id,
-        paymentId: razorpay_payment_id,
-        signature: razorpay_signature,
-        planId: plan.planId,
-        planName: plan.name,
-        amount: order.amount,
-        credits: credits || plan.credits,
-        paymentMethod: payment.method,
-        paymentContact: payment.contact,
+        status: 'VERIFIED', // New intermediate status
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature,
+        verifiedAt: new Date(),
       },
     });
 
-    logger.info('Payment verification initiated', {
+    logger.info('Payment signature verified - awaiting webhook confirmation', {
       userId,
       planId: plan.planId,
       planName: plan.name,
@@ -328,16 +324,19 @@ export const verifyPayment = async (req: Request, res: Response) => {
       orderId: razorpay_order_id,
       paymentId: razorpay_payment_id,
       paymentStatus: payment.status,
+      securityNote: 'Credits will be awarded only after webhook confirmation',
     });
 
     res.json({
       success: true,
-      message: 'Payment verification in progress. Credits will be awarded shortly.',
+      message: 'Payment verified. Awaiting confirmation to award credits.',
+      status: 'VERIFIED',
+      awaitingWebhook: true,
       data: {
         planId,
         planName: plan.name,
         credits: credits || plan.credits,
-        amount: Number(order.amount) / 100,
+        amount: Number(order.amount), // Send raw amount in paise (Frontend divides by 100)
         currency: order.currency,
         orderId: razorpay_order_id,
         paymentId: razorpay_payment_id,

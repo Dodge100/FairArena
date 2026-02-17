@@ -21,6 +21,7 @@ interface SuccessPaymentData {
   currency: string;
   orderId: string;
   paymentId: string;
+  awaitingWebhook?: boolean;
 }
 
 interface FailurePaymentData {
@@ -187,20 +188,19 @@ const Pricing = () => {
             );
 
             if (verifyResult.success && verifyResult.data) {
+              // Immediate invalidation
               queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
               queryClient.invalidateQueries({ queryKey: ['credits-history'] });
               queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
 
-              // Delayed invalidation to handle async backend processing
-              setTimeout(() => {
+              // Aggressive polling for webhook confirmation (every 2 seconds for 30 seconds)
+              const pollInterval = setInterval(() => {
                 queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
                 queryClient.invalidateQueries({ queryKey: ['credits-history'] });
               }, 2000);
 
-              setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
-                queryClient.invalidateQueries({ queryKey: ['credits-history'] });
-              }, 5000);
+              // Stop polling after 30 seconds
+              setTimeout(() => clearInterval(pollInterval), 30000);
 
               setSuccessPaymentData({
                 planName: verifyResult.data.planName,
@@ -209,6 +209,7 @@ const Pricing = () => {
                 currency: verifyResult.data.currency,
                 orderId: verifyResult.data.orderId,
                 paymentId: verifyResult.data.paymentId,
+                awaitingWebhook: verifyResult.awaitingWebhook || false,
               });
               setShowSuccessModal(true);
             } else {

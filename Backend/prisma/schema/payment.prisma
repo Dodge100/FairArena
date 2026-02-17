@@ -48,7 +48,8 @@ model Payment {
   refundReason       String?
   refundedAt         DateTime?
   createdAt          DateTime              @default(now())
-  completedAt        DateTime?
+  verifiedAt         DateTime? // When frontend verification occurred
+  completedAt        DateTime? // When webhook confirmation occurred
   invoiceUrl         String?
   razorpayInvoiceId  String?               @unique
   creditTransactions CreditTransaction?

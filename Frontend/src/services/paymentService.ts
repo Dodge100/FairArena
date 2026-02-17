@@ -39,6 +39,8 @@ export interface VerifyPaymentRequest {
 export interface VerifyPaymentResponse {
   success: boolean;
   message?: string;
+  status?: string;
+  awaitingWebhook?: boolean;
   data?: {
     planId: string;
     planName: string;

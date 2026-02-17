@@ -301,7 +301,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     registerAuth(getToken);
 
     initAuth();
-  }, [fetchCurrentUser, refreshToken, updateToken, fetchAccounts, getToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount to prevent infinite loop
 
   // Login with email/password
   const login = useCallback(
@@ -698,13 +699,13 @@ export function useAuthState() {
     isLoaded: !isLoading,
     user: user
       ? {
-          id: user.userId,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || null,
-          email: user.email,
-          profileImageUrl: user.profileImageUrl,
-        }
+        id: user.userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: [user.firstName, user.lastName].filter(Boolean).join(' ') || null,
+        email: user.email,
+        profileImageUrl: user.profileImageUrl,
+      }
       : null,
     getToken,
     signOut: logout,
