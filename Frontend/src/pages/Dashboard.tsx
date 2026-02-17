@@ -1,3 +1,4 @@
+import Onboarding from '@/components/Onboarding';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,14 +14,22 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useOnboarding } from '../contexts/OnboardingContext';
 import { useAuthState } from '../lib/auth';
-import Onboarding from '@/components/Onboarding';
+import { ComingSoonModal } from '@/components/ComingSoonModal';
 
 function Dashboard() {
   const { user } = useAuthState();
   const { status: onboardingStatus, isLoading: onboardingLoading } = useOnboarding();
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setComingSoonFeature(feature);
+    setComingSoonOpen(true);
+  };
 
   // Show skeleton while loading onboarding status
   if (onboardingLoading) {
@@ -119,7 +128,10 @@ function Dashboard() {
             Here's what's happening with your projects today.
           </p>
         </div>
-        <Button className="bg-linear-to-r from-[#DDFF00] to-[#9AC400] text-neutral-900 hover:opacity-90">
+        <Button
+          className="bg-linear-to-r from-[#DDFF00] to-[#9AC400] text-neutral-900 hover:opacity-90"
+          onClick={() => showComingSoon('New Project')}
+        >
           <Zap className="mr-2 h-4 w-4" />
           New Project
         </Button>
@@ -156,7 +168,7 @@ function Dashboard() {
                 <CardTitle>Recent Projects</CardTitle>
                 <CardDescription>Your active hackathon submissions</CardDescription>
               </div>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => showComingSoon('View All Projects')}>
                 View All
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
@@ -246,25 +258,47 @@ function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={() => showComingSoon('Submit Project')}
+            >
               <Target className="h-6 w-6" />
               <span className="text-sm">Submit Project</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={() => showComingSoon('Invite Team')}
+            >
               <Users className="h-6 w-6" />
               <span className="text-sm">Invite Team</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={() => showComingSoon('View Analytics')}
+            >
               <Activity className="h-6 w-6" />
               <span className="text-sm">View Analytics</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={() => showComingSoon('Schedule Meet')}
+            >
               <Calendar className="h-6 w-6" />
               <span className="text-sm">Schedule Meet</span>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <ComingSoonModal
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
+        feature={comingSoonFeature}
+      />
     </div>
   );
 }

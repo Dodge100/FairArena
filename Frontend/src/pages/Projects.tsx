@@ -1,3 +1,4 @@
+import { ComingSoonModal } from '@/components/ComingSoonModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,6 +52,7 @@ import {
   Tag,
   Trophy,
   Users,
+  X,
   Zap,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -221,7 +223,7 @@ const StatusBadge = ({ status }: { status: Project['status'] }) => {
   );
 };
 
-const ProjectCard = ({ project }: { project: Project }) => {
+const ProjectCard = ({ project, onAction }: { project: Project; onAction: (feature: string) => void }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -241,7 +243,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
               </div>
               <CardDescription className="line-clamp-2">{project.description}</CardDescription>
             </div>
-            <Button variant="ghost" size="icon" className="shrink-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => onAction('Project Options')}>
               <MoreVertical className="w-4 h-4" />
             </Button>
           </div>
@@ -359,7 +361,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
               </a>
             </Button>
           )}
-          <Button size="sm" className="gap-2 flex-1">
+          <Button size="sm" className="gap-2 flex-1" onClick={() => onAction('View Project Details')}>
             <ExternalLink className="w-4 h-4" />
             View
           </Button>
@@ -375,6 +377,13 @@ export default function ProjectsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setComingSoonFeature(feature);
+    setComingSoonOpen(true);
+  };
 
   // Filter projects
   const filteredProjects = MOCK_PROJECTS.filter((project) => {
@@ -485,10 +494,20 @@ export default function ProjectsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search projects..."
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
 
               {/* Category Filter */}
@@ -548,7 +567,7 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project.id} project={project} onAction={showComingSoon} />
             ))}
           </div>
         )}
@@ -616,10 +635,18 @@ export default function ProjectsPage() {
             <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsNewProjectDialogOpen(false)}>Create Project</Button>
+            <Button onClick={() => showComingSoon('Create Project')}>
+              Create Project
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ComingSoonModal
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
+        feature={comingSoonFeature}
+      />
     </div>
   );
 }

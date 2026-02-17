@@ -1,3 +1,4 @@
+import { ComingSoonModal } from '@/components/ComingSoonModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuthState } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import {
@@ -192,8 +192,14 @@ const ProgressBar = ({ label, value, color, growth }: any) => (
 
 export default function AnalyticsPage() {
   const { isDark } = useTheme();
-  const { user } = useAuthState();
   const [timeRange, setTimeRange] = useState('30d');
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setComingSoonFeature(feature);
+    setComingSoonOpen(true);
+  };
 
   const stats = [
     {
@@ -254,11 +260,21 @@ export default function AnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => showComingSoon('Filter Analytics')}
+            >
               <Filter className="w-4 h-4" />
               Filter
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => showComingSoon('Export Data')}
+            >
               <Download className="w-4 h-4" />
               Export
             </Button>
@@ -272,7 +288,10 @@ export default function AnalyticsPage() {
               key={range}
               variant={timeRange === range ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTimeRange(range)}
+              onClick={() => {
+                setTimeRange(range);
+                showComingSoon(`Time Range: ${range === 'all' ? 'All Time' : range.toUpperCase()}`);
+              }}
               className="text-xs"
             >
               {range === 'all' ? 'All Time' : range.toUpperCase()}
@@ -333,7 +352,8 @@ export default function AnalyticsPage() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                          className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
+                          onClick={() => showComingSoon(`Activity: ${activity.project}`)}
                         >
                           <div
                             className={cn(
@@ -486,6 +506,7 @@ export default function AnalyticsPage() {
                         transition={{ delay: index * 0.1, duration: 0.5 }}
                         className="flex-1 bg-primary rounded-t-md relative group cursor-pointer hover:opacity-80 transition-opacity"
                         style={{ minHeight: '20px' }}
+                        onClick={() => showComingSoon('Submission Details')}
                       >
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Badge>{count}</Badge>
@@ -605,6 +626,7 @@ export default function AnalyticsPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.1 }}
                       className="p-6 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-lg transition-all cursor-pointer"
+                      onClick={() => showComingSoon(`Achievement: ${achievement.title}`)}
                     >
                       <div className="flex flex-col items-center text-center space-y-3">
                         <div className="p-3 rounded-full bg-primary/20">
@@ -626,6 +648,11 @@ export default function AnalyticsPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <ComingSoonModal
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
+        feature={comingSoonFeature}
+      />
     </div>
   );
 }
