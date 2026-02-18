@@ -42,7 +42,7 @@ export const refundFailedEmailTemplate = (params: {
           <!-- Header -->
           <tr>
             <td align="center" style="padding: 40px 40px 0;">
-              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px;" />
+              <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena" style="height: 40px;" />
             </td>
           </tr>
           <tr>

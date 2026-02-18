@@ -510,7 +510,7 @@ const Pricing = () => {
                             className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
                             onClick={() =>
                               window.open(
-                                'mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry',
+                                'mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry',
                                 '_blank',
                               )
                             }
@@ -642,7 +642,7 @@ const Pricing = () => {
                                   variant="outline"
                                   onClick={() =>
                                     window.open(
-                                      'mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry',
+                                      'mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry',
                                       '_blank',
                                     )
                                   }

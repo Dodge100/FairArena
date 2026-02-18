@@ -33,7 +33,7 @@ export const waitlistConfirmationTemplate = (params: {
           <!-- Header -->
           <tr>
             <td align="center" style="padding: 40px 40px 32px; background: #000000;">
-              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
+              <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
               <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Welcome to the Waitlist</h1>
             </td>
           </tr>

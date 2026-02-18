@@ -256,7 +256,8 @@ if (ENV.NODE_ENV !== 'production') {
         .swagger-ui .btn.authorize svg { fill: white }
       `,
       customSiteTitle: 'FairArena API Documentation',
-      customfavIcon: 'https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png',
+      customfavIcon:
+        'https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin',
       explorer: true,
       swaggerOptions: {
         persistAuthorization: true,

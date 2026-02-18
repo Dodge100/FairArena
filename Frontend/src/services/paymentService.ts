@@ -1,4 +1,4 @@
-import { apiRequest } from '@/lib/apiClient';
+import { apiRequest, publicApiRequest } from '@/lib/apiClient';
 
 export interface PaymentPlan {
   id: string;
@@ -134,10 +134,8 @@ export class PaymentService {
       }
 
       // Fetch from API
-      // Since publicApiFetch is not wrapped by apiRequest usually, we might need to use apiRequest or just allow auth header which apiRequest adds.
-      // But fetchPlans might be public. apiRequest adds auth header if token exists.
-      // If plans are public, apiRequest is safe to use (extra auth header is usually ignored by public endpoints).
-      const data = await apiRequest<PlansResponse>(`${this.baseURL}/api/v1/plans`);
+      // Use publicApiRequest since plans are public and we want them to load even before auth is initialized
+      const data = await publicApiRequest<PlansResponse>(`${this.baseURL}/api/v1/plans`);
 
       if (data.success && data.plans) {
         this.plansCache = data.plans;
@@ -169,7 +167,8 @@ export class PaymentService {
         return this.subPlansCache;
       }
 
-      const data = await apiRequest<{ success: boolean; plans: SubscriptionPlan[] }>(
+      // Use publicApiRequest since plans are public and we want them to load even before auth is initialized
+      const data = await publicApiRequest<{ success: boolean; plans: SubscriptionPlan[] }>(
         `${this.baseURL}/api/v1/subscriptions/plans`,
       );
 

@@ -172,7 +172,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
     }
 
     if (plan.amount === 0) {
-      window.open('mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry', '_blank');
+      window.open('mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry', '_blank');
       return;
     }
 
@@ -524,7 +524,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                             className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500 text-xs"
                             onClick={() =>
                               window.open(
-                                'mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry',
+                                'mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry',
                                 '_blank',
                               )
                             }
@@ -665,7 +665,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                           className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500 text-xs"
                           onClick={() =>
                             window.open(
-                              'mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry',
+                              'mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry',
                               '_blank',
                             )
                           }

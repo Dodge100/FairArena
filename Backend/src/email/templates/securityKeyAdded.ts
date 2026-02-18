@@ -32,7 +32,7 @@ export const securityKeyAddedTemplate = (params: {
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
+      <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/697b974d001a7a80496e/files/697b9a8100146eb9293f/view?project=69735edc00127d2033d8&mode=admin" alt="FairArena" style="height: 40px; margin-bottom: 16px;" />
       <h1>Security Key Added</h1>
     </div>
     <div class="content">

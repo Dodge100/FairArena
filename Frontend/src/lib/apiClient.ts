@@ -226,3 +226,24 @@ export async function apiRequest<T>(input: RequestInfo, init?: RequestInit): Pro
 
   return response.json();
 }
+
+
+export async function publicApiRequest<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const response = await publicApiFetch(input, init);
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: response.statusText };
+    }
+    throw new ApiError(response.status, errorData);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return response.json();
+}

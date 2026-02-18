@@ -246,7 +246,7 @@ const SubscriptionPage = () => {
         (plan: SubscriptionPlan) => {
             if (!isSignedIn) { navigate('/signin'); return; }
             if (plan.tier === 'ENTERPRISE') {
-                window.open('mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry', '_blank');
+                window.open('mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry', '_blank');
                 return;
             }
             if (subscribingPlanId) return;
@@ -601,7 +601,7 @@ const SubscriptionPage = () => {
                                     <Button
                                         variant="outline"
                                         className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
-                                        onClick={() => window.open('mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry', '_blank')}
+                                        onClick={() => window.open('mailto:contact@fairarena.app?subject=Enterprise Plan Inquiry', '_blank')}
                                     >
                                         Contact Sales <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
