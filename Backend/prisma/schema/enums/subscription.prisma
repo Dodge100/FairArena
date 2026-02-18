@@ -1,0 +1,25 @@
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PRO
+  TEAM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  CREATED
+  AUTHENTICATED
+  ACTIVE
+  PENDING
+  HALTED
+  CANCELLED
+  COMPLETED
+  EXPIRED
+  PAUSED
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}

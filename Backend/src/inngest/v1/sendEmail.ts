@@ -1,4 +1,4 @@
-import { sendEmail } from '../../email/v1/send-mail.js';
+import { sendEmail, TemplateType } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
 
@@ -22,7 +22,7 @@ export const sendEmailHandler = inngest.createFunction(
       await sendEmail({
         to,
         subject,
-        templateType: template as any,
+        templateType: template as TemplateType,
         templateData: templateData || {},
       });
       logger.info('Email sent successfully', { to, subject, template });

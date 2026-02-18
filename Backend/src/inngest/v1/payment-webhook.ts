@@ -188,8 +188,22 @@ export const paymentWebhookReceived = inngest.createFunction(
             });
 
             if (!payment) {
+              // Check if this is a subscription payment (has invoice_id)
+              if (paymentEntity.invoice_id) {
+                logger.info(
+                  'Skipping subscription payment webhook (handled via subscription events)',
+                  {
+                    orderId: paymentEntity.order_id,
+                    invoiceId: paymentEntity.invoice_id,
+                    paymentId: paymentEntity.id,
+                  },
+                );
+                return { success: true, action: 'skipped_subscription_payment' };
+              }
+
               logger.warn('Payment not found for captured webhook', {
                 orderId: paymentEntity.order_id,
+                paymentId: paymentEntity.id,
               });
               return { success: false, reason: 'payment_not_found' };
             }

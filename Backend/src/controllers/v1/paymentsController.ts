@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
@@ -369,13 +369,24 @@ export const handleWebhook = async (req: Request, res: Response) => {
     }
 
     // Verify webhook signature
-    const expectedSignature = createHmac('sha256', secret)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
+    // Use rawBody if available (from express.raw middleware), otherwise fallback to JSON.stringify
+    // Fallback is risky due to key ordering but handled gracefully
+    const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+    const bodyToSign = rawBody ? rawBody : JSON.stringify(req.body);
+
+    const expectedSignature = createHmac('sha256', secret).update(bodyToSign).digest('hex');
 
     const razorpaySignature = req.headers['x-razorpay-signature'] as string;
 
-    if (!razorpaySignature || expectedSignature !== razorpaySignature) {
+    // Use timingSafeEqual to prevent timing attacks
+    const sourceBuffer = Buffer.from(razorpaySignature || '');
+    const targetBuffer = Buffer.from(expectedSignature);
+    const isValid =
+      razorpaySignature &&
+      sourceBuffer.length === targetBuffer.length &&
+      timingSafeEqual(sourceBuffer, targetBuffer);
+
+    if (!isValid) {
       logger.warn('Invalid webhook signature', {
         receivedSignature: razorpaySignature,
         expectedSignature,
@@ -383,20 +394,26 @@ export const handleWebhook = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
 
-    const event = req.body.event;
+    const eventType = req.body.event;
     const eventId = req.body.id || `evt_${Date.now()}`;
 
     logger.info('Razorpay webhook received', {
       eventId,
-      event,
+      event: eventType,
+      routedTo: eventType.startsWith('subscription.') ? 'subscription-webhook' : 'payment-webhook',
     });
 
     // Send webhook to Inngest for async processing
+    // Route subscription events to subscription webhook handler
+    const topic = eventType.startsWith('subscription.')
+      ? 'subscription/webhook.received'
+      : 'payment/webhook.received';
+
     await inngest.send({
-      name: 'payment/webhook.received',
+      name: topic,
       data: {
         eventId,
-        eventType: event,
+        eventType,
         payload: req.body,
         signature: razorpaySignature,
       },
@@ -404,7 +421,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
     logger.info('Webhook event queued for processing', {
       eventId,
-      eventType: event,
+      eventType,
     });
 
     // Always respond quickly to webhook to prevent retries

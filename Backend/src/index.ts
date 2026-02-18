@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import AgentAPI from 'apminsight';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import { serve } from 'inngest/express';
@@ -72,6 +72,7 @@ import {
   sendWeeklyFeedbackEmail,
   starProfile,
   subscribeToNewsletter,
+  subscriptionWebhookReceived,
   supportRequestCreated,
   syncUser,
   unstarProfile,
@@ -117,6 +118,7 @@ import reportsRouter from './routes/v1/reports.js';
 import scimRouter from './routes/v1/scim.routes.js';
 import settingsRouter from './routes/v1/settings.js';
 import starsRouter from './routes/v1/stars.js';
+import subscriptionsRouter from './routes/v1/subscriptions.js';
 import supportRouter from './routes/v1/support.js';
 import teamRouter from './routes/v1/team.js';
 import waitlistRouter from './routes/v1/waitlist.routes.js';
@@ -192,6 +194,28 @@ app.use(ipSecurityMiddleware);
 
 // Apply intrusion detection
 app.use(intrusionDetection);
+
+// ─── Webhook routes MUST be registered BEFORE express.json() ─────────────────
+// Razorpay verifies the HMAC over the exact raw bytes of the request body.
+// If we let express.json() parse first, JSON.stringify(req.body) won't match
+// the original bytes (key order, whitespace), so signature verification fails.
+app.use(
+  ['/api/v1/subscriptions/webhook', '/api/v1/payments/webhook'],
+  express.raw({ type: 'application/json' }),
+  (req: Request & { rawBody?: Buffer }, _res: Response, next: NextFunction) => {
+    // Make the raw buffer available as req.rawBody, then parse into req.body
+    // so the controller can still access req.body normally.
+    if (Buffer.isBuffer(req.body)) {
+      req.rawBody = req.body;
+      try {
+        req.body = JSON.parse(req.body.toString('utf8'));
+      } catch {
+        req.body = {};
+      }
+    }
+    next();
+  },
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -314,6 +338,9 @@ app.use('/api/v1/ai', aiRouter);
 // Payments routes
 app.use('/api/v1/payments', paymentsRouter);
 
+// Subscriptions routes
+app.use('/api/v1/subscriptions', subscriptionsRouter);
+
 // Plans routes
 app.use('/api/v1/plans', plansRouter);
 
@@ -388,6 +415,7 @@ app.use(
       processTeamInviteAcceptance,
       createTeamFunction,
       creditsSendSmsOtp,
+      subscriptionWebhookReceived,
       updateTeamFunction,
       deleteTeamFunction,
       creditsSendVoiceOtp,

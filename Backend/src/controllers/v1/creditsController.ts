@@ -631,9 +631,7 @@ export const checkFreeCreditsEligibility = async (req: Request, res: Response) =
     // Database phone verification has higher priority - once verified in DB, always considered verified
     const phoneVerified = user.isPhoneVerified === true || isVerified;
 
-    // CRITICAL FIX: Only consider credits claimed if there's an INITIAL_ALLOCATION transaction
-    // Don't rely on the hasClaimedFreeCredits flag as it can be inconsistent
-    const hasClaimedFreeCredits = existingInitialAllocation;
+    const hasClaimedFreeCredits = existingInitialAllocation || user.hasClaimedFreeCredits;
     const canClaimFreeCredits = !hasClaimedFreeCredits && phoneVerified;
 
     logger.info('Eligibility check completed', {

@@ -9,25 +9,32 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Slider } from '@/components/ui/slider';
 import { apiRequest } from '@/lib/apiClient';
 import { cn } from '@/lib/utils';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
+  Check,
   CreditCard,
+  Crown,
   ExternalLink,
   Gift,
   History,
   Plus,
   RefreshCw,
   Shield,
+  Sparkles,
   TrendingDown,
   TrendingUp,
+  Zap,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthState } from '../lib/auth';
 import { toast } from 'sonner';
+import { useAuthState } from '../lib/auth';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CreditBalance {
   balance: number;
@@ -72,42 +79,107 @@ interface PaymentDetails {
   invoiceUrl?: string;
 }
 
+interface CreditPlan {
+  id: string;
+  planId: string;
+  name: string;
+  amount: number;
+  currency: string;
+  credits: number;
+  description?: string;
+  features: string[];
+  isActive: boolean;
+}
+
+// ─── Credit Slider Plans ──────────────────────────────────────────────────────
+
+// Fallback plans if API returns nothing
+const FALLBACK_CREDIT_PLANS: CreditPlan[] = [
+  {
+    id: '0', planId: 'tiny_10', name: 'Tiny', amount: 19900, currency: 'INR',
+    credits: 10, description: 'Quick top-up for small tasks', features: ['10 AI Credits', 'Basic features'], isActive: true,
+  },
+  {
+    id: '1', planId: 'starter_50', name: 'Starter', amount: 49900, currency: 'INR',
+    credits: 50, description: 'Perfect for trying out the platform', features: ['50 AI Credits', 'Basic features', 'Email support'], isActive: true,
+  },
+  {
+    id: '2', planId: 'basic_100', name: 'Basic', amount: 89900, currency: 'INR',
+    credits: 100, description: 'Great for small projects', features: ['100 AI Credits', 'All basic features', 'Email support'], isActive: true,
+  },
+  {
+    id: '3', planId: 'growth_250', name: 'Growth', amount: 199900, currency: 'INR',
+    credits: 250, description: 'For growing teams', features: ['250 AI Credits', 'Priority support', 'Advanced analytics'], isActive: true,
+  },
+  {
+    id: '4', planId: 'pro_500', name: 'Pro', amount: 349900, currency: 'INR',
+    credits: 500, description: 'For power users', features: ['500 AI Credits', 'Priority support', 'Advanced analytics', 'API access'], isActive: true,
+  },
+  {
+    id: '5', planId: 'business_1000', name: 'Business', amount: 599900, currency: 'INR',
+    credits: 1000, description: 'For serious businesses', features: ['1000 AI Credits', 'Dedicated support', 'Full analytics', 'API access'], isActive: true,
+  },
+  {
+    id: '6', planId: 'scale_2500', name: 'Scale', amount: 1299900, currency: 'INR',
+    credits: 2500, description: 'Maximum value for high-volume usage', features: ['2500 AI Credits', 'Dedicated account manager', 'Full analytics', 'API access'], isActive: true,
+  },
+  {
+    id: '7', planId: 'enterprise_5000', name: 'Enterprise', amount: 2499900, currency: 'INR',
+    credits: 5000, description: 'Enterprise-grade capacity', features: ['5000 AI Credits', 'Dedicated account manager', 'SLA support', 'Custom integrations'], isActive: true,
+  },
+  {
+    id: '8', planId: 'whale_10000', name: 'Whale', amount: 4499900, currency: 'INR',
+    credits: 10000, description: 'Massive scale for industry leaders', features: ['10000 AI Credits', 'White-glove service', 'On-premise options', 'API access'], isActive: true,
+  },
+  {
+    id: '9', planId: 'titan_25000', name: 'Titan', amount: 9999900, currency: 'INR',
+    credits: 25000, description: 'The ultimate credit pack', features: ['25000 AI Credits', 'Everything included', '24/7 Priority support', 'Strategic partnership'], isActive: true,
+  },
+];
+
+// ─── Razorpay Types ───────────────────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, handler: (response: Record<string, unknown>) => void) => void;
+    };
+  }
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 const CreditsPage = () => {
   const { isSignedIn } = useAuthState();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const [selectedPayment, setSelectedPayment] = useState<PaymentDetails | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(2); // Default to middle plan
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // Handle refresh logic with state to support polling
   const [isRefreshing, setIsRefreshing] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return !!urlParams.get('refresh');
   });
 
   useEffect(() => {
-    if (!isSignedIn) {
-      navigate('/signin');
-      return;
-    }
-
+    if (!isSignedIn) { navigate('/signin'); return; }
     if (isRefreshing) {
-      // Clear URL parameter
       window.history.replaceState({}, '', '/dashboard/credits');
-
-      // Invalidate immediately
       queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
       queryClient.invalidateQueries({ queryKey: ['credits-history'] });
       queryClient.invalidateQueries({ queryKey: ['credits-eligibility'] });
-
-      // Stop refreshing after 5 seconds
       const timer = setTimeout(() => setIsRefreshing(false), 5000);
       return () => clearTimeout(timer);
     }
   }, [isSignedIn, navigate, queryClient, isRefreshing]);
 
-  // Queries
+  // ── Queries ──────────────────────────────────────────────────────────────────
+
   const { data: balanceData, isLoading: balanceLoading } = useQuery({
     queryKey: ['credits-balance'],
     queryFn: () =>
@@ -123,16 +195,21 @@ const CreditsPage = () => {
     queryFn: () =>
       apiRequest<{
         success: boolean;
-        data: {
-          canClaimFreeCredits: boolean;
-          hasClaimedFreeCredits: boolean;
-          phoneVerified: boolean;
-        };
+        data: { canClaimFreeCredits: boolean; hasClaimedFreeCredits: boolean; phoneVerified: boolean };
       }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/credits/check-eligibility`).then(
         (res) => res.data,
       ),
     enabled: isSignedIn,
     refetchInterval: isRefreshing ? 1000 : false,
+  });
+
+  const { data: plansData, isLoading: plansLoading } = useQuery({
+    queryKey: ['credit-plans'],
+    queryFn: () =>
+      apiRequest<{ success: boolean; plans: CreditPlan[] }>(
+        `${import.meta.env.VITE_API_BASE_URL}/api/v1/plans`,
+      ).then((res) => res.plans),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const {
@@ -163,82 +240,148 @@ const CreditsPage = () => {
 
   useEffect(() => {
     if (historyError) {
-      // Handle simple error logging, toast handled by ApiError usually or generic
       console.error('Error fetching credit history:', historyError);
       toast.error('Failed to load credit history');
     }
   }, [historyError]);
 
-  const fetchPaymentDetails = useCallback((transaction: CreditTransaction) => {
-    if (!transaction.payment) return;
+  // ── Plans ────────────────────────────────────────────────────────────────────
+
+  const allActivePlans = (plansData && plansData.length > 0 ? plansData : FALLBACK_CREDIT_PLANS).filter(
+    (p) => p.isActive,
+  );
+  // Filter out Enterprise (amount=0) plans from the slider — they get their own CTA
+  const plans = allActivePlans.filter((p) => p.amount > 0);
+  const selectedPlan = plans[Math.min(selectedPlanIndex, plans.length - 1)];
+
+  // ── Purchase ─────────────────────────────────────────────────────────────────
+
+  const handlePurchase = useCallback(async () => {
+    if (!selectedPlan || isPurchasing) return;
+    setIsPurchasing(true);
 
     try {
-      const paymentDetails: PaymentDetails = {
-        id: transaction.id,
-        razorpayOrderId: transaction.payment.razorpayOrderId,
-        razorpayPaymentId: transaction.payment.razorpayPaymentId,
-        planName: transaction.payment.planName,
-        amount: transaction.payment.amount,
-        currency: 'INR',
-        credits: Math.abs(transaction.amount),
-        status: transaction.payment.status,
-        createdAt: transaction.createdAt,
-      };
+      // Load Razorpay script if not loaded
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Razorpay'));
+          document.body.appendChild(script);
+        });
+      }
 
-      setSelectedPayment(paymentDetails);
-      setShowPaymentDialog(true);
+      const orderData = await apiRequest<{
+        success: boolean;
+        order: { id: string; amount: number; currency: string; key: string };
+        plan: { id: string; name: string; credits: number };
+        serverAmount: number;
+      }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: selectedPlan.planId }),
+      });
+
+      const rzp = new window.Razorpay({
+        key: orderData.order.key,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: 'FairArena',
+        description: `${orderData.plan.credits} Credits`,
+        order_id: orderData.order.id,
+        theme: { color: '#6366f1' },
+        handler: async (response: Record<string, unknown>) => {
+          try {
+            await apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/payments/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            toast.success('Payment successful! Credits will be added shortly.');
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+              queryClient.invalidateQueries({ queryKey: ['credits-history'] });
+            }, 3000);
+          } catch {
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+      });
+
+      rzp.on('payment.failed', () => {
+        toast.error('Payment failed. Please try again.');
+      });
+
+      rzp.open();
     } catch (error) {
-      console.error('Error fetching payment details:', error);
-      toast.error('Failed to load payment details');
+      console.error('Purchase error:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+    } finally {
+      setIsPurchasing(false);
     }
+  }, [selectedPlan, isPurchasing, queryClient]);
+
+  // ── Payment Details ───────────────────────────────────────────────────────────
+
+  const fetchPaymentDetails = useCallback((transaction: CreditTransaction) => {
+    if (!transaction.payment) return;
+    const paymentDetails: PaymentDetails = {
+      id: transaction.id,
+      razorpayOrderId: transaction.payment.razorpayOrderId,
+      razorpayPaymentId: transaction.payment.razorpayPaymentId,
+      planName: transaction.payment.planName,
+      amount: transaction.payment.amount,
+      currency: 'INR',
+      credits: Math.abs(transaction.amount),
+      status: transaction.payment.status,
+      createdAt: transaction.createdAt,
+    };
+    setSelectedPayment(paymentDetails);
+    setShowPaymentDialog(true);
   }, []);
 
   const getTransactionIcon = (type: string, amount: number) => {
     switch (type) {
-      case 'PURCHASE':
-        return <CreditCard className="h-4 w-4" />;
-      case 'REFUND':
-        return <RefreshCw className="h-4 w-4" />;
-      case 'BONUS':
-        return <Gift className="h-4 w-4" />;
-      case 'DEDUCTION':
-        return <TrendingDown className="h-4 w-4" />;
-      default:
-        return amount > 0 ? (
-          <TrendingUp className="h-4 w-4" />
-        ) : (
-          <TrendingDown className="h-4 w-4" />
-        );
+      case 'PURCHASE': return <CreditCard className="h-4 w-4" />;
+      case 'REFUND': return <RefreshCw className="h-4 w-4" />;
+      case 'BONUS': return <Gift className="h-4 w-4" />;
+      case 'DEDUCTION': return <TrendingDown className="h-4 w-4" />;
+      default: return amount > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />;
     }
   };
 
-  if (!isSignedIn) {
-    return null;
-  }
+  if (!isSignedIn) return null;
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-12">
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Credits</h1>
             <p className="text-muted-foreground max-w-2xl">
-              Manage your balance and transaction history.
+              Purchase credits to power AI features. Credits never expire.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => (window.location.hash = 'pricing')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Buy Credits
-            </Button>
-          </div>
+          <Button
+            onClick={() => navigate('/dashboard/subscription')}
+            variant="outline"
+            className="shrink-0"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            View Subscription Plans
+          </Button>
         </div>
 
-        {/* Balance Section */}
+        {/* Balance + Free Credits */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-1 border shadow-sm bg-card">
             <CardHeader className="pb-2">
@@ -258,7 +401,6 @@ const CreditsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Promotional cards / Actions */}
           <div className="md:col-span-2 space-y-4">
             {eligibilityData !== undefined && eligibilityData?.canClaimFreeCredits && (
               <Card className="border bg-secondary/30 shadow-none">
@@ -270,7 +412,7 @@ const CreditsPage = () => {
                     <div>
                       <h3 className="font-semibold text-lg">Claim Free Credits</h3>
                       <p className="text-muted-foreground text-sm">
-                        Verify your phone to verify your account and get 200 free credits.
+                        Verify your phone and get 200 free credits.
                       </p>
                     </div>
                   </div>
@@ -314,7 +456,160 @@ const CreditsPage = () => {
           </div>
         </div>
 
-        {/* Transactions Section */}
+        {/* ── Credit Purchase Slider ─────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Buy Credits</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Drag the slider to choose the amount that fits your needs
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-xs">
+              <Zap className="h-3 w-3 mr-1" />
+              Never expire
+            </Badge>
+          </div>
+
+          <Card className="border shadow-sm overflow-hidden">
+            <CardContent className="p-6 sm:p-8 space-y-8">
+              {plansLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                <>
+                  {/* Selected Plan Display */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-bold tracking-tight">
+                          {selectedPlan?.credits.toLocaleString()}
+                        </span>
+                        <span className="text-xl text-muted-foreground font-medium">credits</span>
+                      </div>
+                      <p className="text-muted-foreground text-sm mt-1">
+                        {selectedPlan?.description}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-3xl font-bold">
+                        ₹{((selectedPlan?.amount || 0) / 100).toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        ₹{(((selectedPlan?.amount || 0) / 100) / (selectedPlan?.credits || 1)).toFixed(2)} per credit
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Slider */}
+                  <div ref={sliderRef} className="space-y-3">
+                    <Slider
+                      min={0}
+                      max={plans.length - 1}
+                      step={1}
+                      value={[selectedPlanIndex]}
+                      onValueChange={([val]) => setSelectedPlanIndex(val)}
+                      className="w-full"
+                    />
+                    {/* Plan labels */}
+                    <div className="flex justify-between text-xs text-muted-foreground px-1">
+                      {plans.map((plan, i) => (
+                        <button
+                          key={plan.planId}
+                          onClick={() => setSelectedPlanIndex(i)}
+                          className={cn(
+                            'transition-colors font-medium',
+                            i === selectedPlanIndex
+                              ? 'text-foreground'
+                              : 'hover:text-foreground/70',
+                          )}
+                        >
+                          {plan.credits >= 1000
+                            ? `${plan.credits / 1000}k`
+                            : plan.credits}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  {selectedPlan?.features && selectedPlan.features.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {selectedPlan.features.map((feature) => (
+                        <div key={feature} className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500 shrink-0" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Purchase Button */}
+                  <Button
+                    onClick={handlePurchase}
+                    disabled={isPurchasing || !selectedPlan}
+                    className="w-full h-12 text-base font-semibold"
+                    size="lg"
+                  >
+                    {isPurchasing ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Buy {selectedPlan?.credits.toLocaleString()} Credits for ₹
+                        {((selectedPlan?.amount || 0) / 100).toLocaleString('en-IN')}
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Secured by Razorpay · Credits are non-refundable after use
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Enterprise CTA ───────────────────────────────────────────────────── */}
+        <Card className="border-2 border-rose-500/30 bg-rose-500/5">
+          <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-rose-500/10">
+                <Crown className="h-6 w-6 text-rose-500" />
+              </div>
+              <div>
+                <h4 className="font-bold text-lg">Enterprise Plan</h4>
+                <p className="text-muted-foreground text-sm mt-0.5">
+                  Unlimited credits, dedicated support &amp; custom integrations
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
+              <div className="text-2xl font-bold">Custom Pricing</div>
+              <Button
+                variant="outline"
+                className="border-rose-500/50 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500"
+                onClick={() =>
+                  window.open(
+                    'mailto:enterprise@fairarena.app?subject=Enterprise Plan Inquiry',
+                    '_blank',
+                  )
+                }
+              >
+                Contact Us <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Transaction History ──────────────────────────────────────────────── */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold tracking-tight">History</h2>
@@ -421,18 +716,12 @@ const CreditsPage = () => {
           </Card>
         </div>
 
-        {/* Footer Links */}
+        {/* Footer */}
         <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <div className="flex gap-4">
-            <Link to="/terms-and-conditions" className="hover:underline">
-              Terms
-            </Link>
-            <Link to="/privacy-policy" className="hover:underline">
-              Privacy
-            </Link>
-            <Link to="/refund" className="hover:underline">
-              Refunds
-            </Link>
+            <Link to="/terms-and-conditions" className="hover:underline">Terms</Link>
+            <Link to="/privacy-policy" className="hover:underline">Privacy</Link>
+            <Link to="/refund" className="hover:underline">Refunds</Link>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-3 w-3" />
@@ -452,9 +741,7 @@ const CreditsPage = () => {
                 <div className="rounded-lg border p-4 space-y-3">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Status</span>
-                    <Badge
-                      variant={selectedPayment.status === 'captured' ? 'default' : 'secondary'}
-                    >
+                    <Badge variant={selectedPayment.status === 'captured' ? 'default' : 'secondary'}>
                       {selectedPayment.status}
                     </Badge>
                   </div>
@@ -477,7 +764,6 @@ const CreditsPage = () => {
                     </div>
                   </div>
                 </div>
-
                 {selectedPayment.invoiceUrl && (
                   <Button
                     onClick={() => window.open(selectedPayment.invoiceUrl, '_blank')}

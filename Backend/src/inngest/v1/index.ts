@@ -31,6 +31,7 @@ export {
   resetSettingsFunction,
   updateSettingsFunction,
 } from './settingsOperations.js';
+export { subscriptionWebhookReceived } from './subscriptionWebhook.js';
 export { supportRequestCreated } from './supportRequest.js';
 export { createTeamAuditLog, sendTeamInviteEmail } from './teamInvite.js';
 export {
@@ -72,9 +73,9 @@ export {
   archiveOldAuditLogs,
   calculateApplicationStats,
   cleanupExpiredTokens,
-  sendOAuthAppAuthorizedEmail,
   createOAuthAppAuthorizedNotification,
   logOAuthDataAccess,
+  sendOAuthAppAuthorizedEmail,
 } from './oauthJobs.js';
 
 // Auth stream functions

@@ -85,6 +85,7 @@ const ProfileViews = lazy(() => import('./pages/ProfileViews'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const TeamsPage = lazy(() => import('./pages/TeamsPage'));
 const TeamInviteAcceptPage = lazy(() => import('./pages/TeamInviteAcceptPage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 
 // Lazy load other pages
 const Feedback = lazy(() => import('./pages/Feedback'));
@@ -374,6 +375,14 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoadingFallback />}>
                     <CreditsVerificationPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/subscription"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <SubscriptionPage />
                   </Suspense>
                 }
               />

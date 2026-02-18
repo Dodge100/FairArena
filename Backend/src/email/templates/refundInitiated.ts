@@ -43,13 +43,17 @@ export const refundInitiatedEmailTemplate = (params: {
       <td align="center" style="padding: 40px 20px;">
         <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
 
-          <!-- Warning Badge -->
+          <!-- Header -->
           <tr>
             <td align="center" style="padding: 40px 40px 0;">
-              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px; margin-bottom: 24px;" />
+              <img src="https://fairarena.blob.core.windows.net/fairarena/fairArenaLogo.png" alt="FairArena" style="height: 40px;" />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding-top: 24px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
                 <tr>
-                  <td style="width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; text-align: center; vertical-align: middle; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);">
+                  <td width="80" height="80" align="center" valign="middle" bgcolor="#f59e0b" style="width: 80px; height: 80px; background-color: #f59e0b; border-radius: 50%;">
                     <span style="font-size: 40px; line-height: 80px; color: white; font-weight: bold;">⌛</span>
                   </td>
                 </tr>

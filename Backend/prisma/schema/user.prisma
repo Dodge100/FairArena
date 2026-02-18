@@ -57,6 +57,7 @@ model User {
   userOrganizations         UserOrganization[]
   projectMemberships        UserProject[]
   teamMemberships           UserTeam[]
+  subscriptions             Subscription[]
 
   @@index([userId])
   @@index([isBanned])

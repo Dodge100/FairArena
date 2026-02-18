@@ -24,6 +24,7 @@ export const CSRF_CONFIG = {
   // Routes that don't require CSRF protection
   exemptPaths: [
     '/api/v1/payments/webhook',
+    '/api/v1/subscriptions/webhook',
     'api/v1/newsletter/unsubscribe',
     '/api/v1/waitlist',
     '/api/v1/auth/verify-email',

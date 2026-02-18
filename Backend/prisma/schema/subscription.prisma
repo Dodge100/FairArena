@@ -1,0 +1,78 @@
+
+model SubscriptionPlan {
+  id                    String         @id @default(cuid())
+  planId                String         @unique // e.g. "pro_monthly", "team_monthly"
+  razorpayPlanId        String?        @unique // Razorpay plan ID (created via API)
+  name                  String
+  tier                  SubscriptionTier
+  billingCycle          BillingCycle
+  amount                Int            // Amount in paise (INR)
+  currency              String         @default("INR")
+  description           String?
+  features              String[]
+  limits                Json?          // e.g. { maxProjects: 10, maxTeamMembers: 5, aiCreditsPerMonth: 500 }
+  isActive              Boolean        @default(true)
+  isPopular             Boolean        @default(false)
+  sortOrder             Int            @default(0)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  subscriptions         Subscription[]
+
+  @@index([planId])
+  @@index([tier])
+  @@index([isActive])
+  @@index([billingCycle])
+}
+
+model Subscription {
+  id                       String             @id @default(cuid())
+  userId                   String
+  planId                   String
+  razorpaySubscriptionId   String?            @unique
+  razorpayCustomerId       String?
+  status                   SubscriptionStatus @default(CREATED)
+  currentPeriodStart       DateTime?
+  currentPeriodEnd         DateTime?
+  cancelAtPeriodEnd        Boolean            @default(false)
+  cancelledAt              DateTime?
+  cancelReason             String?
+  trialStart               DateTime?
+  trialEnd                 DateTime?
+  quantity                 Int                @default(1)
+  metadata                 Json?
+  webhookProcessed         Boolean            @default(false)
+  lastWebhookAt            DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  plan                     SubscriptionPlan   @relation(fields: [planId], references: [planId])
+  user                     User               @relation(fields: [userId], references: [userId])
+  webhookEvents            SubscriptionWebhookEvent[]
+
+  @@index([userId])
+  @@index([razorpaySubscriptionId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([currentPeriodEnd])
+  @@index([planId])
+}
+
+model SubscriptionWebhookEvent {
+  id               String       @id @default(cuid())
+  subscriptionId   String?
+  razorpayEventId  String?      @unique
+  eventType        String
+  payload          Json
+  signature        String?
+  processed        Boolean      @default(false)
+  processedAt      DateTime?
+  errorMessage     String?
+  retryCount       Int          @default(0)
+  createdAt        DateTime     @default(now())
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([razorpayEventId])
+  @@index([eventType])
+  @@index([processed])
+  @@index([createdAt])
+}

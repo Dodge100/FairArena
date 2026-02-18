@@ -12,6 +12,22 @@ export interface PaymentPlan {
   isActive: boolean;
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  planId: string;
+  razorpayPlanId: string | null;
+  name: string;
+  tier: 'FREE' | 'STARTER' | 'PRO' | 'TEAM' | 'ENTERPRISE';
+  billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  amount: number;
+  currency: string;
+  description?: string;
+  features: string[];
+  limits: Record<string, unknown>;
+  isActive: boolean;
+  isPopular: boolean;
+}
+
 export interface PlansResponse {
   success: boolean;
   plans: PaymentPlan[];
@@ -57,6 +73,8 @@ export class PaymentService {
   private baseURL: string;
   private plansCache: PaymentPlan[] | null = null;
   private plansCacheTimestamp: number = 0;
+  private subPlansCache: SubscriptionPlan[] | null = null;
+  private subPlansCacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
   private constructor() {
@@ -144,9 +162,35 @@ export class PaymentService {
     return await this.fetchPlans();
   }
 
+  async fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    try {
+      const now = Date.now();
+      if (this.subPlansCache && now - this.subPlansCacheTimestamp < this.CACHE_DURATION) {
+        return this.subPlansCache;
+      }
+
+      const data = await apiRequest<{ success: boolean; plans: SubscriptionPlan[] }>(
+        `${this.baseURL}/api/v1/subscriptions/plans`,
+      );
+
+      if (data.success && data.plans) {
+        this.subPlansCache = data.plans;
+        this.subPlansCacheTimestamp = now;
+        return data.plans;
+      }
+
+      throw new Error('Failed to fetch subscription plans');
+    } catch (error) {
+      console.error('Failed to fetch subscription plans:', error);
+      return [];
+    }
+  }
+
   clearCache(): void {
     this.plansCache = null;
     this.plansCacheTimestamp = 0;
+    this.subPlansCache = null;
+    this.subPlansCacheTimestamp = 0;
   }
 }
 

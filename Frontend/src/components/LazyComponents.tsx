@@ -1,6 +1,20 @@
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
-import { Suspense, type ReactNode } from 'react';
+import {
+  AlertTriangle,
+  RefreshCw,
+  WifiOff
+} from 'lucide-react';
+import { Component, Suspense, type ErrorInfo, type ReactNode } from 'react';
 import { Spotlight } from './ui/Spotlight';
 
 // Loading fallback components
@@ -126,10 +140,7 @@ export const LazyComponent = ({
   fallback = <ComponentLoadingFallback />,
 }: LazyComponentProps) => <Suspense fallback={fallback}>{children}</Suspense>;
 
-// Helper removed to avoid react-refresh issues
-
 // Error boundary for lazy-loaded chunks
-import { Component, type ErrorInfo } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -157,23 +168,54 @@ export class LazyErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
 
   render() {
     if (this.state.hasError) {
+      // If a custom fallback is provided, use it
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      // Default UI for lazy loading errors (often due to network issues or chunk loading failures)
+      const isChunkLoadError = this.state.error?.name === 'ChunkLoadError' ||
+        this.state.error?.message?.includes('Loading chunk');
+
       return (
-        this.props.fallback || (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-            <div className="max-w-md text-center">
-              <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-              <p className="text-muted-foreground mb-6">
-                Failed to load this page. Please try refreshing.
-              </p>
-              <button
+        <div className="flex h-full min-h-[400px] w-full items-center justify-center p-6">
+          <Card className="w-full max-w-md shadow-lg border-dashed">
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/20">
+                {isChunkLoadError ? (
+                  <WifiOff className="h-6 w-6 text-orange-600 dark:text-orange-500" />
+                ) : (
+                  <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-500" />
+                )}
+              </div>
+              <CardTitle className="text-xl">
+                {isChunkLoadError ? 'Connection Issue' : 'Component Error'}
+              </CardTitle>
+              <CardDescription className="text-center">
+                {isChunkLoadError
+                  ? 'We couldn\'t load this part of the application. This is often caused by a network interruption.'
+                  : 'We encountered an unexpected error while loading this component.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              {this.state.error && !isChunkLoadError && (
+                <div className="bg-muted/50 p-3 rounded-md text-xs font-mono text-muted-foreground break-all max-h-32 overflow-y-auto">
+                  {this.state.error.message}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                className="w-full gap-2"
+                size="lg"
               >
-                Refresh Page
-              </button>
-            </div>
-          </div>
-        )
+                <RefreshCw className="h-4 w-4" />
+                Reload Page
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       );
     }
 

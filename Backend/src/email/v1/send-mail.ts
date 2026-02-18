@@ -33,6 +33,10 @@ import { refundFailedEmailTemplate } from '../templates/refundFailed.js';
 import { refundInitiatedEmailTemplate } from '../templates/refundInitiated.js';
 import { securityKeyAddedTemplate } from '../templates/securityKeyAdded.js';
 import { securityKeyRemovedTemplate } from '../templates/securityKeyRemoved.js';
+import { subscriptionActivatedEmailTemplate } from '../templates/subscriptionActivated.js';
+import { subscriptionCancelledEmailTemplate } from '../templates/subscriptionCancelled.js';
+import { subscriptionPaymentFailedEmailTemplate } from '../templates/subscriptionPaymentFailed.js';
+import { subscriptionRenewedEmailTemplate } from '../templates/subscriptionRenewed.js';
 import { supportConfirmationEmailTemplate } from '../templates/support-confirmation.js';
 import { teamInviteEmailTemplate } from '../templates/teamInvite.js';
 import { waitlistConfirmationTemplate } from '../templates/waitlistConfirmation.js';
@@ -118,6 +122,47 @@ type RefundInitiatedEmailParams = {
   estimatedDays: string;
 };
 type WeeklyFeedbackEmailParams = { name: string; feedbackUrl: string };
+type SubscriptionActivatedEmailParams = {
+  firstName: string;
+  planName: string;
+  tier: string;
+  billingCycle: string;
+  amount: number;
+  currency: string;
+  currentPeriodEnd: string | null;
+  razorpaySubscriptionId: string;
+  features: string[];
+};
+type SubscriptionCancelledEmailParams = {
+  firstName: string;
+  planName: string;
+  tier: string;
+  billingCycle: string;
+  currentPeriodEnd: string | null;
+  cancelledImmediately: boolean;
+};
+type SubscriptionRenewedEmailParams = {
+  firstName: string;
+  planName: string;
+  tier: string;
+  billingCycle: string;
+  amount: number;
+  currency: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string | null;
+  razorpaySubscriptionId: string;
+};
+type SubscriptionPaymentFailedEmailParams = {
+  firstName: string;
+  planName: string;
+  tier: string;
+  billingCycle: string;
+  amount: number;
+  currency: string;
+  failureReason?: string;
+  razorpaySubscriptionId: string;
+  retryUrl?: string;
+};
 type RefundCompletedEmailParams = {
   userName: string;
   planName: string;
@@ -325,9 +370,22 @@ export const emailTemplates = {
   'oauth-app-authorized': oauthAppAuthorizedTemplate as (
     params: OAuthAppAuthorizedParams,
   ) => string,
+  // Subscription templates
+  'subscription-activated': subscriptionActivatedEmailTemplate as (
+    params: SubscriptionActivatedEmailParams,
+  ) => string,
+  'subscription-cancelled': subscriptionCancelledEmailTemplate as (
+    params: SubscriptionCancelledEmailParams,
+  ) => string,
+  'subscription-renewed': subscriptionRenewedEmailTemplate as (
+    params: SubscriptionRenewedEmailParams,
+  ) => string,
+  'subscription-payment-failed': subscriptionPaymentFailedEmailTemplate as (
+    params: SubscriptionPaymentFailedEmailParams,
+  ) => string,
 };
 
-type TemplateType = keyof typeof emailTemplates;
+export type TemplateType = keyof typeof emailTemplates;
 
 interface SendEmailOptions<T extends TemplateType> {
   to: string;
