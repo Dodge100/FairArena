@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { aj, formRateLimiter } from '../../config/arcjet.js';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
@@ -99,20 +100,6 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
 
-const verifyMfaOtpSchema = z.object({
-  code: z.string().length(6, 'OTP must be 6 digits'),
-  method: z.enum(['email', 'notification']).optional(),
-});
-
-// Cryptographically secure OTP generation
-const generateOTP = (): string => {
-  // Generate cryptographically random 6-digit OTP
-  const randomBytes = crypto.randomBytes(4);
-  const randomNumber = randomBytes.readUInt32BE(0);
-  // Ensure 6 digits (100000 to 999999)
-  return String(100000 + (randomNumber % 900000));
-};
-
 // Hash OTP for secure storage (SHA-256)
 const hashOTP = (otp: string): string => {
   return crypto.createHash('sha256').update(otp).digest('hex');
@@ -155,6 +142,35 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const { email, password, firstName, lastName } = validation.data;
+
+    // Arcjet Protection
+    const decision = await formRateLimiter.protect(req, { email });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed during registration', {
+          email,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded during registration', { email });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many registration attempts. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
@@ -265,6 +281,35 @@ export const login = async (req: Request, res: Response) => {
 
     const { email, password } = validation.data;
     const normalizedEmail = email.toLowerCase();
+
+    // Arcjet Protection
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed during login', {
+          email: normalizedEmail,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded during login', { email: normalizedEmail });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many login attempts. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
 
     // Check lockout status
     const lockoutStatus = await isLockedOut(normalizedEmail);
@@ -1490,6 +1535,35 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const { email } = validation.data;
     const normalizedEmail = email.toLowerCase();
 
+    // Arcjet Protection
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed during forgot password', {
+          email: normalizedEmail,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded during forgot password', { email: normalizedEmail });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many requests. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
     // Always return success to prevent email enumeration
     const successResponse = {
       success: true,
@@ -1549,6 +1623,17 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const { token, password } = validation.data;
+
+    // Arcjet Protection (Rate limit only, no email)
+    const decision = await aj.protect(req, { requested: 1 });
+
+    if (decision.isDenied() && decision.reason.isRateLimit()) {
+      logger.warn('Rate limit exceeded during reset password');
+      return res.status(429).json({
+        success: false,
+        message: 'Too many requests. Please try again later.',
+      });
+    }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);

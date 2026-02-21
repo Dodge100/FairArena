@@ -2,6 +2,8 @@ FROM dhi.io/node:23-alpine3.21-dev
 
 WORKDIR /app
 
+ARG TRIVY_VERSION=0.69.1
+
 # Set Node memory limit
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
@@ -13,6 +15,12 @@ COPY prisma.config.ts ./
 # Install pnpm globally
 # Install pnpm globally (force path)
 RUN npm install -g pnpm --prefix /usr/local
+
+# Install Trivy for in-container scans
+RUN wget -qO /tmp/trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+	&& tar -xzf /tmp/trivy.tar.gz -C /tmp \
+	&& mv /tmp/trivy /usr/local/bin/trivy \
+	&& rm -rf /tmp/trivy.tar.gz
 
 # Install dependencies WITHOUT running scripts (to avoid postinstall error)
 RUN pnpm install --ignore-scripts

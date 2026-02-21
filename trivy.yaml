@@ -1,0 +1,23 @@
+format: json
+severity: HIGH,CRITICAL
+scanners: secret,misconfig
+timeout: 2m
+skip-dirs:
+  - .git
+  - .cache
+  - node_modules
+  - Backend/node_modules
+  - Frontend/node_modules
+  - Backend/dist
+  - Frontend/dist
+  - Backend/src/generated
+ignore-unfixed: false
+cache-dir: .cache/trivy
+
+# Custom policies can be added here
+# policy:
+#   - path/to/policy.rego
+
+# Secret scanning config
+secret:
+  config: .trivy/secret.yaml

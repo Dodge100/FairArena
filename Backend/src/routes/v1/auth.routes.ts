@@ -56,30 +56,12 @@ router.get('/csrf-token', (req, res) => {
   res.status(200).json({ success: true, message: 'CSRF token set' });
 });
 
-// Rate limiters for different endpoints
-const registerLimiter = createAuthRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 registrations per hour per IP
-  message: 'Too many registration attempts. Please try again later.',
-});
-
 const loginLimiter = createAuthRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 login attempts per minute per IP
   message: 'Too many login attempts. Please try again later.',
 });
 
-const passwordResetLimiter = createAuthRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 password reset requests per hour per email
-  message: 'Too many password reset attempts. Please try again later.',
-});
-
-const refreshLimiter = createAuthRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 60, // 60 refresh requests per hour
-  message: 'Too many refresh attempts.',
-});
 
 const resendVerificationLimiter = createAuthRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -120,7 +102,7 @@ const resendVerificationLimiter = createAuthRateLimiter({
  *       409:
  *         description: Email already exists
  */
-router.post('/register', registerLimiter, verifyRecaptcha, register);
+router.post('/register', verifyRecaptcha, register);
 
 /**
  * @swagger
@@ -150,7 +132,7 @@ router.post('/register', registerLimiter, verifyRecaptcha, register);
  *       429:
  *         description: Account locked
  */
-router.post('/login', loginLimiter, verifyRecaptcha, login);
+router.post('/login', verifyRecaptcha, login);
 
 /**
  * @swagger
@@ -217,7 +199,7 @@ router.post('/login', loginLimiter, verifyRecaptcha, login);
  *       429:
  *         description: Too many failed attempts
  */
-router.post('/verify-mfa', loginLimiter, verifyRecaptcha, verifyLoginMFA);
+router.post('/verify-mfa', verifyRecaptcha, verifyLoginMFA);
 
 /**
  * @swagger
@@ -317,7 +299,7 @@ router.get('/me', protectRoute, getCurrentUser);
  *       200:
  *         description: Reset email sent (if account exists)
  */
-router.post('/forgot-password', passwordResetLimiter, verifyRecaptcha, forgotPassword);
+router.post('/forgot-password', verifyRecaptcha, forgotPassword);
 
 /**
  * @swagger
@@ -345,7 +327,7 @@ router.post('/forgot-password', passwordResetLimiter, verifyRecaptcha, forgotPas
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password', passwordResetLimiter, verifyRecaptcha, resetPassword);
+router.post('/reset-password', verifyRecaptcha, resetPassword);
 
 /**
  * @swagger
@@ -504,7 +486,7 @@ router.get('/mfa/check-session', checkMfaSession);
  *       200:
  *         description: MFA session invalidated
  */
-router.post('/mfa/invalidate', loginLimiter, invalidateMfaSession);
+router.post('/mfa/invalidate', invalidateMfaSession);
 
 /**
  * @swagger
@@ -521,7 +503,7 @@ router.post('/mfa/invalidate', loginLimiter, invalidateMfaSession);
  *       429:
  *         description: Too many OTP requests
  */
-router.post('/mfa/send-email-otp', loginLimiter, sendEmailOtp);
+router.post('/mfa/send-email-otp', sendEmailOtp);
 
 /**
  * @swagger
@@ -538,7 +520,7 @@ router.post('/mfa/send-email-otp', loginLimiter, sendEmailOtp);
  *       429:
  *         description: Too many OTP requests
  */
-router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
+router.post('/mfa/send-notification-otp', sendNotificationOtp);
 
 /**
  * @swagger
@@ -568,7 +550,7 @@ router.post('/mfa/send-notification-otp', loginLimiter, sendNotificationOtp);
  *       401:
  *         description: Invalid OTP
  */
-router.post('/mfa/verify-otp', loginLimiter, verifyRecaptcha, verifyMfaOtp);
+router.post('/mfa/verify-otp', verifyRecaptcha, verifyMfaOtp);
 
 // ============================================================================
 // DEVICE CODE AUTHENTICATION ROUTES (RFC 8628)

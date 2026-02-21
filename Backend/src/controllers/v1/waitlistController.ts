@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { formRateLimiter } from '../../config/arcjet.js';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 
 // Validation schemas
-const joinWaitlistSchema: z.ZodType<any> = z.object({
+const joinWaitlistSchema = z.object({
   email: z
     .string()
     .email('Invalid email address')
@@ -45,6 +46,35 @@ export const joinWaitlist = async (req: Request, res: Response) => {
     const { email, name, source, marketingConsent } = validation.data;
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Arcjet Protection
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed for waitlist', {
+          email: normalizedEmail,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded for waitlist', { email: normalizedEmail });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many requests. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
+
     // Check if email already exists in waitlist
     const existing = await prisma.waitlist.findUnique({
       where: { email: normalizedEmail },
@@ -74,49 +104,6 @@ export const joinWaitlist = async (req: Request, res: Response) => {
         data: {
           hasAccount: true,
         },
-      });
-    }
-
-    // Check for disposable email
-    try {
-      const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(normalizedEmail)}`;
-      const response = await fetch(disposableCheckUrl, {
-        method: 'GET',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tempmail) {
-          logger.warn('Disposable email detected, rejecting waitlist join', {
-            email: normalizedEmail,
-          });
-          return res.status(400).json({
-            success: false,
-            message: 'Disposable email addresses are not allowed',
-          });
-        }
-      } else if (response.status === 400) {
-        const errorData = await response.json();
-        if (
-          errorData.error &&
-          (errorData.error.includes('Invalid email format') ||
-            errorData.error.includes('Email domain has no mail server'))
-        ) {
-          logger.warn('Invalid email format or domain detected', {
-            email: normalizedEmail,
-            error: errorData.error,
-          });
-          return res.status(400).json({
-            success: false,
-            message: 'Invalid email address or domain',
-          });
-        }
-      }
-    } catch (error) {
-      // Fail open: If validation service is down, allow the user to join
-      logger.warn('Disposable email check failed, allowing waitlist join', {
-        email: normalizedEmail,
-        error: error instanceof Error ? error.message : String(error),
       });
     }
 
