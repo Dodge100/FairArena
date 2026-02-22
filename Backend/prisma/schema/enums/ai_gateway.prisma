@@ -1,0 +1,7 @@
+
+enum AiGatewayStatus {
+  SUCCESS
+  ERROR
+  RATE_LIMITED
+  INSUFFICIENT_CREDITS
+}

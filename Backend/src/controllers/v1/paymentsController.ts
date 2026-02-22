@@ -186,8 +186,11 @@ export const createOrder = async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Create order error', {
-      error: error instanceof Error ? error.message : JSON.stringify(error),
+      error: error instanceof Error ? error.message : String(error),
+      errorCause: error instanceof Error && 'cause' in error ? error.cause : undefined,
+      errorStack: error instanceof Error ? error.stack : undefined,
       userId: req.user?.userId,
+      planId: req.body?.planId,
     });
     res.status(500).json({
       success: false,

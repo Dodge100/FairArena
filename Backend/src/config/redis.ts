@@ -56,4 +56,8 @@ export const REDIS_KEYS = {
   QR_AUTH_RATE_LIMIT: 'qr:auth:ratelimit:',
   DEVICE_AUTH_CODE: 'device:auth:code:',
   DEVICE_AUTH_USER: 'device:auth:user:',
+  // AI Gateway
+  AI_GW_RESPONSE_CACHE: 'aigw:cache:',
+  AI_GW_RATE_LIMIT: 'aigw:ratelimit:',
+  AI_GW_USER_DAILY_STATS: 'aigw:daily:',
 } as const;

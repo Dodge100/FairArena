@@ -58,6 +58,7 @@ model User {
   projectMemberships        UserProject[]
   teamMemberships           UserTeam[]
   subscriptions             Subscription[]
+  aiGatewayRequests         AiGatewayRequest[]
 
   @@index([userId])
   @@index([isBanned])

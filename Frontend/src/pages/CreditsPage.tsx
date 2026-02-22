@@ -91,52 +91,6 @@ interface CreditPlan {
   isActive: boolean;
 }
 
-// ─── Credit Slider Plans ──────────────────────────────────────────────────────
-
-// Fallback plans if API returns nothing
-const FALLBACK_CREDIT_PLANS: CreditPlan[] = [
-  {
-    id: '0', planId: 'tiny_10', name: 'Tiny', amount: 19900, currency: 'INR',
-    credits: 10, description: 'Quick top-up for small tasks', features: ['10 AI Credits', 'Basic features'], isActive: true,
-  },
-  {
-    id: '1', planId: 'starter_50', name: 'Starter', amount: 49900, currency: 'INR',
-    credits: 50, description: 'Perfect for trying out the platform', features: ['50 AI Credits', 'Basic features', 'Email support'], isActive: true,
-  },
-  {
-    id: '2', planId: 'basic_100', name: 'Basic', amount: 89900, currency: 'INR',
-    credits: 100, description: 'Great for small projects', features: ['100 AI Credits', 'All basic features', 'Email support'], isActive: true,
-  },
-  {
-    id: '3', planId: 'growth_250', name: 'Growth', amount: 199900, currency: 'INR',
-    credits: 250, description: 'For growing teams', features: ['250 AI Credits', 'Priority support', 'Advanced analytics'], isActive: true,
-  },
-  {
-    id: '4', planId: 'pro_500', name: 'Pro', amount: 349900, currency: 'INR',
-    credits: 500, description: 'For power users', features: ['500 AI Credits', 'Priority support', 'Advanced analytics', 'API access'], isActive: true,
-  },
-  {
-    id: '5', planId: 'business_1000', name: 'Business', amount: 599900, currency: 'INR',
-    credits: 1000, description: 'For serious businesses', features: ['1000 AI Credits', 'Dedicated support', 'Full analytics', 'API access'], isActive: true,
-  },
-  {
-    id: '6', planId: 'scale_2500', name: 'Scale', amount: 1299900, currency: 'INR',
-    credits: 2500, description: 'Maximum value for high-volume usage', features: ['2500 AI Credits', 'Dedicated account manager', 'Full analytics', 'API access'], isActive: true,
-  },
-  {
-    id: '7', planId: 'enterprise_5000', name: 'Enterprise', amount: 2499900, currency: 'INR',
-    credits: 5000, description: 'Enterprise-grade capacity', features: ['5000 AI Credits', 'Dedicated account manager', 'SLA support', 'Custom integrations'], isActive: true,
-  },
-  {
-    id: '8', planId: 'whale_10000', name: 'Whale', amount: 4499900, currency: 'INR',
-    credits: 10000, description: 'Massive scale for industry leaders', features: ['10000 AI Credits', 'White-glove service', 'On-premise options', 'API access'], isActive: true,
-  },
-  {
-    id: '9', planId: 'titan_25000', name: 'Titan', amount: 9999900, currency: 'INR',
-    credits: 25000, description: 'The ultimate credit pack', features: ['25000 AI Credits', 'Everything included', '24/7 Priority support', 'Strategic partnership'], isActive: true,
-  },
-];
-
 // ─── Razorpay Types ───────────────────────────────────────────────────────────
 
 declare global {
@@ -247,9 +201,7 @@ const CreditsPage = () => {
 
   // ── Plans ────────────────────────────────────────────────────────────────────
 
-  const allActivePlans = (plansData && plansData.length > 0 ? plansData : FALLBACK_CREDIT_PLANS).filter(
-    (p) => p.isActive,
-  );
+  const allActivePlans = plansData || [];
   // Filter out Enterprise (amount=0) plans from the slider — they get their own CTA
   const plans = allActivePlans.filter((p) => p.amount > 0);
   const selectedPlan = plans[Math.min(selectedPlanIndex, plans.length - 1)];

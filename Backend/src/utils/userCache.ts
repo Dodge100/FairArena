@@ -16,7 +16,20 @@ export async function getCachedUserInfo(userId: string): Promise<CachedUserInfo 
     // Try to get from cache first
     const cachedData = await redis.get(cacheKey);
     if (cachedData) {
-      return JSON.parse(cachedData as string);
+      // Upstash Redis might automatically parse JSON strings into objects
+      if (typeof cachedData === 'object' && cachedData !== null) {
+        return cachedData as CachedUserInfo;
+      }
+      try {
+        return JSON.parse(cachedData as string);
+      } catch (parseError) {
+        console.error('Error parsing cached user info:', parseError, { cachedData });
+        // If it's the string "[object Object]", it's corrupted, so we delete it
+        if (cachedData === '[object Object]') {
+          await redis.del(cacheKey);
+        }
+        return null; // Fallback to DB
+      }
     }
 
     // Fetch from database

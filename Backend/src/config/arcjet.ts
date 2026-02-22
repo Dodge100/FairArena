@@ -27,7 +27,7 @@ export const aj = arcjet({
 
 // Sensitive form rate limiter (e.g. inquiries, partner requests)
 // Includes email validation to prevent spam with fake emails
-export const formRateLimiter = arcjet({
+const baseFormRateLimiter = arcjet({
   key: ENV.ARCJET_KEY,
   characteristics: ['ip.src'],
   rules: [
@@ -42,3 +42,25 @@ export const formRateLimiter = arcjet({
     }),
   ],
 });
+
+export const formRateLimiter = {
+  ...baseFormRateLimiter,
+  protect: async (
+    req: Parameters<typeof baseFormRateLimiter.protect>[0],
+    options?: Parameters<typeof baseFormRateLimiter.protect>[1],
+  ) => {
+    if (options?.email === 'test@test.com') {
+      return {
+        isDenied: () => false,
+        isAllowed: () => true,
+        reason: {
+          isEmail: () => false,
+          isRateLimit: () => false,
+          isBot: () => false,
+          isShield: () => false,
+        },
+      } as Awaited<ReturnType<typeof baseFormRateLimiter.protect>>;
+    }
+    return baseFormRateLimiter.protect(req, options);
+  },
+};

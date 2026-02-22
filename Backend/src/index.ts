@@ -97,6 +97,7 @@ import { requestValidation } from './middleware/requestValidation.middleware.js'
 import { securityHeaders } from './middleware/securityHeaders.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
+import aiGatewayRouter from './routes/v1/aiGateway.routes.js';
 import apiKeysRouter from './routes/v1/apiKeys.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
 import creditsRouter from './routes/v1/credits.js';
@@ -367,6 +368,11 @@ app.use('/api/v1/team', teamRouter);
 
 // API Keys routes
 app.use('/api/v1/api-keys', apiKeysRouter);
+
+// AI Gateway routes — OpenAI-compatible at /v1 and also mirrored at /api/v1/ai-gateway
+// Note: must be registered AFTER CSRF middleware, the /v1 path is API-key protected (no CSRF)
+app.use('/v1', aiGatewayRouter);
+app.use('/api/v1/ai-gateway', aiGatewayRouter);
 
 // GitHub routes
 app.use('/api/v1/github', githubRouter);
