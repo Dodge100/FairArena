@@ -63,6 +63,9 @@ export const securityHeaders = [
 
     res.setHeader('Permissions-Policy', permissionsPolicy);
 
+    // Prevent search engines from indexing the API
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
     // X-Request-ID for request tracing
     const requestId = req.headers['x-request-id'] || generateRequestId();
     res.setHeader('X-Request-ID', requestId as string);

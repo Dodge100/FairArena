@@ -42,6 +42,7 @@ import {
   REFRESH_TOKEN_COOKIE_OPTIONS,
   SESSION_COOKIE_OPTIONS,
 } from '../../utils/cookie.utils.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 
 // Types
@@ -69,8 +70,8 @@ const registerSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =) are not allowed in the local part',
     ),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name is required').max(50),
@@ -141,7 +142,8 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password, firstName, lastName } = validation.data;
+    const { password, firstName, lastName } = validation.data;
+    const email = normalizeEmail(validation.data.email);
 
     // Arcjet Protection
     const decision = await formRateLimiter.protect(req, { email });
@@ -184,7 +186,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
     });
 
     if (existingUser) {
@@ -205,7 +207,7 @@ export const register = async (req: Request, res: Response) => {
     const user = await prisma.user.create({
       data: {
         userId,
-        email: email.toLowerCase(),
+        email: email,
         passwordHash,
         firstName,
         lastName,
@@ -279,8 +281,8 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password } = validation.data;
-    const normalizedEmail = email.toLowerCase();
+    const { password } = validation.data;
+    const normalizedEmail = normalizeEmail(validation.data.email);
 
     // Arcjet Protection
     const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
@@ -322,7 +324,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { email: normalizedEmail },
       select: {
         userId: true,
@@ -474,10 +476,10 @@ export const login = async (req: Request, res: Response) => {
           type: 'new_device_pending',
           ipAddress,
           deviceFingerprint: newDeviceFingerprint,
-        } as Omit<MFAPendingPayload, 'iat' | 'exp'>,
-        ENV.JWT_SECRET,
+        },
+        ENV.JWT_SECRET as string,
         {
-          expiresIn: '5m',
+          expiresIn: (ACCESS_TOKEN_EXPIRY as any) || '15m',
           issuer: 'fairarena',
         },
       );

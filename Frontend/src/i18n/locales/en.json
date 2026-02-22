@@ -144,6 +144,12 @@
       "button": "Subscribe",
       "subscribing": "Subscribing..."
     },
+    "gptPromotion": {
+      "badge": "New Feature",
+      "title": "Meet FairArena AI on ChatGPT",
+      "subtitle": "Get instant answers to all your FairArena questions. Add our official GPT to your ChatGPT account and ask anything about hackathons, judging, or platform features.",
+      "cta": "Add to ChatGPT"
+    },
     "whyChooseUsPage": {
       "title": "Why Choose Us",
       "benefits": [

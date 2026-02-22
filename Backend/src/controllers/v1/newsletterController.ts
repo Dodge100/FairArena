@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { formRateLimiter } from '../../config/arcjet.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 
 const newsletterSchema = z.object({
@@ -9,21 +10,21 @@ const newsletterSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     ),
 });
 
 export async function subscribeToNewsletter(req: Request, res: Response) {
   try {
-    const { email } = newsletterSchema.parse(req.body);
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
 
-    const decision = await formRateLimiter.protect(req, { email });
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
 
     if (decision.isDenied()) {
       if (decision.reason.isEmail()) {
         logger.warn('Email validation failed for newsletter subscription', {
-          email,
+          email: normalizedEmail,
           reason: decision.reason,
         });
         return res.status(400).json({
@@ -33,7 +34,7 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
       }
 
       if (decision.reason.isRateLimit()) {
-        logger.warn('Rate limit exceeded for newsletter subscription', { email });
+        logger.warn('Rate limit exceeded for newsletter subscription', { email: normalizedEmail });
         return res.status(429).json({
           success: false,
           message: 'Too many requests. Please try again later.',
@@ -46,17 +47,17 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
       });
     }
 
-    logger.info('Newsletter subscription request received', { email });
+    logger.info('Newsletter subscription request received', { email: normalizedEmail });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'newsletter.subscribe',
       data: {
-        email,
+        email: normalizedEmail,
       },
     });
 
-    logger.info('Newsletter subscription event sent to Inngest', { email });
+    logger.info('Newsletter subscription event sent to Inngest', { email: normalizedEmail });
 
     return res.status(200).json({
       success: true,
@@ -85,9 +86,9 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
 
 export async function unsubscribeFromNewsletter(req: Request, res: Response) {
   try {
-    const { email } = newsletterSchema.parse(req.body);
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
 
-    const decision = await formRateLimiter.protect(req, { email });
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
 
     if (decision.isDenied()) {
       if (decision.reason.isEmail()) {
@@ -110,17 +111,17 @@ export async function unsubscribeFromNewsletter(req: Request, res: Response) {
       });
     }
 
-    logger.info('Newsletter unsubscribe request received', { email });
+    logger.info('Newsletter unsubscribe request received', { email: normalizedEmail });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'newsletter.unsubscribe',
       data: {
-        email,
+        email: normalizedEmail,
       },
     });
 
-    logger.info('Newsletter unsubscribe event sent to Inngest', { email });
+    logger.info('Newsletter unsubscribe event sent to Inngest', { email: normalizedEmail });
 
     return res.status(200).json({
       success: true,

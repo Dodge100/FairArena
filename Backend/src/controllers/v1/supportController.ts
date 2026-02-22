@@ -4,6 +4,7 @@ import { aj, formRateLimiter } from '../../config/arcjet.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
 
@@ -24,8 +25,8 @@ const createSupportRequestSchema = z.object({
     .string()
     .email('Valid email address is required for non-authenticated users')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     )
     .optional(),
 });
@@ -149,7 +150,8 @@ export class SupportController {
         return next();
       }
 
-      const decision = await formRateLimiter.protect(req, { email: userEmail });
+      const normalizedEmail = normalizeEmail(userEmail);
+      const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
 
       if (decision.isDenied()) {
         if (decision.reason.isEmail()) {
@@ -221,7 +223,7 @@ export class SupportController {
             message: 'Email is required for non-authenticated users',
           });
         }
-        emailId = email;
+        emailId = normalizeEmail(email);
       }
 
       // Generate a temporary ID for immediate response

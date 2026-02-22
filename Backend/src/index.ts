@@ -276,6 +276,11 @@ if (ENV.NODE_ENV !== 'production') {
   );
 }
 
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain');
+  res.send('User-agent: *\nDisallow: /');
+});
+
 app.use(validateCsrfToken);
 
 // OAuth 2.0 / OpenID Connect Provider routes

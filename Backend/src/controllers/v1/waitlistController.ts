@@ -4,6 +4,7 @@ import { formRateLimiter } from '../../config/arcjet.js';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 
 // Validation schemas
@@ -12,8 +13,8 @@ const joinWaitlistSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     ),
   name: z.string().max(100).optional(),
   source: z.string().max(50).optional(),
@@ -44,7 +45,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
     }
 
     const { email, name, source, marketingConsent } = validation.data;
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(email);
 
     // Arcjet Protection
     const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
@@ -171,7 +172,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
 export const checkWaitlistStatus = async (req: Request, res: Response) => {
   try {
     const email = req.params.email as string;
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = normalizeEmail(email);
 
     const entry = await prisma.waitlist.findUnique({
       where: { email: normalizedEmail },

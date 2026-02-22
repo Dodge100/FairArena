@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { formRateLimiter } from '../../config/arcjet.js';
 import { prisma } from '../../config/database.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo, getUserDisplayName } from '../../utils/userCache.js';
 
@@ -11,22 +12,22 @@ const newsletterSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     ),
 });
 
 export async function inviteToPlatform(req: Request, res: Response) {
   try {
-    const { email } = newsletterSchema.parse(req.body);
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
 
     // Arcjet Protection
-    const decision = await formRateLimiter.protect(req, { email });
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
 
     if (decision.isDenied()) {
       if (decision.reason.isEmail()) {
         logger.warn('Email validation failed during platform invite', {
-          email,
+          email: normalizedEmail,
           reason: decision.reason,
         });
         return res.status(400).json({
@@ -36,7 +37,7 @@ export async function inviteToPlatform(req: Request, res: Response) {
       }
 
       if (decision.reason.isRateLimit()) {
-        logger.warn('Rate limit exceeded during platform invite', { email });
+        logger.warn('Rate limit exceeded during platform invite', { email: normalizedEmail });
         return res.status(429).json({
           success: false,
           message: 'Too many requests. Please try again later.',
@@ -77,12 +78,15 @@ export async function inviteToPlatform(req: Request, res: Response) {
 
     // Check if user already exists to prevent enumeration
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true },
     });
 
     if (existingUser) {
-      logger.info('Platform invite skipped - user already exists', { email, inviterId });
+      logger.info('Platform invite skipped - user already exists', {
+        email: normalizedEmail,
+        inviterId,
+      });
       // Return success to prevent enumeration
       return res.status(200).json({
         success: true,
@@ -92,18 +96,18 @@ export async function inviteToPlatform(req: Request, res: Response) {
 
     const inviterName = getUserDisplayName(userInfo);
 
-    logger.info('Platform Invite request received', { email, inviterName });
+    logger.info('Platform Invite request received', { email: normalizedEmail, inviterName });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'platform.invite',
       data: {
-        email,
+        email: normalizedEmail,
         inviterName,
       },
     });
 
-    logger.info('Platform invite event sent to Inngest', { email, inviterName });
+    logger.info('Platform invite event sent to Inngest', { email: normalizedEmail, inviterName });
 
     return res.status(200).json({
       success: true,
