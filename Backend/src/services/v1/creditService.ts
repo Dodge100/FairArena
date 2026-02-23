@@ -35,7 +35,7 @@ export async function getUserCreditHistory(
     const { limit = 50, offset = 0, type } = options;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where = { userId } as any;
+    const where: Record<string, any> = { userId };
     if (type) {
       where.type = type;
     }
@@ -107,14 +107,22 @@ export async function verifyUserCredits(
 export async function addUserCredits(
   userId: string,
   amount: number,
-  type: 'BONUS' | 'PURCHASE' | 'REFUND' | 'ADJUSTMENT' | 'TRANSFER_IN' | 'INITIAL_ALLOCATION',
+  type:
+    | 'BONUS'
+    | 'PURCHASE'
+    | 'REFUND'
+    | 'ADJUSTMENT'
+    | 'TRANSFER_IN'
+    | 'INITIAL_ALLOCATION'
+    | 'COUPON_REDEMPTION',
   description: string,
   metadata?: Record<string, unknown>,
+  tx?: any, // We keep any here because Prisma's transaction client type is complex to import from generated
 ): Promise<{ success: boolean; newBalance: number; transactionId: string }> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const execute = async (client: any) => {
       // Get current balance
-      const lastTransaction = await tx.creditTransaction.findFirst({
+      const lastTransaction = await client.creditTransaction.findFirst({
         where: { userId },
         orderBy: { createdAt: 'desc' },
       });
@@ -123,7 +131,7 @@ export async function addUserCredits(
       const newBalance = currentBalance + amount;
 
       // Create addition transaction
-      const transaction = await tx.creditTransaction.create({
+      const transaction = await client.creditTransaction.create({
         data: {
           userId,
           amount,
@@ -170,6 +178,14 @@ export async function addUserCredits(
         newBalance,
         transactionId: transaction.id,
       };
+    };
+
+    if (tx) {
+      return await execute(tx);
+    }
+
+    return await prisma.$transaction(async (newTx) => {
+      return await execute(newTx);
     });
   } catch (error) {
     logger.error('Failed to add user credits', {
@@ -186,11 +202,12 @@ export async function deductUserCredits(
   amount: number,
   description: string,
   metadata?: Record<string, unknown>,
+  tx?: any,
 ): Promise<{ success: boolean; newBalance: number; transactionId: string }> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const execute = async (client: any) => {
       // Get current balance
-      const lastTransaction = await tx.creditTransaction.findFirst({
+      const lastTransaction = await client.creditTransaction.findFirst({
         where: { userId },
         orderBy: { createdAt: 'desc' },
       });
@@ -204,7 +221,7 @@ export async function deductUserCredits(
       const newBalance = currentBalance - amount;
 
       // Create deduction transaction
-      const transaction = await tx.creditTransaction.create({
+      const transaction = await client.creditTransaction.create({
         data: {
           userId,
           amount: -amount,
@@ -251,6 +268,14 @@ export async function deductUserCredits(
         newBalance,
         transactionId: transaction.id,
       };
+    };
+
+    if (tx) {
+      return await execute(tx);
+    }
+
+    return await prisma.$transaction(async (newTx) => {
+      return await execute(newTx);
     });
   } catch (error) {
     logger.error('Failed to deduct user credits', {

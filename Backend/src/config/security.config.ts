@@ -25,7 +25,7 @@ export const CSRF_CONFIG = {
   exemptPaths: [
     '/api/v1/payments/webhook',
     '/api/v1/subscriptions/webhook',
-    'api/v1/newsletter/unsubscribe',
+    '/api/v1/newsletter/unsubscribe', // Fixed: was missing leading slash
     '/api/v1/waitlist',
     '/api/v1/auth/verify-email',
     '/api/inngest',
@@ -36,6 +36,12 @@ export const CSRF_CONFIG = {
     '/api/v1/oauth/token',
     '/oauth/token',
     '/api/v1/oauth/device/authorize',
+    // AI Gateway — uses Bearer/API-key auth, called from external clients without CSRF cookies
+    '/v1/chat/completions',
+    '/v1/models',
+    '/v1/usage',
+    '/v1/balance',
+    '/api/v1/ai-gateway',
   ],
   // Safe HTTP methods that don't require CSRF protection
   safeMethods: ['GET', 'HEAD', 'OPTIONS'],

@@ -1,5 +1,6 @@
 /**
  * AI Gateway Service
+
  * Handles routing, caching, streaming, and credit deduction
  * for all supported AI provider backends (Groq, Gemini, OpenRouter).
  */
@@ -156,9 +157,21 @@ function buildFallbackRequest(request: AiGatewayRequest): AiGatewayRequest {
 const TOOL_FALLBACK_INFIX = TOOL_FALLBACK_SYSTEM_INFIX;
 
 /**
- * Parse a text response that may contain a <tool_call>...</tool_call> block.
- * Returns the original response unchanged if no block is found.
+ * Normalize messages for providers that only support string content (non-vision models).
+ * If a message has a content array, it collapses it into a string.
  */
+function normalizeMessages(messages: ChatMessage[], supportsVision: boolean): ChatMessage[] {
+  if (supportsVision) return messages;
+
+  return messages.map((m) => {
+    if (typeof m.content === 'string') return m;
+    const text = m.content
+      .filter((p) => p.type === 'text')
+      .map((p) => p.text)
+      .join('\n');
+    return { ...m, content: text };
+  });
+}
 function parseFallbackToolCall(response: AiGatewayResponse): AiGatewayResponse {
   const text = response.choices?.[0]?.message?.content;
   if (typeof text !== 'string') return response;
@@ -298,13 +311,16 @@ async function callGroq(
   const groqKey = ENV.GROQ_API_KEY;
   if (!groqKey) throw new Error('GROQ_API_KEY not configured');
 
+  const normalizedMessages = normalizeMessages(request.messages, !!model.supportsVision);
+
   const body: Record<string, unknown> = {
     model: model.providerModelId,
-    messages: request.messages,
+    messages: normalizedMessages,
     stream: streaming,
     temperature: request.temperature ?? 1,
-    max_tokens: request.max_tokens ?? model.maxOutputTokens,
+    max_tokens: Math.min(request.max_tokens ?? model.maxOutputTokens, model.maxOutputTokens),
     top_p: request.top_p ?? 1,
+    stream_options: streaming ? { include_usage: true } : undefined,
   };
 
   if (request.frequency_penalty !== undefined) body.frequency_penalty = request.frequency_penalty;
@@ -404,7 +420,7 @@ async function callGemini(
     contents,
     generationConfig: {
       temperature: request.temperature ?? 1,
-      maxOutputTokens: request.max_tokens ?? model.maxOutputTokens,
+      maxOutputTokens: Math.min(request.max_tokens ?? model.maxOutputTokens, model.maxOutputTokens),
       topP: request.top_p ?? 1,
       stopSequences: request.stop
         ? Array.isArray(request.stop)
@@ -430,7 +446,11 @@ async function callGemini(
 
   const action = streaming ? 'streamGenerateContent' : 'generateContent';
   const altParam = streaming ? 'alt=sse&' : '';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model.providerModelId}:${action}?${altParam}key=${geminiKey}`;
+  const modelPath = model.providerModelId.startsWith('models/')
+    ? model.providerModelId
+    : `models/${model.providerModelId}`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:${action}?${altParam}key=${geminiKey}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -558,13 +578,16 @@ async function callOpenRouter(
   const orKey = ENV.OPENROUTER_API_KEY;
   if (!orKey) throw new Error('OPENROUTER_API_KEY not configured');
 
+  const normalizedMessages = normalizeMessages(request.messages, !!model.supportsVision);
+
   const body: Record<string, unknown> = {
     model: model.providerModelId,
-    messages: request.messages,
+    messages: normalizedMessages,
     stream: streaming,
     temperature: request.temperature ?? 1,
-    max_tokens: request.max_tokens ?? model.maxOutputTokens,
+    max_tokens: Math.min(request.max_tokens ?? model.maxOutputTokens, model.maxOutputTokens),
     top_p: request.top_p ?? 1,
+    stream_options: streaming ? { include_usage: true } : undefined,
   };
 
   if (request.frequency_penalty !== undefined) body.frequency_penalty = request.frequency_penalty;
@@ -580,7 +603,7 @@ async function callOpenRouter(
     headers: {
       Authorization: `Bearer ${orKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://fairarena.app',
+      'HTTP-Referer': 'https://fairarena.vercel.app',
       'X-Title': 'FairArena AI Gateway',
     },
     body: JSON.stringify(body),
@@ -597,7 +620,57 @@ async function callOpenRouter(
   }
 
   const data = (await res.json()) as AiGatewayResponse;
-  // Normalize the model ID in response
+  data.model = model.modelId;
+  return data;
+}
+
+// ─── Provider: Cloudflare Workers AI ────────────────────────────────────────
+
+async function callCloudflare(
+  model: ModelConfig,
+  request: AiGatewayRequest,
+  streaming: boolean,
+): Promise<ReadableStream | AiGatewayResponse> {
+  const cfToken = ENV.CLOUDFLARE_API_TOKEN;
+  const cfAccId = ENV.CLOUDFLARE_ACCOUNT_ID;
+  if (!cfToken || !cfAccId) throw new ProviderError('Cloudflare credentials not configured', 500);
+
+  const normalizedMessages = normalizeMessages(request.messages, !!model.supportsVision);
+
+  // Standard Chat Completion
+  const body: Record<string, unknown> = {
+    model: model.providerModelId,
+    messages: normalizedMessages,
+    stream: streaming,
+    temperature: request.temperature ?? 1,
+    max_tokens:
+      Math.min(request.max_tokens ?? model.maxOutputTokens, model.maxOutputTokens) || 2048,
+    stream_options: streaming ? { include_usage: true } : undefined,
+  };
+  if (request.tools && model.supportsToolCalling) {
+    body.tools = request.tools;
+    if (request.tool_choice) body.tool_choice = request.tool_choice;
+  }
+
+  const url = `https://api.cloudflare.com/client/v4/accounts/${cfAccId}/ai/v1/chat/completions`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${cfToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+    const errMsg = (err as { error?: { message?: string } }).error?.message ?? res.statusText;
+    throw new ProviderError(`Cloudflare error: ${errMsg}`, res.status);
+  }
+
+  if (streaming) return res.body as ReadableStream;
+
+  const data = (await res.json()) as AiGatewayResponse;
   data.model = model.modelId;
   return data;
 }
@@ -605,12 +678,14 @@ async function callOpenRouter(
 // ─── Provider Error ───────────────────────────────────────────────────────────
 
 export class ProviderError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-  ) {
+  public status: number;
+  public statusCode: number;
+
+  constructor(message: string, status: number = 500) {
     super(message);
     this.name = 'ProviderError';
+    this.status = status;
+    this.statusCode = status;
   }
 }
 
@@ -658,7 +733,16 @@ async function logUsage(params: {
       },
     });
   } catch (err) {
-    logger.warn('AI Gateway: failed to log usage', { error: (err as Error).message });
+    const errMsg = (err as Error).message ?? '';
+    // Silently skip if the table hasn't been migrated yet
+    if (
+      errMsg.includes('does not exist') ||
+      errMsg.includes('relation') ||
+      errMsg.includes('AiGatewayRequest')
+    ) {
+      return;
+    }
+    logger.warn('AI Gateway: failed to log usage', { error: errMsg });
   }
 }
 
@@ -806,6 +890,9 @@ export async function processAiGatewayRequest(
       case 'openrouter':
         providerResponse = await callOpenRouter(modelConfig, effectiveRequest, effectiveStreaming);
         break;
+      case 'cloudflare':
+        providerResponse = await callCloudflare(modelConfig, effectiveRequest, effectiveStreaming);
+        break;
       default:
         throw new ProviderError('Unknown provider', 500);
     }
@@ -862,6 +949,28 @@ export async function processAiGatewayRequest(
           }
         }
       }
+
+      // Send final metadata chunk
+      const finalCredits = calculateCredits(
+        modelConfig,
+        estimatedInputTokens,
+        Math.ceil(totalText.length / 4),
+      );
+      const metaChunk = {
+        choices: [],
+        usage: {
+          prompt_tokens: estimatedInputTokens,
+          completion_tokens: Math.ceil(totalText.length / 4),
+          total_tokens: estimatedInputTokens + Math.ceil(totalText.length / 4),
+        },
+        x_fairarena: {
+          credits_used: finalCredits,
+          latency_ms: Date.now() - startTime,
+          cached: false,
+        },
+      };
+      res.write(`data: ${JSON.stringify(metaChunk)}\n\n`);
+      res.write('data: [DONE]\n\n');
       res.end();
 
       const completionTokens = Math.ceil(totalText.length / 4);
@@ -921,6 +1030,26 @@ export async function processAiGatewayRequest(
       reader.releaseLock();
     }
 
+    // Send final metadata chunk
+    const finalCredits = calculateCredits(
+      modelConfig,
+      estimatedInputTokens,
+      Math.ceil(totalText.length / 4),
+    );
+    const metaChunk = {
+      choices: [],
+      usage: {
+        prompt_tokens: estimatedInputTokens,
+        completion_tokens: Math.ceil(totalText.length / 4),
+        total_tokens: estimatedInputTokens + Math.ceil(totalText.length / 4),
+      },
+      x_fairarena: {
+        credits_used: finalCredits,
+        latency_ms: Date.now() - startTime,
+        cached: false,
+      },
+    };
+    res.write(`data: ${JSON.stringify(metaChunk)}\n\n`);
     res.end();
 
     const completionTokens = Math.ceil(totalText.length / 4);
@@ -1017,57 +1146,77 @@ export async function processAiGatewayRequest(
 export async function getUserGatewayStats(userId: string, days = 30) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  const [totals, modelBreakdown, recentRequests] = await Promise.all([
-    prisma.aiGatewayRequest.aggregate({
-      where: { userId, createdAt: { gte: since } },
-      _sum: { creditsUsed: true, totalTokens: true, promptTokens: true, completionTokens: true },
-      _count: { id: true },
-      _avg: { latencyMs: true },
-    }),
-    prisma.aiGatewayRequest.groupBy({
-      by: ['model', 'provider'],
-      where: { userId, createdAt: { gte: since } },
-      _sum: { creditsUsed: true, totalTokens: true },
-      _count: { id: true },
-      orderBy: { _sum: { creditsUsed: 'desc' } },
-    }),
-    prisma.aiGatewayRequest.findMany({
-      where: { userId, createdAt: { gte: since } },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        model: true,
-        provider: true,
-        promptTokens: true,
-        completionTokens: true,
-        creditsUsed: true,
-        latencyMs: true,
-        streaming: true,
-        cached: true,
-        status: true,
-        createdAt: true,
-      },
-    }),
-  ]);
+  try {
+    const [totals, modelBreakdown, recentRequests] = await Promise.all([
+      prisma.aiGatewayRequest.aggregate({
+        where: { userId, createdAt: { gte: since } },
+        _sum: { creditsUsed: true, totalTokens: true, promptTokens: true, completionTokens: true },
+        _count: { id: true },
+        _avg: { latencyMs: true },
+      }),
+      prisma.aiGatewayRequest.groupBy({
+        by: ['model', 'provider'],
+        where: { userId, createdAt: { gte: since } },
+        _sum: { creditsUsed: true, totalTokens: true },
+        _count: { id: true },
+        orderBy: { _sum: { creditsUsed: 'desc' } },
+      }),
+      prisma.aiGatewayRequest.findMany({
+        where: { userId, createdAt: { gte: since } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          model: true,
+          provider: true,
+          promptTokens: true,
+          completionTokens: true,
+          creditsUsed: true,
+          latencyMs: true,
+          streaming: true,
+          cached: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
 
-  return {
-    period: `${days} days`,
-    summary: {
-      totalRequests: totals._count.id,
-      totalCreditsUsed: totals._sum.creditsUsed ?? 0,
-      totalTokens: totals._sum.totalTokens ?? 0,
-      promptTokens: totals._sum.promptTokens ?? 0,
-      completionTokens: totals._sum.completionTokens ?? 0,
-      averageLatencyMs: Math.round(totals._avg.latencyMs ?? 0),
-    },
-    modelBreakdown: modelBreakdown.map((m) => ({
-      model: m.model,
-      provider: m.provider,
-      requests: m._count.id,
-      creditsUsed: m._sum.creditsUsed ?? 0,
-      tokens: m._sum.totalTokens ?? 0,
-    })),
-    recentRequests,
-  };
+    return {
+      period: `${days} days`,
+      summary: {
+        totalRequests: totals._count.id,
+        totalCreditsUsed: totals._sum.creditsUsed ?? 0,
+        totalTokens: totals._sum.totalTokens ?? 0,
+        promptTokens: totals._sum.promptTokens ?? 0,
+        completionTokens: totals._sum.completionTokens ?? 0,
+        averageLatencyMs: Math.round(totals._avg.latencyMs ?? 0),
+      },
+      modelBreakdown: modelBreakdown.map((m) => ({
+        model: m.model,
+        provider: m.provider,
+        requests: m._count.id,
+        creditsUsed: m._sum.creditsUsed ?? 0,
+        tokens: m._sum.totalTokens ?? 0,
+      })),
+      recentRequests,
+    };
+  } catch (err) {
+    const errMsg = (err as Error).message ?? '';
+    if (errMsg.includes('does not exist') || errMsg.includes('AiGatewayRequest')) {
+      return {
+        period: `${days} days`,
+        summary: {
+          totalRequests: 0,
+          totalCreditsUsed: 0,
+          totalTokens: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          averageLatencyMs: 0,
+        },
+        modelBreakdown: [],
+        recentRequests: [],
+      };
+    }
+    throw err;
+  }
 }

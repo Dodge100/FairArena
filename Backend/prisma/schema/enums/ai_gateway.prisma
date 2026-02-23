@@ -5,3 +5,10 @@ enum AiGatewayStatus {
   RATE_LIMITED
   INSUFFICIENT_CREDITS
 }
+
+enum ModelStatus {
+  OPERATIONAL
+  DEGRADED
+  OUTAGE
+  UNKNOWN
+}

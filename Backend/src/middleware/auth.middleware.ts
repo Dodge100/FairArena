@@ -25,7 +25,10 @@ declare global {
 
 /**
  * Middleware to protect routes requiring authentication
- * Supports both JWT access tokens (sessions) and API Keys
+ * Supports:
+ * 1. API Keys (Authorization: Bearer fa_... or X-API-Key)
+ * 2. JWT Access Tokens (Authorization: Bearer <jwt>)
+ * 3. Session Cookies (active_session cookie) - For dashboard usage
  */
 export const protectRoute = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -54,16 +57,11 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
         });
       }
 
-      // Valid API Key - Attach user info
-      req.user = {
-        userId: validation.apiKey.userId,
-        sessionId: 'api-key', // Placeholder for API key auth
-      };
+      req.user = { userId: validation.apiKey.userId, sessionId: 'api-key' };
       req.userId = validation.apiKey.userId;
       req.apiKey = validation.apiKey;
       req.apiKeyAuth = true;
 
-      // Update last used (fire and forget)
       const ipAddress =
         (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
       updateApiKeyLastUsed(validation.apiKey.id, ipAddress).catch(() => {});
@@ -71,40 +69,48 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       return next();
     }
 
-    // 2. Fallback to Standard JWT/Session Auth
+    // 2. Try Standard JWT Auth (Authorization header)
     const token = extractBearerToken(req.headers.authorization);
+    let sessionId: string | undefined;
+    let userId: string | undefined;
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized - no token or API key provided',
-      });
-    }
-
-    // Verify the access token
-    let payload;
-    try {
-      payload = verifyAccessToken(token);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Invalid token';
-
-      if (message === 'Token expired') {
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        sessionId = payload.sessionId;
+        userId = payload.userId;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid token';
+        if (message === 'Token expired') {
+          return res
+            .status(401)
+            .json({ success: false, message: 'Token expired', code: 'TOKEN_EXPIRED' });
+        }
+        return res.status(401).json({ success: false, message: 'Invalid token' });
+      }
+    } else {
+      // 3. Fallback to Cookie-based Auth (For Dashboard Users)
+      sessionId = req.cookies?.active_session;
+      if (!sessionId) {
         return res.status(401).json({
           success: false,
-          message: 'Token expired',
-          code: 'TOKEN_EXPIRED',
+          message: 'Unauthorized - no token, API key, or session provided',
         });
       }
 
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token',
-      });
+      // Special check: Session binding token (CSRF-like protection for cookies)
+      const bindingToken = req.cookies?.[`session_${sessionId}`];
+      if (!bindingToken || !(await verifySessionBinding(sessionId, bindingToken))) {
+        return res.status(401).json({ success: false, message: 'Invalid session binding' });
+      }
     }
 
-    // Verify session is still valid in Redis
-    const session = await getSession(payload.sessionId);
+    // 4. Verify session is still valid in Redis
+    if (!sessionId) {
+      return res.status(401).json({ success: false, message: 'Authentication failed' });
+    }
 
+    const session = await getSession(sessionId);
     if (!session) {
       return res.status(401).json({
         success: false,
@@ -113,21 +119,13 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // Verify session belongs to the user in the token
-    if (session.userId !== payload.userId) {
-      logger.warn('Session user mismatch', {
-        tokenUserId: payload.userId,
-        sessionUserId: session.userId,
-      });
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid session',
-      });
+    // Verify user ownership if we have a userId from token
+    if (userId && session.userId !== userId) {
+      return res.status(401).json({ success: false, message: 'Invalid session' });
     }
 
     // Check if user is banned
     if (session.isBanned) {
-      logger.warn('Banned user attempted access', { userId: session.userId });
       return res.status(403).json({
         success: false,
         message: `Your account has been suspended. Reason: ${session.banReason || 'Violation of terms'}`,
@@ -135,27 +133,17 @@ export const protectRoute = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // Update session activity (non-blocking)
-    updateSessionActivity(payload.sessionId).catch((err) => {
-      logger.error('Failed to update session activity', { error: err.message });
-    });
-
-    // Attach user info to request
-    req.user = {
-      userId: payload.userId,
-      sessionId: payload.sessionId,
-    };
-    req.userId = payload.userId;
+    // Update activity and attach to request
+    updateSessionActivity(sessionId).catch(() => {});
+    req.user = { userId: session.userId, sessionId };
+    req.userId = session.userId;
 
     next();
   } catch (error) {
     logger.error('Auth middleware error:', {
       error: error instanceof Error ? error.message : String(error),
     });
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication failed',
-    });
+    return res.status(401).json({ success: false, message: 'Authentication failed' });
   }
 };
 
@@ -186,7 +174,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     }
 
     next();
-  } catch (error) {
+  } catch {
     // Don't fail on optional auth errors
     next();
   }

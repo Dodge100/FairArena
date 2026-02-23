@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { sendPaymentSuccessEmail } from '../../email/v1/send-mail.js';
+import { addUserCredits } from '../../services/v1/creditService.js';
 import logger from '../../utils/logger.js';
 import { createRazorpayInvoice, getInvoiceUrl } from '../../utils/razorpay-invoice.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
@@ -87,48 +88,36 @@ export const paymentVerified = inngest.createFunction(
             },
           });
 
-          // Get current credit balance
-          const lastTransaction = await tx.creditTransaction.findFirst({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-          });
-
-          const currentBalance = lastTransaction?.balance || 0;
-          const newBalance = currentBalance + credits;
-
-          // Create credit transaction record
-          const creditTx = await tx.creditTransaction.create({
-            data: {
-              userId,
-              paymentId: payment.id,
-              amount: credits,
-              balance: newBalance,
-              type: 'PURCHASE',
-              description: `Credits purchased via ${planName}`,
-              metadata: {
-                planId,
-                planName,
-                orderId,
-                paymentId,
-                amount,
-              },
+          // Add user credits using service (handles balance, transaction record, and cache invalidation)
+          const result = await addUserCredits(
+            userId,
+            credits,
+            'PURCHASE',
+            `Credits purchased via ${planName}`,
+            {
+              planId,
+              planName,
+              orderId,
+              paymentId,
+              amount,
             },
-          });
+            tx,
+          );
 
           logger.info('Payment completed and credits awarded', {
             paymentId: payment.id,
             userId,
             credits,
-            newBalance,
-            creditTxId: creditTx.id,
+            newBalance: result.newBalance,
+            creditTxId: result.transactionId,
           });
 
           return {
             success: true,
             paymentId: payment.id,
-            creditTxId: creditTx.id,
+            creditTxId: result.transactionId,
             creditsAwarded: credits,
-            newBalance,
+            newBalance: result.newBalance,
           };
         });
       } catch (error) {

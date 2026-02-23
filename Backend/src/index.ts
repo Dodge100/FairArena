@@ -40,6 +40,7 @@ import {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
+  modelStatusProbe,
   paymentOrderCreated,
   paymentVerified,
   paymentWebhookReceived,
@@ -100,6 +101,7 @@ import aiRouter from './routes/v1/ai.routes.js';
 import aiGatewayRouter from './routes/v1/aiGateway.routes.js';
 import apiKeysRouter from './routes/v1/apiKeys.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
+import couponRouter from './routes/v1/coupon.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
 import githubRouter from './routes/v1/githubRoutes.js';
@@ -218,8 +220,13 @@ app.use(
   },
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Path-aware JSON body parser: AI Gateway needs 20mb for base64 image uploads
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const isAiGateway =
+    req.path === '/v1/chat/completions' || req.path.startsWith('/api/v1/ai-gateway');
+  return express.json({ limit: isAiGateway ? '20mb' : '100kb' })(req, res, next);
+});
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 app.use(requestValidation);
 
@@ -354,6 +361,9 @@ app.use('/api/v1/plans', plansRouter);
 // Credits routes
 app.use('/api/v1/credits', creditsRouter);
 
+// Coupon routes
+app.use('/api/v1/coupons', couponRouter);
+
 // Settings routes
 app.use('/api/v1/settings', settingsRouter);
 
@@ -453,6 +463,7 @@ app.use(
       sendOAuthAppAuthorizedEmail,
       createOAuthAppAuthorizedNotification,
       logOAuthDataAccess,
+      modelStatusProbe,
     ],
   }),
 );

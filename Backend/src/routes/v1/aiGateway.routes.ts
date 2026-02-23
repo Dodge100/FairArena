@@ -14,10 +14,12 @@
 import { Router } from 'express';
 import {
   chatCompletions,
-  getGatewayBalance,
+  getBalanceHandler,
   getModel,
-  getUsage,
+  getModelStatusHandler,
+  getUsageHandler,
   listModels,
+  triggerModelProbe,
 } from '../../controllers/v1/aiGatewayController.js';
 import { apiKeyAuth } from '../../middleware/apiKey.middleware.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
@@ -67,6 +69,28 @@ async function flexAuth(
  *         description: List of available models
  */
 router.get('/models', listModels);
+
+/**
+ * @swagger
+ * /v1/models/status:
+ *   get:
+ *     summary: Model health and uptime status
+ *     description: Returns real-time model availability, latency, and 24-hour uptime percentage. No auth required.
+ *     tags: [AI Gateway]
+ */
+router.get('/models/status', getModelStatusHandler);
+
+/**
+ * @swagger
+ * /v1/models/probe:
+ *   post:
+ *     summary: Trigger a fresh probe
+ *     description: Starts a new health probe in the background. Rate-limited. Returns immediately.
+ *     tags: [AI Gateway]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/models/probe', flexAuth, triggerModelProbe);
 
 /**
  * @swagger
@@ -231,7 +255,7 @@ router.post('/chat/completions', flexAuth, chatCompletions);
  *       200:
  *         description: Usage statistics
  */
-router.get('/usage', flexAuth, getUsage);
+router.get('/usage', flexAuth, getUsageHandler);
 
 /**
  * @swagger
@@ -246,6 +270,6 @@ router.get('/usage', flexAuth, getUsage);
  *       200:
  *         description: Credit balance
  */
-router.get('/balance', flexAuth, getGatewayBalance);
+router.get('/balance', flexAuth, getBalanceHandler);
 
 export default router;

@@ -60,4 +60,5 @@ export const REDIS_KEYS = {
   AI_GW_RESPONSE_CACHE: 'aigw:cache:',
   AI_GW_RATE_LIMIT: 'aigw:ratelimit:',
   AI_GW_USER_DAILY_STATS: 'aigw:daily:',
+  USER_SUBSCRIPTION_CACHE: 'user:subscription:',
 } as const;

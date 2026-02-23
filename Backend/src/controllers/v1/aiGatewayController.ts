@@ -1,15 +1,6 @@
 /**
  * AI Gateway Controller
  * OpenAI-compatible API endpoints for FairArena's AI gateway.
- *
- * Base URL: /v1   (intentionally top-level for drop-in OpenAI SDK compatibility)
- * Also accessible at: /api/v1/ai-gateway
- *
- * Endpoints:
- *   POST /v1/chat/completions      - Chat completion (streaming + non-streaming)
- *   GET  /v1/models                - List available models
- *   GET  /v1/usage                 - User usage statistics
- *   GET  /v1/balance               - Credit balance
  */
 import { Request, Response } from 'express';
 import { z } from 'zod';
@@ -26,6 +17,7 @@ import {
   ProviderError,
 } from '../../services/v1/aiGateway.service.js';
 import { getUserCreditBalance } from '../../services/v1/creditService.js';
+import { getModelStatus, runStatusProbes } from '../../services/v1/modelStatus.service.js';
 import logger from '../../utils/logger.js';
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
@@ -126,7 +118,6 @@ export const chatCompletions = async (req: Request, res: Response): Promise<void
     );
 
     if (request.stream) {
-      // Streaming response is handled inside processAiGatewayRequest, already sent
       if (!res.headersSent) {
         res.end();
       }
@@ -146,9 +137,11 @@ export const chatCompletions = async (req: Request, res: Response): Promise<void
         502: 'provider_error',
         503: 'service_unavailable',
       };
-      const errorType = statusToErrorType[err.statusCode] ?? 'server_error';
 
-      res.status(err.statusCode).json({
+      const statusCode = err.status || err.statusCode || 500;
+      const errorType = statusToErrorType[statusCode] ?? 'server_error';
+
+      res.status(statusCode).json({
         error: {
           type: errorType,
           message: err.message,
@@ -188,6 +181,7 @@ export const listModels = (_req: Request, res: Response): void => {
     owned_by: m.provider,
     display_name: m.displayName,
     description: m.description,
+    category: m.category,
     context_window: m.contextWindow,
     max_output_tokens: m.maxOutputTokens,
     supports_streaming: m.supportsStreaming,
@@ -197,19 +191,22 @@ export const listModels = (_req: Request, res: Response): void => {
       input_credits_per_1k_tokens: m.inputCreditsPerK,
       output_credits_per_1k_tokens: m.outputCreditsPerK,
     },
-    tags: m.tags,
+    tags: m.tags ?? [],
+    rate_limits: { rpm: null, rpd: null },
   }));
+
+  // Build per-category stats
+  const stats: Record<string, number> = {};
+  for (const m of data) {
+    stats[m.category] = (stats[m.category] ?? 0) + 1;
+  }
 
   res.json({
     object: 'list',
     data,
     total: data.length,
     providers: PROVIDER_METADATA,
-    stats: {
-      groq: data.filter((m) => m.owned_by === 'groq').length,
-      gemini: data.filter((m) => m.owned_by === 'gemini').length,
-      openrouter: data.filter((m) => m.owned_by === 'openrouter').length,
-    },
+    stats,
   });
 };
 
@@ -238,51 +235,44 @@ export const getModel = (req: Request, res: Response): void => {
     owned_by: model.provider,
     display_name: model.displayName,
     description: model.description,
+    category: model.category,
     context_window: model.contextWindow,
     max_output_tokens: model.maxOutputTokens,
     supports_streaming: model.supportsStreaming,
     supports_vision: model.supportsVision,
     supports_tool_calling: model.supportsToolCalling,
-    is_active: model.isActive,
+    isActive: model.isActive,
     pricing: {
       input_credits_per_1k_tokens: model.inputCreditsPerK,
       output_credits_per_1k_tokens: model.outputCreditsPerK,
-      is_free: model.inputCreditsPerK === 0 && model.outputCreditsPerK === 0,
     },
-    tags: model.tags,
   });
 };
 
 // ─── GET /usage ───────────────────────────────────────────────────────────────
 
-export const getUsage = async (req: Request, res: Response): Promise<void> => {
-  const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+export const getUsageHandler = async (req: Request, res: Response): Promise<void> => {
   const userId = req.userId!;
+  const days = parseInt(req.query.days as string) || 30;
 
   try {
     const stats = await getUserGatewayStats(userId, days);
-    res.json({
-      success: true,
-      data: stats,
-    });
+    res.json({ success: true, data: stats });
   } catch (err) {
-    logger.error('AI Gateway: failed to get usage stats', {
-      userId,
-      error: (err as Error).message,
-    });
+    logger.error('AI Gateway: failed to get usage', { userId, error: (err as Error).message });
     res.status(500).json({
       error: {
         type: 'server_error',
-        message: 'Failed to retrieve usage statistics',
+        message: 'Failed to retrieve usage stats',
         code: 'internal_error',
       },
     });
   }
 };
 
-// ─── GET /balance ─────────────────────────────────────────────────────────────
+// ─── GET /balance ────────────────────────────────────────────────────────────
 
-export const getGatewayBalance = async (req: Request, res: Response): Promise<void> => {
+export const getBalanceHandler = async (req: Request, res: Response): Promise<void> => {
   const userId = req.userId!;
   try {
     const balance = await getUserCreditBalance(userId);
@@ -292,7 +282,6 @@ export const getGatewayBalance = async (req: Request, res: Response): Promise<vo
         credits: balance,
         userId,
         note: 'Credits are consumed per API request based on model pricing.',
-        pricing_guide: 'https://fairarena.app/docs/ai-gateway/pricing',
       },
     });
   } catch (err) {
@@ -303,6 +292,38 @@ export const getGatewayBalance = async (req: Request, res: Response): Promise<vo
         message: 'Failed to retrieve balance',
         code: 'internal_error',
       },
+    });
+  }
+};
+
+// ─── GET /models/status ───────────────────────────────────────────────────────
+
+export const getModelStatusHandler = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    // getModelStatus() already returns { success, data: { models, probeRanAt, incidentHistory } }
+    // Forwarding directly avoids double-nesting the response
+    const snapshot = await getModelStatus();
+    res.json(snapshot);
+  } catch (err) {
+    logger.error('AI Gateway: failed to get model status', { error: (err as Error).message });
+    res.status(500).json({
+      error: { type: 'server_error', message: 'Failed to retrieve status', code: 'internal_error' },
+    });
+  }
+};
+
+// ─── POST /models/probe ───────────────────────────────────────────────────────
+
+export const triggerModelProbe = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    void runStatusProbes().catch((err) =>
+      logger.error('Model status probe failed', { error: (err as Error).message }),
+    );
+    res.json({ success: true, message: 'Probe started in background.' });
+  } catch (err) {
+    logger.error('AI Gateway: failed to trigger probe', { error: (err as Error).message });
+    res.status(500).json({
+      error: { type: 'server_error', message: 'Failed to start probe', code: 'internal_error' },
     });
   }
 };

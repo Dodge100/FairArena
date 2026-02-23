@@ -80,3 +80,6 @@ export {
 
 // Auth stream functions
 export { emitSessionRevoked, scheduleTokenRefresh } from './authStream.js';
+
+// AI Gateway
+export { modelStatusProbe } from './modelStatusProbe.js';

@@ -313,4 +313,6 @@ export const ENV = {
   // AI Gateway Provider Keys
   GROQ_API_KEY: getEnv('GROQ_API_KEY', ''),
   OPENROUTER_API_KEY: getEnv('OPENROUTER_API_KEY', ''),
+  CLOUDFLARE_API_TOKEN: getEnv('CLOUDFLARE_API_TOKEN', ''),
+  CLOUDFLARE_ACCOUNT_ID: getEnv('CLOUDFLARE_ACCOUNT_ID', ''),
 };

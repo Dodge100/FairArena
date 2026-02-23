@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { apiRequest } from '@/lib/apiClient';
@@ -25,6 +26,7 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
+  Ticket as TicketIcon,
   TrendingDown,
   TrendingUp,
   Zap,
@@ -114,6 +116,8 @@ const CreditsPage = () => {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(2); // Default to middle plan
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const [isRefreshing, setIsRefreshing] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -278,6 +282,41 @@ const CreditsPage = () => {
     }
   }, [selectedPlan, isPurchasing, queryClient]);
 
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+
+    setIsRedeeming(true);
+    try {
+      const result = await apiRequest<{
+        success: boolean;
+        message: string;
+        data: { success: boolean; credits: number; planId?: string; durationDays?: number };
+      }>(`${import.meta.env.VITE_API_BASE_URL}/api/v1/coupons/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode }),
+      });
+
+      if (result.success) {
+        toast.success(result.message || 'Coupon redeemed successfully!');
+        setCouponCode('');
+        // Invalidate queries to refresh balance and history
+        queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['credits-history'] });
+        if (result.data.planId) {
+          queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
+        }
+      }
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to redeem coupon');
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
+
   // ── Payment Details ───────────────────────────────────────────────────────────
 
   const fetchPaymentDetails = useCallback((transaction: CreditTransaction) => {
@@ -302,6 +341,7 @@ const CreditsPage = () => {
       case 'PURCHASE': return <CreditCard className="h-4 w-4" />;
       case 'REFUND': return <RefreshCw className="h-4 w-4" />;
       case 'BONUS': return <Gift className="h-4 w-4" />;
+      case 'COUPON_REDEMPTION': return <TicketIcon className="h-4 w-4" />;
       case 'DEDUCTION': return <TrendingDown className="h-4 w-4" />;
       default: return amount > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />;
     }
@@ -525,6 +565,49 @@ const CreditsPage = () => {
                   </p>
                 </>
               )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Coupon Redemption ───────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold tracking-tight">Redeem Coupon</h2>
+          </div>
+          <Card className="border shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Enter coupon code (e.g. WELCOME200)"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="h-12 uppercase"
+                    disabled={isRedeeming}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Enter a valid coupon code to get credits or premium subscriptions.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleRedeemCoupon}
+                  disabled={isRedeeming || !couponCode.trim()}
+                  className="h-12 px-8 font-semibold"
+                  variant="secondary"
+                >
+                  {isRedeeming ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Redeeming...
+                    </>
+                  ) : (
+                    <>
+                      <TicketIcon className="mr-2 h-4 w-4" />
+                      Redeem
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

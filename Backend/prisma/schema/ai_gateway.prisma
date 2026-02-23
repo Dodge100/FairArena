@@ -30,3 +30,42 @@ model AiGatewayRequest {
   @@index([userId, createdAt])
   @@index([userId, model])
 }
+
+model AiModelStatus {
+  modelId           String   @id
+  displayName       String
+  provider          String
+  category          String
+  status            ModelStatus @default(UNKNOWN)
+  latencyMs         Int?
+  uptimePercent     Float    @default(100)
+  lastCheckedAt     DateTime?
+  errorMessage      String?
+  updatedAt         DateTime @updatedAt
+
+  @@index([provider])
+  @@index([status])
+}
+
+model AiModelIncident {
+  id                String   @id @default(cuid())
+  provider          String
+  startedAt         DateTime @default(now())
+  resolvedAt        DateTime?
+  errorMessage      String
+
+  @@index([provider])
+  @@index([startedAt])
+}
+
+model AiModelHistory {
+  id                String   @id @default(cuid())
+  modelId           String
+  ok                Boolean
+  latencyMs         Int?
+  error             String?
+  createdAt         DateTime @default(now())
+
+  @@index([modelId])
+  @@index([createdAt])
+}
