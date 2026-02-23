@@ -99,6 +99,10 @@
         {
           "title": "Live Command Center",
           "desc": "Monitor submissions, track judging progress, and watch the leaderboard update in real-time. Manage everything from a single, intuitive dashboard."
+        },
+        {
+          "title": "Universal AI Gateway",
+          "desc": "A unified, OpenAI-compatible API to access the world's best models (Groq, Gemini, and more) with built-in credit management and zero-fee error protection."
         }
       ]
     },
@@ -188,6 +192,12 @@
           "title": "Zero Confusion, Zero Errors",
           "desc": "No more spreadsheets. No more manual calculations. FairArena automates everything.",
           "iconName": "CheckCircle2"
+        },
+        {
+          "id": 7,
+          "title": "Unified AI Gateway",
+          "desc": "Access frontier models from Groq, Gemini, and Cloudflare via one unified API. Built-in caching, credit management, and tool-emulation included.",
+          "iconName": "Cpu"
         }
       ]
     }
@@ -204,7 +214,8 @@
       "security": "Security & Privacy",
       "pricing": "Pricing & Billing",
       "technical": "Technical",
-      "support": "Support"
+      "support": "Support",
+      "aiGateway": "AI Gateway"
     },
     "noResults": "No questions found matching your search.",
     "contact": {
@@ -307,6 +318,31 @@
         "category": "technical",
         "q": "Do you have a mobile app?",
         "a": "Currently, we offer a fully responsive web application that works great on mobile devices. Native iOS and Android apps are on our roadmap for 2026."
+      },
+      {
+        "category": "aiGateway",
+        "q": "What is the FairArena AI Gateway?",
+        "a": "The AI Gateway is a unified, OpenAI-compatible interface that allows developers to access frontier models from multiple providers (Groq, Gemini, Cloudflare, etc.) using a single API key and baseURL. It handles routing, billing, and advanced features like tool-emulation automatically."
+      },
+      {
+        "category": "aiGateway",
+        "q": "How am I billed for AI Gateway usage?",
+        "a": "Usage is billed in FairArena Credits. We only charge for successful responses (no fees for 5xx errors). System prompt tokens are included in the billing as providers charge for them. You can track your real-time consumption in the Gateway Dashboard."
+      },
+      {
+        "category": "aiGateway",
+        "q": "Does the gateway support tool calling and vision?",
+        "a": "Yes! Many models support native vision (like Gemini 2.5 Flash) and tool calling. For models that don't natively support tool calling, FairArena provides automatic fallback emulation, ensuring your function-calling logic works across all supported models."
+      },
+      {
+        "category": "aiGateway",
+        "q": "Is there a caching mechanism?",
+        "a": "Yes, we implement high-performance semantic caching. Identical non-streaming requests are cached for 5 minutes by default. Cached responses use 0 credits, helping you save on costs during development and high-traffic periods."
+      },
+      {
+        "category": "aiGateway",
+        "q": "Can I use the OpenAI SDK with FairArena?",
+        "a": "Absolutely. Our gateway is 100% compatible with the OpenAI official SDKs. Simply set your API key and change the baseURL to https://api.fairarena.app/v1 (or your local environment URL) to start making requests."
       },
       {
         "category": "support",

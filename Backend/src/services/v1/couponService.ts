@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../../config/database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
+import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 import { addUserCredits } from './creditService.js';
 
@@ -159,6 +160,37 @@ export async function redeemCoupon(
               userId,
             });
           }
+        }
+
+        // 10. Send confirmation email
+        try {
+          const user = await tx.user.findUnique({
+            where: { userId },
+            select: { email: true, firstName: true, lastName: true },
+          });
+
+          if (user) {
+            await inngest.send({
+              name: 'email.send',
+              data: {
+                to: user.email,
+                subject: 'Coupon Redeemed Successfully! - FairArena',
+                template: 'COUPON_REDEEMED',
+                templateData: {
+                  userName: `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`,
+                  couponCode: code,
+                  creditsAwarded: coupon.credits,
+                  planName: plan?.displayName || plan?.name,
+                  durationDays: coupon.durationDays,
+                },
+              },
+            });
+          }
+        } catch (emailError) {
+          logger.warn('Failed to trigger coupon redemption confirmation email', {
+            userId,
+            error: emailError instanceof Error ? emailError.message : String(emailError),
+          });
         }
 
         return {

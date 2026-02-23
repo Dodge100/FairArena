@@ -401,6 +401,7 @@ Comprehensive documentation available in `docs/`:
 | Document                                                    | Description                                  |
 | ----------------------------------------------------------- | -------------------------------------------- |
 | [📐 **System Architecture**](./docs/SYSTEM_ARCHITECTURE.md) | Complete architecture with Mermaid diagrams  |
+| [🤖 **AI Gateway**](../docs/ai-gateway.md)                  | Models, caching, and credit management       |
 | [🔄 **Data Flow**](./docs/DATA_FLOW.md)                     | Request lifecycle, workflows, state machines |
 | [📡 **API Reference**](./docs/API_REFERENCE.md)             | Full endpoint documentation with examples    |
 | [💾 **Database Design**](./docs/DATABASE_DESIGN.md)         | Schema, ERD, indexing, retention policies    |

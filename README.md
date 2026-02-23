@@ -180,6 +180,7 @@ docker compose down
 
 | Document                               | Location                                                                     |
 | -------------------------------------- | ---------------------------------------------------------------------------- |
+| **AI Gateway Docs**                    | [docs/ai-gateway.md](./docs/ai-gateway.md)                                   |
 | **Frontend README**                    | [Frontend/README.md](./Frontend/README.md)                                   |
 | **Backend README**                     | [Backend/README.md](./Backend/README.md)                                     |
 | **API Reference**                      | [Backend/docs/API_REFERENCE.md](./Backend/docs/API_REFERENCE.md)             |

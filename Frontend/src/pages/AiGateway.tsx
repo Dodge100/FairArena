@@ -1439,91 +1439,139 @@ const chat = await client.chat.completions.create({
 
 console.log(chat.choices[0].message.content);`;
 
-    const visionExample = `// Vision example (image-capable models only)
+    const metadataExample = `{
+  "id": "chatcmpl-...",
+  "choices": [...],
+  "usage": { "total_tokens": 42, ... },
+  "x_fairarena": {
+    "credits_used": 1,
+    "cached": false,
+    "latency_ms": 450,
+    "model_info": { "provider": "groq", "category": "balanced" }
+  }
+}`;
+
+    const toolExample = `// Tool calling is automatically emulated for all models
 const chat = await client.chat.completions.create({
-  model: "gemini/gemini-2.5-flash",
-  messages: [{
-    role: "user",
-    content: [
-      { type: "text", text: "What's in this image?" },
-      { type: "image_url", image_url: { url: "data:image/jpeg;base64,..." } }
-    ]
-  }],
+  model: "${model}",
+  messages: [{ role: "user", content: "What's the weather in London?" }],
+  tools: [{
+    type: "function",
+    function: {
+      name: "get_weather",
+      parameters: { ... }
+    }
+  }]
 });`;
 
     return (
-        <div className="space-y-8 max-w-3xl">
-            <div className="space-y-3">
-                <div className="flex items-center gap-2"><Key className="h-4 w-4 text-primary" /><h2 className="font-semibold">Authentication</h2></div>
-                <p className="text-sm text-muted-foreground">Use your FairArena API key as a Bearer token. In-browser requests use your session cookie automatically.</p>
-                {!hasKey ? (
-                    <Card className="border border-dashed"><CardContent className="p-4 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-primary/10"><Key className="h-4 w-4 text-primary" /></div>
-                            <div><p className="text-sm font-medium">No API keys yet</p><p className="text-xs text-muted-foreground">Create one to access the gateway programmatically</p></div>
-                        </div>
-                        <Button size="sm" variant="outline" onClick={() => navigate('/dashboard/account-settings')}>
+        <div className="space-y-10 max-w-4xl pb-10">
+            {/* ── Auth & Base URL ── */}
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2"><Key className="h-4 w-4 text-primary" /><h2 className="font-semibold">Authentication</h2></div>
+                    <p className="text-sm text-muted-foreground">Use your FairArena API key as a Bearer token. Generate keys in your account settings.</p>
+                    {!hasKey ? (
+                        <Button size="sm" variant="outline" className="w-full h-10 border-dashed" onClick={() => navigate('/dashboard/account-settings')}>
                             Create API Key <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Button>
-                    </CardContent></Card>
-                ) : (
-                    <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
-                        <Key className="h-4 w-4 text-primary shrink-0" />
-                        <code className="text-sm font-mono flex-1">{showKey ? apiKeys[0].prefix + '...' : '••••••••••••••••'}</code>
-                        <button onClick={() => setShowKey(v => !v)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
-                            {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <div className="space-y-3">
-                <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /><h2 className="font-semibold">Base URL</h2></div>
-                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 font-mono text-sm">
-                    <span className="flex-1 text-muted-foreground">{API_BASE}/v1</span>
-                    <CopyButton text={`${API_BASE}/v1`} />
+                    ) : (
+                        <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                            <Key className="h-4 w-4 text-primary shrink-0" />
+                            <code className="text-xs font-mono flex-1">{showKey ? apiKeys[0].prefix + '...' : '••••••••••••••••'}</code>
+                            <button onClick={() => setShowKey(v => !v)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                                {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </button>
+                        </div>
+                    )}
                 </div>
-                <p className="text-xs text-muted-foreground">Drop-in compatible with the <strong>OpenAI SDK</strong> — just change <code className="bg-muted px-1 rounded">baseURL</code>.</p>
+
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /><h2 className="font-semibold">Base URL</h2></div>
+                    <p className="text-sm text-muted-foreground">Drop-in compatible with the OpenAI SDK. Simply override the <code className="bg-muted px-1 rounded">baseURL</code>.</p>
+                    <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30 font-mono text-xs">
+                        <span className="flex-1 text-muted-foreground">{API_BASE}/v1</span>
+                        <CopyButton text={`${API_BASE}/v1`} />
+                    </div>
+                </div>
             </div>
 
-            <div className="p-4 rounded-lg border bg-amber-500/5 border-amber-500/20 text-sm space-y-1">
-                <p className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-2"><Info className="h-4 w-4" />Billing</p>
-                <ul className="space-y-1 text-xs text-muted-foreground list-disc pl-4">
-                    <li>Credits are charged on <strong>successful responses only</strong> — no charge on errors.</li>
-                    <li>System prompt tokens <strong>are billed</strong> (providers charge us for them).</li>
-                    <li>Cached responses use <strong>0 credits</strong>.</li>
-                    <li>All token counts include input + output.</li>
-                </ul>
+            {/* ── Quick Start ── */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 border-b pb-2"><Code2 className="h-4 w-4 text-primary" /><h2 className="font-semibold">Quick Start</h2></div>
+                <Tabs defaultValue="curl" className="w-full">
+                    <TabsList className="bg-muted/50 mb-4">
+                        <TabsTrigger value="curl" className="text-xs">cURL</TabsTrigger>
+                        <TabsTrigger value="node" className="text-xs">Node.js</TabsTrigger>
+                        <TabsTrigger value="tools" className="text-xs">Tools</TabsTrigger>
+                        <TabsTrigger value="meta" className="text-xs">Metadata</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="curl" className="mt-0">
+                        <CodeBlock code={curlExample} lang="bash" />
+                    </TabsContent>
+                    <TabsContent value="node" className="mt-0">
+                        <CodeBlock code={jsExample} lang="javascript" />
+                    </TabsContent>
+                    <TabsContent value="tools" className="mt-0">
+                        <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground">FairArena provides <strong>automatic fallback emulation</strong> for tool-calling on models that don't natively support it.</p>
+                            <CodeBlock code={toolExample} lang="javascript" />
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="meta" className="mt-0">
+                        <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground">Every response includes a <code className="bg-muted px-1 rounded">x_fairarena</code> object with billing and latentcy data.</p>
+                            <CodeBlock code={metadataExample} lang="json" />
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
 
-            <div className="space-y-4">
-                <div className="flex items-center gap-2"><Code2 className="h-4 w-4 text-primary" /><h2 className="font-semibold">Quick Start</h2></div>
-                <div><p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">cURL</p><CodeBlock code={curlExample} lang="bash" /></div>
-                <div><p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">JavaScript / TypeScript</p><CodeBlock code={jsExample} lang="typescript" /></div>
-                <div><p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Vision / Image Input</p><CodeBlock code={visionExample} lang="typescript" /></div>
+            {/* ── Billing & Protection ── */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 border-b pb-2"><CircleDollarSign className="h-4 w-4 text-primary" /><h2 className="font-semibold">Credit Management</h2></div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <Card className="border bg-primary/[0.02] border-primary/10">
+                        <CardContent className="p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary"><ShieldCheck className="h-3.5 w-3.5" /> Zero-Fee Errors</div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">Credits are <strong>only charged</strong> for successful responses. If a provider (Groq, Gemini, etc.) fails, your balance stays the same.</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="border bg-blue-500/[0.02] border-blue-500/10">
+                        <CardContent className="p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-500"><Zap className="h-3.5 w-3.5" /> Free Caching</div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">Identical requests are cached (via semantic hash) for 5 minutes. <strong>Cached responses cost 0 credits.</strong></p>
+                        </CardContent>
+                    </Card>
+                    <Card className="border bg-orange-500/[0.02] border-orange-500/10">
+                        <CardContent className="p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-500"><AlertTriangle className="h-3.5 w-3.5" /> Low Limit Alert</div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">Recieve an email when your balance dips below <strong>500 credits</strong>. This shield ensures you never run out unexpectedly.</p>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
-            <div className="space-y-3">
-                <div className="flex items-center gap-2"><Terminal className="h-4 w-4 text-primary" /><h2 className="font-semibold">Endpoints</h2></div>
-                <div className="rounded-lg border overflow-hidden">
+            {/* ── Endpoints ── */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 border-b pb-2"><Terminal className="h-4 w-4 text-primary" /><h2 className="font-semibold">Endpoint Reference</h2></div>
+                <div className="rounded-xl border overflow-hidden bg-card">
                     <table className="w-full text-sm">
                         <thead><tr className="border-b bg-muted/30">
-                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Method</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Path</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Description</th>
+                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted-foreground/70">Method</th>
+                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted-foreground/70">Endpoint</th>
+                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-muted-foreground/70">Description</th>
                         </tr></thead>
                         <tbody className="divide-y">
                             {[
-                                { method: 'POST', path: '/v1/chat/completions', desc: 'Chat completions (streaming + non-streaming, vision)' },
-                                { method: 'GET', path: '/v1/models', desc: 'List available models' },
-                                { method: 'GET', path: '/v1/models/:id', desc: 'Get model details' },
-                                { method: 'GET', path: '/api/v1/ai-gateway/usage', desc: 'Usage statistics' },
-                                { method: 'GET', path: '/api/v1/ai-gateway/balance', desc: 'Current credit balance' },
+                                { method: 'POST', path: '/v1/chat/completions', desc: 'Standard completions, streaming, vision, and tool-calling.' },
+                                { method: 'GET', path: '/v1/models', desc: 'List all active models with their pricing and features.' },
+                                { method: 'GET', path: '/v1/models/:id', desc: 'Retrieve detailed config for a specific model ID.' },
                             ].map(({ method, path, desc }) => (
-                                <tr key={path} className="hover:bg-muted/20">
-                                    <td className="px-4 py-2.5"><Badge variant="outline" className={cn('text-[10px] font-mono font-bold', method === 'POST' ? 'text-green-600' : 'text-blue-600')}>{method}</Badge></td>
-                                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{path}</td>
-                                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{desc}</td>
+                                <tr key={path} className="hover:bg-muted/10 transition-colors group">
+                                    <td className="px-4 py-3.5"><Badge variant="outline" className={cn('text-[10px] font-mono font-bold border-none', method === 'POST' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-blue-500/10 text-blue-600')}>{method}</Badge></td>
+                                    <td className="px-4 py-3.5 font-mono text-xs text-foreground/80 group-hover:text-primary transition-colors">{path}</td>
+                                    <td className="px-4 py-3.5 text-xs text-muted-foreground leading-relaxed">{desc}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -1532,20 +1580,20 @@ const chat = await client.chat.completions.create({
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
-                <Card className="border"><CardContent className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold"><Flame className="h-4 w-4 text-orange-500" />Rate Limits</div>
-                    <ul className="space-y-1 text-xs text-muted-foreground">
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />60 requests / minute per user</li>
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />Sliding window — no burst penalty</li>
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />429 status when exceeded</li>
+                <Card className="border shadow-sm group hover:border-primary/20 transition-all"><CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold"><Flame className="h-4 w-4 text-orange-500" />Concurrency & Rate Limits</div>
+                    <ul className="space-y-1.5 text-xs text-muted-foreground">
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />60 requests / minute per user (Sliding Window)</li>
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />4,096 tokens max output (per model default)</li>
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />Contact support for Enterprise throughput upgrades</li>
                     </ul>
                 </CardContent></Card>
-                <Card className="border"><CardContent className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold"><TrendingDown className="h-4 w-4 text-primary" />Caching</div>
-                    <ul className="space-y-1 text-xs text-muted-foreground">
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />Identical non-streaming requests cached 5 min</li>
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />Cached responses use 0 credits</li>
-                        <li className="flex items-center gap-1.5"><ChevronRight className="h-3 w-3 shrink-0" />Disable with <code className="bg-muted px-1 rounded">"cache": false</code></li>
+                <Card className="border shadow-sm group hover:border-primary/20 transition-all"><CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold"><TrendingDown className="h-4 w-4 text-primary" />Advanced Configuration</div>
+                    <ul className="space-y-1.5 text-xs text-muted-foreground">
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />Set <code className="bg-muted px-1 rounded">"cache": false</code> to force live inference</li>
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />Set <code className="bg-muted px-1 rounded">"cache_ttl": 3600</code> for extended caching</li>
+                        <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5" />Enable <code className="bg-muted px-1 rounded">"stream": true</code> for lowest perceived latency</li>
                     </ul>
                 </CardContent></Card>
             </div>
