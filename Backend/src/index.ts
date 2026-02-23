@@ -21,6 +21,7 @@ import {
   createLog,
   createOAuthAppAuthorizedNotification,
   createOrganizationAuditLog,
+  createOrganizationRoles,
   createReport,
   createTeamAuditLog,
   createTeamFunction,
@@ -104,6 +105,7 @@ import authRouter from './routes/v1/auth.routes.js';
 import couponRouter from './routes/v1/coupon.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
+import gamificationRouter from './routes/v1/gamification.routes.js';
 import githubRouter from './routes/v1/githubRoutes.js';
 import hackathonRouter from './routes/v1/hackathon.routes.js';
 import mfaRouter from './routes/v1/mfa.routes.js';
@@ -361,6 +363,9 @@ app.use('/api/v1/plans', plansRouter);
 // Credits routes
 app.use('/api/v1/credits', creditsRouter);
 
+// Gamification routes
+app.use('/api/v1/gamification', gamificationRouter);
+
 // Coupon routes
 app.use('/api/v1/coupons', couponRouter);
 
@@ -430,6 +435,7 @@ app.use(
       processFeedbackSubmission,
       supportRequestCreated,
       createOrganizationAuditLog,
+      createOrganizationRoles,
       sendTeamInviteEmail,
       createTeamAuditLog,
       processSingleTeamInvite,

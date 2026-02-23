@@ -1,6 +1,7 @@
 export { sendOtpForAccountSettings } from './accountSettingsSendOtp.js';
 export { createLog } from './createLog.js';
 export { createOrganizationAuditLog } from './createOrganizationAuditLog.js';
+export { createOrganizationRoles } from './createOrganizationRoles.js';
 export { createReport } from './createReport.js';
 export { creditsSendSmsOtp } from './creditsSmsOtp.js';
 export { creditsSendVoiceOtp } from './creditsVoiceOtp.js';

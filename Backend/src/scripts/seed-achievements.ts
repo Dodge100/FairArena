@@ -1,0 +1,225 @@
+/**
+ * Seed default achievements into the database.
+ * Run once: npx tsx src/scripts/seed-achievements.ts
+ * Safe to re-run — uses upsert.
+ */
+
+import { prisma } from '../config/database.js';
+
+const DEFAULT_ACHIEVEMENTS = [
+  {
+    achievementKey: 'early_adopter',
+    title: 'Early Adopter',
+    description: 'You joined FairArena — welcome aboard!',
+    howToReach: 'Automatically granted to all users',
+    icon: '🚀',
+    rarity: 'COMMON' as const,
+    category: 'general',
+    thresholdType: 'always',
+    thresholdValue: 0,
+    xpReward: 10,
+    sortOrder: 1,
+  },
+  {
+    achievementKey: 'verified_hero',
+    title: 'Verified Hero',
+    description: 'Secured your account with phone verification.',
+    howToReach: 'Verify your phone number to unlock',
+    icon: '🛡️',
+    rarity: 'COMMON' as const,
+    category: 'account',
+    thresholdType: 'phone_verified',
+    thresholdValue: 1,
+    xpReward: 15,
+    sortOrder: 2,
+  },
+  {
+    achievementKey: 'first_buy',
+    title: 'First Purchase',
+    description: 'You made your very first credit purchase!',
+    howToReach: 'Make your first credit purchase',
+    icon: '💳',
+    rarity: 'COMMON' as const,
+    category: 'purchase',
+    thresholdType: 'purchase_count',
+    thresholdValue: 1,
+    xpReward: 50,
+    sortOrder: 3,
+  },
+  {
+    achievementKey: 'triple_threat',
+    title: 'Triple Threat',
+    description: 'Three purchases down — you mean business!',
+    howToReach: 'Make 3 credit purchases',
+    icon: '⚡',
+    rarity: 'RARE' as const,
+    category: 'purchase',
+    thresholdType: 'purchase_count',
+    thresholdValue: 3,
+    xpReward: 75,
+    sortOrder: 4,
+  },
+  {
+    achievementKey: 'power_buyer',
+    title: 'Power Buyer',
+    description: 'Five purchases strong. The AI loves you.',
+    howToReach: 'Make 5 credit purchases',
+    icon: '⚡⚡',
+    rarity: 'RARE' as const,
+    category: 'purchase',
+    thresholdType: 'purchase_count',
+    thresholdValue: 5,
+    xpReward: 100,
+    sortOrder: 5,
+  },
+  {
+    achievementKey: 'whale',
+    title: 'Whale 🐳',
+    description: 'Ten purchases! You are a true FairArena whale.',
+    howToReach: 'Make 10 credit purchases',
+    icon: '🐳',
+    rarity: 'EPIC' as const,
+    category: 'purchase',
+    thresholdType: 'purchase_count',
+    thresholdValue: 10,
+    xpReward: 150,
+    sortOrder: 6,
+  },
+  {
+    achievementKey: 'spender_500',
+    title: 'High Roller',
+    description: 'Spent ₹500+ — you are living the high life.',
+    howToReach: 'Spend a total of ₹500 on credits',
+    icon: '💰',
+    rarity: 'RARE' as const,
+    category: 'spend',
+    thresholdType: 'total_spent_paise',
+    thresholdValue: 50_000,
+    xpReward: 75,
+    sortOrder: 7,
+  },
+  {
+    achievementKey: 'spender_2000',
+    title: 'VIP',
+    description: 'Over ₹2,000 invested — you are our VIP.',
+    howToReach: 'Spend a total of ₹2,000 on credits',
+    icon: '👑',
+    rarity: 'EPIC' as const,
+    category: 'spend',
+    thresholdType: 'total_spent_paise',
+    thresholdValue: 200_000,
+    xpReward: 150,
+    sortOrder: 8,
+  },
+  {
+    achievementKey: 'spender_5000',
+    title: 'Legend Spender',
+    description: 'You have invested ₹5,000+. A true legend.',
+    howToReach: 'Spend a total of ₹5,000 on credits',
+    icon: '🏆',
+    rarity: 'LEGENDARY' as const,
+    category: 'spend',
+    thresholdType: 'total_spent_paise',
+    thresholdValue: 500_000,
+    xpReward: 300,
+    sortOrder: 9,
+  },
+  {
+    achievementKey: 'subscriber',
+    title: 'Subscriber ⭐',
+    description: 'You activated a subscription — the real deal!',
+    howToReach: 'Activate any subscription plan',
+    icon: '⭐',
+    rarity: 'RARE' as const,
+    category: 'subscription',
+    thresholdType: 'subscription_active',
+    thresholdValue: 1,
+    xpReward: 100,
+    sortOrder: 10,
+  },
+  {
+    achievementKey: 'streak_3',
+    title: 'On Fire 🔥',
+    description: '3 days straight — the momentum is real!',
+    howToReach: 'Log in for 3 consecutive days',
+    icon: '🔥',
+    rarity: 'COMMON' as const,
+    category: 'streak',
+    thresholdType: 'login_streak',
+    thresholdValue: 3,
+    xpReward: 30,
+    sortOrder: 11,
+  },
+  {
+    achievementKey: 'streak_7',
+    title: 'Week Warrior',
+    description: 'A full week of logins — disciplined!',
+    howToReach: 'Log in for 7 consecutive days',
+    icon: '🗡️',
+    rarity: 'RARE' as const,
+    category: 'streak',
+    thresholdType: 'login_streak',
+    thresholdValue: 7,
+    xpReward: 70,
+    sortOrder: 12,
+  },
+  {
+    achievementKey: 'streak_30',
+    title: 'Iron Will',
+    description: '30-day login streak. Absolutely unreal.',
+    howToReach: 'Log in for 30 consecutive days',
+    icon: '🧠',
+    rarity: 'EPIC' as const,
+    category: 'streak',
+    thresholdType: 'login_streak',
+    thresholdValue: 30,
+    xpReward: 200,
+    sortOrder: 13,
+  },
+  {
+    achievementKey: 'coupon_master',
+    title: 'Coupon Wizard',
+    description: 'Smart move — redeemed a coupon code!',
+    howToReach: 'Redeem at least one coupon code',
+    icon: '🎫',
+    rarity: 'COMMON' as const,
+    category: 'general',
+    thresholdType: 'coupon_count',
+    thresholdValue: 1,
+    xpReward: 25,
+    sortOrder: 14,
+  },
+];
+
+async function seed() {
+  console.log('Seeding achievements...');
+
+  for (const ach of DEFAULT_ACHIEVEMENTS) {
+    await prisma.achievement.upsert({
+      where: { achievementKey: ach.achievementKey },
+      update: {
+        title: ach.title,
+        description: ach.description,
+        howToReach: ach.howToReach,
+        icon: ach.icon,
+        rarity: ach.rarity,
+        category: ach.category,
+        thresholdType: ach.thresholdType,
+        thresholdValue: ach.thresholdValue,
+        xpReward: ach.xpReward,
+        sortOrder: ach.sortOrder,
+      },
+      create: ach,
+    });
+    console.log(`  ✓ ${ach.title}`);
+  }
+
+  console.log(`\nDone! Seeded ${DEFAULT_ACHIEVEMENTS.length} achievements.`);
+  await prisma.$disconnect();
+}
+
+seed().catch((e) => {
+  console.error(e);
+  prisma.$disconnect();
+  process.exit(1);
+});

@@ -323,7 +323,7 @@ body {
 }
 
 /* Fix ReCAPTCHA interaction issues (unresponsive image modal) when opened inside a Radix UI Dialog */
-body > div[style*="z-index"][style*="position: absolute"] {
+body > div[style*='z-index'][style*='position: absolute'] {
   pointer-events: auto !important;
 }
 
@@ -377,4 +377,16 @@ body > div[style*="z-index"][style*="position: absolute"] {
 
 .border-b-3 {
   border-bottom-width: 3px;
+}
+
+/* Gamification — confetti burst */
+@keyframes confetti {
+  0% {
+    transform: translate(-50%, -50%) translate(0px, 0px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) rotate(720deg);
+    opacity: 0;
+  }
 }

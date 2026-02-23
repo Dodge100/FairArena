@@ -1,0 +1,65 @@
+
+// ─── Gamification ─────────────────────────────────────────────────────────────
+
+/// Admin-configurable achievement catalogue stored in the DB.
+/// Admins can create / edit / reorder achievements without a deploy.
+model Achievement {
+  id             String            @id @default(cuid())
+  achievementKey String            @unique // e.g. "first_buy", "streak_7"
+  title          String
+  description    String            // shown to users
+  howToReach     String            // e.g. "Make your first credit purchase"
+  icon           String            // emoji or icon name
+  rarity         AchievementRarity @default(COMMON)
+  category       String            @default("general") // "purchase", "streak", "subscription" …
+  sortOrder      Int               @default(0)
+  isActive       Boolean           @default(true)
+  // Threshold values — controller checks these against user stats
+  thresholdType  String            // "purchase_count" | "total_spent_paise" | "login_streak" | "boolean_flag"
+  thresholdValue Int               @default(1)
+  xpReward       Int               @default(25)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  userAchievements UserAchievement[]
+
+  @@index([achievementKey])
+  @@index([isActive])
+  @@index([category])
+  @@index([sortOrder])
+}
+
+/// Per-user running gamification stats (streak, XP, level, spend totals).
+model UserGamification {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  loginStreak        Int      @default(0)
+  longestStreak      Int      @default(0)
+  lastLoginDate      String?  // ISO date string YYYY-MM-DD  (stored as text to avoid TZ issues)
+  totalSpentPaise    Int      @default(0)   // sum of completed Payment.amount
+  totalPurchases     Int      @default(0)
+  totalCreditsEarned Int      @default(0)
+  level              Int      @default(1)   // 1–10
+  xp                 Int      @default(0)
+  checkedInToday     Boolean  @default(false)
+  lastSyncedAt       DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Records which achievements a user has unlocked and when.
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@index([unlockedAt])
+}
