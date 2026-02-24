@@ -1,8 +1,10 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { aj, formRateLimiter } from '../../config/arcjet.js';
 import { getReadOnlyPrisma } from '../../config/read-only.database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo } from '../../utils/userCache.js';
 
@@ -23,8 +25,8 @@ const createSupportRequestSchema = z.object({
     .string()
     .email('Valid email address is required for non-authenticated users')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     )
     .optional(),
 });
@@ -118,42 +120,64 @@ export class SupportController {
   private static readonly RATE_LIMIT_MAX_REQUESTS = 1; // 1 request per hour
   private static readonly RATE_LIMIT_MAX_REQUESTS_AUTHENTICATED = 3; // 3 requests per hour for authenticated users
 
-  private static async checkRateLimit(req: Request, res: Response, next: Function) {
+  private static async checkRateLimit(req: Request, res: Response, next: NextFunction) {
     try {
+      const { email } = req.body;
       const auth = req.user;
-      const identifier = auth?.userId || req.ip || 'anonymous';
-      const key = `support_rate_limit:${identifier}`;
+      let userEmail = email;
 
-      const currentRequests = await redis.get(key);
-      const requestCount =
-        typeof currentRequests === 'string'
-          ? parseInt(currentRequests, 10)
-          : typeof currentRequests === 'number'
-            ? currentRequests
-            : 0;
-
-      const maxRequests = auth?.userId
-        ? SupportController.RATE_LIMIT_MAX_REQUESTS_AUTHENTICATED
-        : SupportController.RATE_LIMIT_MAX_REQUESTS;
-
-      if (requestCount >= maxRequests) {
-        return res.status(429).json({
-          success: false,
-          message: `Rate limit exceeded. Maximum ${maxRequests} support requests per hour allowed.`,
-          retryAfter: SupportController.RATE_LIMIT_WINDOW / 1000,
-        });
+      if (!userEmail && auth?.userId) {
+        try {
+          const user = await getCachedUserInfo(auth.userId);
+          userEmail = user?.email;
+        } catch (error) {
+          logger.warn('Failed to get user email for support rate limit', {
+            userId: auth.userId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
-      await redis.incr(key);
 
-      // Set expiry if this is the first request
-      if (requestCount === 0) {
-        await redis.expire(key, SupportController.RATE_LIMIT_WINDOW / 1000);
+      if (!userEmail) {
+        // Fallback to IP-only protection if no email is provided yet
+        const decision = await aj.protect(req, { requested: 1 });
+        if (decision.isDenied()) {
+          return res.status(429).json({
+            success: false,
+            message: 'Too many requests. Please try again later.',
+          });
+        }
+        return next();
+      }
+
+      const normalizedEmail = normalizeEmail(userEmail);
+      const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+      if (decision.isDenied()) {
+        if (decision.reason.isEmail()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid or disposable email address',
+          });
+        }
+
+        if (decision.reason.isRateLimit()) {
+          return res.status(429).json({
+            success: false,
+            message: 'Too many requests. Please try again later.',
+          });
+        }
+
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+        });
       }
 
       next();
     } catch (error) {
-      logger.error('Rate limiting error:', { error });
-      // Allow request to proceed if Redis fails
+      logger.error('Arcjet rate limiting error:', { error });
+      // Allow request to proceed if Arcjet fails
       next();
     }
   }
@@ -199,7 +223,7 @@ export class SupportController {
             message: 'Email is required for non-authenticated users',
           });
         }
-        emailId = email;
+        emailId = normalizeEmail(email);
       }
 
       // Generate a temporary ID for immediate response

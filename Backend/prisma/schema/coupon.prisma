@@ -1,0 +1,40 @@
+
+model Coupon {
+  id               String             @id @default(cuid())
+  codeHash         String             @unique
+  credits          Int                @default(0)
+  planId           String?            // If set, grants this subscription plan
+  durationDays     Int?               // If planId is set, duration of the subscription
+  maxUsages        Int?               // Global limit on how many times it can be redeemed
+  usagesDone       Int                @default(0)
+  userId           String?            // If set, ONLY this user can use it
+  isOneTimePerUser Boolean            @default(true) // If anyone can use it, but only once per user
+  expiresAt        DateTime?
+  isActive         Boolean            @default(true)
+  description      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  redemptions      CouponRedemption[]
+
+  @@index([codeHash])
+  @@index([userId])
+  @@index([isActive])
+}
+
+model CouponRedemption {
+  id             String   @id @default(cuid())
+  couponId       String
+  userId         String
+  redeemedAt     DateTime @default(now())
+  creditsAwarded Int
+  ipAddress      String?
+  userAgent      String?
+
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  user           User     @relation(fields: [userId], references: [userId])
+
+  @@index([couponId, userId])
+  @@index([couponId])
+  @@index([userId])
+  @@index([redeemedAt])
+}

@@ -28,6 +28,7 @@ import { useAuthState } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
+  Bot,
   Calendar,
   CreditCard,
   FileText,
@@ -81,7 +82,7 @@ export function AppSidebar() {
     const saved = localStorage.getItem('notificationSoundEnabled');
     return saved ? JSON.parse(saved) : false;
   });
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const isInitialLoadRef = useRef(true);
   const previousUnreadCountRef = useRef(0);
   const { socket } = useSocket();
 
@@ -107,35 +108,39 @@ export function AppSidebar() {
   // Sound effect
   useEffect(() => {
     // Skip sound on initial load or if count didn't increase
-    if (!isInitialLoad && soundEnabled && unreadCount > previousUnreadCountRef.current) {
+    if (!isInitialLoadRef.current && soundEnabled && unreadCount > previousUnreadCountRef.current) {
       playSound();
     }
 
-    if (unreadData && isInitialLoad) {
-      setIsInitialLoad(false);
+    if (unreadData && isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
     }
 
     previousUnreadCountRef.current = unreadCount;
-  }, [unreadCount, soundEnabled, isInitialLoad, unreadData]);
+  }, [unreadCount, soundEnabled, unreadData]);
 
   // Set up socket listeners for real-time updates
   useEffect(() => {
     if (!socket) return;
 
     const handleNewNotification = (data: { count: number }) => {
-      queryClient.setQueryData(['notifications', 'unread-count'], (old: any) => {
-        const current = old?.data?.count || 0;
-        return { data: { count: current + data.count } };
-      });
+      queryClient.setQueryData(
+        ['notifications', 'unread-count'],
+        (old: { data: { count: number } } | undefined) => {
+          const current = old?.data?.count || 0;
+          return { data: { count: current + data.count } };
+        },
+      );
     };
 
     const handleReadNotification = (data: { count: number }) => {
-      queryClient.setQueryData(['notifications', 'unread-count'], (old: any) => {
-        const current = old?.data?.count || 0;
-        return { data: { count: Math.max(0, current + data.count) } }; // payload usually negative or we subtract? Handlers usually send delta.
-        // Existing code: setUnreadCount(prev => Math.max(0, prev + data.count));
-        // If data.count is negative (e.g. -1), it adds.
-      });
+      queryClient.setQueryData(
+        ['notifications', 'unread-count'],
+        (old: { data: { count: number } } | undefined) => {
+          const current = old?.data?.count || 0;
+          return { data: { count: Math.max(0, current + data.count) } };
+        },
+      );
     };
 
     socket.on('notification:new', handleNewNotification);
@@ -183,6 +188,7 @@ export function AppSidebar() {
         Inbox,
         UserCircle,
         Shield,
+        Bot,
       };
 
       return {
@@ -190,8 +196,8 @@ export function AppSidebar() {
         icon: iconMap[item.icon] || Home,
         badge:
           item.id === 'inbox' &&
-          !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) &&
-          unreadCount > 0
+            !(dataSaverSettings.enabled && dataSaverSettings.disableNotifications) &&
+            unreadCount > 0
             ? unreadCount.toString()
             : undefined,
       };

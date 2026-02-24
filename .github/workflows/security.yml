@@ -1,0 +1,131 @@
+name: Security Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 1' # Weekly on Monday
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-fs-scan:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          trivy-config: 'trivy.yaml'
+          trivyignores: '.trivyignore'
+
+      - name: Upload Trivy fs scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-fs'
+
+  trivy-image-scan:
+    name: Trivy Image Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend
+          push: false
+          load: true
+          tags: fairarena-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy on Backend image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'image'
+          image-ref: 'fairarena-backend:latest'
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy backend scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+          category: 'trivy-backend'
+
+      - name: Build Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Frontend
+          push: false
+          load: true
+          tags: fairarena-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy on Frontend image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'image'
+          image-ref: 'fairarena-frontend:latest'
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy frontend scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'trivy-frontend'
+
+      - name: Build Credential-Validator image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Credential-Validator
+          push: false
+          load: true
+          tags: fairarena-credential-validator:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy on Credential-Validator image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'image'
+          image-ref: 'fairarena-credential-validator:latest'
+          format: 'sarif'
+          output: 'trivy-credential-validator-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy credential-validator scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-credential-validator-results.sarif'
+          category: 'trivy-credential-validator'

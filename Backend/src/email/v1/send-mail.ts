@@ -9,6 +9,7 @@ import { accountPermanentDeletionEmailTemplate } from '../templates/accountPerma
 import { accountRecoveryEmailTemplate } from '../templates/accountRecovery.js';
 import { backupCodesRegeneratedTemplate } from '../templates/backupCodesRegenerated.js';
 import { backupCodeUsedTemplate } from '../templates/backupCodeUsed.js';
+import { couponRedeemedEmailTemplate } from '../templates/couponRedeemed.js';
 import { dataExportEmailTemplate } from '../templates/dataExport.js';
 import { dataExportErrorEmailTemplate } from '../templates/dataExportError.js';
 import { emailVerificationTemplate } from '../templates/emailVerification.js';
@@ -214,6 +215,13 @@ type LoginNotificationParams = {
 };
 type PasswordChangedParams = { firstName: string; supportUrl: string; changeTime: string };
 type WaitlistConfirmationParams = { name: string; position: number };
+type CouponRedeemedParams = {
+  userName: string;
+  couponCode: string;
+  creditsAwarded: number;
+  planName?: string;
+  durationDays?: number;
+};
 
 // Security Email Params
 type MFAEnabledParams = {
@@ -352,6 +360,7 @@ export const emailTemplates = {
   'waitlist-confirmation': waitlistConfirmationTemplate as (
     params: WaitlistConfirmationParams,
   ) => string,
+  COUPON_REDEEMED: couponRedeemedEmailTemplate as (params: CouponRedeemedParams) => string,
   // Security templates
   MFA_ENABLED: mfaEnabledTemplate as (params: MFAEnabledParams) => string,
   MFA_DISABLED: mfaDisabledTemplate as (params: MFADisabledParams) => string,
@@ -800,6 +809,22 @@ export const sendFreeCreditsClaimedEmail = async (
       creditsAdded,
       newBalance,
     },
+  });
+};
+
+export const sendCouponRedeemedEmail = async (
+  to: string,
+  userName: string,
+  couponCode: string,
+  creditsAwarded: number,
+  planName?: string,
+  durationDays?: number,
+): Promise<unknown> => {
+  return sendEmail({
+    to,
+    subject: 'Coupon Redeemed Successfully! - FairArena',
+    templateType: 'COUPON_REDEEMED',
+    templateData: { userName, couponCode, creditsAwarded, planName, durationDays },
   });
 };
 

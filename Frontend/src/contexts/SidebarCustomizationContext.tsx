@@ -77,6 +77,14 @@ const defaultMainItems: SidebarItem[] = [
     visible: true,
     order: 8,
   },
+  {
+    id: 'ai-gateway',
+    title: 'AI Gateway',
+    url: '/dashboard/ai-gateway',
+    icon: 'Bot',
+    visible: true,
+    order: 9,
+  },
 ];
 
 const defaultSecondaryItems: SidebarItem[] = [

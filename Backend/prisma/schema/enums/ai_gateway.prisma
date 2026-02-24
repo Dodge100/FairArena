@@ -1,0 +1,14 @@
+
+enum AiGatewayStatus {
+  SUCCESS
+  ERROR
+  RATE_LIMITED
+  INSUFFICIENT_CREDITS
+}
+
+enum ModelStatus {
+  OPERATIONAL
+  DEGRADED
+  OUTAGE
+  UNKNOWN
+}

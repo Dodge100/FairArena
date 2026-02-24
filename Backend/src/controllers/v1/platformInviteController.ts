@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
+import { formRateLimiter } from '../../config/arcjet.js';
 import { prisma } from '../../config/database.js';
-import { RATE_LIMIT_CONFIG, REDIS_KEYS, redis } from '../../config/redis.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 import { getCachedUserInfo, getUserDisplayName } from '../../utils/userCache.js';
 
@@ -11,14 +12,43 @@ const newsletterSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     ),
 });
 
 export async function inviteToPlatform(req: Request, res: Response) {
   try {
-    const { email } = newsletterSchema.parse(req.body);
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
+
+    // Arcjet Protection
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed during platform invite', {
+          email: normalizedEmail,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded during platform invite', { email: normalizedEmail });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many requests. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
+    }
 
     // Get current user info
     const auth = req.user;
@@ -37,54 +67,6 @@ export async function inviteToPlatform(req: Request, res: Response) {
       });
     }
 
-    // Check rate limiting for platform invites
-    const inviteKey = `${REDIS_KEYS.PLATFORM_INVITE_ATTEMPTS}${inviterId}`;
-    const inviteLockoutKey = `${REDIS_KEYS.PLATFORM_INVITE_LOCKOUT}${inviterId}`;
-
-    // Check if user is currently locked out from sending invites
-    const inviteLockoutUntil = await redis.get(inviteLockoutKey);
-    if (inviteLockoutUntil && typeof inviteLockoutUntil === 'string') {
-      const remainingMinutes = Math.ceil((parseInt(inviteLockoutUntil) - Date.now()) / (60 * 1000));
-      logger.warn('User is locked out from sending platform invites', {
-        userId: inviterId,
-        remainingMinutes,
-      });
-      return res.status(429).json({
-        success: false,
-        message: `Too many invite attempts. Please try again in ${remainingMinutes} minutes.`,
-        retryAfter: remainingMinutes * 60,
-      });
-    }
-
-    // Atomically increment invite attempts and set expiry if first attempt
-    const luaScript = `
-      local count = redis.call('INCR', KEYS[1])
-      if count == 1 then
-        redis.call('EXPIRE', KEYS[1], ARGV[1])
-      end
-      return count
-    `;
-    const expirySeconds = RATE_LIMIT_CONFIG.PLATFORM_INVITE_WINDOW_MINUTES * 60;
-    const currentInviteAttempts = Number(await redis.eval(luaScript, [inviteKey], [expirySeconds]));
-
-    if (currentInviteAttempts > RATE_LIMIT_CONFIG.PLATFORM_INVITE_MAX_ATTEMPTS) {
-      // Lock out the user from sending invites
-      const inviteLockoutUntil =
-        Date.now() + RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60 * 1000;
-      await redis.set(inviteLockoutKey, inviteLockoutUntil.toString(), {
-        ex: RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60,
-      });
-      logger.warn('User locked out from sending platform invites after too many requests', {
-        userId: inviterId,
-        attempts: currentInviteAttempts,
-      });
-      return res.status(429).json({
-        success: false,
-        message: `Too many invite attempts. Please try again in ${RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES} minutes.`,
-        retryAfter: RATE_LIMIT_CONFIG.PLATFORM_INVITE_LOCKOUT_MINUTES * 60,
-      });
-    }
-
     // Fetch inviter data from database with caching
     const userInfo = await getCachedUserInfo(inviterId);
     if (!userInfo) {
@@ -96,12 +78,15 @@ export async function inviteToPlatform(req: Request, res: Response) {
 
     // Check if user already exists to prevent enumeration
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true },
     });
 
     if (existingUser) {
-      logger.info('Platform invite skipped - user already exists', { email, inviterId });
+      logger.info('Platform invite skipped - user already exists', {
+        email: normalizedEmail,
+        inviterId,
+      });
       // Return success to prevent enumeration
       return res.status(200).json({
         success: true,
@@ -111,18 +96,18 @@ export async function inviteToPlatform(req: Request, res: Response) {
 
     const inviterName = getUserDisplayName(userInfo);
 
-    logger.info('Platform Invite request received', { email, inviterName });
+    logger.info('Platform Invite request received', { email: normalizedEmail, inviterName });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'platform.invite',
       data: {
-        email,
+        email: normalizedEmail,
         inviterName,
       },
     });
 
-    logger.info('Platform invite event sent to Inngest', { email, inviterName });
+    logger.info('Platform invite event sent to Inngest', { email: normalizedEmail, inviterName });
 
     return res.status(200).json({
       success: true,

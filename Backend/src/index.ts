@@ -21,6 +21,7 @@ import {
   createLog,
   createOAuthAppAuthorizedNotification,
   createOrganizationAuditLog,
+  createOrganizationRoles,
   createReport,
   createTeamAuditLog,
   createTeamFunction,
@@ -40,6 +41,7 @@ import {
   markAllNotificationsAsRead,
   markNotificationsAsRead,
   markNotificationsAsUnread,
+  modelStatusProbe,
   paymentOrderCreated,
   paymentVerified,
   paymentWebhookReceived,
@@ -97,10 +99,13 @@ import { requestValidation } from './middleware/requestValidation.middleware.js'
 import { securityHeaders } from './middleware/securityHeaders.middleware.js';
 import accountSettingsRouter from './routes/v1/account-settings.js';
 import aiRouter from './routes/v1/ai.routes.js';
+import aiGatewayRouter from './routes/v1/aiGateway.routes.js';
 import apiKeysRouter from './routes/v1/apiKeys.routes.js';
 import authRouter from './routes/v1/auth.routes.js';
+import couponRouter from './routes/v1/coupon.routes.js';
 import creditsRouter from './routes/v1/credits.js';
 import feedbackRouter from './routes/v1/feedback.js';
+import gamificationRouter from './routes/v1/gamification.routes.js';
 import githubRouter from './routes/v1/githubRoutes.js';
 import hackathonRouter from './routes/v1/hackathon.routes.js';
 import mfaRouter from './routes/v1/mfa.routes.js';
@@ -217,8 +222,13 @@ app.use(
   },
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Path-aware JSON body parser: AI Gateway needs 20mb for base64 image uploads
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const isAiGateway =
+    req.path === '/v1/chat/completions' || req.path.startsWith('/api/v1/ai-gateway');
+  return express.json({ limit: isAiGateway ? '20mb' : '100kb' })(req, res, next);
+});
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 app.use(requestValidation);
 
@@ -275,6 +285,11 @@ if (ENV.NODE_ENV !== 'production') {
     }),
   );
 }
+
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain');
+  res.send('User-agent: *\nDisallow: /');
+});
 
 app.use(validateCsrfToken);
 
@@ -348,6 +363,12 @@ app.use('/api/v1/plans', plansRouter);
 // Credits routes
 app.use('/api/v1/credits', creditsRouter);
 
+// Gamification routes
+app.use('/api/v1/gamification', gamificationRouter);
+
+// Coupon routes
+app.use('/api/v1/coupons', couponRouter);
+
 // Settings routes
 app.use('/api/v1/settings', settingsRouter);
 
@@ -362,6 +383,11 @@ app.use('/api/v1/team', teamRouter);
 
 // API Keys routes
 app.use('/api/v1/api-keys', apiKeysRouter);
+
+// AI Gateway routes — OpenAI-compatible at /v1 and also mirrored at /api/v1/ai-gateway
+// Note: must be registered AFTER CSRF middleware, the /v1 path is API-key protected (no CSRF)
+app.use('/v1', aiGatewayRouter);
+app.use('/api/v1/ai-gateway', aiGatewayRouter);
 
 // GitHub routes
 app.use('/api/v1/github', githubRouter);
@@ -409,6 +435,7 @@ app.use(
       processFeedbackSubmission,
       supportRequestCreated,
       createOrganizationAuditLog,
+      createOrganizationRoles,
       sendTeamInviteEmail,
       createTeamAuditLog,
       processSingleTeamInvite,
@@ -442,6 +469,7 @@ app.use(
       sendOAuthAppAuthorizedEmail,
       createOAuthAppAuthorizedNotification,
       logOAuthDataAccess,
+      modelStatusProbe,
     ],
   }),
 );

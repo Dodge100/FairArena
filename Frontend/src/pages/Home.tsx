@@ -3,6 +3,7 @@ import Pricing from '@/components/Pricing';
 import { useAuthState } from '@/lib/auth';
 import { Navigate } from 'react-router';
 import Faq from '../components/Faq';
+import GptPromotion from '../components/GptPromotion';
 import Hero from '../components/Hero';
 import DemoVideo from '../components/ui/DemoVideo';
 import WhyChooseUs from '../components/WhyChooseUs';
@@ -21,6 +22,8 @@ function Home() {
       <section id="demo" className="w-full py-10 md:py-20 bg-neutral-50 dark:bg-neutral-900/10">
         <DemoVideo />
       </section>
+
+      <GptPromotion />
 
       <WhyChooseUs />
       <Pricing />

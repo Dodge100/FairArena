@@ -56,6 +56,7 @@ const creditHistoryQuerySchema = z.object({
       'EXPIRY',
       'TRANSFER_IN',
       'TRANSFER_OUT',
+      'COUPON_REDEMPTION',
     ])
     .optional(),
 });

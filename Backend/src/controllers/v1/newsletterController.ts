@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { redis } from '../../config/redis.js';
+import { formRateLimiter } from '../../config/arcjet.js';
 import { inngest } from '../../inngest/v1/client.js';
+import { normalizeEmail } from '../../utils/email.utils.js';
 import logger from '../../utils/logger.js';
 
 const newsletterSchema = z.object({
@@ -9,72 +10,54 @@ const newsletterSchema = z.object({
     .string()
     .email('Invalid email address')
     .regex(
-      /^[^+=.#]+@/,
-      'Email subaddresses and special characters (+, =, ., #) are not allowed in the local part',
+      /^[^+=#]+@/,
+      'Email subaddresses and special characters (+, =, #) are not allowed in the local part',
     ),
 });
 
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-const RATE_LIMIT_MAX_REQUESTS = 1; // 1 request per hour
-
-async function checkRateLimit(req: Request, res: Response): Promise<boolean> {
-  try {
-    const identifier = req.ip || 'anonymous';
-    const key = `newsletter_rate_limit:${identifier}`;
-
-    const currentRequests = await redis.get(key);
-    const requestCount =
-      typeof currentRequests === 'string'
-        ? parseInt(currentRequests, 10)
-        : typeof currentRequests === 'number'
-          ? currentRequests
-          : 0;
-
-    const maxRequests = RATE_LIMIT_MAX_REQUESTS;
-
-    if (requestCount >= maxRequests) {
-      res.status(429).json({
-        success: false,
-        message: `Rate limit exceeded. Maximum ${maxRequests} newsletter requests per hour allowed.`,
-        retryAfter: RATE_LIMIT_WINDOW / 1000,
-      });
-      return false;
-    }
-
-    await redis.incr(key);
-
-    // Set expiry if this is the first request
-    if (requestCount === 0) {
-      await redis.expire(key, RATE_LIMIT_WINDOW / 1000);
-    }
-
-    return true;
-  } catch (error) {
-    logger.error('Rate limiting error:', { error });
-    // Allow request to proceed if Redis fails
-    return true;
-  }
-}
-
 export async function subscribeToNewsletter(req: Request, res: Response) {
   try {
-    if (!(await checkRateLimit(req, res))) {
-      return;
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
+
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        logger.warn('Email validation failed for newsletter subscription', {
+          email: normalizedEmail,
+          reason: decision.reason,
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        logger.warn('Rate limit exceeded for newsletter subscription', { email: normalizedEmail });
+        return res.status(429).json({
+          success: false,
+          message: 'Too many requests. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
     }
 
-    const { email } = newsletterSchema.parse(req.body);
-
-    logger.info('Newsletter subscription request received', { email });
+    logger.info('Newsletter subscription request received', { email: normalizedEmail });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'newsletter.subscribe',
       data: {
-        email,
+        email: normalizedEmail,
       },
     });
 
-    logger.info('Newsletter subscription event sent to Inngest', { email });
+    logger.info('Newsletter subscription event sent to Inngest', { email: normalizedEmail });
 
     return res.status(200).json({
       success: true,
@@ -103,23 +86,42 @@ export async function subscribeToNewsletter(req: Request, res: Response) {
 
 export async function unsubscribeFromNewsletter(req: Request, res: Response) {
   try {
-    if (!(await checkRateLimit(req, res))) {
-      return;
+    const normalizedEmail = normalizeEmail(newsletterSchema.parse(req.body).email);
+
+    const decision = await formRateLimiter.protect(req, { email: normalizedEmail });
+
+    if (decision.isDenied()) {
+      if (decision.reason.isEmail()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or disposable email address',
+        });
+      }
+
+      if (decision.reason.isRateLimit()) {
+        return res.status(429).json({
+          success: false,
+          message: 'Too many requests. Please try again later.',
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied',
+      });
     }
 
-    const { email } = newsletterSchema.parse(req.body);
-
-    logger.info('Newsletter unsubscribe request received', { email });
+    logger.info('Newsletter unsubscribe request received', { email: normalizedEmail });
 
     // Send event to Inngest for asynchronous processing
     await inngest.send({
       name: 'newsletter.unsubscribe',
       data: {
-        email,
+        email: normalizedEmail,
       },
     });
 
-    logger.info('Newsletter unsubscribe event sent to Inngest', { email });
+    logger.info('Newsletter unsubscribe event sent to Inngest', { email: normalizedEmail });
 
     return res.status(200).json({
       success: true,

@@ -86,6 +86,7 @@ const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const TeamsPage = lazy(() => import('./pages/TeamsPage'));
 const TeamInviteAcceptPage = lazy(() => import('./pages/TeamInviteAcceptPage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const AiGatewayPage = lazy(() => import('./pages/AiGateway'));
 
 // Lazy load other pages
 const Feedback = lazy(() => import('./pages/Feedback'));
@@ -503,6 +504,14 @@ function App() {
                 element={
                   <Suspense fallback={<PageLoadingFallback />}>
                     <Support />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dashboard/ai-gateway"
+                element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <AiGatewayPage />
                   </Suspense>
                 }
               />

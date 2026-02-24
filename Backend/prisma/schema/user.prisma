@@ -58,6 +58,11 @@ model User {
   projectMemberships        UserProject[]
   teamMemberships           UserTeam[]
   subscriptions             Subscription[]
+  aiGatewayRequests         AiGatewayRequest[]
+  couponRedemptions         CouponRedemption[]
+  gamification              UserGamification?
+  userAchievements          UserAchievement[]
+
 
   @@index([userId])
   @@index([isBanned])

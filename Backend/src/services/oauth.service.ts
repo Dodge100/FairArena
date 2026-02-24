@@ -11,6 +11,7 @@ import {
   REFRESH_TOKEN_COOKIE_OPTIONS,
   SESSION_COOKIE_OPTIONS,
 } from '../utils/cookie.utils.js';
+import { normalizeEmail } from '../utils/email.utils.js';
 import logger from '../utils/logger.js';
 import {
   createSession,
@@ -133,9 +134,10 @@ export async function fetchOAuthUserInfo(
 export async function findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<any> {
   const { email, providerId, providerName, ...userData } = oauthData;
 
-  // Find user by email
+  // Find user by normalized email
+  const normalizedEmail = normalizeEmail(email);
   let user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
+    where: { email: normalizedEmail },
   });
 
   if (!user) {
@@ -151,7 +153,7 @@ export async function findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<a
     user = await prisma.user.create({
       data: {
         userId,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         firstName: userData.firstName,
         lastName: userData.lastName,
         profileImageUrl: userData.profileImageUrl,

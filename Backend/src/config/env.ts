@@ -310,4 +310,9 @@ export const ENV = {
   // Pinecone Vector Database
   PINECONE_API_KEY: getEnv('PINECONE_API_KEY', ''),
   PINECONE_INDEX_NAME: getEnv('PINECONE_INDEX_NAME', 'fairarena-docs'),
+  // AI Gateway Provider Keys
+  GROQ_API_KEY: getEnv('GROQ_API_KEY', ''),
+  OPENROUTER_API_KEY: getEnv('OPENROUTER_API_KEY', ''),
+  CLOUDFLARE_API_TOKEN: getEnv('CLOUDFLARE_API_TOKEN', ''),
+  CLOUDFLARE_ACCOUNT_ID: getEnv('CLOUDFLARE_ACCOUNT_ID', ''),
 };

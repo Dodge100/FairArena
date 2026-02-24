@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'Backend/**'
+  pull_request:
+    paths:
+      - 'Backend/**'
 
 concurrency:
   group: fairarena-production
@@ -16,7 +19,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install backend dependencies
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db
+        run: pnpm --dir Backend install
+
+      - name: Backend lint
+        run: pnpm --dir Backend run lint
+
+      - name: Backend typecheck
+        run: pnpm --dir Backend run typecheck
+
       - name: Deploy over SSH
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}

@@ -145,6 +145,12 @@
       "button": "सदस्यता लें",
       "subscribing": "सदस्यता ले रहे हैं..."
     },
+    "gptPromotion": {
+      "badge": "नई सुविधा",
+      "title": "ChatGPT पर FairArena AI से मिलें",
+      "subtitle": "अपने सभी FairArena प्रश्नों के तुरंत उत्तर प्राप्त करें। हमारे आधिकारिक GPT को अपने ChatGPT खाते में जोड़ें और हैकथॉन, जजिंग या प्लेटफ़ॉर्म सुविधाओं के बारे में कुछ भी पूछें।",
+      "cta": "ChatGPT में जोड़ें"
+    },
     "whyChooseUsPage": {
       "title": "हमारा चयन क्यों",
       "benefits": [

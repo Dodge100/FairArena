@@ -11,7 +11,7 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "prettier": "^3.7.4"
+    "prettier": "^3.8.1"
   },
   "lint-staged": {
     "Backend/src/**/*.{ts,js}": [
@@ -24,5 +24,8 @@
     ]
   },
   "author": "Saksham-Goel1107",
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.30.1",
+  "dependencies": {
+    "openai": "^6.22.0"
+  }
 }

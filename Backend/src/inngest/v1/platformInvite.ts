@@ -1,4 +1,3 @@
-import { ENV } from '../../config/env.js';
 import { sendPlatformInviteEmail } from '../../email/v1/send-mail.js';
 import logger from '../../utils/logger.js';
 import { inngest } from './client.js';
@@ -21,71 +20,6 @@ export const inviteToPlatform = inngest.createFunction(
     }
 
     logger.info('Starting platform invite process', { email });
-
-    await step.run('check-disposable-email', async () => {
-      try {
-        logger.info('Checking if email is disposable', { email });
-
-        const disposableCheckUrl = `${ENV.CREDENTIAL_VALIDATOR_URL}/check?email=${encodeURIComponent(email)}`;
-        const response = await fetch(disposableCheckUrl, {
-          method: 'GET',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const isDisposable = data.tempmail;
-
-          if (isDisposable) {
-            logger.warn('Disposable email detected, rejecting invitation', { email });
-            throw new Error('Disposable emails are not allowed');
-          } else {
-            logger.info('Email is not disposable', { email });
-          }
-        } else if (response.status === 400) {
-          try {
-            const errorData = await response.json();
-            if (
-              errorData.error &&
-              (errorData.error.includes('Invalid email format') ||
-                errorData.error.includes('Email domain has no mail server'))
-            ) {
-              logger.warn('Invalid email format or domain detected, rejecting invitation', {
-                email,
-                error: errorData.error,
-              });
-              throw new Error('Invalid email address');
-            }
-          } catch {
-            logger.warn('Could not parse 400 error response, treating as invalid', { email });
-            throw new Error('Invalid email address');
-          }
-        } else {
-          logger.warn(
-            'Disposable email check API returned non-200/400 status, allowing invitation',
-            {
-              email,
-              status: response.status,
-              statusText: response.statusText,
-            },
-          );
-        }
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          (error.message === 'Disposable emails are not allowed' ||
-            error.message === 'Invalid email address')
-        ) {
-          throw error;
-        }
-        logger.warn(
-          'Disposable email check failed (API down/timeout), allowing invitation to continue',
-          {
-            email,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
-    });
 
     await step.run('send-invite-email', async () => {
       logger.info('Sending platform invite email', { email, inviterName });

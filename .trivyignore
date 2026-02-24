@@ -1,0 +1,45 @@
+# Trivy ignore file
+
+# Ignore vulnerabilities in development dependencies
+
+# Ignore specific CVEs that are acceptable or false positives
+
+# Example ignores:
+
+# CVE-2021-1234
+
+# CVE-2022-5678
+
+# Ignore node_modules (handled by package managers)
+
+node_modules/
+
+# Ignore build artifacts
+
+dist/
+build/
+.next/
+.nuxt/
+
+# Ignore Docker-related files that might have vulnerabilities but are controlled
+
+Dockerfile*
+docker-compose*.yml
+
+# Ignore test files
+
+**/_.test._
+**/_.spec._
+**/tests/
+**/test/
+
+# Ignore documentation
+
+\*_/_.md
+docs/
+
+# Ignore configuration files that might contain secrets (handled separately)
+
+.env\*
+_.key
+_.pem
