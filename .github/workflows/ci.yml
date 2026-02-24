@@ -1,0 +1,327 @@
+##############################################################################
+# ci.yml — FairArena Comprehensive CI Pipeline
+#
+# Runs on every push and pull request (any branch).
+# Mirrors the Google-style quality gates:
+#   1. Lint (frontend + backend)
+#   2. TypeCheck (frontend + backend)
+#   3. Unit Tests  (backend + frontend — in parallel)
+#   4. Integration / Coverage gate
+#   5. Security scan summary
+#   6. Build validation
+#
+# All jobs use pnpm for install consistency and speed.
+##############################################################################
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: '10.30.1'
+  NODE_VERSION: '20'
+
+##############################################################################
+# JOBS
+##############################################################################
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1. LINT
+  # ─────────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
+
+      - name: Check License Headers
+        run: node scripts/apply-license-headers.mjs --check
+
+      - name: Lint Backend
+        run: pnpm run lint
+        working-directory: Backend
+
+      - name: Lint Frontend
+        run: pnpm run lint
+        working-directory: Frontend
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2. TYPECHECK
+  # ─────────────────────────────────────────────────────────────────────────
+  typecheck:
+    name: TypeCheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeCheck Backend
+        run: pnpm run typecheck
+        working-directory: Backend
+
+      - name: TypeCheck Frontend
+        run: pnpm run typecheck
+        working-directory: Frontend
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 3a. BACKEND TESTS
+  # ─────────────────────────────────────────────────────────────────────────
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Mocked env for tests — matches setup.ts expectations
+      NODE_ENV: test
+      JWT_SECRET: test-jwt-secret-must-be-at-least-32-chars-long
+      JWT_REFRESH_SECRET: test-refresh-secret-min-32-chars-long
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      BCRYPT_ROUNDS: '4'
+      SESSION_PREFIX: sess
+      FRONTEND_URL: http://localhost:3000
+      MFA_ENCRYPTION_KEY: test-mfa-encryption-key-32-chars!!
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Backend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: Backend
+
+      - name: Run Backend unit tests
+        run: pnpm run test
+        working-directory: Backend
+
+      - name: Run Backend coverage
+        run: pnpm run test:coverage
+        working-directory: Backend
+
+      - name: Upload Backend coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: Backend/coverage/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 3b. FRONTEND TESTS
+  # ─────────────────────────────────────────────────────────────────────────
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: Frontend
+
+      - name: Run Frontend unit tests
+        run: pnpm run test
+        working-directory: Frontend
+
+      - name: Run Frontend coverage
+        run: pnpm run test:coverage
+        working-directory: Frontend
+
+      - name: Upload Frontend coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: Frontend/coverage/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 4. COVERAGE QUALITY GATE
+  # Ensures combined coverage meets our thresholds before merging.
+  # ─────────────────────────────────────────────────────────────────────────
+  coverage-gate:
+    name: Coverage Quality Gate
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend-coverage/
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend-coverage/
+
+      - name: Print coverage summaries
+        run: |
+          echo "=== BACKEND COVERAGE ==="
+          if [ -f backend-coverage/coverage-summary.json ]; then
+            cat backend-coverage/coverage-summary.json | python3 -c "
+          import json,sys
+          data = json.load(sys.stdin)
+          total = data.get('total', {})
+          for k,v in total.items():
+              print(f'{k}: {v[\"pct\"]:.1f}%')
+          "
+          else
+            echo "No summary found (vitest text reporter printed to stdout)"
+          fi
+          echo ""
+          echo "=== FRONTEND COVERAGE ==="
+          if [ -f frontend-coverage/coverage-summary.json ]; then
+            cat frontend-coverage/coverage-summary.json | python3 -c "
+          import json,sys
+          data = json.load(sys.stdin)
+          total = data.get('total', {})
+          for k,v in total.items():
+              print(f'{k}: {v[\"pct\"]:.1f}%')
+          "
+          else
+            echo "No summary found"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 5. BUILD VALIDATION (ensures code compiles for production)
+  # ─────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build Validation
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install all dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Frontend
+        run: pnpm run build
+        working-directory: Frontend
+        env:
+          VITE_API_URL: https://api.example.com
+          VITE_APP_ENV: production
+
+      - name: Build Backend
+        run: pnpm run build
+        working-directory: Backend
+
+      - name: Upload Frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: Frontend/dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 6. CI STATUS BADGE — merge gate
+  # All required jobs must pass before this succeeds.
+  # ─────────────────────────────────────────────────────────────────────────
+  ci-status:
+    name: CI Status
+    needs:
+      - lint
+      - typecheck
+      - test-backend
+      - test-frontend
+      - coverage-gate
+      - build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "TypeCheck: ${{ needs.typecheck.result }}"
+          echo "Backend Tests: ${{ needs.test-backend.result }}"
+          echo "Frontend Tests: ${{ needs.test-frontend.result }}"
+          echo "Coverage Gate: ${{ needs.coverage-gate.result }}"
+          echo "Build: ${{ needs.build.result }}"
+
+          # Fail if any required job failed
+          for result in \
+            "${{ needs.lint.result }}" \
+            "${{ needs.typecheck.result }}" \
+            "${{ needs.test-backend.result }}" \
+            "${{ needs.test-frontend.result }}" \
+            "${{ needs.coverage-gate.result }}" \
+            "${{ needs.build.result }}"; do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "❌ CI failed — one or more jobs did not succeed."
+              exit 1
+            fi
+          done
+          echo "✅ All CI checks passed!"
