@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - "Frontend/**"
+      - 'Frontend/**'
   pull_request:
     paths:
-      - "Frontend/**"
+      - 'Frontend/**'
 
 env:
   NODE_VERSION: 22
@@ -31,8 +31,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Install frontend dependencies
         run: pnpm --dir Frontend install

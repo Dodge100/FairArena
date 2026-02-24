@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - "Backend/**"
+      - 'Backend/**'
   pull_request:
     paths:
-      - "Backend/**"
+      - 'Backend/**'
 
 concurrency:
   group: fairarena-production
@@ -29,8 +29,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Install backend dependencies
         env:

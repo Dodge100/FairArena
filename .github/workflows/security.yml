@@ -57,6 +57,7 @@ jobs:
         with:
           context: ./Backend
           push: false
+          load: true
           tags: fairarena-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -82,6 +83,7 @@ jobs:
         with:
           context: ./Frontend
           push: false
+          load: true
           tags: fairarena-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -107,6 +109,7 @@ jobs:
         with:
           context: ./Credential-Validator
           push: false
+          load: true
           tags: fairarena-credential-validator:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
