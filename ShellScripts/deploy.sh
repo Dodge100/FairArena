@@ -560,6 +560,38 @@ else
     log "${YELLOW}Backend envs.sh not found at $SCRIPT_DIR/../Backend/ShellScripts/envs.sh, skipping${NC}"
 fi
 
+# Copy .env into Backend root and run Prisma migrations
+log "${GREEN}[3/10] Copying .env and running Prisma migrate...${NC}"
+BACKEND_DIR="$SCRIPT_DIR/../Backend"
+ENV_SOURCE="$BACKEND_DIR/ShellScripts/.env"
+
+if [ -f "$ENV_SOURCE" ]; then
+    cp "$ENV_SOURCE" "$BACKEND_DIR/.env"
+    log ".env copied to Backend root"
+else
+    log "${YELLOW}.env not found at $ENV_SOURCE — Prisma steps may fail${NC}"
+fi
+
+cd "$BACKEND_DIR"
+
+if ! npx prisma generate 2>&1; then
+    DEPLOY_MESSAGE="Prisma generate failed"
+    log "${RED}$DEPLOY_MESSAGE${NC}"
+    exit 1
+fi
+log "Prisma client generated"
+
+# if ! npx prisma migrate deploy 2>&1; then         # Temporarily switch to db push to avoid issues with missing migration files in prod
+if ! npx prisma db push 2>&1; then
+    # DEPLOY_MESSAGE="Prisma Migration failed"      # Original message for migrate deploy
+    DEPLOY_MESSAGE="Prisma db push failed"
+    log "${RED}$DEPLOY_MESSAGE${NC}"
+    exit 1
+fi
+log "Prisma migrations applied"
+
+cd "$SCRIPT_DIR"
+
 # Step 4: Setup Frontend environment
 log "${GREEN}[4/10] Setting up Frontend environment...${NC}"
 if [ -f "$SCRIPT_DIR/../Frontend/ShellScripts/envs.sh" ]; then

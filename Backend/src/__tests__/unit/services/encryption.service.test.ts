@@ -18,7 +18,7 @@
  * Unit tests for AES-256-GCM encrypt/decrypt service.
  * No external deps — crypto is Node built-in.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../config/env.js', () => ({
   ENV: {

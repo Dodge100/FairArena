@@ -117,6 +117,9 @@
     "node_modules",
     "dist",
     "vitest.config.ts",
-    "tsconfig.test.json"
+    "tsconfig.test.json",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }

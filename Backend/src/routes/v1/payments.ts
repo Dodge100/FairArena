@@ -19,8 +19,18 @@ import {
   verifyPayment,
 } from '../../controllers/v1/paymentsController.js';
 import { protectRoute } from '../../middleware/auth.middleware.js';
+import { createUserRateLimiter } from '../../middleware/authRateLimit.middleware.js';
 
 const router = Router();
+
+// Rate limiters for payment routes
+// Strict limits — real users don't create orders or verify payments at high frequency
+const createOrderLimiter = createUserRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 orders per minute per user (generous for retries)
+  message: 'Too many payment requests. Please wait before trying again.',
+  keyPrefix: 'rl:pay:create:',
+});
 
 /**
  * @swagger
@@ -66,7 +76,7 @@ const router = Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/create-order', protectRoute, createOrder);
+router.post('/create-order', protectRoute, createOrderLimiter, createOrder);
 
 /**
  * @swagger

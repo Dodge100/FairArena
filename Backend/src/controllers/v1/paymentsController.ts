@@ -56,8 +56,6 @@ export const createOrder = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const userInfo = await getCachedUserInfo(userId);
-    const userEmail = userInfo?.email || null;
 
     if (ENV.PAYMENTS_ENABLED === false) {
       return res.status(403).json({
@@ -66,9 +64,8 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    const userInfo = await getCachedUserInfo(userId);
+    const userEmail = userInfo?.email || null;
 
     // Check if Razorpay is configured
     if (!razorpay) {
@@ -154,26 +151,67 @@ export const createOrder = async (req: Request, res: Response) => {
 
     const order = await razorpay.orders.create(orderOptions);
 
-    // Send event to Inngest for async payment record creation
-    await inngest.send({
-      name: 'payment/order.created',
-      data: {
+    // Create payment record synchronously to prevent race conditions with verifyPayment.
+    // This ensures that when the frontend immediately calls verifyPayment, the record exists.
+    // Only fall back to Inngest async creation if the sync write fails.
+    let syncRecordCreated = false;
+    try {
+      await prisma.payment.create({
+        data: {
+          userId,
+          razorpayOrderId: order.id,
+          planId: planData.id,
+          planName: planData.name,
+          amount: planData.amount,
+          currency: planData.currency,
+          credits: planData.credits,
+          status: 'PENDING',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          notes: { ...orderOptions.notes },
+          receipt: orderOptions.receipt,
+          idempotencyKey: `order_${order.id}`,
+          webhookProcessed: false,
+        },
+      });
+      syncRecordCreated = true;
+    } catch (dbError) {
+      // Log but don't fail the request — Inngest fallback below will attempt to create it
+      logger.error('Failed to create initial payment record in controller', {
+        error: dbError instanceof Error ? dbError.message : String(dbError),
         userId,
-        userEmail: userEmail || null,
         orderId: order.id,
-        planId: planData.id,
-        planName: planData.name,
-        amount: planData.amount,
-        currency: planData.currency,
-        credits: planData.credits,
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        notes: orderOptions.notes,
-        receipt: orderOptions.receipt,
-      },
-    });
+      });
+    }
 
-    logger.info('Razorpay order created', {
+    // Only dispatch Inngest fallback if the synchronous write failed.
+    // Avoids a wasted idempotent Inngest invocation on every successful order.
+    if (!syncRecordCreated) {
+      await inngest.send({
+        name: 'payment/order.created',
+        data: {
+          userId,
+          userEmail: userEmail || null,
+          orderId: order.id,
+          planId: planData.id,
+          planName: planData.name,
+          amount: planData.amount,
+          currency: planData.currency,
+          credits: planData.credits,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          notes: orderOptions.notes,
+          receipt: orderOptions.receipt,
+        },
+      });
+
+      logger.warn('Payment record creation fell back to Inngest async handler', {
+        userId,
+        orderId: order.id,
+      });
+    }
+
+    logger.info('Razorpay order created and payment record initialized', {
       userId,
       planId,
       orderId: order.id,
@@ -223,12 +261,29 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    // Block verification if payments are disabled mid-flow
+    if (ENV.PAYMENTS_ENABLED === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Payments are currently disabled. Please try again later.',
+      });
+    }
+
     // Check if Razorpay is configured
     if (!razorpay) {
       logger.error('Razorpay not configured', { userId });
       return res.status(500).json({
         success: false,
         message: 'Payment service not configured',
+      });
+    }
+
+    // Guard: Ensure key secret is available (fail fast instead of runtime crash)
+    if (!ENV.RAZORPAY_KEY_SECRET) {
+      logger.error('RAZORPAY_KEY_SECRET is not configured', { userId });
+      return res.status(500).json({
+        success: false,
+        message: 'Payment service misconfigured',
       });
     }
 
@@ -248,13 +303,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = validation.data;
 
-    // Verify payment signature
+    // Verify payment signature using timing-safe comparison to prevent timing attacks
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
-    const expectedSign = createHmac('sha256', ENV.RAZORPAY_KEY_SECRET!)
-      .update(sign.toString())
-      .digest('hex');
+    const expectedSign = createHmac('sha256', ENV.RAZORPAY_KEY_SECRET).update(sign).digest('hex');
 
-    if (razorpay_signature !== expectedSign) {
+    const sigBuffer = Buffer.from(razorpay_signature, 'utf8');
+    const expectedBuffer = Buffer.from(expectedSign, 'utf8');
+    const signatureValid =
+      sigBuffer.length === expectedBuffer.length && timingSafeEqual(sigBuffer, expectedBuffer);
+
+    if (!signatureValid) {
       logger.warn('Payment signature verification failed', {
         userId,
         orderId: razorpay_order_id,
@@ -266,9 +324,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Fetch order details from Razorpay
     const order = await razorpay.orders.fetch(razorpay_order_id);
-    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+
+    // SECURITY: Verify that the order belongs to the current user
+    const orderUserId = order.notes?.userId;
+    if (orderUserId && orderUserId !== userId) {
+      logger.error('Security alert: Payment verification attempted for another user order', {
+        attemptedBy: userId,
+        orderOwner: orderUserId,
+        orderId: razorpay_order_id,
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized payment verification',
+      });
+    }
 
     // Extract plan details from order notes
     const planId = order.notes?.planId;
@@ -303,7 +373,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
     }
 
     // Additional security: Verify that the order amount matches the plan amount
-    if (order.amount !== plan.amount) {
+    // Use Number() coercion since Razorpay SDK may return amount as string
+    if (Number(order.amount) !== Number(plan.amount)) {
       logger.error('Order amount mismatch detected', {
         userId,
         orderId: razorpay_order_id,
@@ -322,10 +393,26 @@ export const verifyPayment = async (req: Request, res: Response) => {
     // Credits will be awarded ONLY via webhook to prevent frontend manipulation
 
     // Update payment record to VERIFIED status (not COMPLETED)
-    await prisma.payment.update({
+    // Use upsert as a safety measure in case createOrder's sync creation failed and Inngest is slow
+    await prisma.payment.upsert({
       where: { razorpayOrderId: razorpay_order_id },
-      data: {
-        status: 'VERIFIED', // New intermediate status
+      create: {
+        userId,
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature,
+        planId: String(planId),
+        planName: plan.name,
+        amount: Number(order.amount),
+        currency: order.currency,
+        credits: Number(credits) || plan.credits,
+        status: 'VERIFIED',
+        verifiedAt: new Date(),
+        notes: order.notes as typeof order.notes,
+        idempotencyKey: `order_${razorpay_order_id}`,
+      },
+      update: {
+        status: 'VERIFIED',
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
         verifiedAt: new Date(),
@@ -337,10 +424,9 @@ export const verifyPayment = async (req: Request, res: Response) => {
       planId: plan.planId,
       planName: plan.name,
       amount: order.amount,
-      credits: credits || plan.credits,
+      credits: Number(credits) || plan.credits,
       orderId: razorpay_order_id,
       paymentId: razorpay_payment_id,
-      paymentStatus: payment.status,
       securityNote: 'Credits will be awarded only after webhook confirmation',
     });
 
@@ -385,11 +471,21 @@ export const handleWebhook = async (req: Request, res: Response) => {
       return res.status(500).json({ success: false, message: 'Server configuration error' });
     }
 
-    // Verify webhook signature
-    // Use rawBody if available (from express.raw middleware), otherwise fallback to JSON.stringify
-    // Fallback is risky due to key ordering but handled gracefully
+    // Verify webhook signature using the raw request body bytes.
+    // We MUST use the exact raw bytes — JSON.stringify(req.body) may reorder keys
+    // or alter whitespace, causing signature mismatch. Fail hard if rawBody is missing
+    // (this means the webhook route was not registered before express.json() middleware).
     const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
-    const bodyToSign = rawBody ? rawBody : JSON.stringify(req.body);
+    if (!rawBody) {
+      logger.error(
+        'Payment webhook: rawBody missing — ensure route is registered before express.json()',
+      );
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error',
+      });
+    }
+    const bodyToSign = rawBody;
 
     const expectedSignature = createHmac('sha256', secret).update(bodyToSign).digest('hex');
 
@@ -404,9 +500,11 @@ export const handleWebhook = async (req: Request, res: Response) => {
       timingSafeEqual(sourceBuffer, targetBuffer);
 
     if (!isValid) {
+      // SECURITY: Never log expectedSignature — if logs are compromised,
+      // attackers could use it to forge webhook calls.
       logger.warn('Invalid webhook signature', {
-        receivedSignature: razorpaySignature,
-        expectedSignature,
+        hasReceivedSignature: !!razorpaySignature,
+        receivedSignaturePrefix: razorpaySignature?.slice(0, 8) + '...',
       });
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
