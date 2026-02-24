@@ -112,7 +112,7 @@ router.post('/models/probe', flexAuth, triggerModelProbe);
  *       404:
  *         description: Model not found
  */
-router.get(/^\/models\/(.+)/, getModel);
+router.get(/^\/models\/(?<modelId>.+)/, getModel);
 
 // ─── Authenticated ────────────────────────────────────────────────────────────
 

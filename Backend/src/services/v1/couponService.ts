@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../../config/database.js';
 import { redis, REDIS_KEYS } from '../../config/redis.js';
+import { SubscriptionPlan } from '../../generated/client.js';
 import { inngest } from '../../inngest/v1/client.js';
 import logger from '../../utils/logger.js';
 import { addUserCredits } from './creditService.js';
@@ -52,12 +53,10 @@ export async function redeemCoupon(
 
         // 5. Check per-user limit
         if (coupon.isOneTimePerUser) {
-          const previousRedemption = await tx.couponRedemption.findUnique({
+          const previousRedemption = await tx.couponRedemption.findFirst({
             where: {
-              couponId_userId: {
-                couponId: coupon.id,
-                userId,
-              },
+              couponId: coupon.id,
+              userId,
             },
           });
 
@@ -98,9 +97,10 @@ export async function redeemCoupon(
           );
         }
 
+        let plan: SubscriptionPlan | null = null;
         // 9. Grant subscription if any
         if (coupon.planId && coupon.durationDays) {
-          const plan = await tx.subscriptionPlan.findUnique({
+          plan = await tx.subscriptionPlan.findUnique({
             where: { planId: coupon.planId },
           });
 
@@ -180,7 +180,7 @@ export async function redeemCoupon(
                   userName: `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`,
                   couponCode: code,
                   creditsAwarded: coupon.credits,
-                  planName: plan?.displayName || plan?.name,
+                  planName: plan?.name,
                   durationDays: coupon.durationDays,
                 },
               },

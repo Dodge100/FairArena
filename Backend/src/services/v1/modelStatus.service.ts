@@ -309,14 +309,12 @@ export interface ModelStatusSnapshot {
 // ─── Read Access ──────────────────────────────────────────────────────────────
 
 export async function getModelStatus(): Promise<ModelStatusSnapshot> {
-  const cached = await redis.get<string | ModelStatusSnapshot>(CACHE_KEY);
+  const cached = await redis.get<string>(CACHE_KEY);
   if (cached) {
-    if (typeof cached === 'string') {
-      try {
-        return JSON.parse(cached) as ModelStatusSnapshot;
-      } catch {}
-    } else if (typeof cached === 'object' && cached !== null && 'data' in cached) {
-      return cached as ModelStatusSnapshot;
+    try {
+      return JSON.parse(cached) as ModelStatusSnapshot;
+    } catch {
+      // fall through to fresh computation if cache is malformed
     }
   }
 

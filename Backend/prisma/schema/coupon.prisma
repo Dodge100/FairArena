@@ -33,7 +33,7 @@ model CouponRedemption {
   coupon         Coupon   @relation(fields: [couponId], references: [id])
   user           User     @relation(fields: [userId], references: [userId])
 
-  @@unique([couponId, userId])
+  @@index([couponId, userId])
   @@index([couponId])
   @@index([userId])
   @@index([redeemedAt])

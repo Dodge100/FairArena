@@ -430,9 +430,9 @@ export const login = async (req: Request, res: Response) => {
             ipAddress,
             deviceFingerprint,
           } as Omit<MFAPendingPayload, 'iat' | 'exp'>,
-          ENV.JWT_SECRET,
+          ENV.JWT_SECRET as string,
           {
-            expiresIn: '5m',
+            expiresIn: (ENV.ACCESS_TOKEN_EXPIRY as any) || '5m',
             issuer: 'fairarena',
           },
         ),
@@ -479,7 +479,7 @@ export const login = async (req: Request, res: Response) => {
         },
         ENV.JWT_SECRET as string,
         {
-          expiresIn: (ACCESS_TOKEN_EXPIRY as any) || '15m',
+          expiresIn: (ENV.ACCESS_TOKEN_EXPIRY as any) || '15m',
           issuer: 'fairarena',
         },
       );

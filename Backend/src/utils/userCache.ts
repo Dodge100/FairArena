@@ -17,8 +17,16 @@ export async function getCachedUserInfo(userId: string): Promise<CachedUserInfo 
     const cachedData = await redis.get(cacheKey);
     if (cachedData) {
       // Upstash Redis might automatically parse JSON strings into objects
-      if (typeof cachedData === 'object' && cachedData !== null) {
-        return cachedData as CachedUserInfo;
+      if (
+        typeof cachedData === 'object' &&
+        cachedData !== null &&
+        !(cachedData instanceof Date) &&
+        !(cachedData instanceof RegExp)
+      ) {
+        const obj = cachedData as Record<string, unknown>;
+        if (typeof obj.id === 'string' && typeof obj.email === 'string') {
+          return obj as unknown as CachedUserInfo;
+        }
       }
       try {
         return JSON.parse(cachedData as string);
