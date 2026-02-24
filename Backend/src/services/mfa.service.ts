@@ -51,10 +51,11 @@ export function encryptSecret(text: string): string {
 /** Decrypt a string using AES-256-GCM */
 export function decryptSecret(encryptedData: string): string {
   try {
-    const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
-    if (!ivHex || !authTagHex || !encrypted) {
+    const parts = encryptedData.split(':');
+    if (parts.length !== 3 || !parts[0] || !parts[1]) {
       throw new Error('Invalid encrypted data format');
     }
+    const [ivHex, authTagHex, encrypted] = parts;
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
     const decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);

@@ -136,13 +136,18 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: Backend
 
-      - name: Run Backend unit tests
-        run: pnpm run test
+      - name: Run Backend unit tests and coverage
+        run: pnpm run test:coverage -- --reporter=default --reporter=junit --outputFile=test-report.junit.xml
         working-directory: Backend
 
-      - name: Run Backend coverage
-        run: pnpm run test:coverage
-        working-directory: Backend
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: Backend/coverage/
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: true
 
       - name: Upload Backend coverage report
         uses: actions/upload-artifact@v4
@@ -151,6 +156,13 @@ jobs:
           name: backend-coverage
           path: Backend/coverage/
           retention-days: 30
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
 
   # ─────────────────────────────────────────────────────────────────────────
   # 3b. FRONTEND TESTS
@@ -177,13 +189,18 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: Frontend
 
-      - name: Run Frontend unit tests
-        run: pnpm run test
+      - name: Run Frontend unit tests and coverage
+        run: pnpm run test:coverage -- --reporter=default --reporter=junit --outputFile=test-report.junit.xml
         working-directory: Frontend
 
-      - name: Run Frontend coverage
-        run: pnpm run test:coverage
-        working-directory: Frontend
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: Frontend/coverage/
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: true
 
       - name: Upload Frontend coverage report
         uses: actions/upload-artifact@v4
@@ -192,6 +209,13 @@ jobs:
           name: frontend-coverage
           path: Frontend/coverage/
           retention-days: 30
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: frontend
 
   # ─────────────────────────────────────────────────────────────────────────
   # 4. COVERAGE QUALITY GATE

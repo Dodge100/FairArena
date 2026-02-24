@@ -22,7 +22,7 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
+      reporter: ['text', 'lcov', 'html', 'json-summary'],
       include: ['src/services/**', 'src/middleware/**', 'src/utils/**', 'src/controllers/**'],
       exclude: ['src/__tests__/**', 'src/scripts/**', 'src/generated/**'],
       thresholds: {

@@ -2,5 +2,9 @@ node scripts/validate-branch-name.js
 node scripts/apply-license-headers.mjs
 node scripts/trivy-scan.js
 pnpm lint-staged
+pnpm --filter backend run test
+pnpm --filter fairarena run test
+pnpm --filter backend run lint
+pnpm --filter fairarena run lint
 pnpm --filter backend run typecheck
 pnpm --filter fairarena run typecheck

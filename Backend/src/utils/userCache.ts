@@ -14,6 +14,7 @@
 
 import { prisma } from '../config/database.js';
 import { redis, REDIS_KEYS } from '../config/redis.js';
+import logger from './logger.js';
 
 export interface CachedUserInfo {
   id: string;
@@ -45,7 +46,7 @@ export async function getCachedUserInfo(userId: string): Promise<CachedUserInfo 
       try {
         return JSON.parse(cachedData as string);
       } catch (parseError) {
-        console.error('Error parsing cached user info:', parseError, { cachedData });
+        logger.error('Error parsing cached user info', { error: parseError, cachedData });
         // If it's the string "[object Object]", it's corrupted, so we delete it
         if (cachedData === '[object Object]') {
           await redis.del(cacheKey);
@@ -75,7 +76,7 @@ export async function getCachedUserInfo(userId: string): Promise<CachedUserInfo 
 
     return user;
   } catch (error) {
-    console.error('Error fetching cached user info:', error);
+    logger.error('Error fetching cached user info', { error });
     // Fallback to direct DB query if cache fails
     try {
       const user = await prisma.user.findUnique({
@@ -90,7 +91,7 @@ export async function getCachedUserInfo(userId: string): Promise<CachedUserInfo 
       });
       return user;
     } catch (dbError) {
-      console.error('Error fetching user from database:', dbError);
+      logger.error('Error fetching user from database', { error: dbError });
       return null;
     }
   }
@@ -108,6 +109,6 @@ export async function invalidateUserCache(userId: string): Promise<void> {
   try {
     await redis.del(cacheKey);
   } catch (error) {
-    console.error('Error invalidating user cache:', error);
+    logger.error('Error invalidating user cache', { error });
   }
 }
