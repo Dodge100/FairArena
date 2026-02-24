@@ -18,22 +18,118 @@ import { rateLimiters } from '../../middleware/organizationRateLimit.middleware.
 const router = Router();
 
 // SSO Configuration
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config:
+ *   get:
+ *     summary: Get SSO configuration
+ *     description: Retrieve the Single Sign-On configuration for an organization.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orgId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: SSO configuration retrieved successfully
+ *   post:
+ *     summary: Update SSO configuration
+ *     description: Create or update the Single Sign-On configuration for an organization.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SSO configuration updated successfully
+ */
 router.get('/:orgId/sso-config', protectRoute, ssoController.getSSOConfig);
 router.post('/:orgId/sso-config', protectRoute, ssoController.upsertSSOConfig);
+
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config/scim-token:
+ *   post:
+ *     summary: Regenerate SCIM token
+ *     description: Generate a new SCIM API token for automated user provisioning.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SCIM token regenerated successfully
+ */
 router.post('/:orgId/sso-config/scim-token', protectRoute, ssoController.regenerateSCIMToken);
+
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config/test:
+ *   post:
+ *     summary: Test SSO connection
+ *     description: Verify the connectivity and configuration with the identity provider.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SSO connection test results
+ */
 router.post('/:orgId/sso-config/test', protectRoute, ssoController.testSSOConnection);
 
-// Domain verification
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config/verification-status:
+ *   get:
+ *     summary: Get domain verification status
+ *     description: Check the status of domain ownership verification for SSO.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Domain verification status retrieved successfully
+ */
 router.get(
   '/:orgId/sso-config/verification-status',
   protectRoute,
   ssoController.getVerificationStatus,
 );
+
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config/verify-domain/initiate:
+ *   post:
+ *     summary: Initiate domain verification
+ *     description: Start the process of verifying a domain for SSO.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Domain verification initiated successfully
+ */
 router.post(
   '/:orgId/sso-config/verify-domain/initiate',
   protectRoute,
   ssoController.initiateDomainVerification,
 );
+
+/**
+ * @swagger
+ * /api/v1/organization/{orgId}/sso-config/verify-domain/check:
+ *   post:
+ *     summary: Check domain verification
+ *     description: Verify if the requested domain has been correctly configured with required records.
+ *     tags: [Organization SSO]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Domain verification check complete
+ */
 router.post(
   '/:orgId/sso-config/verify-domain/check',
   protectRoute,

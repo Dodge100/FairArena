@@ -1,4 +1,3 @@
-// @ts-nocheck
 import DOMPurify from 'dompurify';
 import {
   Bot,
@@ -41,14 +40,14 @@ renderer.link = (href, title, text) => {
   let safeHref = '#';
   if (typeof href === 'string') {
     safeHref = href;
-  } else if (href && typeof href === 'object' && typeof href.href === 'string') {
-    safeHref = href.href;
+  } else if (href && typeof href === 'object' && href !== null && 'href' in href && typeof (href as { href: string }).href === 'string') {
+    safeHref = (href as { href: string }).href;
   }
   const safeTitle =
     typeof title === 'string' && title && title !== 'undefined'
       ? title.replace(/undefined/g, '')
       : '';
-  return `<a href="${safeHref}"${safeTitle ? ` title="${safeTitle}"` : ''} class="text-blue-500 hover:text-blue-700 underline" target="_blank" rel="noopener noreferrer">link</a>`;
+  return `<a href="${safeHref}"${safeTitle ? ` title="${safeTitle}"` : ''} class="text-blue-500 hover:text-blue-700 underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
 };
 marked.setOptions({
   breaks: true,
@@ -68,7 +67,7 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
     regenerateLastMessage,
   } = useChat();
   const { position: aiButtonPosition, setPosition: setAIButtonPosition } = useAIButton();
-  const { theme, toggleTheme } = useTheme();
+  useTheme(); // Just calling the hook if it performs side effects, otherwise remove if unused
   const { user } = useAuthState();
 
   const [input, setInput] = useState('');
@@ -97,9 +96,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
   const sidebarRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  type SpeechRecognition = typeof window extends { webkitSpeechRecognition: infer T } ? T : any;
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
   const messages = useMemo(() => currentSession?.messages || [], [currentSession]);
@@ -237,7 +235,7 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = 'en-US';
 
-        recognitionRef.current.onresult = (event: any) => {
+        recognitionRef.current.onresult = (event: { results: any[] }) => {
           const transcript = Array.from(event.results)
             .map((result: any) => result[0])
             .map((result: any) => result.transcript)
@@ -245,7 +243,7 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
           setInput(transcript);
         };
 
-        recognitionRef.current.onerror = (event: any) => {
+        recognitionRef.current.onerror = (event: { error: string }) => {
           console.error('Speech recognition error:', event.error);
           setIsListening(false);
         };
@@ -584,9 +582,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             setAutoScroll(newValue);
                             localStorage.setItem('ai-auto-scroll', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${
-                            autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
-                          }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${autoScroll ? 'bg-[#DDEF00]' : 'bg-muted'
+                            }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -607,9 +604,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             setSoundNotifications(newValue);
                             localStorage.setItem('ai-sound-notifications', String(newValue));
                           }}
-                          className={`w-10 h-6 rounded-full relative transition-colors ${
-                            soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
-                          }`}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${soundNotifications ? 'bg-[#DDEF00]' : 'bg-muted'
+                            }`}
                         >
                           <motion.div
                             className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -635,11 +631,10 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setAIButtonPosition(option.value as AIButtonPosition)}
-                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                              aiButtonPosition === option.value
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${aiButtonPosition === option.value
                                 ? 'bg-[#DDEF00] text-black'
                                 : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                            }`}
+                              }`}
                           >
                             {option.label}
                           </motion.button>
@@ -656,9 +651,8 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setAiButtonHidden(!aiButtonHidden)}
-                        className={`w-10 h-6 rounded-full relative transition-colors ${
-                          aiButtonHidden ? 'bg-red-500' : 'bg-muted'
-                        }`}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${aiButtonHidden ? 'bg-red-500' : 'bg-muted'
+                          }`}
                       >
                         <motion.div
                           className="w-4 h-4 bg-white rounded-full absolute top-1 shadow-md"
@@ -992,11 +986,10 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                                         speakMessage(message.content);
                                       }
                                     }}
-                                    className={`p-1.5 rounded-lg transition-colors ${
-                                      aiSpeaking
+                                    className={`p-1.5 rounded-lg transition-colors ${aiSpeaking
                                         ? 'bg-[#DDEF00]/20 text-[#DDEF00]'
                                         : 'hover:bg-muted'
-                                    }`}
+                                      }`}
                                     title={aiSpeaking ? 'Stop speaking' : 'Read aloud'}
                                   >
                                     <svg
@@ -1083,11 +1076,10 @@ export function AISidebar({ isOpen, onClose, aiButtonHidden, setAiButtonHidden }
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleVoiceInput}
-                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${
-                          isListening
+                        className={`flex items-center justify-center w-11 h-11 rounded-2xl transition-all shrink-0 ${isListening
                             ? 'bg-red-500 hover:bg-red-600 text-white'
                             : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                        }`}
+                          }`}
                         title={isListening ? 'Stop recording' : 'Voice input'}
                       >
                         <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />

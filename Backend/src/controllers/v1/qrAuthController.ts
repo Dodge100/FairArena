@@ -81,7 +81,6 @@ async function checkRateLimit(
   max: number,
   windowMs: number,
 ): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
-  const now = Date.now();
   const windowKey = `${REDIS_KEYS.QR_AUTH_RATE_LIMIT}${key}`;
 
   const current = await redis.get<string>(windowKey);
@@ -375,7 +374,7 @@ export async function streamQRStatus(req: Request, res: Response) {
 export async function approveQRSession(req: Request, res: Response) {
   try {
     // User must be authenticated
-    const userId = (req as any).userId;
+    const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({
         success: false,

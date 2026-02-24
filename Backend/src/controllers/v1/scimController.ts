@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../config/database.js';
 import { ENV } from '../../config/env.js';
+import { Prisma } from '../../generated/client.js';
 import logger from '../../utils/logger.js';
 
 // SCIM Constants
@@ -9,7 +10,16 @@ const SCIM_ERROR_SCHEMA = 'urn:ietf:params:scim:api:messages:2.0:Error';
 const SCIM_LIST_SCHEMA = 'urn:ietf:params:scim:api:messages:2.0:ListResponse';
 
 // Helper to format User to SCIM
-const toScimUser = (user: any) => ({
+const toScimUser = (user: {
+  userId: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  isBanned?: boolean;
+  isDeleted?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}) => ({
   schemas: [SCIM_USER_SCHEMA],
   id: user.userId,
   userName: user.email,
@@ -22,8 +32,8 @@ const toScimUser = (user: any) => ({
   active: !user.isBanned && !user.isDeleted,
   meta: {
     resourceType: 'User',
-    created: user.createdAt.toISOString(),
-    lastModified: user.updatedAt.toISOString(),
+    created: (user.createdAt as Date).toISOString(),
+    lastModified: (user.updatedAt as Date).toISOString(),
     location: `${ENV.BASE_URL}/api/v1/scim/v2/Users/${user.userId}`,
   },
 });
@@ -38,7 +48,7 @@ export const getUsers = async (req: Request, res: Response) => {
     const skip = Math.max(0, Number(startIndex) - 1);
     const take = Math.min(1000, Number(count));
 
-    let where: any = { isDeleted: false }; // Default only active users? SCIM might want all.
+    const where: Prisma.UserWhereInput = { isDeleted: false }; // Default only active users? SCIM might want all.
 
     // Very basic filter parsing for "userName eq '...'"
     if (filter && typeof filter === 'string') {
@@ -65,8 +75,10 @@ export const getUsers = async (req: Request, res: Response) => {
       startIndex: Number(startIndex),
       Resources: users.map(toScimUser),
     });
-  } catch (error: any) {
-    logger.error('SCIM getUsers error', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('SCIM getUsers error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     res.status(500).json({
       schemas: [SCIM_ERROR_SCHEMA],
       status: '500',
@@ -93,9 +105,13 @@ export const getUser = async (req: Request, res: Response) => {
       });
     }
 
-    res.set('Content-Type', 'application/scim+json').json(toScimUser(user));
-  } catch (error: any) {
-    logger.error('SCIM getUser error', { error: error.message });
+    res
+      .set('Content-Type', 'application/scim+json')
+      .json(toScimUser(user as Parameters<typeof toScimUser>[0]));
+  } catch (error: unknown) {
+    logger.error('SCIM getUser error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     res.status(500).json({
       schemas: [SCIM_ERROR_SCHEMA],
       status: '500',
@@ -110,7 +126,7 @@ export const getUser = async (req: Request, res: Response) => {
  */
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { userName, name, active, emails } = req.body;
+    const { userName, name } = req.body;
 
     if (!userName) {
       return res.status(400).json({
@@ -144,9 +160,14 @@ export const createUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).set('Content-Type', 'application/scim+json').json(toScimUser(user));
-  } catch (error: any) {
-    logger.error('SCIM createUser error', { error: error.message });
+    res
+      .status(201)
+      .set('Content-Type', 'application/scim+json')
+      .json(toScimUser(user as Parameters<typeof toScimUser>[0]));
+  } catch (error: unknown) {
+    logger.error('SCIM createUser error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     res.status(500).json({
       schemas: [SCIM_ERROR_SCHEMA],
       status: '500',
@@ -173,16 +194,19 @@ export const updateUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.set('Content-Type', 'application/scim+json').json(toScimUser(user));
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+    res
+      .set('Content-Type', 'application/scim+json')
+      .json(toScimUser(user as Parameters<typeof toScimUser>[0]));
+  } catch (error: unknown) {
+    const err = error as { code?: string; message: string };
+    if (err.code === 'P2025') {
       return res.status(404).json({
         schemas: [SCIM_ERROR_SCHEMA],
         status: '404',
         detail: 'Resource not found',
       });
     }
-    logger.error('SCIM updateUser error', { error: error.message });
+    logger.error('SCIM updateUser error', { error: err.message });
     res.status(500).json({
       schemas: [SCIM_ERROR_SCHEMA],
       status: '500',
@@ -202,7 +226,7 @@ export const patchUser = async (req: Request, res: Response) => {
     const { Operations } = req.body; // Array of operations
 
     // Very basic implementation: handle 'replace' on 'active'
-    let updateData: any = {};
+    const updateData: Prisma.UserUpdateInput = {};
 
     for (const op of Operations) {
       if (op.op.toLowerCase() === 'replace') {
@@ -228,15 +252,16 @@ export const patchUser = async (req: Request, res: Response) => {
     });
 
     res.set('Content-Type', 'application/scim+json').json(toScimUser(user));
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; message: string };
+    if (err.code === 'P2025') {
       return res.status(404).json({
         schemas: [SCIM_ERROR_SCHEMA],
         status: '404',
         detail: 'Resource not found',
       });
     }
-    logger.error('SCIM patchUser error', { error: error.message });
+    logger.error('SCIM patchUser error', { error: err.message });
     res.status(500).json({
       schemas: [SCIM_ERROR_SCHEMA],
       status: '500',
@@ -254,8 +279,13 @@ export const deleteUser = async (req: Request, res: Response) => {
     const userId = Array.isArray(id) ? id[0] : id;
     await prisma.user.delete({ where: { userId } });
     res.status(204).send();
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2025'
+    ) {
       return res.status(404).json({
         schemas: [SCIM_ERROR_SCHEMA],
         status: '404',

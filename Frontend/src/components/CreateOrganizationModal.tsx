@@ -16,7 +16,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { useOrganization } from '../contexts/OrganizationContext';
-import { apiRequest } from '../lib/apiClient';
+import { ApiError, apiRequest } from '../lib/apiClient';
 
 // Zod schema for form fields
 const createOrganizationFormSchema = z.object({
@@ -90,14 +90,16 @@ export const CreateOrganizationModal = ({ open, onOpenChange }: CreateOrganizati
       onOpenChange(false);
       reset();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       // Logic to handle slug exists error, check error.data
-      // Note: apiRequest throws ApiError, which we can inspect
-      if ((error as any).data?.error === 'Slug already exists' && (error as any).data?.suggestion) {
-        toast.error(`Slug already exists. Try: ${error.data.suggestion}`);
-      } else {
-        toast.error(error.message || 'Failed to create organization');
+      if (error instanceof ApiError && error.data && typeof error.data === 'object') {
+        const errorData = error.data as { error?: string; suggestion?: string };
+        if (errorData.error === 'Slug already exists' && errorData.suggestion) {
+          toast.error(`Slug already exists. Try: ${errorData.suggestion}`);
+          return;
+        }
       }
+      toast.error(error.message || 'Failed to create organization');
     },
   });
 

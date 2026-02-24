@@ -30,20 +30,18 @@ export async function apiFetch(input: RequestInfo, init: RequestInit = {}) {
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
 
   // Prepare headers
-  const headers: Record<string, string> = {
-    ...((init.headers as any) || {}),
-  };
+  const headers = new Headers(init.headers);
 
   // Add authorization token
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   // Add CSRF token for state-changing requests
   if (isStateChanging) {
     const csrfToken = getCsrfToken();
     if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
+      headers.set('X-CSRF-Token', csrfToken);
     }
   }
 
@@ -121,15 +119,13 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
   const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
 
   // Prepare headers
-  const headers: Record<string, string> = {
-    ...((init.headers as any) || {}),
-  };
+  const headers = new Headers(init.headers);
 
   // Add CSRF token for state-changing requests
   if (isStateChanging) {
     const csrfToken = getCsrfToken();
     if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
+      headers.set('X-CSRF-Token', csrfToken);
     }
   }
 
@@ -187,7 +183,7 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore parse errors
     }
   }
@@ -197,9 +193,9 @@ export async function publicApiFetch(input: RequestInfo, init: RequestInit = {})
 
 export class ApiError extends Error {
   status: number;
-  data: any;
+  data: unknown;
 
-  constructor(status: number, data: any) {
+  constructor(status: number, data: unknown) {
     super(`API Error: ${status}`);
     this.name = 'ApiError';
     this.status = status;
@@ -226,7 +222,6 @@ export async function apiRequest<T>(input: RequestInfo, init?: RequestInit): Pro
 
   return response.json();
 }
-
 
 export async function publicApiRequest<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const response = await publicApiFetch(input, init);

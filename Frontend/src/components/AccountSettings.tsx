@@ -21,7 +21,7 @@ import {
   Shield,
   Smartphone,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CookieConsentModal } from '../components/CookieConsentModal';
@@ -105,7 +105,7 @@ export default function AccountSettingsComponent() {
       }
       return { previousSettings };
     },
-    onError: (_err, _newTodo, context: any) => {
+    onError: (_err, _newTodo, context: { previousSettings?: UserSettings } | undefined) => {
       if (context?.previousSettings) {
         queryClient.setQueryData(['account-settings'], context.previousSettings);
       }
@@ -221,11 +221,7 @@ export default function AccountSettingsComponent() {
     );
   };
 
-  useEffect(() => {
-    if (searchQuery) {
-      setOpenSections(['activity', 'communication', 'preferences', 'data', 'privacy']);
-    }
-  }, [searchQuery]);
+  // We handle opening sections in the onChange handler to avoid setState-in-effect issues
 
   const sections = [
     {
@@ -785,11 +781,10 @@ export default function AccountSettingsComponent() {
 
               {exportMessage && (
                 <div
-                  className={`text-sm p-3 rounded-md ${
-                    exportMessage.includes('Check your email')
+                  className={`text-sm p-3 rounded-md ${exportMessage.includes('Check your email')
                       ? 'text-green-600 bg-green-50 border border-green-200'
                       : 'text-red-600 bg-red-50 border border-red-200'
-                  }`}
+                    }`}
                 >
                   {exportMessage}
                 </div>
@@ -982,7 +977,13 @@ export default function AccountSettingsComponent() {
             placeholder="Search settings..."
             className="pl-9"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (val) {
+                setOpenSections(['activity', 'communication', 'preferences', 'data', 'privacy']);
+              }
+            }}
           />
         </div>
 

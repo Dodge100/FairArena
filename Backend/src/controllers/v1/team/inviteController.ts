@@ -85,7 +85,7 @@ function parseJSONInvites(jsonContent: string): { valid: BulkInviteInput[]; inva
     });
 
     return { valid, invalid };
-  } catch (error) {
+  } catch {
     throw new Error('Invalid JSON format');
   }
 }
@@ -344,7 +344,7 @@ export const uploadTeamInviteCSV = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
     const userId = auth?.userId;
-    const { teamSlug, organizationSlug } = req.params;
+    const {} = req.params;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -417,7 +417,7 @@ export const uploadTeamInviteJSON = async (req: Request, res: Response) => {
   try {
     const auth = req.user;
     const userId = auth?.userId;
-    const { teamSlug, organizationSlug } = req.params;
+    const {} = req.params;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

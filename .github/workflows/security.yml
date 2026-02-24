@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner in fs mode
+        id: trivy-fs
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'fs'
@@ -35,7 +36,7 @@ jobs:
 
       - name: Upload Trivy fs scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy-fs.outcome == 'success'
         with:
           sarif_file: 'trivy-fs-results.sarif'
           category: 'trivy-fs'
@@ -53,6 +54,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Backend image
+        id: build-backend
         uses: docker/build-push-action@v5
         with:
           context: ./Backend
@@ -63,6 +65,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy on Backend image
+        id: trivy-backend
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'image'
@@ -70,15 +73,18 @@ jobs:
           format: 'sarif'
           output: 'trivy-backend-results.sarif'
           severity: 'HIGH,CRITICAL'
+          trivy-config: 'trivy.yaml'
+          trivyignores: '.trivyignore'
 
       - name: Upload Trivy backend scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy-backend.outcome == 'success'
         with:
           sarif_file: 'trivy-backend-results.sarif'
           category: 'trivy-backend'
 
       - name: Build Frontend image
+        id: build-frontend
         uses: docker/build-push-action@v5
         with:
           context: ./Frontend
@@ -89,6 +95,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy on Frontend image
+        id: trivy-frontend
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'image'
@@ -96,15 +103,18 @@ jobs:
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
           severity: 'HIGH,CRITICAL'
+          trivy-config: 'trivy.yaml'
+          trivyignores: '.trivyignore'
 
       - name: Upload Trivy frontend scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy-frontend.outcome == 'success'
         with:
           sarif_file: 'trivy-frontend-results.sarif'
           category: 'trivy-frontend'
 
       - name: Build Credential-Validator image
+        id: build-credential-validator
         uses: docker/build-push-action@v5
         with:
           context: ./Credential-Validator
@@ -115,6 +125,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy on Credential-Validator image
+        id: trivy-credential-validator
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'image'
@@ -122,10 +133,12 @@ jobs:
           format: 'sarif'
           output: 'trivy-credential-validator-results.sarif'
           severity: 'HIGH,CRITICAL'
+          trivy-config: 'trivy.yaml'
+          trivyignores: '.trivyignore'
 
       - name: Upload Trivy credential-validator scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy-credential-validator.outcome == 'success'
         with:
           sarif_file: 'trivy-credential-validator-results.sarif'
           category: 'trivy-credential-validator'

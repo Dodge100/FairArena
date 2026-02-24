@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiRequest, publicApiFetch } from '@/lib/apiClient';
+import { apiRequest } from '@/lib/apiClient';
 import {
   browserSupportsWebAuthn,
-  startAuthentication,
-  startRegistration,
+  startRegistration
 } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,7 +38,7 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
-  const [isSupported, setIsSupported] = useState(true);
+  const [isSupported, setIsSupported] = useState(() => browserSupportsWebAuthn());
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -47,8 +46,12 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
 
   // Check WebAuthn support
   useEffect(() => {
-    setIsSupported(browserSupportsWebAuthn());
-  }, []);
+    // Sync with browser check if needed, but state is already initialized
+    const supported = browserSupportsWebAuthn();
+    if (supported !== isSupported) {
+      setIsSupported(supported);
+    }
+  }, [isSupported]);
 
   // Fetch passkeys
   const { data: passkeys = [], isLoading: loading } = useQuery({
@@ -63,7 +66,7 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
   // Register new passkey
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const optionsRes = await apiRequest<{ success: boolean; data: any; message?: string }>(
+      const optionsRes = await apiRequest<{ success: boolean; data: unknown; message?: string }>(
         `${apiUrl}/api/v1/passkeys/register/options`,
         { method: 'POST' },
       );
@@ -94,8 +97,8 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
       toast.success('Passkey registered successfully!');
       onPasskeyChange?.();
     },
-    onError: (error: any) => {
-      const message = error instanceof Error ? error.message : 'Failed to register passkey';
+    onError: (error: Error) => {
+      const message = error.message || 'Failed to register passkey';
       if (
         message.includes('cancelled') ||
         message.includes('canceled') ||
@@ -135,8 +138,8 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
       toast.success('Passkey deleted');
       onPasskeyChange?.();
     },
-    onError: (error: any) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete passkey');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete passkey');
     },
   });
 
@@ -166,8 +169,8 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
       setNewName('');
       toast.success('Passkey renamed');
     },
-    onError: (error: any) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to rename passkey');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to rename passkey');
     },
   });
 
@@ -373,119 +376,3 @@ export function PasskeyManager({ onPasskeyChange }: PasskeyManagerProps) {
   );
 }
 
-/**
- * Hook to check if passkeys are supported
- */
-export function usePasskeySupport() {
-  const [isSupported, setIsSupported] = useState(false);
-
-  useEffect(() => {
-    setIsSupported(browserSupportsWebAuthn());
-  }, []);
-
-  return isSupported;
-}
-
-/**
- * Initiate passkey login flow
- * Call this from the signin page
- */
-/**
- * Hook to handle passkey login flow
- */
-export function usePasskeyLogin() {
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
-  return useMutation({
-    mutationFn: async (email?: string) => {
-      // Step 1: Get authentication options
-      const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/options`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const optionsData = await optionsRes.json();
-
-      if (!optionsData.success) {
-        throw new Error(optionsData.message || 'Failed to get authentication options');
-      }
-
-      // Step 2: Authenticate with browser
-      const credential = await startAuthentication({
-        optionsJSON: optionsData.data,
-      });
-
-      // Step 3: Verify with server
-      const verifyRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response: credential }),
-      });
-      const verifyData = await verifyRes.json();
-
-      if (!verifyData.success) {
-        throw new Error(verifyData.message || 'Failed to verify authentication');
-      }
-
-      return {
-        user: verifyData.data.user,
-        accessToken: verifyData.data.accessToken,
-      };
-    },
-  });
-}
-
-/**
- * Helper to handle passkey login flow (non-hook version)
- */
-export async function initiatePasskeyLogin(apiUrl: string, email?: string) {
-  try {
-    // Step 1: Get authentication options
-    const optionsRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/options`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const optionsData = await optionsRes.json();
-
-    if (!optionsData.success) {
-      return {
-        success: false,
-        error: optionsData.message || 'Failed to get authentication options',
-      };
-    }
-
-    // Step 2: Authenticate with browser
-    const credential = await startAuthentication({
-      optionsJSON: optionsData.data,
-    });
-
-    // Step 3: Verify with server
-    const verifyRes = await publicApiFetch(`${apiUrl}/api/v1/passkeys/login/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ response: credential }),
-    });
-    const verifyData = await verifyRes.json();
-
-    if (!verifyData.success) {
-      return { success: false, error: verifyData.message || 'Failed to verify authentication' };
-    }
-
-    return {
-      success: true,
-      user: verifyData.data.user,
-      accessToken: verifyData.data.accessToken,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Passkey authentication failed';
-    if (
-      message.includes('cancelled') ||
-      message.includes('canceled') ||
-      message.includes('AbortError')
-    ) {
-      return { success: false, error: 'cancelled' };
-    }
-    return { success: false, error: message };
-  }
-}

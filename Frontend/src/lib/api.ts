@@ -1,11 +1,11 @@
 import { apiFetch } from './apiClient';
 
-interface AxiosLikeResponse<T = any> {
+interface AxiosLikeResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
-  headers: any;
-  config: any;
+  headers: Record<string, string>;
+  config: RequestInit;
 }
 
 class AxiosLikeError extends Error {
@@ -45,7 +45,7 @@ const createAxiosLikeResponse = async (res: Response): Promise<AxiosLikeResponse
 };
 
 export const apiClient = {
-  get: async <T = any>(url: string, config?: any): Promise<AxiosLikeResponse<T>> => {
+  get: async <T = unknown>(url: string, config?: RequestInit): Promise<AxiosLikeResponse<T>> => {
     const res = await apiFetch(url, { method: 'GET', ...config });
     if (!res.ok) {
       const errorResponse = await createAxiosLikeResponse(res);
@@ -54,7 +54,11 @@ export const apiClient = {
     return createAxiosLikeResponse(res);
   },
 
-  post: async <T = any>(url: string, data?: any, config?: any): Promise<AxiosLikeResponse<T>> => {
+  post: async <T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: RequestInit,
+  ): Promise<AxiosLikeResponse<T>> => {
     const res = await apiFetch(url, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -68,7 +72,11 @@ export const apiClient = {
     return createAxiosLikeResponse(res);
   },
 
-  put: async <T = any>(url: string, data?: any, config?: any): Promise<AxiosLikeResponse<T>> => {
+  put: async <T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: RequestInit,
+  ): Promise<AxiosLikeResponse<T>> => {
     const res = await apiFetch(url, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -82,7 +90,7 @@ export const apiClient = {
     return createAxiosLikeResponse(res);
   },
 
-  delete: async <T = any>(url: string, config?: any): Promise<AxiosLikeResponse<T>> => {
+  delete: async <T = unknown>(url: string, config?: RequestInit): Promise<AxiosLikeResponse<T>> => {
     const res = await apiFetch(url, { method: 'DELETE', ...config });
     if (!res.ok) {
       const errorResponse = await createAxiosLikeResponse(res);

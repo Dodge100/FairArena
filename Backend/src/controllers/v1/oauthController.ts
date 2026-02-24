@@ -593,8 +593,9 @@ export const handleGoogleRiscEvent = async (req: Request, res: Response) => {
 
     // Extract event details
     // RISC tokens put events in the 'events' claim
-    const events = (payload as any).events || {};
-    const subject = (payload as any).sub;
+    const riserPayload = payload as unknown as Record<string, unknown>;
+    const events = (riserPayload.events as Record<string, unknown>) || {};
+    const subject = riserPayload.sub as string;
 
     if (!subject) {
       return res.status(400).json({
@@ -812,11 +813,11 @@ export const ssoCallback = async (req: Request, res: Response) => {
 
     if (tokenData.id_token) {
       const jwt = await import('jsonwebtoken');
-      const decoded: any = jwt.default.decode(tokenData.id_token);
-      email = decoded.email;
-      firstName = decoded.given_name;
-      lastName = decoded.family_name;
-      profileImageUrl = decoded.picture;
+      const decoded = jwt.default.decode(tokenData.id_token) as Record<string, unknown>;
+      email = decoded.email as string;
+      firstName = decoded.given_name as string;
+      lastName = decoded.family_name as string;
+      profileImageUrl = decoded.picture as string;
     } else if (ssoConfig.userInfoUrl) {
       const uiRes = await fetch(ssoConfig.userInfoUrl, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -872,7 +873,7 @@ export const ssoCallback = async (req: Request, res: Response) => {
           await prisma.userOrganization.create({
             data: { userId: user.userId, organizationId: ssoConfig.organizationId },
           });
-        } catch (e) {
+        } catch {
           // Ignore unique constraint violation if exists
         }
       }

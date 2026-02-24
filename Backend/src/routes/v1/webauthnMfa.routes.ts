@@ -30,10 +30,11 @@ const authLimiter = createAuthRateLimiter({
 // Registration Routes (Authenticated users only, requires settings verification)
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/register/options:
  *   post:
  *     summary: Generate WebAuthn registration options
+ *     description: Initiate the process of registering a new security key or biometric credential.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -62,10 +63,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/register/verify:
  *   post:
- *     summary: Verify WebAuthn registration and save security key
+ *     summary: Verify WebAuthn registration
+ *     description: Finalize the registration of a new security key by verifying the credential response from the browser.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -101,10 +103,11 @@ router.post(
 // Authentication Routes (Can be called with temp MFA token - no settings verification needed)
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/authenticate/options:
  *   post:
- *     summary: Generate WebAuthn authentication options for MFA
+ *     summary: Generate WebAuthn authentication options
+ *     description: Initiate the login process using a previously registered security key.
  *     tags: [MFA]
  *     requestBody:
  *       content:
@@ -132,10 +135,11 @@ router.post(
 router.post('/authenticate/options', authLimiter, getAuthenticationOptions);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/authenticate/verify:
  *   post:
- *     summary: Verify WebAuthn assertion for MFA login
+ *     summary: Verify WebAuthn authentication
+ *     description: Complete the login process by verifying the authentication assertion from the browser.
  *     tags: [MFA]
  *     requestBody:
  *       required: true
@@ -165,10 +169,11 @@ router.post('/authenticate/verify', authLimiter, verifyAuthentication);
 // Management Routes (Authenticated users only, requires settings verification)
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/devices:
  *   get:
  *     summary: List registered security keys
+ *     description: Retrieve all security keys registered by the authenticated user.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -201,10 +206,11 @@ router.post('/authenticate/verify', authLimiter, verifyAuthentication);
 router.get('/devices', protectRoute, requireSettingsVerification, listSecurityKeys);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/devices/{id}:
  *   delete:
  *     summary: Delete a security key
+ *     description: Unregister and delete a specific security key.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -223,10 +229,11 @@ router.get('/devices', protectRoute, requireSettingsVerification, listSecurityKe
 router.delete('/devices/:id', protectRoute, requireSettingsVerification, deleteSecurityKey);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/webauthn/devices/{id}/rename:
  *   patch:
  *     summary: Rename a security key
+ *     description: Change the friendly name of a registered security key.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []

@@ -34,6 +34,56 @@ interface ProfileData {
   requireAuth: boolean;
   trackViews: boolean;
 }
+// Custom Circular Progress Component
+const CircularProgress = ({
+  percentage,
+  size = 180,
+  strokeWidth = 20,
+}: {
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#e5e7eb"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#10b981"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl font-bold text-primary">{percentage}%</div>
+          <div className="text-sm text-muted-foreground">Complete</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function MyProfile() {
   const { user, isLoaded } = useAuthState();
@@ -95,56 +145,6 @@ export default function MyProfile() {
 
   const profileCompletion = calculateProfileCompletion();
 
-  // Custom Circular Progress Component
-  const CircularProgress = ({
-    percentage,
-    size = 180,
-    strokeWidth = 20,
-  }: {
-    percentage: number;
-    size?: number;
-    strokeWidth?: number;
-  }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const strokeDasharray = circumference;
-    const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-    return (
-      <div className="relative inline-flex items-center justify-center">
-        <svg width={size} height={size} className="transform -rotate-90">
-          {/* Background circle */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#e5e7eb"
-            strokeWidth={strokeWidth}
-            fill="none"
-          />
-          {/* Progress circle */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="#10b981"
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-primary">{percentage}%</div>
-            <div className="text-sm text-muted-foreground">Complete</div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const profileActions = [
     {
@@ -265,11 +265,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profileCompletion.percentage === 100
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profileCompletion.percentage === 100
                             ? 'bg-green-100 text-green-800'
                             : 'bg-yellow-100 text-yellow-800'
-                        }`}
+                          }`}
                       >
                         {profileCompletion.percentage === 100 ? 'Complete' : 'Incomplete'}
                       </div>
@@ -295,11 +294,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profile?.isPublic
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.isPublic
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-gray-100 text-gray-800'
-                        }`}
+                          }`}
                       >
                         {profile?.isPublic ? 'Public' : 'Private'}
                       </div>
@@ -313,11 +311,10 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profile?.trackViews
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${profile?.trackViews
                             ? 'bg-purple-100 text-purple-800'
                             : 'bg-gray-100 text-gray-800'
-                        }`}
+                          }`}
                       >
                         {profile?.trackViews ? 'Enabled' : 'Disabled'}
                       </div>

@@ -39,7 +39,7 @@ export const getLastUpdated = async (req: Request, res: Response) => {
             },
           });
         }
-      } catch (e) {
+      } catch {
         // Ignore parse error, fetch fresh
       }
     }
@@ -84,7 +84,7 @@ export const getLastUpdated = async (req: Request, res: Response) => {
           } else {
             patUser = `invalid_token_${userRes.status}`;
           }
-        } catch (e) {
+        } catch {
           patUser = 'check_failed';
         }
       }

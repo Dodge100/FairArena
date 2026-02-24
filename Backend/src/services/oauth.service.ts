@@ -34,10 +34,10 @@ function buildMfaRedirectUrl(redirectTarget: string): string {
  * Returns redirect URL if should redirect, null otherwise
  */
 async function checkMultiAccountSession(
-  req: Request,
-  res: Response,
-  userId: string,
-  redirectPath: string,
+  _req: Request,
+  _res: Response,
+  _userId: string,
+  _redirectPath: string,
 ): Promise<string | null> {
   // Implementation would go here - keeping existing logic
   // For now, return null (no redirect needed)
@@ -132,7 +132,13 @@ export async function fetchOAuthUserInfo(
  * Find or create user from OAuth data
  */
 export async function findOrCreateOAuthUser(oauthData: OAuthUserData): Promise<any> {
-  const { email, providerId, providerName, ...userData } = oauthData;
+  const { email, providerName } = oauthData;
+  const userData = {
+    firstName: oauthData.firstName,
+    lastName: oauthData.lastName,
+    profileImageUrl: oauthData.profileImageUrl,
+    emailVerified: oauthData.emailVerified,
+  };
 
   // Find user by normalized email
   const normalizedEmail = normalizeEmail(email);
@@ -261,7 +267,8 @@ export async function handleSuccessfulOAuthLogin(
     userAgent,
     ipAddress,
   });
-  const accessToken = generateAccessToken(user.userId, sessionId);
+  // accessToken is generated but we don't return it here as we redirect
+  generateAccessToken(user.userId, sessionId);
 
   // Update last login
   await prisma.user.update({

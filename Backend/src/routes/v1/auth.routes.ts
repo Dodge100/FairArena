@@ -62,7 +62,6 @@ const loginLimiter = createAuthRateLimiter({
   message: 'Too many login attempts. Please try again later.',
 });
 
-
 const resendVerificationLimiter = createAuthRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 resend attempts per hour
@@ -1534,6 +1533,54 @@ export default router;
 // ============================================
 // ENTERPRISE SSO ROUTES
 // ============================================
+
+/**
+ * @swagger
+ * /api/v1/auth/sso/check:
+ *   get:
+ *     summary: Check SSO availability for email
+ *     description: Determine if a user's email domain is configured for Enterprise SSO (SAML/OIDC).
+ *     tags: [Authentication, SSO]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: SSO status for the domain
+ */
 router.get('/sso/check', ssoCheck);
+
+/**
+ * @swagger
+ * /api/v1/auth/sso/login:
+ *   get:
+ *     summary: Initiate SSO login
+ *     description: Redirect the user to their Enterprise Identity Provider (IdP) for authentication.
+ *     tags: [Authentication, SSO]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       302:
+ *         description: Redirect to IdP login page
+ */
 router.get('/sso/login', ssoLogin);
+
+/**
+ * @swagger
+ * /api/v1/auth/sso/callback:
+ *   get:
+ *     summary: SSO callback handler
+ *     description: Handle the assertion or token returned by the Enterprise IdP after successful authentication.
+ *     tags: [Authentication, SSO]
+ *     responses:
+ *       302:
+ *         description: Redirect to application with session
+ */
 router.get('/sso/callback', ssoCallback);

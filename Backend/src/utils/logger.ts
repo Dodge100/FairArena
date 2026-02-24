@@ -97,15 +97,24 @@ class OpenTelemetryTransport extends Transport {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const logsApi = (api as any).logs;
     if (logsApi) {
-      const logger = logsApi.getLogger('winston-logger');
+      const otelLogger = logsApi.getLogger('winston-logger');
 
-      const { message, level, timestamp, trace_id, span_id, trace_flags, ...meta } = info;
+      const message = String(info.message || '');
+      const level = String(info.level || 'info');
+      const timestamp = info.timestamp;
 
-      const levelStr = level as string;
+      const meta = { ...info };
+      // Remove specific fields from meta to avoid duplication in attributes
+      delete meta.message;
+      delete meta.level;
+      delete meta.timestamp;
+      delete meta.trace_id;
+      delete meta.span_id;
+      delete meta.trace_flags;
 
       // Map Winston levels to OpenTelemetry SeverityNumbers
       let severityNumber = 0; // UNSPECIFIED
-      switch (levelStr) {
+      switch (level) {
         case 'error':
           severityNumber = 17;
           break; // ERROR
@@ -123,10 +132,10 @@ class OpenTelemetryTransport extends Transport {
           break; // TRACE
       }
 
-      logger.emit({
-        body: message as string,
+      otelLogger.emit({
+        body: message,
         severityNumber,
-        severityText: levelStr.toUpperCase(),
+        severityText: level.toUpperCase(),
         attributes: meta as api.Attributes,
         timestamp: timestamp ? new Date(timestamp as string) : new Date(),
       });

@@ -124,7 +124,16 @@ const MOCK_ANALYTICS = {
   ],
 };
 
-const StatCard = ({ title, value, change, icon: Icon, trend, color }: any) => (
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change?: string;
+  icon: React.ElementType;
+  trend?: 'up' | 'down';
+  color: string;
+}
+
+const StatCard = ({ title, value, change, icon: Icon, trend, color }: StatCardProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -165,7 +174,14 @@ const StatCard = ({ title, value, change, icon: Icon, trend, color }: any) => (
   </motion.div>
 );
 
-const ProgressBar = ({ label, value, color, growth }: any) => (
+interface ProgressBarProps {
+  label: string;
+  value: number;
+  color: string;
+  growth?: number;
+}
+
+const ProgressBar = ({ label, value, color, growth }: ProgressBarProps) => (
   <div className="space-y-2">
     <div className="flex items-center justify-between text-sm">
       <span className="font-medium">{label}</span>

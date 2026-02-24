@@ -29,28 +29,28 @@ const authenticationLimiter = createAuthRateLimiter({
 // --- Registration Routes (authenticated) ---
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/register/options:
  *   post:
  *     summary: Get passkey registration options
- *     description: Generate WebAuthn registration options for creating a new passkey
+ *     description: Generate WebAuthn registration options for creating a new passkey.
  *     tags: [Passkeys]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Registration options generated
+ *         description: Registration options generated successfully
  *       401:
  *         description: Authentication required
  */
 router.post('/register/options', registrationLimiter, protectRoute, getRegistrationOptions);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/register/verify:
  *   post:
- *     summary: Verify and save passkey registration
- *     description: Complete the passkey registration by verifying the credential
+ *     summary: Verify passkey registration
+ *     description: Complete the passkey registration by verifying the credential response.
  *     tags: [Passkeys]
  *     security:
  *       - bearerAuth: []
@@ -81,11 +81,11 @@ router.post('/register/verify', registrationLimiter, protectRoute, verifyRegistr
 // --- Authentication Routes (public) ---
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/login/options:
  *   post:
  *     summary: Get passkey authentication options
- *     description: Generate WebAuthn authentication options for signing in with a passkey
+ *     description: Generate WebAuthn authentication options for signing in with a passkey.
  *     tags: [Passkeys]
  *     security: []
  *     requestBody:
@@ -100,16 +100,16 @@ router.post('/register/verify', registrationLimiter, protectRoute, verifyRegistr
  *                 description: Optional email to scope allowed credentials
  *     responses:
  *       200:
- *         description: Authentication options generated
+ *         description: Authentication options generated successfully
  */
 router.post('/login/options', authenticationLimiter, getAuthenticationOptions);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/login/verify:
  *   post:
- *     summary: Verify passkey authentication
- *     description: Complete sign-in by verifying the passkey assertion
+ *     summary: Verify passkey login
+ *     description: Complete sign-in by verifying the passkey assertion response.
  *     tags: [Passkeys]
  *     security: []
  *     requestBody:
@@ -134,28 +134,28 @@ router.post('/login/verify', authenticationLimiter, verifyAuthentication);
 // --- Management Routes (authenticated) ---
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys:
  *   get:
  *     summary: List user's passkeys
- *     description: Get all registered passkeys for the authenticated user
+ *     description: Get all registered passkeys for the authenticated user.
  *     tags: [Passkeys]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of passkeys
+ *         description: List of passkeys retrieved successfully
  *       401:
  *         description: Authentication required
  */
 router.get('/', protectRoute, listPasskeys);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/{id}:
  *   delete:
  *     summary: Delete a passkey
- *     description: Remove a registered passkey
+ *     description: Remove and unregister a specific passkey.
  *     tags: [Passkeys]
  *     security:
  *       - bearerAuth: []
@@ -167,18 +167,18 @@ router.get('/', protectRoute, listPasskeys);
  *           type: string
  *     responses:
  *       200:
- *         description: Passkey deleted
+ *         description: Passkey deleted successfully
  *       404:
  *         description: Passkey not found
  */
 router.delete('/:id', protectRoute, deletePasskey);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/passkeys/{id}/rename:
  *   patch:
  *     summary: Rename a passkey
- *     description: Update the friendly name of a passkey
+ *     description: Update the friendly name of a registered passkey.
  *     tags: [Passkeys]
  *     security:
  *       - bearerAuth: []
@@ -202,7 +202,7 @@ router.delete('/:id', protectRoute, deletePasskey);
  *                 maxLength: 100
  *     responses:
  *       200:
- *         description: Passkey renamed
+ *         description: Passkey renamed successfully
  *       404:
  *         description: Passkey not found
  */

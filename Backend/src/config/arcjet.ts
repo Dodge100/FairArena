@@ -47,7 +47,7 @@ export const formRateLimiter = {
   ...baseFormRateLimiter,
   protect: async (
     req: Parameters<typeof baseFormRateLimiter.protect>[0],
-    options?: Parameters<typeof baseFormRateLimiter.protect>[1],
+    options: Parameters<typeof baseFormRateLimiter.protect>[1],
   ) => {
     if (options?.email === 'test@test.com') {
       return {

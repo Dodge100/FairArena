@@ -29,7 +29,9 @@ RUN pnpm install --ignore-scripts
 COPY . .
 
 # Generate Prisma client manually
-RUN npx prisma generate
+# Use dummy URL for build if not provided (avoids crash when secrets aren't available during build)
+ARG DATABASE_URL
+RUN DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/postgres} npx prisma generate
 
 # Build the application
 RUN pnpm run build

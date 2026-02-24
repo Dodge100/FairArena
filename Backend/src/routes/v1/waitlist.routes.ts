@@ -10,10 +10,11 @@ import { verifyRecaptcha } from '../../middleware/v1/captcha.middleware.js';
 const router = Router();
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/waitlist:
  *   post:
  *     summary: Join the waitlist
+ *     description: Submit an email address to join the platform waitlist.
  *     tags: [Waitlist]
  *     requestBody:
  *       required: true
@@ -51,10 +52,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/waitlist/status/{email}:
  *   get:
  *     summary: Check waitlist status
+ *     description: Check the current waitlist status for a specific email address.
  *     tags: [Waitlist]
  *     parameters:
  *       - in: path
@@ -65,7 +67,7 @@ router.post(
  *           format: email
  *     responses:
  *       200:
- *         description: Waitlist status
+ *         description: Waitlist status retrieved successfully
  *       404:
  *         description: Email not found
  */
@@ -80,14 +82,15 @@ router.get(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/waitlist/stats:
  *   get:
  *     summary: Get waitlist statistics
+ *     description: Retrieve general statistics about the waitlist (e.g., total entries).
  *     tags: [Waitlist]
  *     responses:
  *       200:
- *         description: Waitlist stats
+ *         description: Waitlist stats retrieved successfully
  */
 router.get('/stats', getWaitlistStats);
 

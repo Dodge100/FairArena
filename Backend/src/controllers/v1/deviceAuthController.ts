@@ -123,13 +123,13 @@ export const pollDeviceToken = async (req: Request, res: Response) => {
 
       const userAgent = (req.headers['user-agent'] as string) || 'Unknown Device';
       const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
-      const { deviceType, deviceName } = parseUserAgent(userAgent);
+      const { deviceType: detectedDeviceType, deviceName } = parseUserAgent(userAgent);
 
       // Create session
       const refreshToken = generateRefreshToken();
       const sessionId = await createSession(user.userId, refreshToken, {
         deviceName: deviceName || 'FairArena App',
-        deviceType: 'mobile', // Assumed for device flow usually
+        deviceType: detectedDeviceType || 'mobile', // Assumed for device flow usually
         userAgent,
         ipAddress,
       });
@@ -231,12 +231,10 @@ export const approveDeviceAuth = async (req: Request, res: Response) => {
       await redis.setex(`${REDIS_KEYS.DEVICE_AUTH_CODE}${deviceCode}`, ttl, JSON.stringify(data));
     }
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: approve ? 'Device authorized' : 'Device authorization denied',
-      });
+    return res.status(200).json({
+      success: true,
+      message: approve ? 'Device authorized' : 'Device authorization denied',
+    });
   } catch (error) {
     logger.error('Failed to approve device auth', { error });
     return res.status(500).json({ success: false, message: 'Server error' });

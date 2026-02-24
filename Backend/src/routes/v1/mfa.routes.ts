@@ -16,30 +16,32 @@ const router = Router();
 router.use(protectRoute);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/status:
  *   get:
  *     summary: Get MFA status
+ *     description: Check if Multi-Factor Authentication is enabled and retrieve user's MFA settings.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: MFA status
+ *         description: MFA status retrieved successfully
  */
 router.get('/status', getMFAStatus);
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/setup:
  *   post:
  *     summary: Start MFA setup
+ *     description: Initialize the setup of Multi-Factor Authentication, returning a secret key and QR code.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: QR code and backup codes
+ *         description: MFA setup initiated with QR code and backup codes
  */
 router.post(
   '/setup',
@@ -53,10 +55,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/verify-setup:
  *   post:
  *     summary: Complete MFA setup
+ *     description: Finalize the MFA setup process by verifying the initial code from the authenticator app.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -75,7 +78,7 @@ router.post(
  *                 maxLength: 6
  *     responses:
  *       200:
- *         description: MFA enabled
+ *         description: MFA enabled successfully
  *       204:
  *         description: Verification successful
  */
@@ -90,10 +93,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/verify:
  *   post:
  *     summary: Verify MFA code
+ *     description: Verify an MFA code or backup code during the login or sensitive action process.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -112,7 +116,7 @@ router.post(
  *                 type: boolean
  *     responses:
  *       200:
- *         description: Verification successful
+ *         description: MFA verification successful
  */
 router.post(
   '/verify',
@@ -125,10 +129,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/disable:
  *   post:
  *     summary: Disable MFA
+ *     description: Turn off Multi-Factor Authentication for the user's account (requires password and code verification).
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -148,7 +153,7 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: MFA disabled
+ *         description: MFA disabled successfully
  */
 router.post(
   '/disable',
@@ -162,10 +167,11 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /api/v1/mfa/regenerate-backup:
  *   post:
  *     summary: Regenerate backup codes
+ *     description: Generate a new set of backup codes, invalidating any previous ones.
  *     tags: [MFA]
  *     security:
  *       - bearerAuth: []
@@ -182,7 +188,7 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: New backup codes
+ *         description: New backup codes generated successfully
  */
 router.post(
   '/regenerate-backup',

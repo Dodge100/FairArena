@@ -47,6 +47,76 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
     }
   }, []);
 
+  // Claim the approved session mutation
+  const claimMutation = useMutation({
+    mutationFn: async ({ sessionId, nonce }: { sessionId: string; nonce: string }) => {
+      const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, nonce }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to complete sign in');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      setStatus('claimed');
+      toast.success('Signed in successfully!');
+      // Small delay for visual feedback
+      setTimeout(() => {
+        onOpenChange(false);
+        sessionStorage.removeItem('auth_flow');
+        window.location.href = getRedirectPath(location);
+      }, 800);
+    },
+    onError: (error: Error) => {
+      console.error('Claim Error:', error);
+      toast.error('Failed to complete sign in');
+      setStatus('error');
+      setErrorMessage(error.message || 'Connection error. Please try again.');
+    },
+  });
+
+  // Start SSE stream for real-time status
+  const startStatusStream = useCallback(
+    (sessionId: string) => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
+      const sse = new EventSource(`${apiUrl}/api/v1/auth/qr/status/${sessionId}`);
+      eventSourceRef.current = sse;
+
+      sse.onmessage = async (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.status === 'expired') {
+            setStatus('expired');
+            sse.close();
+            return;
+          }
+
+          if (data.status === 'approved' && data.nonce) {
+            setStatus('approved');
+            sse.close();
+            claimMutation.mutate({ sessionId, nonce: data.nonce });
+          }
+        } catch (err) {
+          console.error('SSE Parse Error:', err);
+        }
+      };
+
+      sse.onerror = () => {
+        sse.close();
+        // Don't set error state - might just be connection closed
+      };
+    },
+    [apiUrl, claimMutation],
+  );
+
   // Generate QR session mutation
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -87,77 +157,7 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
     setErrorMessage(null);
     setSession(null);
     generateMutation.mutate();
-  }, [cleanup]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Start SSE stream for real-time status
-  const startStatusStream = useCallback(
-    (sessionId: string) => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-
-      const sse = new EventSource(`${apiUrl}/api/v1/auth/qr/status/${sessionId}`);
-      eventSourceRef.current = sse;
-
-      sse.onmessage = async (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (data.status === 'expired') {
-            setStatus('expired');
-            sse.close();
-            return;
-          }
-
-          if (data.status === 'approved' && data.nonce) {
-            setStatus('approved');
-            sse.close();
-            claimMutation.mutate({ sessionId, nonce: data.nonce });
-          }
-        } catch (err) {
-          console.error('SSE Parse Error:', err);
-        }
-      };
-
-      sse.onerror = () => {
-        sse.close();
-        // Don't set error state - might just be connection closed
-      };
-    },
-    [apiUrl],
-  );
-
-  // Claim the approved session mutation
-  const claimMutation = useMutation({
-    mutationFn: async ({ sessionId, nonce }: { sessionId: string; nonce: string }) => {
-      const res = await publicApiFetch(`${apiUrl}/api/v1/auth/qr/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, nonce }),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to complete sign in');
-      }
-      return data;
-    },
-    onSuccess: () => {
-      setStatus('claimed');
-      toast.success('Signed in successfully!');
-      // Small delay for visual feedback
-      setTimeout(() => {
-        onOpenChange(false);
-        sessionStorage.removeItem('auth_flow');
-        window.location.href = getRedirectPath(location);
-      }, 800);
-    },
-    onError: (error: Error) => {
-      console.error('Claim Error:', error);
-      toast.error('Failed to complete sign in');
-      setStatus('error');
-      setErrorMessage(error.message || 'Connection error. Please try again.');
-    },
-  });
+  }, [cleanup, generateMutation]);
 
   // Claim session wrapper (not needed but kept for minimal diff if called elsewhere, but here logic is moved to mutation success/stream)
   // Actually claimSession was only called in stream, now replaced by mutate.
@@ -205,9 +205,8 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`sm:max-w-[400px] p-0 overflow-hidden ${
-          isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
-        }`}
+        className={`sm:max-w-[400px] p-0 overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
+          }`}
       >
         {/* Header */}
         <DialogHeader
@@ -215,9 +214,8 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
         >
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                isDark ? 'bg-[#DDEF00]/10' : 'bg-[#DDEF00]/10'
-              }`}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-[#DDEF00]/10' : 'bg-[#DDEF00]/10'
+                }`}
             >
               <svg
                 className="w-5 h-5 text-[#DDEF00]"
@@ -281,9 +279,8 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
             {status === 'error' && (
               <div className="w-[220px] text-center">
                 <div
-                  className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    isDark ? 'bg-red-500/10' : 'bg-red-50'
-                  }`}
+                  className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'
+                    }`}
                 >
                   <svg
                     className="w-8 h-8 text-red-500"
@@ -315,9 +312,8 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
             {status === 'expired' && (
               <div className="w-[220px] text-center">
                 <div
-                  className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    isDark ? 'bg-orange-500/10' : 'bg-orange-50'
-                  }`}
+                  className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-orange-500/10' : 'bg-orange-50'
+                    }`}
                 >
                   <svg
                     className="w-8 h-8 text-orange-500"
@@ -424,13 +420,12 @@ export function QRAuthDialog({ open, onOpenChange }: QRAuthDialogProps) {
             {status === 'pending' && (
               <div className="mt-6 text-center">
                 <p
-                  className={`text-sm font-medium tabular-nums ${
-                    timeLeft < 10
-                      ? 'text-red-500'
-                      : isDark
-                        ? 'text-neutral-300'
-                        : 'text-neutral-600'
-                  }`}
+                  className={`text-sm font-medium tabular-nums ${timeLeft < 10
+                    ? 'text-red-500'
+                    : isDark
+                      ? 'text-neutral-300'
+                      : 'text-neutral-600'
+                    }`}
                 >
                   {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </p>

@@ -65,145 +65,151 @@ export function FileUpload({
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, UploadingFile>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = (file: File): string | null => {
-    // Check file size
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      return `File size exceeds ${maxSizeMB}MB limit`;
-    }
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      // Check file size
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        return `File size exceeds ${maxSizeMB}MB limit`;
+      }
 
-    // Check file type
-    if (!allowedTypes.includes(file.type)) {
-      return `File type not allowed. Allowed types: ${DEFAULT_ALLOWED_EXTENSIONS.join(', ')}`;
-    }
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        return `File type not allowed. Allowed types: ${DEFAULT_ALLOWED_EXTENSIONS.join(', ')}`;
+      }
 
-    // Check file extension
-    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-    if (!DEFAULT_ALLOWED_EXTENSIONS.includes(extension)) {
-      return `File extension not allowed`;
-    }
+      // Check file extension
+      const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      if (!DEFAULT_ALLOWED_EXTENSIONS.includes(extension)) {
+        return `File extension not allowed`;
+      }
 
-    return null;
-  };
+      return null;
+    },
+    [maxSizeMB, allowedTypes],
+  );
 
-  const uploadFile = async (file: File) => {
-    const fileId = `${file.name}-${Date.now()}`;
+  const uploadFile = useCallback(
+    async (file: File) => {
+      const fileId = `${file.name}-${Date.now()}`;
 
-    // Add to uploading files
-    setUploadingFiles((prev) =>
-      new Map(prev).set(fileId, {
-        file,
-        progress: 0,
-        status: 'uploading',
-      }),
-    );
+      // Add to uploading files
+      setUploadingFiles((prev) =>
+        new Map(prev).set(fileId, {
+          file,
+          progress: 0,
+          status: 'uploading',
+        }),
+      );
 
-    try {
-      // Step 1: Request SAS token from backend
-      const tokenResponse = await apiRequest<{ data: { uploadUrl: string; blobName: string } }>(
-        `${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/sas-token`,
-        {
+      try {
+        // Step 1: Request SAS token from backend
+        const tokenResponse = await apiRequest<{ data: { uploadUrl: string; blobName: string } }>(
+          `${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/sas-token`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileSize: file.size,
+              contentType: file.type,
+            }),
+          },
+        );
+
+        const { uploadUrl, blobName } = tokenResponse.data;
+
+        // Step 2: Upload directly to Azure Blob Storage with progress tracking
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            setUploadingFiles((prev) => {
+              const updated = new Map(prev);
+              const fileData = updated.get(fileId);
+              if (fileData) {
+                updated.set(fileId, { ...fileData, progress });
+              }
+              return updated;
+            });
+          }
+        });
+
+        await new Promise<void>((resolve, reject) => {
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
+
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload cancelled'));
+          });
+
+          xhr.open('PUT', uploadUrl);
+          xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+          xhr.setRequestHeader('Content-Type', file.type);
+          xhr.send(file);
+        });
+
+        // Step 3: Confirm upload with backend
+        await apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/confirm`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            fileName: file.name,
-            fileSize: file.size,
-            contentType: file.type,
+            blobName,
+            supportTicketId,
           }),
-        },
-      );
-
-      const { uploadUrl, blobName } = tokenResponse.data;
-
-      // Step 2: Upload directly to Azure Blob Storage with progress tracking
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadingFiles((prev) => {
-            const updated = new Map(prev);
-            const fileData = updated.get(fileId);
-            if (fileData) {
-              updated.set(fileId, { ...fileData, progress });
-            }
-            return updated;
-          });
-        }
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
         });
 
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
-        });
-
-        xhr.addEventListener('abort', () => {
-          reject(new Error('Upload cancelled'));
-        });
-
-        xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
-        xhr.setRequestHeader('Content-Type', file.type);
-        xhr.send(file);
-      });
-
-      // Step 3: Confirm upload with backend
-      await apiRequest(`${import.meta.env.VITE_API_BASE_URL}/api/v1/support/upload/confirm`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          blobName,
-          supportTicketId,
-        }),
-      });
-
-      // Update status to success
-      setUploadingFiles((prev) => {
-        const updated = new Map(prev);
-        const fileData = updated.get(fileId);
-        if (fileData) {
-          updated.set(fileId, { ...fileData, status: 'success', progress: 100, blobName });
-        }
-        return updated;
-      });
-
-      onUploadComplete?.(blobName);
-
-      // Remove from list after 3 seconds
-      setTimeout(() => {
+        // Update status to success
         setUploadingFiles((prev) => {
           const updated = new Map(prev);
-          updated.delete(fileId);
+          const fileData = updated.get(fileId);
+          if (fileData) {
+            updated.set(fileId, { ...fileData, status: 'success', progress: 100, blobName });
+          }
           return updated;
         });
-      }, 3000);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
 
-      setUploadingFiles((prev) => {
-        const updated = new Map(prev);
-        const fileData = updated.get(fileId);
-        if (fileData) {
-          updated.set(fileId, { ...fileData, status: 'error', error: errorMessage });
-        }
-        return updated;
-      });
+        onUploadComplete?.(blobName);
 
-      onUploadError?.(errorMessage);
-    }
-  };
+        // Remove from list after 3 seconds
+        setTimeout(() => {
+          setUploadingFiles((prev) => {
+            const updated = new Map(prev);
+            updated.delete(fileId);
+            return updated;
+          });
+        }, 3000);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+
+        setUploadingFiles((prev) => {
+          const updated = new Map(prev);
+          const fileData = updated.get(fileId);
+          if (fileData) {
+            updated.set(fileId, { ...fileData, status: 'error', error: errorMessage });
+          }
+          return updated;
+        });
+
+        onUploadError?.(errorMessage);
+      }
+    },
+    [onUploadComplete, onUploadError, supportTicketId],
+  );
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -219,7 +225,7 @@ export function FileUpload({
         uploadFile(file);
       });
     },
-    [maxSizeMB, allowedTypes],
+    [onUploadError, uploadFile, validateFile],
   );
 
   const handleDrop = useCallback(
@@ -279,12 +285,11 @@ export function FileUpload({
         className={`
           relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
           transition-all duration-200 hover:border-[#DDEF00]
-          ${
-            isDragging
-              ? 'border-[#DDEF00] bg-[#DDEF00]/10'
-              : isDark
-                ? 'border-neutral-700 bg-[rgba(15,15,15,0.65)] hover:bg-[rgba(15,15,15,0.85)]'
-                : 'border-neutral-300 bg-white hover:bg-neutral-50'
+          ${isDragging
+            ? 'border-[#DDEF00] bg-[#DDEF00]/10'
+            : isDark
+              ? 'border-neutral-700 bg-[rgba(15,15,15,0.65)] hover:bg-[rgba(15,15,15,0.85)]'
+              : 'border-neutral-300 bg-white hover:bg-neutral-50'
           }
         `}
       >
@@ -324,10 +329,9 @@ export function FileUpload({
               key={fileId}
               className={`
                 p-4 rounded-lg border
-                ${
-                  isDark
-                    ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800'
-                    : 'bg-white border-neutral-200'
+                ${isDark
+                  ? 'bg-[rgba(15,15,15,0.65)] border-neutral-800'
+                  : 'bg-white border-neutral-200'
                 }
               `}
             >
@@ -336,13 +340,12 @@ export function FileUpload({
                 <div
                   className={`
                   w-10 h-10 rounded-lg flex items-center justify-center shrink-0
-                  ${
-                    fileData.status === 'success'
+                  ${fileData.status === 'success'
                       ? 'bg-green-500/20'
                       : fileData.status === 'error'
                         ? 'bg-red-500/20'
                         : 'bg-blue-500/20'
-                  }
+                    }
                 `}
                 >
                   {fileData.status === 'success' ? (
